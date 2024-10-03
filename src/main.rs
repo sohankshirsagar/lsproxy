@@ -15,14 +15,7 @@ struct CloneRequest {
 }
 
 struct AppState {
-    clones: Mutex<HashMap<String, CloneInfo>>,
-}
-
-struct CloneInfo {
-    id: String,
-    github_url: String,
-    reference: Option<String>,
-    temp_dir: TempDir,
+    clones: Mutex<HashMap<String, TempDir>>,
 }
 
 async fn clone_repo(
@@ -45,15 +38,8 @@ async fn clone_repo(
         }
     }
 
-    let clone_info = CloneInfo {
-        id: info.id.clone(),
-        github_url: info.github_url.clone(),
-        reference: info.reference.clone(),
-        temp_dir,
-    };
-
     let mut clones = data.clones.lock().unwrap();
-    clones.insert(info.id.clone(), clone_info);
+    clones.insert(info.id.clone(), temp_dir);
 
     HttpResponse::Ok().body(format!("Repository cloned successfully. ID: {}", info.id))
 }
