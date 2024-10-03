@@ -1,10 +1,11 @@
-use actix_web::{web, App, HttpServer, HttpResponse};
+use actix_web::{web, App, HttpServer, HttpResponse, Responder};
+use actix_files::NamedFile;
+use actix_cors::Cors;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
-use uuid::Uuid;
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -70,6 +71,10 @@ fn checkout_reference(repo: &Repository, reference: &str) -> Result<(), git2::Er
     Ok(())
 }
 
+async fn index() -> impl Responder {
+    NamedFile::open_async("./index.html").await.unwrap()
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let app_state = web::Data::new(AppState {
@@ -77,8 +82,15 @@ async fn main() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header();
+
         App::new()
+            .wrap(cors)
             .app_data(app_state.clone())
+            .route("/", web::get().to(index))
             .route("/clone", web::post().to(clone_repo))
     })
     .bind("127.0.0.1:8080")?

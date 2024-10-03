@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Clone API Tester</title>
+    <script>
+        async function cloneRepo() {
+            const id = document.getElementById('id').value;
+            const githubUrl = document.getElementById('githubUrl').value;
+            const reference = document.getElementById('reference').value;
+
+            const response = await fetch('http://localhost:8080/clone', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: id,
+                    github_url: githubUrl,
+                    reference: reference || undefined,
+                }),
+            });
+
+            const result = await response.text();
+            document.getElementById('result').textContent = result;
+        }
+    </script>
+</head>
+<body>
+    <h1>GitHub Clone API Tester</h1>
+    <form onsubmit="event.preventDefault(); cloneRepo();">
+        <label for="id">ID:</label>
+        <input type="text" id="id" required><br><br>
+        
+        <label for="githubUrl">GitHub URL:</label>
+        <input type="text" id="githubUrl" required><br><br>
+        
+        <label for="reference">Reference (optional):</label>
+        <input type="text" id="reference"><br><br>
+        
+        <button type="submit">Clone Repository</button>
+    </form>
+    <div id="result"></div>
+</body>
+</html>
