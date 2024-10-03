@@ -15,7 +15,7 @@ struct CloneRequest {
 }
 
 struct AppState {
-    clones: Mutex<HashMap<String, TempDir>>,
+    clones: Mutex<HashMap<String, HashMap<String, TempDir>>>,
 }
 
 async fn clone_repo(
@@ -39,9 +39,12 @@ async fn clone_repo(
     }
 
     let mut clones = data.clones.lock().unwrap();
-    clones.insert(info.id.clone(), temp_dir);
+    clones
+        .entry(info.id.clone())
+        .or_insert_with(HashMap::new)
+        .insert(info.github_url.clone(), temp_dir);
 
-    HttpResponse::Ok().body(format!("Repository cloned successfully. ID: {}", info.id))
+    HttpResponse::Ok().body(format!("Repository cloned successfully. ID: {}, URL: {}", info.id, info.github_url))
 }
 
 fn checkout_reference(repo: &Repository, reference: &str) -> Result<(), git2::Error> {
