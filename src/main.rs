@@ -11,7 +11,7 @@ use env_logger::Env;
 use std::process::Command;
 use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use lsp_types::{TextDocumentPositionParams, TextDocumentIdentifier, Position, Url};
+use lsp_types::{TextDocumentPositionParams, TextDocumentIdentifier, Position, Url, GotoDefinitionParams, GotoDefinitionResponse};
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -295,9 +295,10 @@ async fn get_function_definition(
         },
     };
 
-    let request = serde_json::to_string(&lsp_types::request::Request::new(
+    let request = serde_json::to_string(&lsp_types::Request::new(
         lsp_types::request::GotoDefinition::METHOD.to_string(),
-        serde_json::to_value(params).unwrap(),
+        serde_json::to_value(GotoDefinitionParams::new(params)).unwrap(),
+        Some(serde_json::Value::Number(serde_json::Number::from(1))),
     )).unwrap();
 
     if let Err(e) = stream.write_all(request.as_bytes()).await {
