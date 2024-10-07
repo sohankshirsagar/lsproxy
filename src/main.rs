@@ -6,12 +6,12 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
-use log::{info, error, debug, warn};
+use log::{info, error, debug};
 use env_logger::Env;
 use std::process::Command;
 use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use lsp_types::{request::Definition, TextDocumentPositionParams, TextDocumentIdentifier, Position};
+use lsp_types::{TextDocumentPositionParams, TextDocumentIdentifier, Position, Url};
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -190,7 +190,7 @@ async fn init_lsp(
         }
     };
 
-    let (temp_dir, repo_info) = match repo_map.get(&info.github_url) {
+    let (_, repo_info) = match repo_map.get(&info.github_url) {
         Some(entry) => entry,
         None => {
             error!("Repository not found for ID: {} and URL: {}", info.id, info.github_url);
@@ -287,7 +287,7 @@ async fn get_function_definition(
 
     let params = TextDocumentPositionParams {
         text_document: TextDocumentIdentifier {
-            uri: format!("file://{}/{}", repo_info.temp_dir, info.file_path).into(),
+            uri: Url::parse(&format!("file://{}/{}", repo_info.temp_dir, info.file_path)).unwrap(),
         },
         position: Position {
             line: info.line,
@@ -295,8 +295,8 @@ async fn get_function_definition(
         },
     };
 
-    let request = serde_json::to_string(&lsp_types::Request::new(
-        "textDocument/definition".to_string(),
+    let request = serde_json::to_string(&lsp_types::request::Request::new(
+        lsp_types::request::GotoDefinition::METHOD.to_string(),
         serde_json::to_value(params).unwrap(),
     )).unwrap();
 
