@@ -53,6 +53,31 @@
             const result = await response.text();
             document.getElementById('lspResult').textContent = result;
         }
+
+        async function getFunctionDefinition() {
+            const id = document.getElementById('funcDefId').value;
+            const githubUrl = document.getElementById('funcDefGithubUrl').value;
+            const filePath = document.getElementById('funcDefFilePath').value;
+            const line = parseInt(document.getElementById('funcDefLine').value);
+            const character = parseInt(document.getElementById('funcDefCharacter').value);
+
+            const response = await fetch('http://localhost:8080/function-definition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: id,
+                    github_url: githubUrl,
+                    file_path: filePath,
+                    line: line,
+                    character: character,
+                }),
+            });
+
+            const result = await response.text();
+            document.getElementById('funcDefResult').textContent = result;
+        }
     </script>
 </head>
 <body>
@@ -85,5 +110,26 @@
         <button type="submit">Initialize LSP</button>
     </form>
     <div id="lspResult"></div>
+    <br>
+    <h2>Get Function Definition</h2>
+    <form onsubmit="event.preventDefault(); getFunctionDefinition();">
+        <label for="funcDefId">ID:</label>
+        <input type="text" id="funcDefId" required><br><br>
+        
+        <label for="funcDefGithubUrl">GitHub URL:</label>
+        <input type="text" id="funcDefGithubUrl" required><br><br>
+        
+        <label for="funcDefFilePath">File Path:</label>
+        <input type="text" id="funcDefFilePath" required><br><br>
+        
+        <label for="funcDefLine">Line:</label>
+        <input type="number" id="funcDefLine" required><br><br>
+        
+        <label for="funcDefCharacter">Character:</label>
+        <input type="number" id="funcDefCharacter" required><br><br>
+        
+        <button type="submit">Get Function Definition</button>
+    </form>
+    <div id="funcDefResult"></div>
 </body>
 </html>

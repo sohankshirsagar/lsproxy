@@ -9,6 +9,9 @@ use git2::{Repository, BranchType};
 use log::{info, error, debug, warn};
 use env_logger::Env;
 use std::process::Command;
+use tokio::net::TcpStream;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use lsp_types::{request::Definition, TextDocumentPositionParams, TextDocumentIdentifier, Position};
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -30,6 +33,15 @@ struct RepoInfo {
 struct LspInitRequest {
     id: String,
     github_url: String,
+}
+
+#[derive(Deserialize)]
+struct FunctionDefinitionRequest {
+    id: String,
+    github_url: String,
+    file_path: String,
+    line: u32,
+    character: u32,
 }
 
 struct AppState {
@@ -236,8 +248,68 @@ async fn main() -> std::io::Result<()> {
             .route("/clone", web::post().to(clone_repo))
             .route("/list", web::get().to(list_repos))
             .route("/init-lsp", web::post().to(init_lsp))
+            .route("/function-definition", web::post().to(get_function_definition))
     })
     .bind("0.0.0.0:8080")?
     .run()
     .await
+}
+async fn get_function_definition(
+    data: web::Data<AppState>,
+    info: web::Json<FunctionDefinitionRequest>,
+) -> HttpResponse {
+    info!("Received function definition request for ID: {}, URL: {}", info.id, info.github_url);
+
+    let clones = data.clones.lock().unwrap();
+    let repo_map = match clones.get(&info.id) {
+        Some(map) => map,
+        None => {
+            error!("No repositories found for ID: {}", info.id);
+            return HttpResponse::BadRequest().body("No repositories found for the given ID");
+        }
+    };
+
+    let (_, repo_info) = match repo_map.get(&info.github_url) {
+        Some(entry) => entry,
+        None => {
+            error!("Repository not found for ID: {} and URL: {}", info.id, info.github_url);
+            return HttpResponse::BadRequest().body("Repository not found");
+        }
+    };
+
+    let mut stream = match TcpStream::connect("127.0.0.1:2087").await {
+        Ok(stream) => stream,
+        Err(e) => {
+            error!("Failed to connect to LSP server: {}", e);
+            return HttpResponse::InternalServerError().body("Failed to connect to LSP server");
+        }
+    };
+
+    let params = TextDocumentPositionParams {
+        text_document: TextDocumentIdentifier {
+            uri: format!("file://{}/{}", repo_info.temp_dir, info.file_path).into(),
+        },
+        position: Position {
+            line: info.line,
+            character: info.character,
+        },
+    };
+
+    let request = serde_json::to_string(&lsp_types::Request::new(
+        "textDocument/definition".to_string(),
+        serde_json::to_value(params).unwrap(),
+    )).unwrap();
+
+    if let Err(e) = stream.write_all(request.as_bytes()).await {
+        error!("Failed to send request to LSP server: {}", e);
+        return HttpResponse::InternalServerError().body("Failed to send request to LSP server");
+    }
+
+    let mut response = String::new();
+    if let Err(e) = stream.read_to_string(&mut response).await {
+        error!("Failed to read response from LSP server: {}", e);
+        return HttpResponse::InternalServerError().body("Failed to read response from LSP server");
+    }
+
+    HttpResponse::Ok().body(response)
 }
