@@ -34,6 +34,25 @@
             ).join('\n\n');
             document.getElementById('repoList').textContent = repoList;
         }
+
+        async function initLsp() {
+            const id = document.getElementById('lspId').value;
+            const githubUrl = document.getElementById('lspGithubUrl').value;
+
+            const response = await fetch('http://localhost:8080/init-lsp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: id,
+                    github_url: githubUrl,
+                }),
+            });
+
+            const result = await response.text();
+            document.getElementById('lspResult').textContent = result;
+        }
     </script>
 </head>
 <body>
@@ -54,5 +73,17 @@
     <br>
     <button onclick="listRepos()">List Repositories</button>
     <pre id="repoList"></pre>
+    <br>
+    <h2>Initialize LSP</h2>
+    <form onsubmit="event.preventDefault(); initLsp();">
+        <label for="lspId">ID:</label>
+        <input type="text" id="lspId" required><br><br>
+        
+        <label for="lspGithubUrl">GitHub URL:</label>
+        <input type="text" id="lspGithubUrl" required><br><br>
+        
+        <button type="submit">Initialize LSP</button>
+    </form>
+    <div id="lspResult"></div>
 </body>
 </html>

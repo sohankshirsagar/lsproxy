@@ -6,8 +6,9 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
-use log::{info, error, debug};
+use log::{info, error, debug, warn};
 use env_logger::Env;
+use std::process::Command;
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -23,6 +24,12 @@ struct RepoInfo {
     branch: Option<String>,
     commit: String,
     temp_dir: String,
+}
+
+#[derive(Deserialize)]
+struct LspInitRequest {
+    id: String,
+    github_url: String,
 }
 
 struct AppState {
@@ -156,6 +163,61 @@ async fn list_repos(data: web::Data<AppState>) -> HttpResponse {
     HttpResponse::Ok().json(repo_list)
 }
 
+async fn init_lsp(
+    data: web::Data<AppState>,
+    info: web::Json<LspInitRequest>,
+) -> HttpResponse {
+    info!("Received LSP init request for ID: {}, URL: {}", info.id, info.github_url);
+
+    let clones = data.clones.lock().unwrap();
+    let repo_map = match clones.get(&info.id) {
+        Some(map) => map,
+        None => {
+            error!("No repositories found for ID: {}", info.id);
+            return HttpResponse::BadRequest().body("No repositories found for the given ID");
+        }
+    };
+
+    let (temp_dir, repo_info) = match repo_map.get(&info.github_url) {
+        Some(entry) => entry,
+        None => {
+            error!("Repository not found for ID: {} and URL: {}", info.id, info.github_url);
+            return HttpResponse::BadRequest().body("Repository not found");
+        }
+    };
+
+    info!("Initializing LSP for repo: {}", repo_info.temp_dir);
+
+    // Run the Python LSP initialization command
+    let output = Command::new("python3")
+        .arg("-m")
+        .arg("pylsp")
+        .arg("--verbose")
+        .current_dir(&repo_info.temp_dir)
+        .output();
+
+    match output {
+        Ok(output) => {
+            if output.status.success() {
+                info!("LSP initialized successfully for repo: {}", repo_info.temp_dir);
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                debug!("LSP stdout: {}", stdout);
+                debug!("LSP stderr: {}", stderr);
+                HttpResponse::Ok().body("LSP initialized successfully")
+            } else {
+                let error_msg = String::from_utf8_lossy(&output.stderr);
+                error!("Failed to initialize LSP: {}", error_msg);
+                HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", error_msg))
+            }
+        }
+        Err(e) => {
+            error!("Failed to execute LSP command: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to execute LSP command: {}", e))
+        }
+    }
+}
+
 async fn index() -> impl Responder {
     NamedFile::open_async("./index.html").await.unwrap()
 }
@@ -181,6 +243,7 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             .route("/clone", web::post().to(clone_repo))
             .route("/list", web::get().to(list_repos))
+            .route("/init-lsp", web::post().to(init_lsp))
     })
     .bind("0.0.0.0:8080")?
     .run()
