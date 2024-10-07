@@ -7,6 +7,7 @@ use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
 use log::{info, error, debug};
+use env_logger::Env;
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -78,6 +79,7 @@ async fn index() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
     info!("Starting server at http://127.0.0.1:8080");
 
     let app_state = web::Data::new(AppState {
