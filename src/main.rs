@@ -22,6 +22,7 @@ struct RepoInfo {
     github_url: String,
     branch: Option<String>,
     commit: String,
+    temp_dir: String,
 }
 
 struct AppState {
@@ -116,6 +117,7 @@ async fn clone_repo(
         github_url: info.github_url.clone(),
         branch,
         commit,
+        temp_dir: temp_dir.path().to_string_lossy().into_owned(),
     };
 
     let mut clones = data.clones.lock().unwrap();

@@ -30,7 +30,7 @@
             const response = await fetch('http://localhost:8080/list');
             const repos = await response.json();
             const repoList = repos.map(repo => 
-                `ID: ${repo.id}\nURL: ${repo.github_url}\nBranch: ${repo.branch || 'N/A'}\nCommit: ${repo.commit}`
+                `ID: ${repo.id}\nURL: ${repo.github_url}\nBranch: ${repo.branch || 'N/A'}\nCommit: ${repo.commit}\nTemp Dir: ${repo.temp_dir}`
             ).join('\n\n');
             document.getElementById('repoList').textContent = repoList;
         }
