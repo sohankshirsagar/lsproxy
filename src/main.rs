@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
-use git2::{Repository, BranchType, Oid, Reference};
+use git2::{Repository, BranchType};
 use log::{info, error, debug};
 use env_logger::Env;
 
@@ -90,9 +90,24 @@ async fn clone_repo(
             }
         },
         None => {
-            let head = repo.head()?;
-            let commit = head.peel_to_commit()?.id().to_string();
-            (head.shorthand().map(String::from), commit)
+            match repo.head() {
+                Ok(head) => {
+                    match head.peel_to_commit() {
+                        Ok(commit_obj) => {
+                            let commit = commit_obj.id().to_string();
+                            (head.shorthand().map(String::from), commit)
+                        },
+                        Err(e) => {
+                            error!("Failed to get commit: {}", e);
+                            return HttpResponse::InternalServerError().body("Failed to get commit");
+                        }
+                    }
+                },
+                Err(e) => {
+                    error!("Failed to get repository head: {}", e);
+                    return HttpResponse::InternalServerError().body("Failed to get repository head");
+                }
+            }
         }
     };
 
