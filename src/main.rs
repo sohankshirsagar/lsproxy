@@ -11,8 +11,8 @@ use env_logger::Env;
 use std::process::Command;
 use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use lsp_types::{TextDocumentPositionParams, TextDocumentIdentifier, Position, Url, GotoDefinitionParams};
-use lsp_types::request::{GotoDefinition, Request};
+use lsp_types::{TextDocumentPositionParams, TextDocumentIdentifier, Position, Url};
+use lsp_types::request::{GotoDefinition, GotoDefinitionParams};
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -301,8 +301,8 @@ async fn get_function_definition(
         },
     };
 
-    let request = serde_json::to_string(&Request::new(
-        GotoDefinition::METHOD.to_string(),
+    let request = serde_json::to_string(&lsp_types::Request::new(
+        GotoDefinitionParams::METHOD.to_string(),
         params,
         Some(1)
     )).unwrap();
