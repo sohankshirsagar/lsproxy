@@ -43,8 +43,8 @@ COPY start.sh .
 # Make the startup script executable
 RUN chmod +x start.sh
 
-# Document that the container listens on ports 8080 and 2087
-EXPOSE 8080 2087
+# Document that the container listens on port 8080
+EXPOSE 8080
 
 # Run the startup script
 CMD ["./start.sh"]
