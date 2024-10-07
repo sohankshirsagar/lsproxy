@@ -52,5 +52,6 @@ COPY index.html .
 # Document that the container listens on port 8080
 EXPOSE 8080
 
-# Run the Rust server
-CMD ["./github-clone-server"]
+# Run the Rust server with logging
+ENV RUST_LOG=info
+CMD ["sh", "-c", "./github-clone-server 2>&1 | tee /var/log/app.log"]

@@ -236,7 +236,8 @@ async fn main() -> std::io::Result<()> {
         clones: Mutex::new(HashMap::new()),
     });
 
-    HttpServer::new(move || {
+    info!("Initializing HTTP server");
+    let server = HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
@@ -251,9 +252,13 @@ async fn main() -> std::io::Result<()> {
             .route("/init-lsp", web::post().to(init_lsp))
             .route("/function-definition", web::post().to(get_function_definition))
     })
-    .bind("0.0.0.0:8080")?
-    .run()
-    .await
+    .bind("0.0.0.0:8080")?;
+
+    info!("Server bound to 0.0.0.0:8080");
+    info!("Starting server...");
+    let result = server.run().await;
+    info!("Server stopped");
+    result
 }
 async fn get_function_definition(
     data: web::Data<AppState>,
