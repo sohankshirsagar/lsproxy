@@ -189,9 +189,7 @@ async fn init_lsp(
     info!("Initializing LSP for repo: {}", repo_info.temp_dir);
 
     // Run the Python LSP initialization command
-    let output = Command::new("python3")
-        .arg("-m")
-        .arg("pylsp")
+    let output = Command::new("pylsp")
         .arg("--verbose")
         .current_dir(&repo_info.temp_dir)
         .output();

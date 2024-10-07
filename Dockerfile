@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
     git \
     python3 \
     python3-pip \
-    && pip3 install python-language-server
+    && pip3 install python-lsp-server
 
 # Copy the binary from the builder stage
 COPY --from=builder /usr/src/app/target/release/github-clone-server .
