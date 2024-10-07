@@ -1,7 +1,7 @@
 use actix_web::{web, App, HttpServer, HttpResponse, Responder};
 use actix_files::NamedFile;
 use actix_cors::Cors;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
@@ -73,6 +73,27 @@ fn checkout_reference(repo: &Repository, reference: &str) -> Result<(), git2::Er
     Ok(())
 }
 
+#[derive(Serialize)]
+struct RepoInfo {
+    id: String,
+    github_url: String,
+}
+
+async fn list_repos(data: web::Data<AppState>) -> HttpResponse {
+    let clones = data.clones.lock().unwrap();
+    let repo_list: Vec<RepoInfo> = clones
+        .iter()
+        .flat_map(|(id, repos)| {
+            repos.keys().map(move |url| RepoInfo {
+                id: id.clone(),
+                github_url: url.clone(),
+            })
+        })
+        .collect();
+
+    HttpResponse::Ok().json(repo_list)
+}
+
 async fn index() -> impl Responder {
     NamedFile::open_async("./index.html").await.unwrap()
 }
@@ -97,6 +118,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_state.clone())
             .route("/", web::get().to(index))
             .route("/clone", web::post().to(clone_repo))
+            .route("/list", web::get().to(list_repos))
     })
     .bind("127.0.0.1:8080")?
     .run()

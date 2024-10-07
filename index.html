@@ -25,6 +25,13 @@
             const result = await response.text();
             document.getElementById('result').textContent = result;
         }
+
+        async function listRepos() {
+            const response = await fetch('http://localhost:8080/list');
+            const repos = await response.json();
+            const repoList = repos.map(repo => `ID: ${repo.id}, URL: ${repo.github_url}`).join('\n');
+            document.getElementById('repoList').textContent = repoList;
+        }
     </script>
 </head>
 <body>
@@ -42,5 +49,8 @@
         <button type="submit">Clone Repository</button>
     </form>
     <div id="result"></div>
+    <br>
+    <button onclick="listRepos()">List Repositories</button>
+    <pre id="repoList"></pre>
 </body>
 </html>
