@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
+use log::{info, error, debug};
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -22,18 +23,28 @@ async fn clone_repo(
     data: web::Data<AppState>,
     info: web::Json<CloneRequest>,
 ) -> HttpResponse {
+    info!("Received clone request for ID: {}, URL: {}", info.id, info.github_url);
+
     let temp_dir = match TempDir::new() {
         Ok(dir) => dir,
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to create temp directory"),
+        Err(e) => {
+            error!("Failed to create temp directory: {}", e);
+            return HttpResponse::InternalServerError().body("Failed to create temp directory");
+        }
     };
 
     let repo = match Repository::clone(&info.github_url, temp_dir.path()) {
         Ok(repo) => repo,
-        Err(_) => return HttpResponse::BadRequest().body("Failed to clone repository"),
+        Err(e) => {
+            error!("Failed to clone repository: {}", e);
+            return HttpResponse::BadRequest().body("Failed to clone repository");
+        }
     };
 
     if let Some(ref_name) = &info.reference {
-        if let Err(_) = checkout_reference(&repo, ref_name) {
+        debug!("Checking out reference: {}", ref_name);
+        if let Err(e) = checkout_reference(&repo, ref_name) {
+            error!("Failed to checkout specified reference: {}", e);
             return HttpResponse::BadRequest().body("Failed to checkout specified reference");
         }
     }
@@ -44,6 +55,7 @@ async fn clone_repo(
         .or_insert_with(HashMap::new)
         .insert(info.github_url.clone(), temp_dir);
 
+    info!("Repository cloned successfully. ID: {}, URL: {}", info.id, info.github_url);
     HttpResponse::Ok().body(format!("Repository cloned successfully. ID: {}, URL: {}", info.id, info.github_url))
 }
 
@@ -66,9 +78,13 @@ async fn index() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
     });
+
+    info!("Starting server at http://127.0.0.1:8080");
 
     HttpServer::new(move || {
         let cors = Cors::default()
