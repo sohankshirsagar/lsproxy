@@ -11,5 +11,5 @@ serde = { version = "1.0", features = ["derive"] }
 tempfile = "3.2"
 git2 = "0.13"
 log = "0.4"
-log4rs = { version = "1.2", features = ["yaml_format"] }
+log4rs = { version = "1.2", features = ["yaml_format", "yaml_config"] }
 chrono = "0.4"
