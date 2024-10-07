@@ -4,7 +4,6 @@ FROM rust:1.74-slim-buster as builder
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -23,11 +22,14 @@ FROM debian:buster-slim
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Install runtime dependencies
+# Install runtime dependencies and Python
 RUN apt-get update && apt-get install -y \
     libssl1.1 \
     ca-certificates \
-    git
+    git \
+    python3 \
+    python3-pip \
+    && pip3 install python-language-server
 
 # Copy the binary from the builder stage
 COPY --from=builder /usr/src/app/target/release/github-clone-server .
@@ -35,8 +37,14 @@ COPY --from=builder /usr/src/app/target/release/github-clone-server .
 # Copy the index.html file
 COPY index.html .
 
-# Document that the container listens on port 8080
-EXPOSE 8080
+# Copy the startup script
+COPY start.sh .
 
-# Run the binary
-CMD ["./github-clone-server"]
+# Make the startup script executable
+RUN chmod +x start.sh
+
+# Document that the container listens on ports 8080 and 2087
+EXPOSE 8080 2087
+
+# Run the startup script
+CMD ["./start.sh"]
