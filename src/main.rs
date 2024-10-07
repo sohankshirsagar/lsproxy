@@ -7,6 +7,8 @@ use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
 use log::{info, error, debug};
+use log4rs;
+use chrono::Local;
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -78,13 +80,38 @@ async fn index() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    // Get the path to the project directory
+    let project_dir = std::env::current_dir().unwrap();
+
+    // Generate a dynamic log file name based on the current date and time
+    let log_file_name = format!("application_{}.log", Local::now().format("%Y-%m-%d_%H-%M-%S"));
+
+    // Configure log4rs to write logs to a file with a dynamic name
+    let log_config = log4rs::yaml::load_from_str(&format!(
+        r#"
+        appenders:
+          file:
+            kind: file
+            path: "{}/logs/{}"
+            encoder:
+              pattern: "{{d}} - {{m}}{{n}}"
+        root:
+          level: info
+          appenders:
+            - file
+        "#,
+        project_dir.to_str().unwrap(),
+        log_file_name
+    ))
+    .unwrap();
+
+    log4rs::init_config(log_config).unwrap();
+
+    info!("Starting server at http://127.0.0.1:8080");
 
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
     });
-
-    info!("Starting server at http://127.0.0.1:8080");
 
     HttpServer::new(move || {
         let cors = Cors::default()

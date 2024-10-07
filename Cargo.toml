@@ -10,3 +10,6 @@ actix-cors = "0.6"
 serde = { version = "1.0", features = ["derive"] }
 tempfile = "3.2"
 git2 = "0.13"
+log = "0.4"
+log4rs = "1.2"
+chrono = "0.4"
