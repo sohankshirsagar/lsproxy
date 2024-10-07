@@ -37,14 +37,8 @@ COPY --from=builder /usr/src/app/target/release/github-clone-server .
 # Copy the index.html file
 COPY index.html .
 
-# Copy the startup script
-COPY start.sh .
-
-# Make the startup script executable
-RUN chmod +x start.sh
-
 # Document that the container listens on port 8080
 EXPOSE 8080
 
-# Run the startup script
-CMD ["./start.sh"]
+# Run the Rust server
+CMD ["./github-clone-server"]

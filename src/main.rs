@@ -190,28 +190,22 @@ async fn init_lsp(
 
     // Run the Python LSP initialization command
     let output = Command::new("pylsp")
-        .arg("--verbose")
+        .arg("--tcp")
+        .arg("--host")
+        .arg("0.0.0.0")
+        .arg("--port")
+        .arg("2087")
         .current_dir(&repo_info.temp_dir)
-        .output();
+        .spawn();
 
     match output {
-        Ok(output) => {
-            if output.status.success() {
-                info!("LSP initialized successfully for repo: {}", repo_info.temp_dir);
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                debug!("LSP stdout: {}", stdout);
-                debug!("LSP stderr: {}", stderr);
-                HttpResponse::Ok().body("LSP initialized successfully")
-            } else {
-                let error_msg = String::from_utf8_lossy(&output.stderr);
-                error!("Failed to initialize LSP: {}", error_msg);
-                HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", error_msg))
-            }
+        Ok(_) => {
+            info!("LSP initialized successfully for repo: {}", repo_info.temp_dir);
+            HttpResponse::Ok().body("LSP initialized successfully")
         }
         Err(e) => {
-            error!("Failed to execute LSP command: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to execute LSP command: {}", e))
+            error!("Failed to start LSP process: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to start LSP process: {}", e))
         }
     }
 }
