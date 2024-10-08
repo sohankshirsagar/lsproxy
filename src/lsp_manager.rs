@@ -36,8 +36,8 @@ impl LspManager {
     }
 
     pub async fn stop_lsp_for_repo(&mut self, repo_path: &PathBuf) -> Result<(), std::io::Error> {
-        if let Some(client) = self.clients.remove(repo_path) {
-            client.process.kill().await?;
+        if let Some(mut client) = self.clients.remove(repo_path) {
+            client.kill().await?;
         }
         Ok(())
     }

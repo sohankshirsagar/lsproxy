@@ -28,4 +28,8 @@ impl LspClient {
         let response_json: Value = serde_json::from_str(&response)?;
         Ok(response_json)
     }
+
+    pub async fn kill(&mut self) -> Result<(), std::io::Error> {
+        self.process.kill().await
+    }
 }
