@@ -12,7 +12,8 @@ use std::process::Command;
 use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use lsp_types::{TextDocumentPositionParams, TextDocumentIdentifier, Position, Url};
-use lsp_types::request::GotoDefinition;
+use lsp_types::{request::GotoDefinitionParams, GotoDefinitionResponse};
+use lsp_types::request::{Request, GotoDefinition};
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -301,11 +302,12 @@ async fn get_function_definition(
         },
     };
 
-    let request = serde_json::to_string(&lsp_types::request::Request::new(
-        GotoDefinition::METHOD.to_string(),
-        params,
-        Some(1)
-    )).unwrap();
+    let request = serde_json::to_string(&Request {
+        jsonrpc: Some("2.0".to_string()),
+        id: Some(serde_json::Value::Number(1.into())),
+        method: GotoDefinition::METHOD.to_string(),
+        params: serde_json::to_value(params).unwrap(),
+    }).unwrap();
 
     if let Err(e) = stream.write_all(request.as_bytes()).await {
         error!("Failed to send request to LSP server: {}", e);
