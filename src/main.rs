@@ -359,6 +359,9 @@ async fn get_document_symbols(
 
     match lsp_client.send_request("textDocument/documentSymbol", params).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to get document symbols: {}", e))
+        Err(e) => {
+            error!("Failed to get document symbols: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to get document symbols: {}", e))
+        }
     }
 }
