@@ -10,7 +10,6 @@ use git2::{Repository, BranchType};
 use log::{info, error, debug};
 use env_logger::Env;
 use std::path::PathBuf;
-use serde_json::json;
 
 #[derive(Deserialize)]
 struct CloneRequest {
