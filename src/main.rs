@@ -292,24 +292,30 @@ async fn get_function_definition(
         }
     };
 
-    let params = TextDocumentPositionParams {
-        text_document: TextDocumentIdentifier {
-            uri: Url::parse(&format!("file://{}/{}", repo_info.temp_dir, info.file_path)).unwrap(),
+    let params = GotoDefinitionParams {
+        text_document_position_params: TextDocumentPositionParams {
+            text_document: TextDocumentIdentifier {
+                uri: Url::parse(&format!("file://{}/{}", repo_info.temp_dir, info.file_path)).unwrap(),
+            },
+            position: Position {
+                line: info.line,
+                character: info.character,
+            },
         },
-        position: Position {
-            line: info.line,
-            character: info.character,
-        },
+        work_done_progress_params: Default::default(),
+        partial_result_params: Default::default(),
     };
 
-    let request = serde_json::to_string(&Request {
-        jsonrpc: Some("2.0".to_string()),
-        id: Some(serde_json::Value::Number(1.into())),
-        method: GotoDefinition::METHOD.to_string(),
-        params: serde_json::to_value(params).unwrap(),
-    }).unwrap();
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": GotoDefinition::METHOD,
+        "params": params
+    });
 
-    if let Err(e) = stream.write_all(request.as_bytes()).await {
+    let request_string = serde_json::to_string(&request).unwrap();
+
+    if let Err(e) = stream.write_all(request_string.as_bytes()).await {
         error!("Failed to send request to LSP server: {}", e);
         return HttpResponse::InternalServerError().body("Failed to send request to LSP server");
     }
