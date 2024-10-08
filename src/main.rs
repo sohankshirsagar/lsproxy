@@ -46,7 +46,6 @@ mod lsp_manager;
 mod lsp_client;
 
 use lsp_manager::LspManager;
-use lsp_client::LspClient;
 
 struct AppState {
     clones: Mutex<HashMap<String, HashMap<String, (TempDir, RepoInfo)>>>,
