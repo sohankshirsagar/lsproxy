@@ -8,14 +8,8 @@ use tempfile::TempDir;
 use git2::{Repository, BranchType};
 use log::{info, error, debug};
 use env_logger::Env;
-use std::process::Command;
-use tokio::net::TcpStream;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use lsp_types::{
-    request::{GotoDefinition, Request},
-    GotoDefinitionParams, TextDocumentPositionParams, TextDocumentIdentifier, Position, Url,
-};
-use serde_json::Value;
+use std::path::PathBuf;
+use serde_json::json;
 
 #[derive(Deserialize)]
 struct CloneRequest {
@@ -52,6 +46,7 @@ mod lsp_manager;
 mod lsp_client;
 
 use lsp_manager::LspManager;
+use lsp_client::LspClient;
 
 struct AppState {
     clones: Mutex<HashMap<String, HashMap<String, (TempDir, RepoInfo)>>>,
