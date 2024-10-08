@@ -277,14 +277,12 @@ async fn get_function_definition(
     let repo_path = PathBuf::from(&repo_info.temp_dir);
     let mut lsp_manager = data.lsp_manager.lock().unwrap();
     
-    let lsp_process = match lsp_manager.get_lsp_for_repo(&repo_path) {
-        Some(process) => process,
+    let lsp_client = match lsp_manager.get_lsp_for_repo(&repo_path) {
+        Some(client) => client,
         None => {
             return HttpResponse::InternalServerError().body("LSP server not found for this repository");
         }
     };
-
-    let mut lsp_client = LspClient::new(lsp_process.try_clone().unwrap());
 
     let params = json!({
         "textDocument": {

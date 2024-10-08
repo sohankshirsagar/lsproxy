@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tokio::process::Child;
 use tokio::process::Command;
+use crate::lsp_client::LspClient;
 
 pub struct LspManager {
-    processes: HashMap<PathBuf, Child>,
+    clients: HashMap<PathBuf, LspClient>,
 }
 
 impl LspManager {
     pub fn new() -> Self {
         LspManager {
-            processes: HashMap::new(),
+            clients: HashMap::new(),
         }
     }
 
     pub async fn start_lsp_for_repo(&mut self, repo_path: PathBuf) -> Result<(), std::io::Error> {
-        if !self.processes.contains_key(&repo_path) {
+        if !self.clients.contains_key(&repo_path) {
             let child = Command::new("pylsp")
                 .arg("--tcp")
                 .arg("--host")
@@ -25,18 +25,19 @@ impl LspManager {
                 .current_dir(&repo_path)
                 .spawn()?;
 
-            self.processes.insert(repo_path, child);
+            let client = LspClient::new(child);
+            self.clients.insert(repo_path, client);
         }
         Ok(())
     }
 
-    pub fn get_lsp_for_repo(&mut self, repo_path: &PathBuf) -> Option<&mut Child> {
-        self.processes.get_mut(repo_path)
+    pub fn get_lsp_for_repo(&mut self, repo_path: &PathBuf) -> Option<&mut LspClient> {
+        self.clients.get_mut(repo_path)
     }
 
     pub async fn stop_lsp_for_repo(&mut self, repo_path: &PathBuf) -> Result<(), std::io::Error> {
-        if let Some(child) = self.processes.remove(repo_path) {
-            child.kill().await?;
+        if let Some(client) = self.clients.remove(repo_path) {
+            client.process.kill().await?;
         }
         Ok(())
     }
