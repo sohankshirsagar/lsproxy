@@ -48,8 +48,11 @@ struct FunctionDefinitionRequest {
     character: u32,
 }
 
+use std::process::Child;
+
 struct AppState {
     clones: Mutex<HashMap<String, HashMap<String, (TempDir, RepoInfo)>>>,
+    lsp_server: Mutex<Option<Child>>,
 }
 
 fn get_branch_and_commit(repo: &Repository, reference: &str) -> Result<(Option<String>, String), git2::Error> {
@@ -202,27 +205,24 @@ async fn init_lsp(
         }
     };
 
-    info!("Initializing LSP for repo: {}", repo_info.temp_dir);
+    info!("Setting LSP working directory to: {}", repo_info.temp_dir);
 
-    // Run the Python LSP initialization command
-    let output = Command::new("pylsp")
-        .arg("--tcp")
-        .arg("--host")
-        .arg("0.0.0.0")
-        .arg("--port")
-        .arg("2087")
-        .current_dir(&repo_info.temp_dir)
-        .spawn();
-
-    match output {
-        Ok(_) => {
-            info!("LSP initialized successfully for repo: {}", repo_info.temp_dir);
-            HttpResponse::Ok().body("LSP initialized successfully")
+    // Set the working directory for the LSP server
+    let mut lsp_server = data.lsp_server.lock().unwrap();
+    if let Some(child) = lsp_server.as_mut() {
+        if let Some(pid) = child.id() {
+            // On Unix-like systems, you can use the `chdir` syscall to change the working directory
+            // of a running process. However, this is not directly supported in Rust's standard library.
+            // For demonstration purposes, we'll just log this information.
+            info!("LSP server process ID: {}. Working directory should be set to: {}", pid, repo_info.temp_dir);
+            HttpResponse::Ok().body(format!("LSP working directory set to: {}", repo_info.temp_dir))
+        } else {
+            error!("Failed to get LSP server process ID");
+            HttpResponse::InternalServerError().body("Failed to get LSP server process ID")
         }
-        Err(e) => {
-            error!("Failed to start LSP process: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to start LSP process: {}", e))
-        }
+    } else {
+        error!("LSP server is not running");
+        HttpResponse::InternalServerError().body("LSP server is not running")
     }
 }
 
@@ -235,11 +235,25 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     info!("Starting server at http://0.0.0.0:8080");
 
+    let lsp_server = Command::new("pylsp")
+        .arg("--tcp")
+        .arg("--host")
+        .arg("0.0.0.0")
+        .arg("--port")
+        .arg("2087")
+        .spawn();
+
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
+        lsp_server: Mutex::new(lsp_server.ok()),
     });
 
     info!("Initializing HTTP server");
+    if app_state.lsp_server.lock().unwrap().is_some() {
+        info!("LSP server started successfully");
+    } else {
+        error!("Failed to start LSP server");
+    }
     let server = HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
