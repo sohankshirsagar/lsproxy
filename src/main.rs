@@ -48,11 +48,14 @@ struct FunctionDefinitionRequest {
     character: u32,
 }
 
-use std::process::Child;
+mod lsp_manager;
+mod lsp_client;
+
+use lsp_manager::LspManager;
 
 struct AppState {
     clones: Mutex<HashMap<String, HashMap<String, (TempDir, RepoInfo)>>>,
-    lsp_server: Mutex<Option<Child>>,
+    lsp_manager: Mutex<LspManager>,
 }
 
 fn get_branch_and_commit(repo: &Repository, reference: &str) -> Result<(Option<String>, String), git2::Error> {
@@ -192,7 +195,6 @@ async fn init_lsp(
     let repo_map = match clones.get(&info.id) {
         Some(map) => map,
         None => {
-            error!("No repositories found for ID: {}", info.id);
             return HttpResponse::BadRequest().body("No repositories found for the given ID");
         }
     };
@@ -200,29 +202,21 @@ async fn init_lsp(
     let (_, repo_info) = match repo_map.get(&info.github_url) {
         Some(entry) => entry,
         None => {
-            error!("Repository not found for ID: {} and URL: {}", info.id, info.github_url);
             return HttpResponse::BadRequest().body("Repository not found");
         }
     };
 
-    info!("Setting LSP working directory to: {}", repo_info.temp_dir);
-
-    // Set the working directory for the LSP server
-    let mut lsp_server = data.lsp_server.lock().unwrap();
-    if let Some(child) = lsp_server.as_mut() {
-        if let Some(pid) = child.id() {
-            // On Unix-like systems, you can use the `chdir` syscall to change the working directory
-            // of a running process. However, this is not directly supported in Rust's standard library.
-            // For demonstration purposes, we'll just log this information.
-            info!("LSP server process ID: {}. Working directory should be set to: {}", pid, repo_info.temp_dir);
-            HttpResponse::Ok().body(format!("LSP working directory set to: {}", repo_info.temp_dir))
-        } else {
-            error!("Failed to get LSP server process ID");
-            HttpResponse::InternalServerError().body("Failed to get LSP server process ID")
+    let repo_path = PathBuf::from(&repo_info.temp_dir);
+    let mut lsp_manager = data.lsp_manager.lock().unwrap();
+    
+    match lsp_manager.start_lsp_for_repo(repo_path.clone()).await {
+        Ok(_) => {
+            info!("LSP server started for repo: {}", repo_info.temp_dir);
+            HttpResponse::Ok().body(format!("LSP server started for repo: {}", repo_info.temp_dir))
+        },
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Failed to start LSP server: {}", e))
         }
-    } else {
-        error!("LSP server is not running");
-        HttpResponse::InternalServerError().body("LSP server is not running")
     }
 }
 
@@ -235,25 +229,12 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     info!("Starting server at http://0.0.0.0:8080");
 
-    let lsp_server = Command::new("pylsp")
-        .arg("--tcp")
-        .arg("--host")
-        .arg("0.0.0.0")
-        .arg("--port")
-        .arg("2087")
-        .spawn();
-
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
-        lsp_server: Mutex::new(lsp_server.ok()),
+        lsp_manager: Mutex::new(LspManager::new()),
     });
 
     info!("Initializing HTTP server");
-    if app_state.lsp_server.lock().unwrap().is_some() {
-        info!("LSP server started successfully");
-    } else {
-        error!("Failed to start LSP server");
-    }
     let server = HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
@@ -287,7 +268,6 @@ async fn get_function_definition(
     let repo_map = match clones.get(&info.id) {
         Some(map) => map,
         None => {
-            error!("No repositories found for ID: {}", info.id);
             return HttpResponse::BadRequest().body("No repositories found for the given ID");
         }
     };
@@ -295,52 +275,34 @@ async fn get_function_definition(
     let (_, repo_info) = match repo_map.get(&info.github_url) {
         Some(entry) => entry,
         None => {
-            error!("Repository not found for ID: {} and URL: {}", info.id, info.github_url);
             return HttpResponse::BadRequest().body("Repository not found");
         }
     };
 
-    let mut stream = match TcpStream::connect("127.0.0.1:2087").await {
-        Ok(stream) => stream,
-        Err(e) => {
-            error!("Failed to connect to LSP server: {}", e);
-            return HttpResponse::InternalServerError().body("Failed to connect to LSP server");
+    let repo_path = PathBuf::from(&repo_info.temp_dir);
+    let mut lsp_manager = data.lsp_manager.lock().unwrap();
+    
+    let lsp_process = match lsp_manager.get_lsp_for_repo(&repo_path) {
+        Some(process) => process,
+        None => {
+            return HttpResponse::InternalServerError().body("LSP server not found for this repository");
         }
     };
 
-    let params = GotoDefinitionParams {
-        text_document_position_params: TextDocumentPositionParams {
-            text_document: TextDocumentIdentifier {
-                uri: Url::parse(&format!("file://{}/{}", repo_info.temp_dir, info.file_path)).unwrap(),
-            },
-            position: Position {
-                line: info.line,
-                character: info.character,
-            },
-        },
-        work_done_progress_params: Default::default(),
-        partial_result_params: Default::default(),
-    };
+    let mut lsp_client = LspClient::new(lsp_process.try_clone().unwrap());
 
-    let request = serde_json::json!({
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": GotoDefinition::METHOD,
-        "params": params
+    let params = json!({
+        "textDocument": {
+            "uri": format!("file://{}/{}", repo_info.temp_dir, info.file_path)
+        },
+        "position": {
+            "line": info.line,
+            "character": info.character
+        }
     });
 
-    let request_string = serde_json::to_string(&request).unwrap();
-
-    if let Err(e) = stream.write_all(request_string.as_bytes()).await {
-        error!("Failed to send request to LSP server: {}", e);
-        return HttpResponse::InternalServerError().body("Failed to send request to LSP server");
+    match lsp_client.send_request("textDocument/definition", params).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to get function definition: {}", e))
     }
-
-    let mut response = String::new();
-    if let Err(e) = stream.read_to_string(&mut response).await {
-        error!("Failed to read response from LSP server: {}", e);
-        return HttpResponse::InternalServerError().body("Failed to read response from LSP server");
-    }
-
-    HttpResponse::Ok().body(response)
 }
