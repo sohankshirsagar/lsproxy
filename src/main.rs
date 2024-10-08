@@ -252,6 +252,42 @@ async fn main() -> std::io::Result<()> {
     info!("Server stopped");
     result
 }
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    info!("Starting server at http://0.0.0.0:8080");
+
+    let app_state = web::Data::new(AppState {
+        clones: Mutex::new(HashMap::new()),
+        lsp_manager: Mutex::new(LspManager::new()),
+    });
+
+    info!("Initializing HTTP server");
+    let server = HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header();
+
+        App::new()
+            .wrap(cors)
+            .app_data(app_state.clone())
+            .route("/", web::get().to(index))
+            .route("/clone", web::post().to(clone_repo))
+            .route("/list", web::get().to(list_repos))
+            .route("/init-lsp", web::post().to(init_lsp))
+            .route("/function-definition", web::post().to(get_function_definition))
+            .route("/list-lsp", web::get().to(list_lsp_servers))
+    })
+    .bind("0.0.0.0:8080")?;
+
+    info!("Server bound to 0.0.0.0:8080");
+    info!("Starting server...");
+    let result = server.run().await;
+    info!("Server stopped");
+    result
+}
 async fn get_function_definition(
     data: web::Data<AppState>,
     info: web::Json<FunctionDefinitionRequest>,
@@ -297,4 +333,16 @@ async fn get_function_definition(
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().body(format!("Failed to get function definition: {}", e))
     }
+}
+
+async fn list_lsp_servers(data: web::Data<AppState>) -> HttpResponse {
+    let lsp_manager = data.lsp_manager.lock().unwrap();
+    let active_servers = lsp_manager.list_active_lsp_servers();
+    
+    let server_list: Vec<String> = active_servers
+        .into_iter()
+        .map(|path| path.to_string_lossy().into_owned())
+        .collect();
+
+    HttpResponse::Ok().json(server_list)
 }

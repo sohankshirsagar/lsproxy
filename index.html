@@ -131,5 +131,18 @@
         <button type="submit">Get Function Definition</button>
     </form>
     <div id="funcDefResult"></div>
+
+    <h2>List LSP Servers</h2>
+    <button onclick="listLspServers()">List LSP Servers</button>
+    <pre id="lspServerList"></pre>
+
+    <script>
+        async function listLspServers() {
+            const response = await fetch('http://localhost:8080/list-lsp');
+            const servers = await response.json();
+            const serverList = servers.join('\n');
+            document.getElementById('lspServerList').textContent = serverList;
+        }
+    </script>
 </body>
 </html>

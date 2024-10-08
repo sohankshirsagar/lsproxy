@@ -41,4 +41,8 @@ impl LspManager {
         }
         Ok(())
     }
+
+    pub fn list_active_lsp_servers(&self) -> Vec<PathBuf> {
+        self.clients.keys().cloned().collect()
+    }
 }
