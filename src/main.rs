@@ -2,6 +2,7 @@ use actix_web::{web, App, HttpServer, HttpResponse, Responder};
 use actix_files::NamedFile;
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
@@ -40,6 +41,13 @@ struct FunctionDefinitionRequest {
     file_path: String,
     line: u32,
     character: u32,
+}
+
+#[derive(Deserialize)]
+struct SymbolRequest {
+    id: String,
+    github_url: String,
+    file_path: String,
 }
 
 mod lsp_manager;
@@ -244,6 +252,7 @@ async fn main() -> std::io::Result<()> {
             .route("/init-lsp", web::post().to(init_lsp))
             .route("/function-definition", web::post().to(get_function_definition))
             .route("/list-lsp", web::get().to(list_lsp_servers))
+            .route("/document-symbols", web::post().to(get_document_symbols))
     })
     .bind("0.0.0.0:8080")?;
 
@@ -310,4 +319,47 @@ async fn list_lsp_servers(data: web::Data<AppState>) -> HttpResponse {
         .collect();
 
     HttpResponse::Ok().json(server_list)
+}
+
+async fn get_document_symbols(
+    data: web::Data<AppState>,
+    info: web::Json<SymbolRequest>,
+) -> HttpResponse {
+    info!("Received document symbols request for ID: {}, URL: {}", info.id, info.github_url);
+
+    let clones = data.clones.lock().unwrap();
+    let repo_map = match clones.get(&info.id) {
+        Some(map) => map,
+        None => {
+            return HttpResponse::BadRequest().body("No repositories found for the given ID");
+        }
+    };
+
+    let (_, repo_info) = match repo_map.get(&info.github_url) {
+        Some(entry) => entry,
+        None => {
+            return HttpResponse::BadRequest().body("Repository not found");
+        }
+    };
+
+    let repo_path = PathBuf::from(&repo_info.temp_dir);
+    let mut lsp_manager = data.lsp_manager.lock().unwrap();
+    
+    let lsp_client = match lsp_manager.get_lsp_for_repo(&repo_path) {
+        Some(client) => client,
+        None => {
+            return HttpResponse::InternalServerError().body("LSP server not found for this repository");
+        }
+    };
+
+    let params = json!({
+        "textDocument": {
+            "uri": format!("file://{}/{}", repo_info.temp_dir, info.file_path)
+        }
+    });
+
+    match lsp_client.send_request("textDocument/documentSymbol", params).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to get document symbols: {}", e))
+    }
 }

@@ -136,12 +136,48 @@
     <button onclick="listLspServers()">List LSP Servers</button>
     <pre id="lspServerList"></pre>
 
+    <h2>Get Document Symbols</h2>
+    <form onsubmit="event.preventDefault(); getDocumentSymbols();">
+        <label for="symbolId">ID:</label>
+        <input type="text" id="symbolId" required><br><br>
+        
+        <label for="symbolGithubUrl">GitHub URL:</label>
+        <input type="text" id="symbolGithubUrl" required><br><br>
+        
+        <label for="symbolFilePath">File Path:</label>
+        <input type="text" id="symbolFilePath" required><br><br>
+        
+        <button type="submit">Get Document Symbols</button>
+    </form>
+    <pre id="symbolResult"></pre>
+
     <script>
         async function listLspServers() {
             const response = await fetch('http://localhost:8080/list-lsp');
             const servers = await response.json();
             const serverList = servers.join('\n');
             document.getElementById('lspServerList').textContent = serverList;
+        }
+
+        async function getDocumentSymbols() {
+            const id = document.getElementById('symbolId').value;
+            const githubUrl = document.getElementById('symbolGithubUrl').value;
+            const filePath = document.getElementById('symbolFilePath').value;
+
+            const response = await fetch('http://localhost:8080/document-symbols', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: id,
+                    github_url: githubUrl,
+                    file_path: filePath,
+                }),
+            });
+
+            const result = await response.json();
+            document.getElementById('symbolResult').textContent = JSON.stringify(result, null, 2);
         }
     </script>
 </body>
