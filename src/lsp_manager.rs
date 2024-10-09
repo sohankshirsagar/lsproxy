@@ -3,8 +3,7 @@ use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use log::{error, info};
 
-mod lsp_client;
-use lsp_client::LspClient;
+use crate::lsp_client::LspClient;
 
 pub struct LspManager {
     clients: HashMap<(String, String), Arc<Mutex<LspClient>>>,
