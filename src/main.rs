@@ -274,10 +274,19 @@ use std::io::Write;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Immediate file logging
-    let mut file = File::create("/tmp/server_start.log").expect("Failed to create log file");
+    let log_path = "/var/log/app.log";
+    let mut file = match File::create(log_path) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Failed to create log file at {}: {}", log_path, e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to create log file"));
+        }
+    };
+
     file.write_all(b"Server starting\n").expect("Failed to write to log file");
 
     println!("Starting main function");
+    eprintln!("Starting main function"); // This will appear in Docker logs
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Server panicked: {:?}", panic_info);
         let mut file = File::create("/tmp/server_panic.log").expect("Failed to create panic log file");

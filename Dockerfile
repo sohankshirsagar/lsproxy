@@ -56,6 +56,9 @@ RUN npm install -g pyright
 # Document that the container listens on port 8080
 EXPOSE 8080
 
+# Create log directory and set permissions
+RUN mkdir -p /var/log && chmod 755 /var/log
+
 # Run the Rust server with logging
 ENV RUST_LOG=debug
-CMD ["sh", "-c", "./github-clone-server 2>&1 | tee /var/log/app.log"]
+CMD ["sh", "-c", "touch /var/log/app.log && chmod 666 /var/log/app.log && ./github-clone-server 2>&1 | tee /var/log/app.log"]
