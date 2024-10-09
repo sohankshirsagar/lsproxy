@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tokio::process::Command;
+use tokio::process::{Command, Child};
 use crate::lsp_client::LspClient;
-use log::{info, error, debug};
+use log::{info, error, debug, warn};
 use std::process::Stdio;
-use tokio::io::AsyncBufReadExt;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::time::{timeout, Duration};
 
 pub struct LspManager {
     clients: HashMap<PathBuf, LspClient>,
@@ -39,30 +40,42 @@ impl LspManager {
             let stdout = child.stdout.take().expect("Failed to capture stdout");
             let stderr = child.stderr.take().expect("Failed to capture stderr");
 
-            tokio::spawn(async move {
-                let mut reader = tokio::io::BufReader::new(stdout).lines();
-                while let Some(line) = reader.next_line().await.expect("Failed to read line") {
-                    debug!("pyright stdout: {}", line);
-                }
-            });
+            self.log_output(stdout, stderr);
 
-            tokio::spawn(async move {
-                let mut reader = tokio::io::BufReader::new(stderr).lines();
-                while let Some(line) = reader.next_line().await.expect("Failed to read line") {
-                    error!("pyright stderr: {}", line);
-                }
-            });
-
-            // Increase wait time for the server to start
+            // Wait for the server to start (increased to 30 seconds)
             info!("Waiting for pyright server to start...");
-            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+            tokio::time::sleep(Duration::from_secs(30)).await;
 
-            info!("Attempting to connect to pyright");
-            let client = match LspClient::new(port).await {
-                Ok(c) => c,
-                Err(e) => {
-                    error!("Failed to create LSP client: {}", e);
-                    return Err(Box::new(e));
+            // Attempt to connect multiple times
+            let mut retry_count = 0;
+            let max_retries = 5;
+            let mut client = None;
+
+            while retry_count < max_retries {
+                info!("Attempting to connect to pyright (attempt {}/{})", retry_count + 1, max_retries);
+                match timeout(Duration::from_secs(10), LspClient::new(port)).await {
+                    Ok(Ok(c)) => {
+                        client = Some(c);
+                        break;
+                    },
+                    Ok(Err(e)) => {
+                        warn!("Failed to connect to LSP server: {}. Retrying...", e);
+                        retry_count += 1;
+                        tokio::time::sleep(Duration::from_secs(5)).await;
+                    },
+                    Err(_) => {
+                        warn!("Timeout while connecting to LSP server. Retrying...");
+                        retry_count += 1;
+                        tokio::time::sleep(Duration::from_secs(5)).await;
+                    }
+                }
+            }
+
+            let client = match client {
+                Some(c) => c,
+                None => {
+                    error!("Failed to connect to LSP server after {} attempts", max_retries);
+                    return Err("Failed to connect to LSP server".into());
                 }
             };
             
@@ -82,6 +95,22 @@ impl LspManager {
             info!("LSP client already exists for repo: {:?}", repo_path);
             Ok(())
         }
+    }
+
+    fn log_output(&self, stdout: impl AsyncBufReadExt + Unpin + Send + 'static, stderr: impl AsyncBufReadExt + Unpin + Send + 'static) {
+        tokio::spawn(async move {
+            let mut reader = BufReader::new(stdout).lines();
+            while let Some(line) = reader.next_line().await.expect("Failed to read line") {
+                debug!("pyright stdout: {}", line);
+            }
+        });
+
+        tokio::spawn(async move {
+            let mut reader = BufReader::new(stderr).lines();
+            while let Some(line) = reader.next_line().await.expect("Failed to read line") {
+                error!("pyright stderr: {}", line);
+            }
+        });
     }
 
     pub fn get_lsp_for_repo(&mut self, repo_path: &PathBuf) -> Option<&mut LspClient> {
