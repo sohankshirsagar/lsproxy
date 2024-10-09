@@ -24,15 +24,12 @@ impl LspManager {
             let port = self.next_port;
             self.next_port += 1;
 
-            info!("Starting pylsp for repo: {:?}", repo_path);
-            let mut command = Command::new("pylsp");
+            info!("Starting pyright for repo: {:?}", repo_path);
+            let mut command = Command::new("pyright-langserver");
             command
-                .arg("--tcp")
-                .arg("--host")
-                .arg("127.0.0.1")
-                .arg("--port")
-                .arg(port.to_string())
+                .arg("--stdio")
                 .current_dir(&repo_path)
+                .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped());
 
@@ -45,21 +42,21 @@ impl LspManager {
             tokio::spawn(async move {
                 let mut reader = tokio::io::BufReader::new(stdout).lines();
                 while let Some(line) = reader.next_line().await.expect("Failed to read line") {
-                    debug!("pylsp stdout: {}", line);
+                    debug!("pyright stdout: {}", line);
                 }
             });
 
             tokio::spawn(async move {
                 let mut reader = tokio::io::BufReader::new(stderr).lines();
                 while let Some(line) = reader.next_line().await.expect("Failed to read line") {
-                    error!("pylsp stderr: {}", line);
+                    error!("pyright stderr: {}", line);
                 }
             });
 
             // Wait a bit for the server to start
             tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
-            info!("Attempting to connect to pylsp on port {}", port);
+            info!("Attempting to connect to pyright");
             let client = LspClient::new(port).await?;
             
             info!("Initializing LSP client for repo: {:?}", repo_path);

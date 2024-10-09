@@ -259,8 +259,8 @@ async fn init_lsp(
     
     match lsp_manager.start_lsp_for_repo(repo_path.clone()).await {
         Ok(_) => {
-            info!("LSP server started for repo: {}", repo_info.temp_dir);
-            HttpResponse::Ok().body(format!("LSP server started for repo: {}", repo_info.temp_dir))
+            info!("Pyright server started for repo: {}", repo_info.temp_dir);
+            HttpResponse::Ok().body(format!("Pyright server started for repo: {}", repo_info.temp_dir))
         },
         Err(e) => {
             HttpResponse::InternalServerError().body(format!("Failed to start LSP server: {}", e))
