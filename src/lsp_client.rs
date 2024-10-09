@@ -3,6 +3,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use log::debug;
 
 pub struct LspClient {
     stream: Arc<Mutex<TcpStream>>,

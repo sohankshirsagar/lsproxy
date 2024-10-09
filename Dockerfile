@@ -53,5 +53,5 @@ COPY index.html .
 EXPOSE 8080
 
 # Run the Rust server with logging
-ENV RUST_LOG=info
+ENV RUST_LOG=debug
 CMD ["sh", "-c", "./github-clone-server 2>&1 | tee /var/log/app.log"]
