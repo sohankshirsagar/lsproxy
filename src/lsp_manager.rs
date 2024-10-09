@@ -1,17 +1,10 @@
 use std::collections::HashMap;
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use log::{error, info};
 
-pub struct LspClient {
-    process: Child,
-}
-
-impl LspClient {
-    fn new(process: Child) -> Self {
-        Self { process }
-    }
-}
+mod lsp_client;
+use lsp_client::LspClient;
 
 pub struct LspManager {
     clients: HashMap<(String, String), Arc<Mutex<LspClient>>>,
