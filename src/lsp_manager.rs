@@ -4,7 +4,7 @@ use tokio::process::Command;
 use crate::lsp_client::LspClient;
 use log::{info, error, debug, warn};
 use std::process::Stdio;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, BufReader, AsyncRead};
 use tokio::time::{timeout, Duration};
 
 pub struct LspManager {
@@ -97,7 +97,7 @@ impl LspManager {
         }
     }
 
-    fn log_output(&self, stdout: impl AsyncBufReadExt + Unpin + Send + 'static, stderr: impl AsyncBufReadExt + Unpin + Send + 'static) {
+    fn log_output(&self, stdout: impl AsyncRead + Unpin + Send + 'static, stderr: impl AsyncRead + Unpin + Send + 'static) {
         tokio::spawn(async move {
             let mut reader = BufReader::new(stdout).lines();
             while let Some(line) = reader.next_line().await.expect("Failed to read line") {
