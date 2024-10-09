@@ -58,11 +58,5 @@ COPY --from=builder /usr/src/app/target/release/github-clone-server .
 # Document that the container listens on port 8080
 EXPOSE 8080
 
-# Create log directory and set permissions
-RUN mkdir -p /var/log && chmod 755 /var/log
-
-# Run a simple check before starting the server
-RUN echo '#!/bin/sh\necho "Container is starting..."\nexec ./github-clone-server 2>&1 | tee -a /var/log/app.log' > /usr/src/app/start.sh && chmod +x /usr/src/app/start.sh
-
-# Run the start script
-CMD ["/usr/src/app/start.sh"]
+# Run the server directly
+CMD ["./github-clone-server"]

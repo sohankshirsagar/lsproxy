@@ -268,37 +268,18 @@ async fn init_lsp(
     }
 }
 
-use std::fs::File;
-use std::io::Write;
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Immediate file logging
-    let log_path = "/var/log/app.log";
-    let mut file = match File::create(log_path) {
-        Ok(file) => file,
-        Err(e) => {
-            eprintln!("Failed to create log file at {}: {}", log_path, e);
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to create log file"));
-        }
-    };
-
-    file.write_all(b"Server starting\n").expect("Failed to write to log file");
-
     println!("Starting main function");
-    eprintln!("Starting main function"); // This will appear in Docker logs
 
     // Set up panic hook
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Server panicked: {:?}", panic_info);
-        let mut file = File::create("/tmp/server_panic.log").expect("Failed to create panic log file");
-        writeln!(file, "Server panicked: {:?}", panic_info).expect("Failed to write panic info");
     }));
 
     // Initialize logger
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Logger initialized");
-    file.write_all(b"Logging initialized\n").expect("Failed to write to log file");
 
     // Initialize app state
     info!("Initializing app state");
@@ -315,7 +296,7 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize HTTP server
     info!("Initializing HTTP server");
-    let server = match HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
@@ -335,39 +316,12 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/list-lsp").route(web::get().to(list_lsp_servers)))
             .service(web::resource("/document-symbols").route(web::post().to(get_document_symbols)))
     })
-    .bind("0.0.0.0:8080") {
-        Ok(server) => {
-            info!("Server bound to 0.0.0.0:8080");
-            server
-        },
-        Err(e) => {
-            error!("Failed to bind server to 0.0.0.0:8080: {:?}", e);
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to bind server: {:?}", e)));
-        }
-    };
+    .bind("0.0.0.0:8080")?;
 
     info!("Starting server...");
     println!("Server is about to start running...");
-    eprintln!("Server is about to start running...");
-    file.write_all(b"Server is about to start running...\n").expect("Failed to write to log file");
 
-    match server.run().await {
-        Ok(_) => {
-            info!("Server stopped normally");
-            println!("Server stopped normally");
-            eprintln!("Server stopped normally");
-            file.write_all(b"Server stopped normally\n").expect("Failed to write to log file");
-        },
-        Err(e) => {
-            error!("Server stopped with error: {:?}", e);
-            println!("Server stopped with error: {:?}", e);
-            eprintln!("Server stopped with error: {:?}", e);
-            file.write_all(format!("Server stopped with error: {:?}\n", e).as_bytes()).expect("Failed to write to log file");
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Server error: {:?}", e)));
-        }
-    }
-
-    Ok(())
+    server.run().await
 }
 
 #[utoipa::path(
