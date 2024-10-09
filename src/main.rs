@@ -448,15 +448,40 @@ async fn get_document_symbols(
     });
 
     info!("Sending LSP request: textDocument/documentSymbol");
-    match lsp_client.send_request("textDocument/documentSymbol", params).await {
-        Ok(response) => {
-            info!("Received LSP response for document symbols");
-            debug!("LSP response: {:?}", response);
-            HttpResponse::Ok().json(response)
-        },
-        Err(e) => {
-            error!("Failed to get document symbols: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to get document symbols: {}", e))
+    
+    // Retry the request up to 3 times
+    for attempt in 1..=3 {
+        match lsp_client.send_request("textDocument/documentSymbol", params.clone()).await {
+            Ok(response) => {
+                info!("Received LSP response for document symbols (attempt {})", attempt);
+                debug!("LSP response: {:?}", response);
+                
+                // Check if the response is a log message
+                if response.get("method") == Some(&json!("window/logMessage")) {
+                    warn!("Received log message instead of symbols (attempt {}): {:?}", attempt, response);
+                    if attempt < 3 {
+                        info!("Retrying request...");
+                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                        continue;
+                    } else {
+                        return HttpResponse::InternalServerError().body("Failed to get document symbols after 3 attempts");
+                    }
+                }
+                
+                // If it's not a log message, assume it's the correct response
+                return HttpResponse::Ok().json(response);
+            },
+            Err(e) => {
+                error!("Failed to get document symbols (attempt {}): {}", attempt, e);
+                if attempt < 3 {
+                    info!("Retrying request...");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                } else {
+                    return HttpResponse::InternalServerError().body(format!("Failed to get document symbols: {}", e));
+                }
+            }
         }
     }
+    
+    HttpResponse::InternalServerError().body("Failed to get document symbols after 3 attempts")
 }

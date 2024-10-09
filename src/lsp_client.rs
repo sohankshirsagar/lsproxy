@@ -37,6 +37,11 @@ impl LspClient {
                 match result {
                     Ok(response) => {
                         info!("LSP initialization successful");
+                        // Handle potential log messages during initialization
+                        if response.get("method") == Some(&json!("window/logMessage")) {
+                            warn!("Received log message during initialization: {:?}", response);
+                            // You might want to add additional logic here to handle log messages
+                        }
                         // After successful initialize, send the initialized notification
                         self.send_notification("initialized", json!({})).await?;
                         Ok(response)
