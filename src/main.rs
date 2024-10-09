@@ -1,12 +1,11 @@
 use actix_web::{web, App, HttpServer, HttpResponse};
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
-use log::{info, error, debug, warn};
+use log::{info, error, debug};
 use env_logger::Env;
 use std::path::PathBuf;
 use utoipa::OpenApi;
@@ -19,7 +18,6 @@ use utoipa_swagger_ui::SwaggerUi;
         list_repos,
         init_lsp,
         get_function_definition,
-        list_lsp_servers,
         get_document_symbols
     ),
     components(
@@ -69,14 +67,8 @@ struct SymbolRequest {
     file_path: String,
 }
 
-mod lsp_manager;
-mod lsp_client;
-
-use lsp_manager::LspManager;
-
 struct AppState {
     clones: Mutex<HashMap<String, HashMap<String, (TempDir, RepoInfo)>>>,
-    lsp_manager: Mutex<LspManager>,
 }
 
 fn get_branch_and_commit(repo: &Repository, reference: &str) -> Result<(Option<String>, String), git2::Error> {
@@ -234,38 +226,12 @@ async fn list_repos(data: web::Data<AppState>) -> HttpResponse {
     )
 )]
 async fn init_lsp(
-    data: web::Data<AppState>,
+    _data: web::Data<AppState>,
     info: web::Json<LspInitRequest>,
 ) -> HttpResponse {
     info!("Received LSP init request for ID: {}, URL: {}", info.id, info.github_url);
-
-    let clones = data.clones.lock().unwrap();
-    let repo_map = match clones.get(&info.id) {
-        Some(map) => map,
-        None => {
-            return HttpResponse::BadRequest().body("No repositories found for the given ID");
-        }
-    };
-
-    let (_, repo_info) = match repo_map.get(&info.github_url) {
-        Some(entry) => entry,
-        None => {
-            return HttpResponse::BadRequest().body("Repository not found");
-        }
-    };
-
-    let repo_path = PathBuf::from(&repo_info.temp_dir);
-    let mut lsp_manager = data.lsp_manager.lock().unwrap();
-    
-    match lsp_manager.start_lsp_for_repo(repo_path.clone()).await {
-        Ok(_) => {
-            info!("Pyright server started for repo: {}", repo_info.temp_dir);
-            HttpResponse::Ok().body(format!("Pyright server started for repo: {}", repo_info.temp_dir))
-        },
-        Err(e) => {
-            HttpResponse::InternalServerError().body(format!("Failed to start LSP server: {}", e))
-        }
-    }
+    // TODO: Implement LSP initialization
+    HttpResponse::Ok().body("LSP initialization not implemented yet")
 }
 
 #[actix_web::main]
@@ -285,7 +251,6 @@ async fn main() -> std::io::Result<()> {
     info!("Initializing app state");
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
-        lsp_manager: Mutex::new(LspManager::new()),
     });
     info!("App state initialized");
 
@@ -313,7 +278,6 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/list").route(web::get().to(list_repos)))
             .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
             .service(web::resource("/function-definition").route(web::post().to(get_function_definition)))
-            .service(web::resource("/list-lsp").route(web::get().to(list_lsp_servers)))
             .service(web::resource("/document-symbols").route(web::post().to(get_document_symbols)))
     })
     .bind("0.0.0.0:8080")?;
@@ -335,69 +299,12 @@ async fn main() -> std::io::Result<()> {
     )
 )]
 async fn get_function_definition(
-    data: web::Data<AppState>,
+    _data: web::Data<AppState>,
     info: web::Json<FunctionDefinitionRequest>,
 ) -> HttpResponse {
     info!("Received function definition request for ID: {}, URL: {}", info.id, info.github_url);
-
-    let clones = data.clones.lock().unwrap();
-    let repo_map = match clones.get(&info.id) {
-        Some(map) => map,
-        None => {
-            return HttpResponse::BadRequest().body("No repositories found for the given ID");
-        }
-    };
-
-    let (_, repo_info) = match repo_map.get(&info.github_url) {
-        Some(entry) => entry,
-        None => {
-            return HttpResponse::BadRequest().body("Repository not found");
-        }
-    };
-
-    let repo_path = PathBuf::from(&repo_info.temp_dir);
-    let mut lsp_manager = data.lsp_manager.lock().unwrap();
-    
-    let lsp_client = match lsp_manager.get_lsp_for_repo(&repo_path) {
-        Some(client) => client,
-        None => {
-            return HttpResponse::InternalServerError().body("LSP server not found for this repository");
-        }
-    };
-
-    let params = json!({
-        "textDocument": {
-            "uri": format!("file://{}/{}", repo_info.temp_dir, info.file_path)
-        },
-        "position": {
-            "line": info.line,
-            "character": info.character
-        }
-    });
-
-    match lsp_client.send_request("textDocument/definition", params).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to get function definition: {}", e))
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/list-lsp",
-    responses(
-        (status = 200, description = "List of active LSP servers", body = Vec<String>)
-    )
-)]
-async fn list_lsp_servers(data: web::Data<AppState>) -> HttpResponse {
-    let lsp_manager = data.lsp_manager.lock().unwrap();
-    let active_servers = lsp_manager.list_active_lsp_servers();
-    
-    let server_list: Vec<String> = active_servers
-        .into_iter()
-        .map(|path| path.to_string_lossy().into_owned())
-        .collect();
-
-    HttpResponse::Ok().json(server_list)
+    // TODO: Implement function definition retrieval
+    HttpResponse::Ok().body("Function definition retrieval not implemented yet")
 }
 
 #[utoipa::path(
@@ -411,96 +318,10 @@ async fn list_lsp_servers(data: web::Data<AppState>) -> HttpResponse {
     )
 )]
 async fn get_document_symbols(
-    data: web::Data<AppState>,
+    _data: web::Data<AppState>,
     info: web::Json<SymbolRequest>,
 ) -> HttpResponse {
     info!("Received document symbols request for ID: {}, URL: {}, File: {}", info.id, info.github_url, info.file_path);
-
-    let clones = data.clones.lock().unwrap();
-    let repo_map = match clones.get(&info.id) {
-        Some(map) => map,
-        None => {
-            error!("No repositories found for ID: {}", info.id);
-            return HttpResponse::BadRequest().body("No repositories found for the given ID");
-        }
-    };
-
-    let (_, repo_info) = match repo_map.get(&info.github_url) {
-        Some(entry) => entry,
-        None => {
-            error!("Repository not found for URL: {}", info.github_url);
-            return HttpResponse::BadRequest().body("Repository not found");
-        }
-    };
-
-    let repo_path = PathBuf::from(&repo_info.temp_dir);
-    let mut lsp_manager = data.lsp_manager.lock().unwrap();
-    
-    let lsp_client = match lsp_manager.get_lsp_for_repo(&repo_path) {
-        Some(client) => client,
-        None => {
-            error!("LSP server not found for repo path: {:?}", repo_path);
-            return HttpResponse::InternalServerError().body("LSP server not found for this repository");
-        }
-    };
-
-    let file_uri = format!("file://{}/{}", repo_info.temp_dir, info.file_path);
-    info!("Requesting symbols for file: {}", file_uri);
-
-    let params = json!({
-        "textDocument": {
-            "uri": file_uri
-        }
-    });
-
-    info!("Sending LSP request: textDocument/documentSymbol");
-    
-    // Retry the request up to 3 times
-    for attempt in 1..=3 {
-        match lsp_client.send_request("textDocument/documentSymbol", params.clone()).await {
-            Ok(response) => {
-                info!("Received LSP response for document symbols (attempt {})", attempt);
-                debug!("LSP response: {:?}", response);
-                
-                // Check if the response is a log message
-                if response.get("method") == Some(&json!("window/logMessage")) {
-                    warn!("Received log message instead of symbols (attempt {}): {:?}", attempt, response);
-                    if attempt < 3 {
-                        info!("Retrying request...");
-                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                        continue;
-                    } else {
-                        return HttpResponse::InternalServerError().body("Failed to get document symbols after 3 attempts");
-                    }
-                }
-                
-                // Check if we received capabilities instead of symbols
-                if response.get("result").and_then(|r| r.get("capabilities")).is_some() {
-                    warn!("Received capabilities instead of symbols");
-                    // You might want to store these capabilities or handle them differently
-                    if attempt < 3 {
-                        info!("Retrying request for symbols...");
-                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                        continue;
-                    } else {
-                        return HttpResponse::InternalServerError().body("Failed to get document symbols after 3 attempts");
-                    }
-                }
-                
-                // If it's not a log message or capabilities, assume it's the correct response
-                return HttpResponse::Ok().json(response);
-            },
-            Err(e) => {
-                error!("Failed to get document symbols (attempt {}): {}", attempt, e);
-                if attempt < 3 {
-                    info!("Retrying request...");
-                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                } else {
-                    return HttpResponse::InternalServerError().body(format!("Failed to get document symbols: {}", e));
-                }
-            }
-        }
-    }
-    
-    HttpResponse::InternalServerError().body("Failed to get document symbols after 3 attempts")
+    // TODO: Implement document symbols retrieval
+    HttpResponse::Ok().body("Document symbols retrieval not implemented yet")
 }
