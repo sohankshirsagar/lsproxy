@@ -24,7 +24,7 @@ impl LspClient {
         }
     }
 
-    pub async fn initialize(&self, root_uri: &str) -> Result<Value, Box<dyn std::error::Error>> {
+    pub async fn initialize(&self, root_uri: &str) -> Result<(), Box<dyn std::error::Error>> {
         info!("Initializing LSP for root_uri: {}", root_uri);
         let params = json!({
             "processId": std::process::id(),
@@ -39,18 +39,18 @@ impl LspClient {
             Ok(result) => {
                 match result {
                     Ok(response) => {
-                        info!("LSP initialization successful");
-                        // Store the server capabilities
                         if let Some(capabilities) = response.get("result").and_then(|r| r.get("capabilities")) {
                             let mut caps = self.capabilities.lock().await;
                             *caps = Some(capabilities.clone());
-                            info!("Server capabilities stored");
+                            info!("Server capabilities stored, LSP initialized successfully");
+                            
+                            // Send the initialized notification
+                            self.send_notification("initialized", json!({})).await?;
+                            Ok(())
                         } else {
-                            warn!("Server capabilities not found in the response");
+                            error!("Server capabilities not found in the response");
+                            Err("Server capabilities not found".into())
                         }
-                        // After successful initialize, send the initialized notification
-                        self.send_notification("initialized", json!({})).await?;
-                        Ok(response)
                     },
                     Err(e) => {
                         error!("LSP initialization failed: {}", e);
