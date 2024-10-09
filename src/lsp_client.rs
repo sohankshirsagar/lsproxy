@@ -71,6 +71,30 @@ impl LspClient {
         }
     }
 
+    async fn wait_for_initialize_response(&self, id: u64) -> Result<Value, Box<dyn std::error::Error>> {
+        loop {
+            let response_json: Value = self.read_message().await?;
+            
+            if let Some(response_id) = response_json.get("id") {
+                if response_id.as_u64() == Some(id) {
+                    return Ok(response_json);
+                }
+            }
+
+            // Handle other messages
+            if let Some(method) = response_json.get("method") {
+                match method.as_str() {
+                    Some("window/logMessage") => {
+                        if let Some(params) = response_json.get("params") {
+                            info!("LSP Log: {:?}", params);
+                        }
+                    },
+                    _ => debug!("Received message during initialization: {:?}", response_json),
+                }
+            }
+        }
+    }
+
     pub async fn get_capabilities(&self) -> Option<Value> {
         self.capabilities.lock().await.clone()
     }
@@ -92,23 +116,27 @@ impl LspClient {
         stdin.write_all(format!("Content-Length: {}\r\n\r\n{}", request_str.len(), request_str).as_bytes()).await?;
         stdin.flush().await?;
 
-        loop {
-            let response_json: Value = self.read_message().await?;
-            
-            if let Some(response_id) = response_json.get("id") {
-                if response_id == &json!(id) {
-                    return Ok(response_json);
-                }
-            }
-
-            // If it's not the response we're looking for, log it and continue
-            if let Some(method) = response_json.get("method") {
-                if method == "window/logMessage" {
-                    if let Some(params) = response_json.get("params") {
-                        info!("LSP Log: {:?}", params);
+        if method == "initialize" {
+            self.wait_for_initialize_response(id).await
+        } else {
+            loop {
+                let response_json: Value = self.read_message().await?;
+                
+                if let Some(response_id) = response_json.get("id") {
+                    if response_id == &json!(id) {
+                        return Ok(response_json);
                     }
-                } else {
-                    debug!("Received unexpected message: {:?}", response_json);
+                }
+
+                // If it's not the response we're looking for, log it and continue
+                if let Some(method) = response_json.get("method") {
+                    if method == "window/logMessage" {
+                        if let Some(params) = response_json.get("params") {
+                            info!("LSP Log: {:?}", params);
+                        }
+                    } else {
+                        debug!("Received unexpected message: {:?}", response_json);
+                    }
                 }
             }
         }
