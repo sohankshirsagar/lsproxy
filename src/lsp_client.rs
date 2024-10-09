@@ -11,14 +11,15 @@ use lsp_types::{
 };
 
 pub struct LspClient {
-    client: Arc<Mutex<Client<ChildStdin, BufReader<ChildStdout>>>>,
+    client: Arc<Mutex<Client>>,
     capabilities: Arc<Mutex<Option<ServerCapabilities>>>,
 }
 
 impl LspClient {
     // Create a new LspClient instance
     pub fn new(stdin: ChildStdin, stdout: ChildStdout) -> Self {
-        let client = Client::new(stdin, BufReader::new(stdout));
+        let client = Client::new();
+        client.start(stdin, BufReader::new(stdout));
         LspClient {
             client: Arc::new(Mutex::new(client)),
             capabilities: Arc::new(Mutex::new(None)),
