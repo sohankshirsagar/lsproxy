@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::process::{Command, Child};
 use crate::lsp_client::LspClient;
-use log::{info, error, debug};
+use log::{info, error};
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 
