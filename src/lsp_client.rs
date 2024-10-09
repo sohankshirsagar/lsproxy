@@ -13,10 +13,19 @@ pub struct LspClient {
 
 impl LspClient {
     pub async fn new(port: u16) -> Result<Self, std::io::Error> {
-        let stream = TcpStream::connect(format!("127.0.0.1:{}", port)).await?;
-        Ok(LspClient {
-            stream: Arc::new(Mutex::new(stream)),
-        })
+        info!("Attempting to connect to LSP server on port {}", port);
+        match TcpStream::connect(format!("127.0.0.1:{}", port)).await {
+            Ok(stream) => {
+                info!("Successfully connected to LSP server");
+                Ok(LspClient {
+                    stream: Arc::new(Mutex::new(stream)),
+                })
+            },
+            Err(e) => {
+                error!("Failed to connect to LSP server: {}", e);
+                Err(e)
+            }
+        }
     }
 
     pub async fn initialize(&self, root_uri: &str) -> Result<Value, Box<dyn std::error::Error>> {

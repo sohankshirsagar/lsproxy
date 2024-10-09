@@ -53,19 +53,35 @@ impl LspManager {
                 }
             });
 
-            // Wait a bit for the server to start
-            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+            // Increase wait time for the server to start
+            info!("Waiting for pyright server to start...");
+            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
 
             info!("Attempting to connect to pyright");
-            let client = LspClient::new(port).await?;
+            let client = match LspClient::new(port).await {
+                Ok(c) => c,
+                Err(e) => {
+                    error!("Failed to create LSP client: {}", e);
+                    return Err(Box::new(e));
+                }
+            };
             
             info!("Initializing LSP client for repo: {:?}", repo_path);
-            client.initialize(&repo_path.to_string_lossy()).await?;
-            
-            info!("LSP client initialized successfully for repo: {:?}", repo_path);
-            self.clients.insert(repo_path, client);
+            match client.initialize(&repo_path.to_string_lossy()).await {
+                Ok(_) => {
+                    info!("LSP client initialized successfully for repo: {:?}", repo_path);
+                    self.clients.insert(repo_path, client);
+                    Ok(())
+                },
+                Err(e) => {
+                    error!("Failed to initialize LSP client: {}", e);
+                    Err(e)
+                }
+            }
+        } else {
+            info!("LSP client already exists for repo: {:?}", repo_path);
+            Ok(())
         }
-        Ok(())
     }
 
     pub fn get_lsp_for_repo(&mut self, repo_path: &PathBuf) -> Option<&mut LspClient> {
