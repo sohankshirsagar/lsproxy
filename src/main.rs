@@ -268,8 +268,6 @@ async fn init_lsp(
     }
 }
 
-use log::error;
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting main function");
