@@ -3,7 +3,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use log::{debug, error};
+use log::{debug, error, info};
 use tokio::time::timeout;
 use std::time::Duration;
 
@@ -20,6 +20,7 @@ impl LspClient {
     }
 
     pub async fn initialize(&self, root_uri: &str) -> Result<Value, Box<dyn std::error::Error>> {
+        info!("Initializing LSP for root_uri: {}", root_uri);
         let params = json!({
             "processId": std::process::id(),
             "rootUri": root_uri,
@@ -28,12 +29,27 @@ impl LspClient {
             }
         });
 
-        let response = self.send_request("initialize", params).await?;
-
-        // After successful initialize, send the initialized notification
-        self.send_notification("initialized", json!({})).await?;
-
-        Ok(response)
+        // Increase timeout to 60 seconds for initialization
+        match timeout(Duration::from_secs(60), self.send_request("initialize", params)).await {
+            Ok(result) => {
+                match result {
+                    Ok(response) => {
+                        info!("LSP initialization successful");
+                        // After successful initialize, send the initialized notification
+                        self.send_notification("initialized", json!({})).await?;
+                        Ok(response)
+                    },
+                    Err(e) => {
+                        error!("LSP initialization failed: {}", e);
+                        Err(e)
+                    }
+                }
+            },
+            Err(_) => {
+                error!("LSP initialization timed out after 60 seconds");
+                Err("LSP initialization timeout".into())
+            }
+        }
     }
 
     pub async fn send_request(&self, method: &str, params: Value) -> Result<Value, Box<dyn std::error::Error>> {
@@ -45,24 +61,22 @@ impl LspClient {
         });
 
         let request_str = serde_json::to_string(&request)?;
-        debug!("Preparing to send LSP request: {}", request_str);
+        info!("Sending LSP request: {}", method);
+        debug!("Request payload: {}", request_str);
 
         let mut stream = self.stream.lock().await;
-        debug!("Acquired stream lock");
         
-        debug!("Writing request to stream");
         stream.write_all(request_str.as_bytes()).await?;
-        stream.write_all(b"\r\n").await?;  // Add newline to end the request
-        debug!("Request sent, flushing stream");
+        stream.write_all(b"\r\n").await?;
         stream.flush().await?;
 
-        debug!("Reading response");
         let mut response = String::new();
         match timeout(Duration::from_secs(30), stream.read_to_string(&mut response)).await {
             Ok(result) => {
                 match result {
                     Ok(bytes_read) => {
-                        debug!("Received response ({} bytes): {}", bytes_read, response);
+                        info!("Received LSP response for {}: {} bytes", method, bytes_read);
+                        debug!("Response: {}", response);
                     },
                     Err(e) => {
                         error!("Error reading from stream: {}", e);
@@ -80,9 +94,7 @@ impl LspClient {
             return Err("Empty response from LSP server".into());
         }
 
-        debug!("Parsing response as JSON");
         let response_json: Value = serde_json::from_str(&response)?;
-        debug!("Parsed response: {:?}", response_json);
         Ok(response_json)
     }
 
