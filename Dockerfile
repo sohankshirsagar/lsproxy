@@ -46,12 +46,14 @@ RUN apt-get update && apt-get install -y \
     && apt-get install -y nodejs \
     && pip3 install pyright
 
-# Copy the binary from the builder stage and the openapi.yaml file
-COPY --from=builder /usr/src/app/target/release/github-clone-server .
-COPY openapi.yaml .
-
 # Install Pyright globally
 RUN npm install -g pyright
+
+COPY openapi.yaml .
+COPY configs/pyrightconfig.json .
+# Copy the binary from the builder stage and the openapi.yaml file
+COPY --from=builder /usr/src/app/target/release/github-clone-server .
+
 
 # Document that the container listens on port 8080
 EXPOSE 8080
