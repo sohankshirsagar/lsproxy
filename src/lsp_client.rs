@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 use log::{debug, error, info, warn};
 use tokio::time::timeout;
 use std::time::Duration;
+use rand::Rng;
 
 pub struct LspClient {
     stdin: Arc<Mutex<ChildStdin>>,
@@ -69,21 +70,45 @@ impl LspClient {
     }
 
     pub async fn send_request(&self, method: &str, params: Value) -> Result<Value, Box<dyn std::error::Error>> {
+        let id = rand::thread_rng().gen::<u64>(); // Generate a unique ID for this request
         let request = json!({
             "jsonrpc": "2.0",
-            "id": 1,
+            "id": id,
             "method": method,
             "params": params
         });
 
         let request_str = serde_json::to_string(&request)?;
-        info!("Sending LSP request: {}", method);
+        info!("Sending LSP request: {} (id: {})", method, id);
         debug!("Request payload: {}", request_str);
 
         let mut stdin = self.stdin.lock().await;
         stdin.write_all(format!("Content-Length: {}\r\n\r\n{}", request_str.len(), request_str).as_bytes()).await?;
         stdin.flush().await?;
 
+        loop {
+            let response_json: Value = self.read_message().await?;
+            
+            if let Some(response_id) = response_json.get("id") {
+                if response_id == &json!(id) {
+                    return Ok(response_json);
+                }
+            }
+
+            // If it's not the response we're looking for, log it and continue
+            if let Some(method) = response_json.get("method") {
+                if method == "window/logMessage" {
+                    if let Some(params) = response_json.get("params") {
+                        info!("LSP Log: {:?}", params);
+                    }
+                } else {
+                    debug!("Received unexpected message: {:?}", response_json);
+                }
+            }
+        }
+    }
+
+    async fn read_message(&self) -> Result<Value, Box<dyn std::error::Error>> {
         let mut stdout = self.stdout.lock().await;
         let mut headers = String::new();
         let mut content_length = None;
