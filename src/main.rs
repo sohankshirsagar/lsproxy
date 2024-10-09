@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
-use log::{info, error, debug};
+use log::{info, error, debug, warn};
 use env_logger::Env;
 use std::path::PathBuf;
 use utoipa::OpenApi;

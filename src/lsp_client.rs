@@ -4,7 +4,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, AsyncBufReadExt};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use tokio::time::timeout;
 use std::time::Duration;
 
