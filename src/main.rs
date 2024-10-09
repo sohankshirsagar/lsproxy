@@ -1,5 +1,4 @@
 use actix_web::{web, App, HttpServer, HttpResponse, Responder};
-use actix_files::NamedFile;
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -10,15 +9,36 @@ use git2::{Repository, BranchType};
 use log::{info, error, debug};
 use env_logger::Env;
 use std::path::PathBuf;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
-#[derive(Deserialize)]
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        clone_repo,
+        list_repos,
+        init_lsp,
+        get_function_definition,
+        list_lsp_servers,
+        get_document_symbols
+    ),
+    components(
+        schemas(CloneRequest, RepoInfo, LspInitRequest, FunctionDefinitionRequest, SymbolRequest)
+    ),
+    tags(
+        (name = "github-clone-api", description = "GitHub Clone API")
+    )
+)]
+struct ApiDoc;
+
+#[derive(Deserialize, utoipa::ToSchema)]
 struct CloneRequest {
     id: String,
     github_url: String,
     reference: Option<String>,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, utoipa::ToSchema)]
 struct RepoInfo {
     id: String,
     github_url: String,
@@ -27,13 +47,13 @@ struct RepoInfo {
     temp_dir: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 struct LspInitRequest {
     id: String,
     github_url: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 struct FunctionDefinitionRequest {
     id: String,
     github_url: String,
@@ -42,7 +62,7 @@ struct FunctionDefinitionRequest {
     character: u32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 struct SymbolRequest {
     id: String,
     github_url: String,
@@ -81,6 +101,16 @@ fn get_branch_and_commit(repo: &Repository, reference: &str) -> Result<(Option<S
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/clone",
+    request_body = CloneRequest,
+    responses(
+        (status = 200, description = "Repository cloned successfully", body = RepoInfo),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
 async fn clone_repo(
     data: web::Data<AppState>,
     info: web::Json<CloneRequest>,
@@ -174,6 +204,13 @@ fn checkout_reference(repo: &Repository, reference: &str) -> Result<(), git2::Er
     Ok(())
 }
 
+#[utoipa::path(
+    get,
+    path = "/list",
+    responses(
+        (status = 200, description = "List of cloned repositories", body = Vec<RepoInfo>)
+    )
+)]
 async fn list_repos(data: web::Data<AppState>) -> HttpResponse {
     let clones = data.clones.lock().unwrap();
     let repo_list: Vec<RepoInfo> = clones
@@ -186,6 +223,16 @@ async fn list_repos(data: web::Data<AppState>) -> HttpResponse {
     HttpResponse::Ok().json(repo_list)
 }
 
+#[utoipa::path(
+    post,
+    path = "/init-lsp",
+    request_body = LspInitRequest,
+    responses(
+        (status = 200, description = "LSP server initialized successfully"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
 async fn init_lsp(
     data: web::Data<AppState>,
     info: web::Json<LspInitRequest>,
@@ -221,10 +268,6 @@ async fn init_lsp(
     }
 }
 
-async fn index() -> impl Responder {
-    NamedFile::open_async("./index.html").await.unwrap()
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
@@ -234,6 +277,8 @@ async fn main() -> std::io::Result<()> {
         clones: Mutex::new(HashMap::new()),
         lsp_manager: Mutex::new(LspManager::new()),
     });
+
+    let openapi = ApiDoc::openapi();
 
     info!("Initializing HTTP server");
     let server = HttpServer::new(move || {
@@ -245,13 +290,16 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(app_state.clone())
-            .route("/", web::get().to(index))
-            .route("/clone", web::post().to(clone_repo))
-            .route("/list", web::get().to(list_repos))
-            .route("/init-lsp", web::post().to(init_lsp))
-            .route("/function-definition", web::post().to(get_function_definition))
-            .route("/list-lsp", web::get().to(list_lsp_servers))
-            .route("/document-symbols", web::post().to(get_document_symbols))
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", openapi.clone())
+            )
+            .service(web::resource("/clone").route(web::post().to(clone_repo)))
+            .service(web::resource("/list").route(web::get().to(list_repos)))
+            .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
+            .service(web::resource("/function-definition").route(web::post().to(get_function_definition)))
+            .service(web::resource("/list-lsp").route(web::get().to(list_lsp_servers)))
+            .service(web::resource("/document-symbols").route(web::post().to(get_document_symbols)))
     })
     .bind("0.0.0.0:8080")?;
 
@@ -261,6 +309,17 @@ async fn main() -> std::io::Result<()> {
     info!("Server stopped");
     result
 }
+
+#[utoipa::path(
+    post,
+    path = "/function-definition",
+    request_body = FunctionDefinitionRequest,
+    responses(
+        (status = 200, description = "Function definition retrieved successfully"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
 async fn get_function_definition(
     data: web::Data<AppState>,
     info: web::Json<FunctionDefinitionRequest>,
@@ -308,6 +367,13 @@ async fn get_function_definition(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/list-lsp",
+    responses(
+        (status = 200, description = "List of active LSP servers", body = Vec<String>)
+    )
+)]
 async fn list_lsp_servers(data: web::Data<AppState>) -> HttpResponse {
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let active_servers = lsp_manager.list_active_lsp_servers();
@@ -320,6 +386,16 @@ async fn list_lsp_servers(data: web::Data<AppState>) -> HttpResponse {
     HttpResponse::Ok().json(server_list)
 }
 
+#[utoipa::path(
+    post,
+    path = "/document-symbols",
+    request_body = SymbolRequest,
+    responses(
+        (status = 200, description = "Document symbols retrieved successfully"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
 async fn get_document_symbols(
     data: web::Data<AppState>,
     info: web::Json<SymbolRequest>,

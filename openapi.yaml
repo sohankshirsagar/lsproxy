@@ -1,0 +1,178 @@
+openapi: 3.0.0
+info:
+  title: GitHub Clone API
+  version: 1.0.0
+  description: API for cloning GitHub repositories and interacting with LSP servers
+
+paths:
+  /clone:
+    post:
+      summary: Clone a GitHub repository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloneRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepoInfo'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /list:
+    get:
+      summary: List cloned repositories
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RepoInfo'
+
+  /init-lsp:
+    post:
+      summary: Initialize LSP for a repository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LspInitRequest'
+      responses:
+        '200':
+          description: Successful response
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /function-definition:
+    post:
+      summary: Get function definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionDefinitionRequest'
+      responses:
+        '200':
+          description: Successful response
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /list-lsp:
+    get:
+      summary: List active LSP servers
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /document-symbols:
+    post:
+      summary: Get document symbols
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SymbolRequest'
+      responses:
+        '200':
+          description: Successful response
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    CloneRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        github_url:
+          type: string
+        reference:
+          type: string
+      required:
+        - id
+        - github_url
+
+    RepoInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        github_url:
+          type: string
+        branch:
+          type: string
+        commit:
+          type: string
+        temp_dir:
+          type: string
+
+    LspInitRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        github_url:
+          type: string
+      required:
+        - id
+        - github_url
+
+    FunctionDefinitionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        github_url:
+          type: string
+        file_path:
+          type: string
+        line:
+          type: integer
+        character:
+          type: integer
+      required:
+        - id
+        - github_url
+        - file_path
+        - line
+        - character
+
+    SymbolRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        github_url:
+          type: string
+        file_path:
+          type: string
+      required:
+        - id
+        - github_url
+        - file_path
