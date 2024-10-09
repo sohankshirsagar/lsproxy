@@ -287,25 +287,35 @@ async fn main() -> std::io::Result<()> {
 
     println!("Starting main function");
     eprintln!("Starting main function"); // This will appear in Docker logs
+
+    // Set up panic hook
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Server panicked: {:?}", panic_info);
         let mut file = File::create("/tmp/server_panic.log").expect("Failed to create panic log file");
         writeln!(file, "Server panicked: {:?}", panic_info).expect("Failed to write panic info");
     }));
 
+    // Initialize logger
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
-    info!("Starting server at http://0.0.0.0:8080");
+    info!("Logger initialized");
     file.write_all(b"Logging initialized\n").expect("Failed to write to log file");
 
+    // Initialize app state
+    info!("Initializing app state");
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
         lsp_manager: Mutex::new(LspManager::new()),
     });
+    info!("App state initialized");
 
+    // Generate OpenAPI documentation
+    info!("Generating OpenAPI documentation");
     let openapi = ApiDoc::openapi();
+    info!("OpenAPI documentation generated");
 
+    // Initialize HTTP server
     info!("Initializing HTTP server");
-    let server = HttpServer::new(move || {
+    let server = match HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
@@ -325,13 +335,28 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/list-lsp").route(web::get().to(list_lsp_servers)))
             .service(web::resource("/document-symbols").route(web::post().to(get_document_symbols)))
     })
-    .bind("0.0.0.0:8080")?;
+    .bind("0.0.0.0:8080") {
+        Ok(server) => {
+            info!("Server bound to 0.0.0.0:8080");
+            server
+        },
+        Err(e) => {
+            error!("Failed to bind server to 0.0.0.0:8080: {:?}", e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to bind server: {:?}", e)));
+        }
+    };
 
-    info!("Server bound to 0.0.0.0:8080");
     info!("Starting server...");
     match server.run().await {
-        Ok(_) => info!("Server stopped normally"),
-        Err(e) => error!("Server stopped with error: {:?}", e),
+        Ok(_) => {
+            info!("Server stopped normally");
+            file.write_all(b"Server stopped normally\n").expect("Failed to write to log file");
+        },
+        Err(e) => {
+            error!("Server stopped with error: {:?}", e);
+            file.write_all(format!("Server stopped with error: {:?}\n", e).as_bytes()).expect("Failed to write to log file");
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Server error: {:?}", e)));
+        }
     }
 
     Ok(())
