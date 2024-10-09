@@ -268,15 +268,25 @@ async fn init_lsp(
     }
 }
 
+use std::fs::File;
+use std::io::Write;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Immediate file logging
+    let mut file = File::create("/tmp/server_start.log").expect("Failed to create log file");
+    file.write_all(b"Server starting\n").expect("Failed to write to log file");
+
     println!("Starting main function");
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Server panicked: {:?}", panic_info);
+        let mut file = File::create("/tmp/server_panic.log").expect("Failed to create panic log file");
+        writeln!(file, "Server panicked: {:?}", panic_info).expect("Failed to write panic info");
     }));
 
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Starting server at http://0.0.0.0:8080");
+    file.write_all(b"Logging initialized\n").expect("Failed to write to log file");
 
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
