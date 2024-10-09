@@ -16,16 +16,17 @@ impl LspManager {
 
     pub async fn start_lsp_for_repo(&mut self, repo_path: PathBuf) -> Result<(), std::io::Error> {
         if !self.clients.contains_key(&repo_path) {
+            let port = 2760;
             let child = Command::new("pylsp")
                 .arg("--tcp")
                 .arg("--host")
                 .arg("127.0.0.1")
                 .arg("--port")
-                .arg("0")  // Let the OS assign a port
+                .arg(port.to_string())
                 .current_dir(&repo_path)
                 .spawn()?;
 
-            let client = LspClient::new(child);
+            let client = LspClient::new(child, port);
             self.clients.insert(repo_path, client);
         }
         Ok(())
