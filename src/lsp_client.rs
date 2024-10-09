@@ -11,6 +11,7 @@ use std::time::Duration;
 pub struct LspClient {
     stdin: Arc<Mutex<ChildStdin>>,
     stdout: Arc<Mutex<BufReader<ChildStdout>>>,
+    capabilities: Arc<Mutex<Option<Value>>>,
 }
 
 impl LspClient {
@@ -18,6 +19,7 @@ impl LspClient {
         LspClient {
             stdin: Arc::new(Mutex::new(stdin)),
             stdout: Arc::new(Mutex::new(BufReader::new(stdout))),
+            capabilities: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -37,10 +39,13 @@ impl LspClient {
                 match result {
                     Ok(response) => {
                         info!("LSP initialization successful");
-                        // Handle potential log messages during initialization
-                        if response.get("method") == Some(&json!("window/logMessage")) {
-                            warn!("Received log message during initialization: {:?}", response);
-                            // You might want to add additional logic here to handle log messages
+                        // Store the server capabilities
+                        if let Some(capabilities) = response.get("result").and_then(|r| r.get("capabilities")) {
+                            let mut caps = self.capabilities.lock().await;
+                            *caps = Some(capabilities.clone());
+                            info!("Server capabilities stored");
+                        } else {
+                            warn!("Server capabilities not found in the response");
                         }
                         // After successful initialize, send the initialized notification
                         self.send_notification("initialized", json!({})).await?;
@@ -57,6 +62,10 @@ impl LspClient {
                 Err("LSP initialization timeout".into())
             }
         }
+    }
+
+    pub async fn get_capabilities(&self) -> Option<Value> {
+        self.capabilities.lock().await.clone()
     }
 
     pub async fn send_request(&self, method: &str, params: Value) -> Result<Value, Box<dyn std::error::Error>> {

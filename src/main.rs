@@ -468,7 +468,20 @@ async fn get_document_symbols(
                     }
                 }
                 
-                // If it's not a log message, assume it's the correct response
+                // Check if we received capabilities instead of symbols
+                if response.get("result").and_then(|r| r.get("capabilities")).is_some() {
+                    warn!("Received capabilities instead of symbols");
+                    // You might want to store these capabilities or handle them differently
+                    if attempt < 3 {
+                        info!("Retrying request for symbols...");
+                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                        continue;
+                    } else {
+                        return HttpResponse::InternalServerError().body("Failed to get document symbols after 3 attempts");
+                    }
+                }
+                
+                // If it's not a log message or capabilities, assume it's the correct response
                 return HttpResponse::Ok().json(response);
             },
             Err(e) => {
