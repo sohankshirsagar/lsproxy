@@ -34,6 +34,7 @@ impl LspManager {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 
             let client = LspClient::new(port).await?;
+            client.initialize(&repo_path.to_string_lossy()).await?;
             self.clients.insert(repo_path, client);
         }
         Ok(())
