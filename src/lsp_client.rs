@@ -25,12 +25,16 @@ impl LspClient {
         });
 
         let request_str = serde_json::to_string(&request)?;
+        debug!("Sending LSP request: {}", request_str);
+
         let mut stream = self.stream.lock().await;
         
         stream.write_all(request_str.as_bytes()).await?;
+        debug!("Request sent, waiting for response");
 
         let mut response = String::new();
         stream.read_to_string(&mut response).await?;
+        debug!("Received response: {}", response);
 
         let response_json: Value = serde_json::from_str(&response)?;
         Ok(response_json)

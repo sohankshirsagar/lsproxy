@@ -324,12 +324,13 @@ async fn get_document_symbols(
     data: web::Data<AppState>,
     info: web::Json<SymbolRequest>,
 ) -> HttpResponse {
-    info!("Received document symbols request for ID: {}, URL: {}", info.id, info.github_url);
+    info!("Received document symbols request for ID: {}, URL: {}, File: {}", info.id, info.github_url, info.file_path);
 
     let clones = data.clones.lock().unwrap();
     let repo_map = match clones.get(&info.id) {
         Some(map) => map,
         None => {
+            error!("No repositories found for ID: {}", info.id);
             return HttpResponse::BadRequest().body("No repositories found for the given ID");
         }
     };
@@ -337,6 +338,7 @@ async fn get_document_symbols(
     let (_, repo_info) = match repo_map.get(&info.github_url) {
         Some(entry) => entry,
         None => {
+            error!("Repository not found for URL: {}", info.github_url);
             return HttpResponse::BadRequest().body("Repository not found");
         }
     };
@@ -347,18 +349,27 @@ async fn get_document_symbols(
     let lsp_client = match lsp_manager.get_lsp_for_repo(&repo_path) {
         Some(client) => client,
         None => {
+            error!("LSP server not found for repo path: {:?}", repo_path);
             return HttpResponse::InternalServerError().body("LSP server not found for this repository");
         }
     };
 
+    let file_uri = format!("file://{}/{}", repo_info.temp_dir, info.file_path);
+    info!("Requesting symbols for file: {}", file_uri);
+
     let params = json!({
         "textDocument": {
-            "uri": format!("file://{}/{}", repo_info.temp_dir, info.file_path)
+            "uri": file_uri
         }
     });
 
+    info!("Sending LSP request: textDocument/documentSymbol");
     match lsp_client.send_request("textDocument/documentSymbol", params).await {
-        Ok(response) => HttpResponse::Ok().json(response),
+        Ok(response) => {
+            info!("Received LSP response for document symbols");
+            debug!("LSP response: {:?}", response);
+            HttpResponse::Ok().json(response)
+        },
         Err(e) => {
             error!("Failed to get document symbols: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get document symbols: {}", e))
