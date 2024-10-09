@@ -34,8 +34,8 @@ impl LspClient {
             }
         });
 
-        // Increase timeout to 60 seconds for initialization
-        match timeout(Duration::from_secs(60), self.send_request("initialize", params)).await {
+        let timeout_secs = 240;
+        match timeout(Duration::from_secs(timeout_secs), self.send_request("initialize", params)).await {
             Ok(result) => {
                 match result {
                     Ok(response) => {
@@ -59,7 +59,7 @@ impl LspClient {
                 }
             },
             Err(_) => {
-                error!("LSP initialization timed out after 60 seconds");
+                error!("LSP initialization timed out after {} seconds", timeout_secs);
                 Err("LSP initialization timeout".into())
             }
         }
