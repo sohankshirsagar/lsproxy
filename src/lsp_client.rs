@@ -26,18 +26,29 @@ impl LspClient {
         });
 
         let request_str = serde_json::to_string(&request)?;
-        debug!("Sending LSP request: {}", request_str);
+        debug!("Preparing to send LSP request: {}", request_str);
 
         let mut stream = self.stream.lock().await;
+        debug!("Acquired stream lock");
         
+        debug!("Writing request to stream");
         stream.write_all(request_str.as_bytes()).await?;
-        debug!("Request sent, waiting for response");
+        stream.write_all(b"\r\n").await?;  // Add newline to end the request
+        debug!("Request sent, flushing stream");
+        stream.flush().await?;
 
+        debug!("Reading response");
         let mut response = String::new();
-        stream.read_to_string(&mut response).await?;
-        debug!("Received response: {}", response);
+        let bytes_read = stream.read_to_string(&mut response).await?;
+        debug!("Received response ({} bytes): {}", bytes_read, response);
 
+        if response.is_empty() {
+            return Err("Empty response from LSP server".into());
+        }
+
+        debug!("Parsing response as JSON");
         let response_json: Value = serde_json::from_str(&response)?;
+        debug!("Parsed response: {:?}", response_json);
         Ok(response_json)
     }
 
