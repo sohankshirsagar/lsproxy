@@ -34,20 +34,23 @@ FROM debian:buster-slim
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Install runtime dependencies and Python
+# Install runtime dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
     libssl1.1 \
     ca-certificates \
     git \
     python3 \
     python3-pip \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs \
     && pip3 install pyright
 
 # Copy the binary from the builder stage
 COPY --from=builder /usr/src/app/target/release/github-clone-server .
 
-# Copy the index.html file
-COPY index.html .
+# Install Pyright globally
+RUN npm install -g pyright
 
 # Document that the container listens on port 8080
 EXPOSE 8080
