@@ -39,17 +39,23 @@ impl LspClient {
             Ok(result) => {
                 match result {
                     Ok(response) => {
-                        if let Some(capabilities) = response.get("result").and_then(|r| r.get("capabilities")) {
-                            let mut caps = self.capabilities.lock().await;
-                            *caps = Some(capabilities.clone());
-                            info!("Server capabilities stored, LSP initialized successfully");
-                            
-                            // Send the initialized notification
-                            self.send_notification("initialized", json!({})).await?;
-                            Ok(())
+                        debug!("Received initialize response: {:?}", response);
+                        if let Some(result) = response.get("result") {
+                            if let Some(capabilities) = result.get("capabilities") {
+                                let mut caps = self.capabilities.lock().await;
+                                *caps = Some(capabilities.clone());
+                                info!("Server capabilities stored, LSP initialized successfully");
+                                
+                                // Send the initialized notification
+                                self.send_notification("initialized", json!({})).await?;
+                                Ok(())
+                            } else {
+                                error!("Server capabilities not found in the response");
+                                Err("Server capabilities not found".into())
+                            }
                         } else {
-                            error!("Server capabilities not found in the response");
-                            Err("Server capabilities not found".into())
+                            error!("Result not found in the response");
+                            Err("Result not found in the response".into())
                         }
                     },
                     Err(e) => {
