@@ -347,13 +347,21 @@ async fn main() -> std::io::Result<()> {
     };
 
     info!("Starting server...");
+    println!("Server is about to start running...");
+    eprintln!("Server is about to start running...");
+    file.write_all(b"Server is about to start running...\n").expect("Failed to write to log file");
+
     match server.run().await {
         Ok(_) => {
             info!("Server stopped normally");
+            println!("Server stopped normally");
+            eprintln!("Server stopped normally");
             file.write_all(b"Server stopped normally\n").expect("Failed to write to log file");
         },
         Err(e) => {
             error!("Server stopped with error: {:?}", e);
+            println!("Server stopped with error: {:?}", e);
+            eprintln!("Server stopped with error: {:?}", e);
             file.write_all(format!("Server stopped with error: {:?}\n", e).as_bytes()).expect("Failed to write to log file");
             return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Server error: {:?}", e)));
         }

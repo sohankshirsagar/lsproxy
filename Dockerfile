@@ -62,7 +62,7 @@ EXPOSE 8080
 RUN mkdir -p /var/log && chmod 755 /var/log
 
 # Run a simple check before starting the server
-RUN echo "#!/bin/sh\necho 'Container is starting...'\n./github-clone-server" > /usr/src/app/start.sh && chmod +x /usr/src/app/start.sh
+RUN echo '#!/bin/sh\necho "Container is starting..."\nexec ./github-clone-server 2>&1 | tee -a /var/log/app.log' > /usr/src/app/start.sh && chmod +x /usr/src/app/start.sh
 
 # Run the start script
 CMD ["/usr/src/app/start.sh"]
