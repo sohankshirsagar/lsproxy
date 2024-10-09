@@ -2,104 +2,203 @@ openapi: 3.0.0
 info:
   title: GitHub Clone API
   version: 1.0.0
-  description: API for cloning GitHub repositories and interacting with LSP servers
+  description: API for cloning GitHub repositories, interacting with LSP servers, and performing code analysis
 
 paths:
   /clone:
     post:
       summary: Clone a GitHub repository
+      description: Clone a GitHub repository and store it locally
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CloneRequest'
+            example:
+              id: "repo1"
+              github_url: "https://github.com/username/repo.git"
+              reference: "main"
       responses:
         '200':
-          description: Successful response
+          description: Repository cloned successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RepoInfo'
+              example:
+                id: "repo1"
+                github_url: "https://github.com/username/repo.git"
+                branch: "main"
+                commit: "abc123def456"
+                temp_dir: "/tmp/repo1"
         '400':
-          description: Bad request
+          description: Bad request (e.g., invalid URL or reference)
         '500':
           description: Internal server error
 
   /list:
     get:
       summary: List cloned repositories
+      description: Retrieve a list of all cloned repositories
       responses:
         '200':
-          description: Successful response
+          description: List of cloned repositories
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/RepoInfo'
+              example:
+                - id: "repo1"
+                  github_url: "https://github.com/username/repo1.git"
+                  branch: "main"
+                  commit: "abc123def456"
+                  temp_dir: "/tmp/repo1"
+                - id: "repo2"
+                  github_url: "https://github.com/username/repo2.git"
+                  branch: "develop"
+                  commit: "def456abc789"
+                  temp_dir: "/tmp/repo2"
 
   /init-lsp:
     post:
       summary: Initialize LSP for a repository
+      description: Start and initialize an LSP server for a specific repository
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LspInitRequest'
+            example:
+              id: "repo1"
+              github_url: "https://github.com/username/repo.git"
       responses:
         '200':
-          description: Successful response
+          description: LSP server initialized successfully
         '400':
-          description: Bad request
+          description: Bad request (e.g., repository not found)
         '500':
-          description: Internal server error
+          description: Internal server error (e.g., LSP server failed to start)
 
   /function-definition:
     post:
       summary: Get function definition
+      description: Retrieve the definition of a function at a specific location in a file
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/FunctionDefinitionRequest'
+            example:
+              id: "repo1"
+              github_url: "https://github.com/username/repo.git"
+              file_path: "src/main.py"
+              line: 10
+              character: 5
       responses:
         '200':
-          description: Successful response
+          description: Function definition retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  definition:
+                    type: string
+              example:
+                definition: "def example_function(param1: str, param2: int) -> bool:"
         '400':
-          description: Bad request
+          description: Bad request (e.g., invalid file path or position)
         '500':
           description: Internal server error
 
   /list-lsp:
     get:
       summary: List active LSP servers
+      description: Retrieve a list of all active LSP servers
       responses:
         '200':
-          description: Successful response
+          description: List of active LSP servers
           content:
             application/json:
               schema:
                 type: array
                 items:
                   type: string
+              example:
+                - "/tmp/repo1"
+                - "/tmp/repo2"
 
   /document-symbols:
     post:
       summary: Get document symbols
+      description: Retrieve all symbols (functions, classes, variables) in a specific file
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/SymbolRequest'
+            example:
+              id: "repo1"
+              github_url: "https://github.com/username/repo.git"
+              file_path: "src/main.py"
       responses:
         '200':
-          description: Successful response
+          description: Document symbols retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    kind:
+                      type: string
+                    range:
+                      type: object
+                      properties:
+                        start:
+                          type: object
+                          properties:
+                            line:
+                              type: integer
+                            character:
+                              type: integer
+                        end:
+                          type: object
+                          properties:
+                            line:
+                              type: integer
+                            character:
+                              type: integer
+              example:
+                - name: "example_function"
+                  kind: "function"
+                  range:
+                    start:
+                      line: 10
+                      character: 0
+                    end:
+                      line: 15
+                      character: 12
+                - name: "ExampleClass"
+                  kind: "class"
+                  range:
+                    start:
+                      line: 18
+                      character: 0
+                    end:
+                      line: 30
+                      character: 8
         '400':
-          description: Bad request
+          description: Bad request (e.g., invalid file path)
         '500':
           description: Internal server error
 
@@ -110,10 +209,13 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier for the repository
         github_url:
           type: string
+          description: URL of the GitHub repository to clone
         reference:
           type: string
+          description: Branch, tag, or commit to checkout (optional)
       required:
         - id
         - github_url
@@ -123,22 +225,29 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier for the repository
         github_url:
           type: string
+          description: URL of the GitHub repository
         branch:
           type: string
+          description: Current branch of the repository
         commit:
           type: string
+          description: Current commit hash
         temp_dir:
           type: string
+          description: Temporary directory where the repository is cloned
 
     LspInitRequest:
       type: object
       properties:
         id:
           type: string
+          description: Unique identifier for the repository
         github_url:
           type: string
+          description: URL of the GitHub repository
       required:
         - id
         - github_url
@@ -148,14 +257,19 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier for the repository
         github_url:
           type: string
+          description: URL of the GitHub repository
         file_path:
           type: string
+          description: Path to the file containing the function
         line:
           type: integer
+          description: Line number of the function
         character:
           type: integer
+          description: Character position on the line
       required:
         - id
         - github_url
@@ -168,10 +282,13 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier for the repository
         github_url:
           type: string
+          description: URL of the GitHub repository
         file_path:
           type: string
+          description: Path to the file to analyze
       required:
         - id
         - github_url
