@@ -2,7 +2,7 @@ use actix_web::{web, App, HttpServer, HttpResponse};
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tempfile::TempDir;
 use git2::{Repository, BranchType};
 use log::{info, error, debug};
@@ -10,6 +10,9 @@ use env_logger::Env;
 use std::path::PathBuf;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+
+mod lsp_manager;
+use lsp_manager::LspManager;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -69,6 +72,7 @@ struct SymbolRequest {
 
 struct AppState {
     clones: Mutex<HashMap<String, HashMap<String, (TempDir, RepoInfo)>>>,
+    lsp_manager: Arc<Mutex<LspManager>>,
 }
 
 fn get_branch_and_commit(repo: &Repository, reference: &str) -> Result<(Option<String>, String), git2::Error> {
@@ -226,12 +230,31 @@ async fn list_repos(data: web::Data<AppState>) -> HttpResponse {
     )
 )]
 async fn init_lsp(
-    _data: web::Data<AppState>,
+    data: web::Data<AppState>,
     info: web::Json<LspInitRequest>,
 ) -> HttpResponse {
     info!("Received LSP init request for ID: {}, URL: {}", info.id, info.github_url);
-    // TODO: Implement LSP initialization
-    HttpResponse::Ok().body("LSP initialization not implemented yet")
+
+    let clones = data.clones.lock().unwrap();
+    let repo_map = match clones.get(&info.id) {
+        Some(map) => map,
+        None => {
+            return HttpResponse::BadRequest().body("No repositories found for the given ID");
+        }
+    };
+
+    let (_, repo_info) = match repo_map.get(&info.github_url) {
+        Some(entry) => entry,
+        None => {
+            return HttpResponse::BadRequest().body("Repository not found");
+        }
+    };
+
+    let mut lsp_manager = data.lsp_manager.lock().unwrap();
+    match lsp_manager.start_lsp(info.id.clone(), info.github_url.clone(), repo_info.temp_dir.clone()) {
+        Ok(_) => HttpResponse::Ok().body("LSP initialized successfully"),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e)),
+    }
 }
 
 #[actix_web::main]
@@ -251,6 +274,7 @@ async fn main() -> std::io::Result<()> {
     info!("Initializing app state");
     let app_state = web::Data::new(AppState {
         clones: Mutex::new(HashMap::new()),
+        lsp_manager: Arc::new(Mutex::new(LspManager::new())),
     });
     info!("App state initialized");
 
