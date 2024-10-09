@@ -4,11 +4,12 @@ use serde_json::{json, Value};
 
 pub struct LspClient {
     process: Child,
+    port: u16,
 }
 
 impl LspClient {
-    pub fn new(process: Child) -> Self {
-        LspClient { process }
+    pub fn new(process: Child, port: u16) -> Self {
+        LspClient { process, port }
     }
 
     pub async fn send_request(&mut self, method: &str, params: Value) -> Result<Value, Box<dyn std::error::Error>> {
