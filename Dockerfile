@@ -61,6 +61,8 @@ EXPOSE 8080
 # Create log directory and set permissions
 RUN mkdir -p /var/log && chmod 755 /var/log
 
-# Run the Rust server with logging
-ENV RUST_LOG=debug
-CMD ["./github-clone-server"]
+# Run a simple check before starting the server
+RUN echo "#!/bin/sh\necho 'Container is starting...'\n./github-clone-server" > /usr/src/app/start.sh && chmod +x /usr/src/app/start.sh
+
+# Run the start script
+CMD ["/usr/src/app/start.sh"]
