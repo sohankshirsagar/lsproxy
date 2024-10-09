@@ -1,5 +1,6 @@
-use tokio::net::TcpStream;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::process::ChildStdin;
+use tokio::process::ChildStdout;
+use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -8,23 +9,15 @@ use tokio::time::timeout;
 use std::time::Duration;
 
 pub struct LspClient {
-    stream: Arc<Mutex<TcpStream>>,
+    stdin: Arc<Mutex<ChildStdin>>,
+    stdout: Arc<Mutex<BufReader<ChildStdout>>>,
 }
 
 impl LspClient {
-    pub async fn new(port: u16) -> Result<Self, std::io::Error> {
-        info!("Attempting to connect to LSP server on port {}", port);
-        match TcpStream::connect(format!("127.0.0.1:{}", port)).await {
-            Ok(stream) => {
-                info!("Successfully connected to LSP server");
-                Ok(LspClient {
-                    stream: Arc::new(Mutex::new(stream)),
-                })
-            },
-            Err(e) => {
-                error!("Failed to connect to LSP server: {}", e);
-                Err(e)
-            }
+    pub fn new(stdin: ChildStdin, stdout: ChildStdout) -> Self {
+        LspClient {
+            stdin: Arc::new(Mutex::new(stdin)),
+            stdout: Arc::new(Mutex::new(BufReader::new(stdout))),
         }
     }
 
@@ -73,37 +66,36 @@ impl LspClient {
         info!("Sending LSP request: {}", method);
         debug!("Request payload: {}", request_str);
 
-        let mut stream = self.stream.lock().await;
-        
-        stream.write_all(request_str.as_bytes()).await?;
-        stream.write_all(b"\r\n").await?;
-        stream.flush().await?;
+        let mut stdin = self.stdin.lock().await;
+        stdin.write_all(format!("Content-Length: {}\r\n\r\n{}", request_str.len(), request_str).as_bytes()).await?;
+        stdin.flush().await?;
 
-        let mut response = String::new();
-        match timeout(Duration::from_secs(30), stream.read_to_string(&mut response)).await {
-            Ok(result) => {
-                match result {
-                    Ok(bytes_read) => {
-                        info!("Received LSP response for {}: {} bytes", method, bytes_read);
-                        debug!("Response: {}", response);
-                    },
-                    Err(e) => {
-                        error!("Error reading from stream: {}", e);
-                        return Err(e.into());
-                    }
-                }
-            },
-            Err(_) => {
-                error!("Timeout while waiting for LSP server response");
-                return Err("LSP server response timeout".into());
+        let mut stdout = self.stdout.lock().await;
+        let mut headers = String::new();
+        let mut content_length = None;
+
+        // Read headers
+        loop {
+            let mut line = String::new();
+            stdout.read_line(&mut line).await?;
+            if line == "\r\n" {
+                break;
+            }
+            headers.push_str(&line);
+            if line.starts_with("Content-Length: ") {
+                content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse::<usize>()?);
             }
         }
 
-        if response.is_empty() {
-            return Err("Empty response from LSP server".into());
-        }
+        // Read content
+        let content_length = content_length.ok_or("No Content-Length header found")?;
+        let mut content = vec![0; content_length];
+        stdout.read_exact(&mut content).await?;
 
-        let response_json: Value = serde_json::from_str(&response)?;
+        let response_str = String::from_utf8(content)?;
+        debug!("Response: {}", response_str);
+
+        let response_json: Value = serde_json::from_str(&response_str)?;
         Ok(response_json)
     }
 
@@ -115,16 +107,18 @@ impl LspClient {
         });
 
         let notification_str = serde_json::to_string(&notification)?;
-        let mut stream = self.stream.lock().await;
-        stream.write_all(notification_str.as_bytes()).await?;
-        stream.write_all(b"\r\n").await?;
-        stream.flush().await?;
+        let mut stdin = self.stdin.lock().await;
+        stdin.write_all(format!("Content-Length: {}\r\n\r\n{}", notification_str.len(), notification_str).as_bytes()).await?;
+        stdin.flush().await?;
 
         Ok(())
     }
 
     pub async fn shutdown(&self) -> Result<(), std::io::Error> {
-        let mut stream = self.stream.lock().await;
-        stream.shutdown().await
+        // Send shutdown request
+        self.send_request("shutdown", json!(null)).await?;
+        // Send exit notification
+        self.send_notification("exit", json!(null)).await?;
+        Ok(())
     }
 }
