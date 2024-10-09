@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tokio::process::{Command, Child};
+use tokio::process::Command;
 use crate::lsp_client::LspClient;
 use log::{info, error, debug, warn};
 use std::process::Stdio;

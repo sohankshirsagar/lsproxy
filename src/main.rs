@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpServer, HttpResponse, Responder};
+use actix_web::{web, App, HttpServer, HttpResponse};
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
