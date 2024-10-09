@@ -1,3 +1,4 @@
+use jsonrpc::{Client, Request};
 use tokio::process::{ChildStdin, ChildStdout};
 use tokio::io::BufReader;
 use serde_json::Value;
@@ -5,16 +6,18 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub struct LspClient {
-    stdin: Arc<Mutex<ChildStdin>>,
-    stdout: Arc<Mutex<BufReader<ChildStdout>>>,
+    client: Arc<Mutex<Client<ChildStdin, BufReader<ChildStdout>>>>,
     capabilities: Arc<Mutex<Option<Value>>>,
 }
 
 impl LspClient {
     // Create a new LspClient instance
     pub fn new(stdin: ChildStdin, stdout: ChildStdout) -> Self {
-        // Initialize the LspClient struct
-        unimplemented!()
+        let client = Client::new(stdin, BufReader::new(stdout));
+        LspClient {
+            client: Arc::new(Mutex::new(client)),
+            capabilities: Arc::new(Mutex::new(None)),
+        }
     }
 
     // Initialize the LSP connection
@@ -49,7 +52,14 @@ impl LspClient {
 
     // Shutdown the LSP connection
     pub async fn shutdown(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // Send shutdown request and exit notification
-        unimplemented!()
+        // Send shutdown request
+        let shutdown_request = Request::new("shutdown", serde_json::Value::Null);
+        self.client.lock().await.send_request(shutdown_request).await?;
+
+        // Send exit notification
+        let exit_notification = Request::notification("exit", serde_json::Value::Null);
+        self.client.lock().await.send_notification(exit_notification).await?;
+
+        Ok(())
     }
 }
