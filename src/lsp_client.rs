@@ -1,6 +1,6 @@
 use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
-use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, AsyncBufReadExt};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -114,7 +114,7 @@ impl LspClient {
         Ok(())
     }
 
-    pub async fn shutdown(&self) -> Result<(), std::io::Error> {
+    pub async fn shutdown(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Send shutdown request
         self.send_request("shutdown", json!(null)).await?;
         // Send exit notification

@@ -5,6 +5,7 @@ use crate::lsp_client::LspClient;
 use log::{info, error};
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::AsyncRead;
 
 pub struct LspManager {
     clients: HashMap<PathBuf, (LspClient, Child)>,
@@ -38,7 +39,7 @@ impl LspManager {
             let client = LspClient::new(stdin, stdout);
 
             // Log stderr
-            self.log_output(stderr);
+            self.log_output(BufReader::new(stderr));
 
             info!("Initializing LSP client for repo: {:?}", repo_path);
             match client.initialize(&repo_path.to_string_lossy()).await {
@@ -58,7 +59,8 @@ impl LspManager {
         }
     }
 
-    fn log_output(&self, stderr: impl AsyncBufReadExt + Unpin + Send + 'static) {
+    fn log_output(&self, stderr: impl AsyncRead + Unpin + Send + 'static) {
+        let stderr = BufReader::new(stderr);
         tokio::spawn(async move {
             let mut reader = BufReader::new(stderr).lines();
             while let Some(line) = reader.next_line().await.expect("Failed to read line") {
@@ -72,7 +74,7 @@ impl LspManager {
     }
 
     pub async fn stop_lsp_for_repo(&mut self, repo_path: &PathBuf) -> Result<(), std::io::Error> {
-        if let Some((client, child)) = self.clients.remove(repo_path) {
+        if let Some((client, mut child)) = self.clients.remove(repo_path) {
             client.shutdown().await?;
             child.kill().await?;
         }
