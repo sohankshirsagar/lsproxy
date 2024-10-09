@@ -268,9 +268,16 @@ async fn init_lsp(
     }
 }
 
+use log::error;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    println!("Starting main function");
+    std::panic::set_hook(Box::new(|panic_info| {
+        eprintln!("Server panicked: {:?}", panic_info);
+    }));
+
+    env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Starting server at http://0.0.0.0:8080");
 
     let app_state = web::Data::new(AppState {
@@ -305,9 +312,12 @@ async fn main() -> std::io::Result<()> {
 
     info!("Server bound to 0.0.0.0:8080");
     info!("Starting server...");
-    let result = server.run().await;
-    info!("Server stopped");
-    result
+    match server.run().await {
+        Ok(_) => info!("Server stopped normally"),
+        Err(e) => error!("Server stopped with error: {:?}", e),
+    }
+
+    Ok(())
 }
 
 #[utoipa::path(
