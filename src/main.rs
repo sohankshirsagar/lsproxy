@@ -1,6 +1,6 @@
 use actix_web::{web, App, HttpServer, HttpResponse};
 use actix_cors::Cors;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tempfile::TempDir;
@@ -12,7 +12,9 @@ use utoipa_swagger_ui::SwaggerUi;
 
 mod lsp_manager;
 mod lsp_client;
+mod types;
 use crate::lsp_manager::LspManager;
+use crate::types::RepoKey;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -42,14 +44,6 @@ struct CloneRequest {
 #[derive(Deserialize, utoipa::ToSchema)]
 struct LspInitRequest {
     repo_key: RepoKey,
-}
-
-#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
-struct RepoKey {
-    id: String,
-    github_url: String,
-    branch: Option<String>,
-    commit: String,
 }
 
 #[derive(Serialize, Clone, utoipa::ToSchema)]
