@@ -13,7 +13,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 mod lsp_manager;
 mod lsp_client;
-use lsp_manager::LspManager;
+use crate::lsp_manager::LspManager;
 
 #[derive(OpenApi)]
 #[openapi(
