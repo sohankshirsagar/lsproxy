@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use log::{error, info};
+use tokio::sync::Mutex;
 
 use crate::lsp_client::LspClient;
 
@@ -16,7 +17,7 @@ impl LspManager {
         }
     }
 
-    pub fn start_lsp(&mut self, id: String, github_url: String, repo_path: String) -> Result<(), String> {
+    pub async fn start_lsp(&mut self, id: String, github_url: String, repo_path: String) -> Result<(), String> {
         let key = (id.clone(), github_url.clone());
 
         if self.clients.contains_key(&key) {
@@ -37,10 +38,19 @@ impl LspManager {
                 }
             };
 
-        let client = Arc::new(Mutex::new(LspClient::new(process)));
-        self.clients.insert(key, client);
+        let client = LspClient::new(process)
+            .map_err(|e| format!("Failed to create LSP client: {}", e))?;
 
-        info!("Started Pyright LSP for repo: {}", github_url);
+        let client = Arc::new(Mutex::new(client));
+        self.clients.insert(key.clone(), client.clone());
+
+        // Initialize the client
+        let mut locked_client = client.lock().await;
+        locked_client.initialize(Some(repo_path))
+            .await
+            .map_err(|e| format!("Failed to initialize LSP client: {}", e))?;
+
+        info!("Started and initialized Pyright LSP for repo: {}", github_url);
         Ok(())
     }
 
