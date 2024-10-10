@@ -26,7 +26,7 @@ use crate::types::{RepoKey, SupportedLSPs};
         get_document_symbols
     ),
     components(
-        schemas(CloneRequest, RepoInfo, LspInitRequest, FunctionDefinitionRequest, SymbolRequest)
+        schemas(CloneRequest, RepoInfo, LspInitRequest)
     ),
     tags(
         (name = "github-clone-api", description = "GitHub Clone API")
@@ -168,7 +168,7 @@ async fn clone_repo(
     clones.insert(repo_key, temp_dir);
 
     info!("Repository cloned successfully. ID: {}, URL: {}, Branch: {:?}, Commit: {}", 
-          info.id, info.github_url, repo_info.branch, repo_info.commit);
+          info.id, info.github_url, repo_info.repo_key.branch, repo_info.repo_key.commit);
     HttpResponse::Ok().json(repo_info)
 }
 

@@ -1,8 +1,7 @@
 use std::process::Child;
 use std::io::{BufReader, BufWriter};
-use lsp_types::{InitializeParams, InitializeResult};
+use lsp_types::{InitializeParams, InitializedParams, InitializeResult, ClientCapabilities};
 use jsonrpc::{Client, Transport};
-use serde_json::Value;
 
 pub struct LspClient {
     process: Child,
@@ -36,7 +35,7 @@ impl LspClient {
         };
 
         let initialize_result: InitializeResult = self.rpc_client
-            .request("initialize", &params)
+            .send_request("initialize", &params)
             .await
             .map_err(|e| format!("Failed to initialize language server: {}", e))?;
 
@@ -48,7 +47,7 @@ impl LspClient {
     }
 
     pub async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.rpc_client.request::<(), ()>("shutdown", ())
+        self.rpc_client.send_request::<(), ()>("shutdown", ())
             .await
             .map_err(|e| format!("Failed to shutdown language server: {}", e))?;
 
