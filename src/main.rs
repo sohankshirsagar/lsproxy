@@ -7,7 +7,6 @@ use tempfile::TempDir;
 use git2::{Repository, BranchType};
 use log::{info, error, debug};
 use env_logger::Env;
-use std::path::PathBuf;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -40,39 +39,28 @@ struct CloneRequest {
     reference: Option<String>,
 }
 
-#[derive(Serialize, Clone, utoipa::ToSchema)]
-struct RepoInfo {
+#[derive(Deserialize, utoipa::ToSchema)]
+struct LspInitRequest {
+    repo_key: RepoKey,
+}
+
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
+struct RepoKey {
     id: String,
     github_url: String,
     branch: Option<String>,
     commit: String,
+}
+
+#[derive(Serialize, Clone, utoipa::ToSchema)]
+struct RepoInfo {
+    repo_key: RepoKey,
     temp_dir: String,
 }
 
-#[derive(Deserialize, utoipa::ToSchema)]
-struct LspInitRequest {
-    id: String,
-    github_url: String,
-}
-
-#[derive(Deserialize, utoipa::ToSchema)]
-struct FunctionDefinitionRequest {
-    id: String,
-    github_url: String,
-    file_path: String,
-    line: u32,
-    character: u32,
-}
-
-#[derive(Deserialize, utoipa::ToSchema)]
-struct SymbolRequest {
-    id: String,
-    github_url: String,
-    file_path: String,
-}
 
 struct AppState {
-    clones: Mutex<HashMap<String, HashMap<String, (TempDir, RepoInfo)>>>,
+    clones: Mutex<HashMap<RepoKey, TempDir>>,
     lsp_manager: Arc<Mutex<LspManager>>,
 }
 
@@ -169,19 +157,20 @@ async fn clone_repo(
         }
     };
 
-    let repo_info = RepoInfo {
+    let repo_key = RepoKey {
         id: info.id.clone(),
         github_url: info.github_url.clone(),
-        branch,
-        commit,
+        branch: branch.clone(),
+        commit: commit.clone(),
+    };
+
+    let repo_info = RepoInfo {
+        repo_key: repo_key.clone(),
         temp_dir: temp_dir.path().to_string_lossy().into_owned(),
     };
 
     let mut clones = data.clones.lock().unwrap();
-    clones
-        .entry(info.id.clone())
-        .or_insert_with(HashMap::new)
-        .insert(info.github_url.clone(), (temp_dir, repo_info.clone()));
+    clones.insert(repo_key, temp_dir);
 
     info!("Repository cloned successfully. ID: {}, URL: {}, Branch: {:?}, Commit: {}", 
           info.id, info.github_url, repo_info.branch, repo_info.commit);
@@ -199,25 +188,6 @@ fn checkout_reference(repo: &Repository, reference: &str) -> Result<(), git2::Er
         repo.set_head(branch.get().name().unwrap())?;
     }
     Ok(())
-}
-
-#[utoipa::path(
-    get,
-    path = "/list",
-    responses(
-        (status = 200, description = "List of cloned repositories", body = Vec<RepoInfo>)
-    )
-)]
-async fn list_repos(data: web::Data<AppState>) -> HttpResponse {
-    let clones = data.clones.lock().unwrap();
-    let repo_list: Vec<RepoInfo> = clones
-        .iter()
-        .flat_map(|(_, repos)| {
-            repos.values().map(|(_, repo_info)| repo_info.clone())
-        })
-        .collect();
-
-    HttpResponse::Ok().json(repo_list)
 }
 
 #[utoipa::path(
@@ -302,10 +272,7 @@ async fn main() -> std::io::Result<()> {
                     .url("/api-docs/openapi.json", openapi.clone())
             )
             .service(web::resource("/clone").route(web::post().to(clone_repo)))
-            .service(web::resource("/list").route(web::get().to(list_repos)))
             .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
-            .service(web::resource("/function-definition").route(web::post().to(get_function_definition)))
-            .service(web::resource("/document-symbols").route(web::post().to(get_document_symbols)))
     })
     .bind("0.0.0.0:8080")?;
 
@@ -313,42 +280,4 @@ async fn main() -> std::io::Result<()> {
     println!("Server is about to start running...");
 
     server.run().await
-}
-
-#[utoipa::path(
-    post,
-    path = "/function-definition",
-    request_body = FunctionDefinitionRequest,
-    responses(
-        (status = 200, description = "Function definition retrieved successfully"),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-async fn get_function_definition(
-    _data: web::Data<AppState>,
-    info: web::Json<FunctionDefinitionRequest>,
-) -> HttpResponse {
-    info!("Received function definition request for ID: {}, URL: {}", info.id, info.github_url);
-    // TODO: Implement function definition retrieval
-    HttpResponse::Ok().body("Function definition retrieval not implemented yet")
-}
-
-#[utoipa::path(
-    post,
-    path = "/document-symbols",
-    request_body = SymbolRequest,
-    responses(
-        (status = 200, description = "Document symbols retrieved successfully"),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-async fn get_document_symbols(
-    _data: web::Data<AppState>,
-    info: web::Json<SymbolRequest>,
-) -> HttpResponse {
-    info!("Received document symbols request for ID: {}, URL: {}, File: {}", info.id, info.github_url, info.file_path);
-    // TODO: Implement document symbols retrieval
-    HttpResponse::Ok().body("Document symbols retrieval not implemented yet")
 }

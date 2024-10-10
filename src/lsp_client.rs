@@ -26,12 +26,23 @@ impl LspClient {
 
     pub async fn initialize(&mut self, root_uri: Option<String>) -> Result<InitializeResult, Box<dyn std::error::Error>> {
         let params = InitializeParams {
-            root_uri: root_uri.map(|uri| url::Url::parse(&uri).unwrap()),
+            root_uri: root_uri.map(|uri| url::Url::parse(&uri).map_err(|e| format!("Invalid root URI: {}", e))?),
+            capabilities: ClientCapabilities {
+                // Fill in the capabilities your client supports
+                ..Default::default()
+            },
+            // Add other necessary fields
             ..Default::default()
         };
 
-        let result: Value = self.rpc_client.request("initialize", &params).await?;
-        let initialize_result: InitializeResult = serde_json::from_value(result)?;
+        let initialize_result: InitializeResult = self.rpc_client
+            .request("initialize", &params)
+            .await
+            .map_err(|e| format!("Failed to initialize language server: {}", e))?;
+
+        self.rpc_client.notify("initialized", InitializedParams {})
+            .await
+            .map_err(|e| format!("Failed to send initialized notification: {}", e))?;
 
         Ok(initialize_result)
     }
