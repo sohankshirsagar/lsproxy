@@ -201,18 +201,23 @@ async fn init_lsp(
 ) -> HttpResponse {
     info!("Received LSP init request for repo: {:?}", info.repo_key);
 
-    let clones = data.clones.lock().unwrap();
-    let temp_dir = match clones.get(&info.repo_key) {
-        Some(dir) => dir,
-        None => {
-            return HttpResponse::BadRequest().body("Repository not found");
+    let temp_dir = {
+        let clones = data.clones.lock().unwrap();
+        match clones.get(&info.repo_key) {
+            Some(dir) => dir.path().to_string_lossy().into_owned(),
+            None => {
+                return HttpResponse::BadRequest().body("Repository not found");
+            }
         }
     };
 
-    let mut lsp_manager = data.lsp_manager.lock().unwrap();
-    match lsp_manager.start_lsps(info.repo_key.clone(), temp_dir.path().to_string_lossy().into_owned(), &info.lsp_types).await {
+    let lsp_manager = data.lsp_manager.clone();
+    match lsp_manager.lock().unwrap().start_lsps(info.repo_key.clone(), temp_dir, &info.lsp_types).await {
         Ok(_) => HttpResponse::Ok().body("LSP initialized successfully"),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e)),
+        Err(e) => {
+            error!("Failed to initialize LSP: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e))
+        },
     }
 }
 

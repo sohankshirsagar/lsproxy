@@ -26,7 +26,7 @@ impl LspClient {
 
     pub async fn initialize(&mut self, root_uri: Option<String>) -> Result<InitializeResult, Box<dyn std::error::Error>> {
         let params = InitializeParams {
-            root_uri: root_uri.map(|uri| url::Url::parse(&uri).map_err(|e| format!("Invalid root URI: {}", e))?),
+            root_uri: root_uri.map(|uri| url::Url::parse(&uri).map_err(|e| format!("Invalid root URI: {}", e))).transpose()?,
             capabilities: ClientCapabilities {
                 // Fill in the capabilities your client supports
                 ..Default::default()
@@ -45,5 +45,17 @@ impl LspClient {
             .map_err(|e| format!("Failed to send initialized notification: {}", e))?;
 
         Ok(initialize_result)
+    }
+
+    pub async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.rpc_client.request::<(), ()>("shutdown", ())
+            .await
+            .map_err(|e| format!("Failed to shutdown language server: {}", e))?;
+
+        self.rpc_client.notify("exit", ())
+            .await
+            .map_err(|e| format!("Failed to send exit notification: {}", e))?;
+
+        Ok(())
     }
 }

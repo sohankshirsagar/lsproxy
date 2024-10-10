@@ -19,10 +19,14 @@ impl LspManager {
 
     pub async fn start_lsps(&mut self, key: RepoKey, repo_path: String, lsps: &[SupportedLSPs]) -> Result<(), String> {
         for &lsp in lsps {
-            match lsp {
-                SupportedLSPs::Python => self.start_python_lsp(&key, &repo_path).await?,
-                SupportedLSPs::TypeScript => self.start_typescript_lsp(&key, &repo_path).await?,
-                SupportedLSPs::Rust => self.start_rust_lsp(&key, &repo_path).await?,
+            let result = match lsp {
+                SupportedLSPs::Python => self.start_python_lsp(&key, &repo_path).await,
+                SupportedLSPs::TypeScript => self.start_typescript_lsp(&key, &repo_path).await,
+                SupportedLSPs::Rust => self.start_rust_lsp(&key, &repo_path).await,
+            };
+            if let Err(e) = result {
+                error!("Failed to start {:?} LSP: {}", lsp, e);
+                return Err(format!("Failed to start {:?} LSP: {}", lsp, e));
             }
         }
         Ok(())
