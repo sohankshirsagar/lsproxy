@@ -215,3 +215,6 @@ impl LspClient {
         Ok(response)
     }
 }
+fn log_non_json_rpc(&self, stream: &str, message: &str) {
+    debug!("Non-JSON-RPC message from {}: {}", stream, message);
+}
