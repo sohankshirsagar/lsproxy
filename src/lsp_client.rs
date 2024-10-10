@@ -50,18 +50,26 @@ impl LspClient {
             Ok(resp) => resp,
             Err(e) => {
                 error!("Failed to read response: {}", e);
-                return Err(e);
+                return Err(e.into());
             }
         };
 
         debug!("Received response: {:?}", response);
 
-        let result: InitializeResult = serde_json::from_value(response["result"].clone())
-            .map_err(|e| format!("Failed to parse InitializeResult: {}. Response: {:?}", e, response))?;
+        let result: InitializeResult = match serde_json::from_value(response["result"].clone()) {
+            Ok(r) => r,
+            Err(e) => {
+                error!("Failed to parse InitializeResult: {}. Response: {:?}", e, response);
+                return Err(format!("Failed to parse InitializeResult: {}. Response: {:?}", e, response).into());
+            }
+        };
 
         // Send initialized notification
         let notification = self.create_notification("initialized", serde_json::json!({}));
-        self.send_notification(&notification).await?;
+        if let Err(e) = self.send_notification(&notification).await {
+            error!("Failed to send initialized notification: {}", e);
+            return Err(e);
+        }
 
         Ok(result)
     }
@@ -108,25 +116,48 @@ impl LspClient {
     async fn read_response(&mut self) -> Result<Value, Box<dyn std::error::Error>> {
         let mut header = String::new();
         let mut content_length = 0;
+        let mut timeout = tokio::time::interval(tokio::time::Duration::from_secs(1));
 
-        // Read headers asynchronously
-        loop {
-            let bytes_read = self.stdout.read_line(&mut header).await?;
-            if bytes_read == 0 {
-                return Err("Unexpected EOF while reading headers".into());
+        // Read headers asynchronously with a timeout
+        for _ in 0..5 {  // Try for 5 seconds
+            tokio::select! {
+                result = self.stdout.read_line(&mut header) => {
+                    match result {
+                        Ok(0) => {
+                            debug!("Reached EOF while reading headers");
+                            break;
+                        }
+                        Ok(_) => {
+                            debug!("Read header: {}", header.trim());
+                            if header.trim().is_empty() {
+                                break;
+                            }
+                            if header.starts_with("Content-Length: ") {
+                                content_length = header.trim_start_matches("Content-Length: ").trim().parse()?;
+                            }
+                            header.clear();
+                        }
+                        Err(e) => return Err(format!("Error reading header: {}", e).into()),
+                    }
+                }
+                _ = timeout.tick() => {
+                    debug!("Timeout while reading headers");
+                    break;
+                }
             }
-            debug!("Read header: {}", header.trim());
-            if header.trim().is_empty() {
-                break;
-            }
-            if header.starts_with("Content-Length: ") {
-                content_length = header.trim_start_matches("Content-Length: ").trim().parse()?;
-            }
-            header.clear();
         }
 
         if content_length == 0 {
-            return Err("No Content-Length header found".into());
+            debug!("No Content-Length header found. Attempting to read available data.");
+            let mut buffer = Vec::new();
+            let bytes_read = self.stdout.read_to_end(&mut buffer).await?;
+            debug!("Read {} bytes of data without Content-Length", bytes_read);
+            if bytes_read == 0 {
+                return Err("No data available from LSP server".into());
+            }
+            let response: Value = serde_json::from_slice(&buffer)
+                .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&buffer)))?;
+            return Ok(response);
         }
 
         // Read content asynchronously
