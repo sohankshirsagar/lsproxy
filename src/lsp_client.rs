@@ -16,7 +16,9 @@ impl LspClient {
     pub async fn new(mut child: tokio::process::Child) -> Result<Self, Box<dyn std::error::Error>> {
         debug!("Creating new LspClient");
         let stdin = child.stdin.take().ok_or("Failed to open stdin")?;
+        debug!("Opened stdin");
         let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
+        debug!("Opened stdout");
         let stdout = tokio::io::BufReader::new(stdout);
 
         // Check if the child process is still running
