@@ -5,6 +5,24 @@ use serde_json::Value;
 use lsp_types::{InitializeParams, InitializeResult, ClientCapabilities, TextDocumentClientCapabilities, WorkspaceClientCapabilities, WorkspaceFolder};
 use log::{error, debug, warn};
 use tokio::time::Duration;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonRpcMessage {
+    jsonrpc: String,
+    id: Option<serde_json::Value>,
+    method: Option<String>,
+    params: Option<serde_json::Value>,
+    result: Option<serde_json::Value>,
+    error: Option<JsonRpcError>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonRpcError {
+    code: i32,
+    message: String,
+    data: Option<serde_json::Value>,
+}
 
 pub struct LspClient {
     child: tokio::process::Child,
@@ -85,11 +103,17 @@ impl LspClient {
 
         debug!("Received initialize response: {:?}", response);
 
-        let result: InitializeResult = match serde_json::from_value(response["result"].clone()) {
-            Ok(r) => r,
-            Err(e) => {
-                error!("Failed to parse InitializeResult: {}. Response: {:?}", e, response);
-                return Err(format!("Failed to parse InitializeResult: {}. Response: {:?}", e, response).into());
+        let result: InitializeResult = match response.result {
+            Some(result) => match serde_json::from_value(result) {
+                Ok(r) => r,
+                Err(e) => {
+                    error!("Failed to parse InitializeResult: {}. Response: {:?}", e, response);
+                    return Err(format!("Failed to parse InitializeResult: {}. Response: {:?}", e, response).into());
+                }
+            },
+            None => {
+                error!("No result in initialize response: {:?}", response);
+                return Err("No result in initialize response".into());
             }
         };
 
@@ -143,7 +167,7 @@ impl LspClient {
         Ok(())
     }
 
-    async fn read_response(&mut self) -> Result<Value, Box<dyn std::error::Error>> {
+    async fn read_response(&mut self) -> Result<JsonRpcMessage, Box<dyn std::error::Error>> {
         debug!("Starting to read response from LSP server");
         let mut content_length: Option<usize> = None;
         let mut buffer = Vec::new();
@@ -168,7 +192,7 @@ impl LspClient {
                                     self.stdout.read_exact(&mut content).await?;
                                     debug!("Read JSON content: {}", String::from_utf8_lossy(&content));
                                     
-                                    let response: Value = serde_json::from_slice(&content)
+                                    let response: JsonRpcMessage = serde_json::from_slice(&content)
                                         .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
                                     
                                     debug!("Successfully parsed JSON response");
