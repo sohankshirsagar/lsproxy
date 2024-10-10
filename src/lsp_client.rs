@@ -25,6 +25,7 @@ impl LspClient {
     }
 
     pub async fn initialize(&mut self, repo_path: Option<String>) -> Result<InitializeResult, Box<dyn std::error::Error>> {
+        debug!("Initializing LSP client with repo path: {:?}", repo_path);
         let capabilities = ClientCapabilities {
             text_document: Some(TextDocumentClientCapabilities::default()),
             workspace: Some(WorkspaceClientCapabilities::default()),
@@ -44,17 +45,19 @@ impl LspClient {
         }
 
         let request = self.create_request("initialize", serde_json::to_value(params)?);
+        debug!("Sending initialize request: {}", request);
         self.send_request(&request).await?;
 
+        debug!("Waiting for initialize response...");
         let response = match self.read_response().await {
             Ok(resp) => resp,
             Err(e) => {
-                error!("Failed to read response: {}", e);
+                error!("Failed to read initialize response: {}", e);
                 return Err(e.into());
             }
         };
 
-        debug!("Received response: {:?}", response);
+        debug!("Received initialize response: {:?}", response);
 
         let result: InitializeResult = match serde_json::from_value(response["result"].clone()) {
             Ok(r) => r,
@@ -64,13 +67,14 @@ impl LspClient {
             }
         };
 
-        // Send initialized notification
+        debug!("Sending initialized notification");
         let notification = self.create_notification("initialized", serde_json::json!({}));
         if let Err(e) = self.send_notification(&notification).await {
             error!("Failed to send initialized notification: {}", e);
             return Err(e);
         }
 
+        debug!("LSP client initialization completed successfully");
         Ok(result)
     }
 
@@ -114,12 +118,14 @@ impl LspClient {
     }
 
     async fn read_response(&mut self) -> Result<Value, Box<dyn std::error::Error>> {
+        debug!("Starting to read response from LSP server");
         let mut header = String::new();
         let mut content_length = 0;
         let mut timeout = tokio::time::interval(tokio::time::Duration::from_secs(1));
 
         // Read headers asynchronously with a timeout
-        for _ in 0..5 {  // Try for 5 seconds
+        for i in 0..5 {  // Try for 5 seconds
+            debug!("Attempt {} to read headers", i + 1);
             tokio::select! {
                 result = self.stdout.read_line(&mut header) => {
                     match result {
@@ -127,17 +133,22 @@ impl LspClient {
                             debug!("Reached EOF while reading headers");
                             break;
                         }
-                        Ok(_) => {
-                            debug!("Read header: {}", header.trim());
+                        Ok(n) => {
+                            debug!("Read header ({} bytes): {}", n, header.trim());
                             if header.trim().is_empty() {
+                                debug!("Empty line found, headers complete");
                                 break;
                             }
                             if header.starts_with("Content-Length: ") {
                                 content_length = header.trim_start_matches("Content-Length: ").trim().parse()?;
+                                debug!("Content-Length found: {}", content_length);
                             }
                             header.clear();
                         }
-                        Err(e) => return Err(format!("Error reading header: {}", e).into()),
+                        Err(e) => {
+                            error!("Error reading header: {}", e);
+                            return Err(format!("Error reading header: {}", e).into());
+                        }
                     }
                 }
                 _ = timeout.tick() => {
@@ -153,21 +164,27 @@ impl LspClient {
             let bytes_read = self.stdout.read_to_end(&mut buffer).await?;
             debug!("Read {} bytes of data without Content-Length", bytes_read);
             if bytes_read == 0 {
+                error!("No data available from LSP server");
                 return Err("No data available from LSP server".into());
             }
+            debug!("Attempting to parse JSON from buffer");
             let response: Value = serde_json::from_slice(&buffer)
                 .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&buffer)))?;
             return Ok(response);
         }
 
+        debug!("Reading content with length: {}", content_length);
         // Read content asynchronously
         let mut content = vec![0; content_length];
         self.stdout.read_exact(&mut content).await?;
 
         debug!("Read content: {}", String::from_utf8_lossy(&content));
 
+        debug!("Parsing JSON content");
         let response: Value = serde_json::from_slice(&content)
             .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
+        
+        debug!("Successfully parsed JSON response");
         Ok(response)
     }
 }
