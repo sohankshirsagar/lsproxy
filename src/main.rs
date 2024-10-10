@@ -23,7 +23,7 @@ use crate::types::{RepoKey, SupportedLSPs};
         init_lsp,
     ),
     components(
-        schemas(CloneRequest, RepoInfo, LspInitRequest)
+        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest)
     ),
     tags(
         (name = "github-clone-api", description = "GitHub Clone API")

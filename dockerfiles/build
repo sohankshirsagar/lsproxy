@@ -1,0 +1,21 @@
+FROM rust:1.74-slim-buster as builder
+
+# Set the working directory in the container
+WORKDIR /usr/src/app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    pkg-config \
+    libssl-dev
+# Copy only the Cargo.toml and Cargo.lock first to cache dependencies
+COPY Cargo.toml Cargo.lock ./
+
+# Create a dummy source file to trick Cargo into downloading dependencies
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+
+# Download the dependencies (this will be cached as long as Cargo.toml and Cargo.lock don't change)
+RUN cargo build --release
+
+# Build the application
+CMD /bin/bash -c "touch Cargo.toml Cargo.lock && cargo build"
