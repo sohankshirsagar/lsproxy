@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::process::Stdio; // Use std::process::Stdio for piping
+use std::process::Stdio;
 use log::{error, info, warn};
 use tokio::sync::Mutex;
-use tokio::process::Command; // Use tokio's Command for async process spawning
+use tokio::process::Command;
+use tokio::io::{AsyncBufReadExt, BufReader};
 use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
 
@@ -35,12 +36,12 @@ impl LspManager {
 
     async fn start_python_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<(), String> {
         // Spawn the LSP server using tokio's async process
-        let process = match Command::new("pyright-langserver")
+        let mut process = match Command::new("pyright-langserver")
             .arg("--stdio")
             .current_dir(repo_path)
-            .stdin(Stdio::piped())    // Use std::process::Stdio
-            .stdout(Stdio::piped())   // Use std::process::Stdio
-            .stderr(Stdio::piped())   // Use std::process::Stdio
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .spawn() {
                 Ok(child) => child,
                 Err(e) => {
@@ -48,6 +49,28 @@ impl LspManager {
                     return Err(format!("Failed to start Pyright LSP: {}", e));
                 }
             };
+
+        // Pipe stdout
+        if let Some(stdout) = process.stdout.take() {
+            let stdout_reader = BufReader::new(stdout);
+            tokio::spawn(async move {
+                let mut lines = stdout_reader.lines();
+                while let Ok(Some(line)) = lines.next_line().await {
+                    println!("LSP stdout: {}", line);
+                }
+            });
+        }
+
+        // Pipe stderr
+        if let Some(stderr) = process.stderr.take() {
+            let stderr_reader = BufReader::new(stderr);
+            tokio::spawn(async move {
+                let mut lines = stderr_reader.lines();
+                while let Ok(Some(line)) = lines.next_line().await {
+                    eprintln!("LSP stderr: {}", line);
+                }
+            });
+        }
 
         self.create_and_initialize_client(key.clone(), SupportedLSPs::Python, process, repo_path.to_string()).await
     }
