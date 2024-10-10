@@ -1,4 +1,4 @@
-use std::process::{Child};
+use std::process::Child;
 use std::io::Write;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 use serde_json::{json, Value};
@@ -9,7 +9,6 @@ use lsp_types::{
 };
 use futures::channel::mpsc::{channel, Sender, Receiver};
 use futures::{SinkExt, StreamExt};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub struct LspClient {
     process: Child,
