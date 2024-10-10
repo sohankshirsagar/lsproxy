@@ -261,6 +261,7 @@ async fn init_lsp(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting main function");
+    eprintln!("This is a test error message");
 
     // Set up panic hook
     std::panic::set_hook(Box::new(|panic_info| {
@@ -269,6 +270,7 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize logger
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
+    println!("Logger initialized");
     info!("Logger initialized");
 
     // Initialize app state
