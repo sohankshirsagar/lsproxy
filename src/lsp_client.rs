@@ -3,6 +3,7 @@ use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
 use serde_json::Value;
 use lsp_types::{InitializeParams, InitializeResult, ClientCapabilities, TextDocumentClientCapabilities, WorkspaceClientCapabilities, WorkspaceFolder};
+use log::{error, debug};
 
 pub struct LspClient {
     child: tokio::process::Child,
@@ -45,8 +46,18 @@ impl LspClient {
         let request = self.create_request("initialize", serde_json::to_value(params)?);
         self.send_request(&request).await?;
 
-        let response = self.read_response().await?;
-        let result: InitializeResult = serde_json::from_value(response["result"].clone())?;
+        let response = match self.read_response().await {
+            Ok(resp) => resp,
+            Err(e) => {
+                error!("Failed to read response: {}", e);
+                return Err(e);
+            }
+        };
+
+        debug!("Received response: {:?}", response);
+
+        let result: InitializeResult = serde_json::from_value(response["result"].clone())
+            .map_err(|e| format!("Failed to parse InitializeResult: {}. Response: {:?}", e, response))?;
 
         // Send initialized notification
         let notification = self.create_notification("initialized", serde_json::json!({}));
@@ -100,7 +111,11 @@ impl LspClient {
 
         // Read headers asynchronously
         loop {
-            self.stdout.read_line(&mut header).await?;
+            let bytes_read = self.stdout.read_line(&mut header).await?;
+            if bytes_read == 0 {
+                return Err("Unexpected EOF while reading headers".into());
+            }
+            debug!("Read header: {}", header.trim());
             if header.trim().is_empty() {
                 break;
             }
@@ -110,11 +125,18 @@ impl LspClient {
             header.clear();
         }
 
+        if content_length == 0 {
+            return Err("No Content-Length header found".into());
+        }
+
         // Read content asynchronously
         let mut content = vec![0; content_length];
         self.stdout.read_exact(&mut content).await?;
 
-        let response: Value = serde_json::from_slice(&content)?;
+        debug!("Read content: {}", String::from_utf8_lossy(&content));
+
+        let response: Value = serde_json::from_slice(&content)
+            .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
         Ok(response)
     }
 }
