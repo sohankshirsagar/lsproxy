@@ -22,3 +22,4 @@ utoipa = { version = "3.0", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3.0", features = ["actix-web"] }
 rand = "0.8"
 jsonrpc = "0.13.0"
+futures = "0.3"
