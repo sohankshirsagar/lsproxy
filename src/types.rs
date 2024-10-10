@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;
 use strum_macros::{EnumString, Display};
 
-#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize, ToSchema)]
 pub struct RepoKey {
     pub id: String,
     pub github_url: String,
