@@ -145,26 +145,35 @@ impl LspClient {
 
     async fn read_response(&mut self) -> Result<Value, Box<dyn std::error::Error>> {
         debug!("Starting to read response from LSP server");
-        let mut buffer = Vec::new();
         let mut content_length: Option<usize> = None;
+        let mut buffer = Vec::new();
         let mut timeout = tokio::time::interval(Duration::from_secs(5));
 
-        // Read headers and content
         loop {
             tokio::select! {
                 result = self.stdout.read_until(b'\n', &mut buffer) => {
                     match result {
                         Ok(0) => {
                             debug!("Reached EOF");
-                            break;
+                            return Err("Unexpected EOF".into());
                         }
                         Ok(n) => {
                             let line = String::from_utf8_lossy(&buffer[buffer.len() - n..]);
                             debug!("Read line ({} bytes): {}", n, line.trim());
-                        
+
                             if line.trim().is_empty() {
-                                debug!("Empty line found, continuing..");
-                                continue;
+                                if let Some(length) = content_length {
+                                    // Read the JSON content
+                                    let mut content = vec![0; length];
+                                    self.stdout.read_exact(&mut content).await?;
+                                    debug!("Read JSON content: {}", String::from_utf8_lossy(&content));
+                                    
+                                    let response: Value = serde_json::from_slice(&content)
+                                        .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
+                                    
+                                    debug!("Successfully parsed JSON response");
+                                    return Ok(response);
+                                }
                             } else if line.starts_with("Content-Length: ") {
                                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
                                 debug!("Content-Length found: {:?}", content_length);
@@ -195,17 +204,6 @@ impl LspClient {
                 }
             }
         }
-
-        if buffer.is_empty() {
-            error!("No data available from LSP server");
-            return Err("No data available from LSP server".into());
-        }
-
-        debug!("Attempting to parse JSON from buffer");
-        let response: Value = serde_json::from_slice(&buffer)
-            .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&buffer)))?;
-        debug!("Successfully parsed JSON response");
-        Ok(response)
     }
 
     fn log_non_json_rpc(&self, stream: &str, message: &str) {
