@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;
+use strum_macros::{EnumString, Display};
 
 #[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize, ToSchema)]
 pub struct RepoKey {
@@ -9,7 +10,8 @@ pub struct RepoKey {
     pub commit: String,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash)]
+#[strum(serialize_all = "lowercase")]
 pub enum SupportedLSPs {
     Python,
     TypeScript,
