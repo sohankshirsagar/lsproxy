@@ -161,7 +161,7 @@ impl LspClient {
                         Ok(n) => {
                             let line = String::from_utf8_lossy(&buffer[buffer.len() - n..]);
                             debug!("Read line ({} bytes): {}", n, line.trim());
-                            
+                        
                             if line.trim().is_empty() {
                                 debug!("Empty line found, headers complete");
                                 if content_length.is_none() {
@@ -178,6 +178,9 @@ impl LspClient {
                             } else if line.starts_with("Content-Length: ") {
                                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
                                 debug!("Content-Length found: {:?}", content_length);
+                            } else {
+                                // Log non-JSON-RPC messages
+                                self.log_non_json_rpc("stdout", &line);
                             }
                         }
                         Err(e) => {
