@@ -10,20 +10,8 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev
 
-# Copy only the Cargo.toml and Cargo.lock files
-COPY Cargo.toml Cargo.lock ./
-
-# Create a dummy main.rs to build dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-
-# Build dependencies
-RUN cargo build --release
-
-# Remove the dummy main.rs
-RUN rm src/main.rs
-
-# Copy the actual source code
-COPY src ./src
+# Copy the entire project
+COPY . .
 
 # Build the application
 RUN cargo build --release
