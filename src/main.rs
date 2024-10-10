@@ -211,8 +211,12 @@ async fn init_lsp(
         }
     };
 
-    let lsp_manager = data.lsp_manager.clone();
-    match lsp_manager.lock().unwrap().start_lsps(info.repo_key.clone(), temp_dir, &info.lsp_types).await {
+    let result = {
+        let mut lsp_manager = data.lsp_manager.lock().unwrap();
+        lsp_manager.start_lsps(info.repo_key.clone(), temp_dir, &info.lsp_types).await
+    };
+
+    match result {
         Ok(_) => HttpResponse::Ok().body("LSP initialized successfully"),
         Err(e) => {
             error!("Failed to initialize LSP: {}", e);
