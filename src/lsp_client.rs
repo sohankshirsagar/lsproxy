@@ -3,7 +3,8 @@ use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
 use serde_json::Value;
 use lsp_types::{InitializeParams, InitializeResult, ClientCapabilities, TextDocumentClientCapabilities, WorkspaceClientCapabilities, WorkspaceFolder};
-use log::{error, debug};
+use log::{error, debug, warn};
+use tokio::time::Duration;
 
 pub struct LspClient {
     child: tokio::process::Child,
@@ -13,9 +14,20 @@ pub struct LspClient {
 
 impl LspClient {
     pub async fn new(mut child: tokio::process::Child) -> Result<Self, Box<dyn std::error::Error>> {
+        debug!("Creating new LspClient");
         let stdin = child.stdin.take().ok_or("Failed to open stdin")?;
         let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
         let stdout = tokio::io::BufReader::new(stdout);
+
+        // Check if the child process is still running
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                error!("LSP server process exited immediately with status: {:?}", status);
+                return Err("LSP server process exited immediately".into());
+            }
+            Ok(None) => debug!("LSP server process is still running"),
+            Err(e) => warn!("Error checking LSP server process status: {}", e),
+        }
 
         Ok(LspClient {
             child,
@@ -121,16 +133,16 @@ impl LspClient {
         debug!("Starting to read response from LSP server");
         let mut header = String::new();
         let mut content_length = 0;
-        let mut timeout = tokio::time::interval(tokio::time::Duration::from_secs(1));
+        let mut timeout = tokio::time::interval(Duration::from_secs(5));
 
         // Read headers asynchronously with a timeout
-        for i in 0..5 {  // Try for 5 seconds
+        for i in 0..12 {  // Try for 60 seconds (5 seconds * 12 attempts)
             debug!("Attempt {} to read headers", i + 1);
             tokio::select! {
                 result = self.stdout.read_line(&mut header) => {
                     match result {
                         Ok(0) => {
-                            debug!("Reached EOF while reading headers");
+                            warn!("Reached EOF while reading headers");
                             break;
                         }
                         Ok(n) => {
@@ -152,14 +164,23 @@ impl LspClient {
                     }
                 }
                 _ = timeout.tick() => {
-                    debug!("Timeout while reading headers");
-                    break;
+                    warn!("Timeout while reading headers");
+                    // Check if the child process is still running
+                    match self.child.try_wait() {
+                        Ok(Some(status)) => {
+                            error!("LSP server process exited with status: {:?}", status);
+                            return Err("LSP server process exited unexpectedly".into());
+                        }
+                        Ok(None) => warn!("LSP server process is still running, but not responding"),
+                        Err(e) => warn!("Error checking LSP server process status: {}", e),
+                    }
+                    continue;
                 }
             }
         }
 
         if content_length == 0 {
-            debug!("No Content-Length header found. Attempting to read available data.");
+            warn!("No Content-Length header found. Attempting to read available data.");
             let mut buffer = Vec::new();
             let bytes_read = self.stdout.read_to_end(&mut buffer).await?;
             debug!("Read {} bytes of data without Content-Length", bytes_read);
@@ -174,17 +195,26 @@ impl LspClient {
         }
 
         debug!("Reading content with length: {}", content_length);
-        // Read content asynchronously
+        // Read content asynchronously with a timeout
         let mut content = vec![0; content_length];
-        self.stdout.read_exact(&mut content).await?;
-
-        debug!("Read content: {}", String::from_utf8_lossy(&content));
-
-        debug!("Parsing JSON content");
-        let response: Value = serde_json::from_slice(&content)
-            .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
-        
-        debug!("Successfully parsed JSON response");
-        Ok(response)
+        let read_result = tokio::time::timeout(Duration::from_secs(30), self.stdout.read_exact(&mut content)).await;
+        match read_result {
+            Ok(Ok(_)) => {
+                debug!("Read content: {}", String::from_utf8_lossy(&content));
+                debug!("Parsing JSON content");
+                let response: Value = serde_json::from_slice(&content)
+                    .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
+                debug!("Successfully parsed JSON response");
+                Ok(response)
+            }
+            Ok(Err(e)) => {
+                error!("Error reading content: {}", e);
+                Err(format!("Error reading content: {}", e).into())
+            }
+            Err(_) => {
+                error!("Timeout while reading content");
+                Err("Timeout while reading content".into())
+            }
+        }
     }
 }
