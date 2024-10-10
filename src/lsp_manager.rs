@@ -1,21 +1,13 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
-use log::{error, info};
+use log::{error, info, warn};
 use tokio::sync::Mutex;
-use strum_macros::{EnumString, Display};
 use crate::lsp_client::LspClient;
+use crate::types::{RepoKey, SupportedLSPs};
 
 pub struct LspManager {
     clients: HashMap<(RepoKey, SupportedLSPs), Arc<Mutex<LspClient>>>,
-}
-
-#[derive(Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash)]
-#[strum(serialize_all = "lowercase")]
-pub enum SupportedLSPs {
-    Python,
-    TypeScript,
-    Rust,
 }
 
 impl LspManager {

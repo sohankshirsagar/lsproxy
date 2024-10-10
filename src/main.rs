@@ -1,6 +1,6 @@
 use actix_web::{web, App, HttpServer, HttpResponse};
 use actix_cors::Cors;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tempfile::TempDir;
@@ -14,7 +14,7 @@ mod lsp_manager;
 mod lsp_client;
 mod types;
 use crate::lsp_manager::LspManager;
-use crate::types::RepoKey;
+use crate::types::{RepoKey, SupportedLSPs};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -44,6 +44,7 @@ struct CloneRequest {
 #[derive(Deserialize, utoipa::ToSchema)]
 struct LspInitRequest {
     repo_key: RepoKey,
+    lsp_types: Vec<SupportedLSPs>,
 }
 
 #[derive(Serialize, Clone, utoipa::ToSchema)]
@@ -198,25 +199,18 @@ async fn init_lsp(
     data: web::Data<AppState>,
     info: web::Json<LspInitRequest>,
 ) -> HttpResponse {
-    info!("Received LSP init request for ID: {}, URL: {}", info.id, info.github_url);
+    info!("Received LSP init request for repo: {:?}", info.repo_key);
 
     let clones = data.clones.lock().unwrap();
-    let repo_map = match clones.get(&info.id) {
-        Some(map) => map,
-        None => {
-            return HttpResponse::BadRequest().body("No repositories found for the given ID");
-        }
-    };
-
-    let (_, repo_info) = match repo_map.get(&info.github_url) {
-        Some(entry) => entry,
+    let temp_dir = match clones.get(&info.repo_key) {
+        Some(dir) => dir,
         None => {
             return HttpResponse::BadRequest().body("Repository not found");
         }
     };
 
     let mut lsp_manager = data.lsp_manager.lock().unwrap();
-    match lsp_manager.start_lsp(info.id.clone(), info.github_url.clone(), repo_info.temp_dir.clone()) {
+    match lsp_manager.start_lsps(info.repo_key.clone(), temp_dir.path().to_string_lossy().into_owned(), &info.lsp_types).await {
         Ok(_) => HttpResponse::Ok().body("LSP initialized successfully"),
         Err(e) => HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e)),
     }
