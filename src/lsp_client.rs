@@ -131,40 +131,50 @@ impl LspClient {
 
     async fn read_response(&mut self) -> Result<Value, Box<dyn std::error::Error>> {
         debug!("Starting to read response from LSP server");
-        let mut header = String::new();
-        let mut content_length = 0;
+        let mut buffer = Vec::new();
+        let mut content_length: Option<usize> = None;
         let mut timeout = tokio::time::interval(Duration::from_secs(5));
 
-        // Read headers asynchronously with a timeout
-        for i in 0..12 {  // Try for 60 seconds (5 seconds * 12 attempts)
-            debug!("Attempt {} to read headers", i + 1);
+        // Read headers and content
+        loop {
             tokio::select! {
-                result = self.stdout.read_line(&mut header) => {
+                result = self.stdout.read_until(b'\n', &mut buffer) => {
                     match result {
                         Ok(0) => {
-                            warn!("Reached EOF while reading headers");
+                            debug!("Reached EOF");
                             break;
                         }
                         Ok(n) => {
-                            debug!("Read header ({} bytes): {}", n, header.trim());
-                            if header.trim().is_empty() {
+                            let line = String::from_utf8_lossy(&buffer[buffer.len() - n..]);
+                            debug!("Read line ({} bytes): {}", n, line.trim());
+                            
+                            if line.trim().is_empty() {
                                 debug!("Empty line found, headers complete");
+                                if content_length.is_none() {
+                                    warn!("No Content-Length header found. Attempting to parse available data.");
+                                    break;
+                                }
+                                // Read the content
+                                let content_length = content_length.unwrap();
+                                buffer.clear();
+                                buffer.resize(content_length, 0);
+                                self.stdout.read_exact(&mut buffer).await?;
+                                debug!("Read content: {}", String::from_utf8_lossy(&buffer));
                                 break;
+                            } else if line.starts_with("Content-Length: ") {
+                                content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
+                                debug!("Content-Length found: {:?}", content_length);
                             }
-                            if header.starts_with("Content-Length: ") {
-                                content_length = header.trim_start_matches("Content-Length: ").trim().parse()?;
-                                debug!("Content-Length found: {}", content_length);
-                            }
-                            header.clear();
                         }
                         Err(e) => {
-                            error!("Error reading header: {}", e);
-                            return Err(format!("Error reading header: {}", e).into());
+                            error!("Error reading from stdout: {}", e);
+                            return Err(e.into());
                         }
                     }
+                    buffer.clear();
                 }
                 _ = timeout.tick() => {
-                    warn!("Timeout while reading headers");
+                    warn!("Timeout while reading response");
                     // Check if the child process is still running
                     match self.child.try_wait() {
                         Ok(Some(status)) => {
@@ -179,42 +189,15 @@ impl LspClient {
             }
         }
 
-        if content_length == 0 {
-            warn!("No Content-Length header found. Attempting to read available data.");
-            let mut buffer = Vec::new();
-            let bytes_read = self.stdout.read_to_end(&mut buffer).await?;
-            debug!("Read {} bytes of data without Content-Length", bytes_read);
-            if bytes_read == 0 {
-                error!("No data available from LSP server");
-                return Err("No data available from LSP server".into());
-            }
-            debug!("Attempting to parse JSON from buffer");
-            let response: Value = serde_json::from_slice(&buffer)
-                .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&buffer)))?;
-            return Ok(response);
+        if buffer.is_empty() {
+            error!("No data available from LSP server");
+            return Err("No data available from LSP server".into());
         }
 
-        debug!("Reading content with length: {}", content_length);
-        // Read content asynchronously with a timeout
-        let mut content = vec![0; content_length];
-        let read_result = tokio::time::timeout(Duration::from_secs(30), self.stdout.read_exact(&mut content)).await;
-        match read_result {
-            Ok(Ok(_)) => {
-                debug!("Read content: {}", String::from_utf8_lossy(&content));
-                debug!("Parsing JSON content");
-                let response: Value = serde_json::from_slice(&content)
-                    .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
-                debug!("Successfully parsed JSON response");
-                Ok(response)
-            }
-            Ok(Err(e)) => {
-                error!("Error reading content: {}", e);
-                Err(format!("Error reading content: {}", e).into())
-            }
-            Err(_) => {
-                error!("Timeout while reading content");
-                Err("Timeout while reading content".into())
-            }
-        }
+        debug!("Attempting to parse JSON from buffer");
+        let response: Value = serde_json::from_slice(&buffer)
+            .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&buffer)))?;
+        debug!("Successfully parsed JSON response");
+        Ok(response)
     }
 }
