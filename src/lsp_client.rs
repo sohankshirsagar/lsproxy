@@ -22,8 +22,8 @@ impl LspClient {
         let stdin = process.stdin.take().expect("Failed to get stdin");
         let stdout = process.stdout.take().expect("Failed to get stdout");
         
-        let (tx_writer, mut rx_writer) = channel(32);
-        let (mut tx_reader, rx_reader) = channel(32);
+        let (tx_writer, mut rx_writer) = channel::<String>(32);
+        let (mut tx_reader, rx_reader) = channel::<String>(32);
 
         tokio::spawn(async move {
             let mut writer = BufWriter::new(stdin);
