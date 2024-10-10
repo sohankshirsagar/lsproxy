@@ -57,8 +57,9 @@ COPY --from=builder /usr/src/app/target/release/github-clone-server .
 # Document that the container listens on port 8080
 EXPOSE 8080
 
-# Set environment variable for logging
+# Set environment variables for logging and backtrace
 ENV RUST_LOG=debug
+ENV RUST_BACKTRACE=1
 
 # Run the server directly
 CMD ["./github-clone-server"]
