@@ -19,7 +19,19 @@ impl LspClient {
         debug!("Opened stdin");
         let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
         debug!("Opened stdout");
+        let stderr = child.stderr.take().ok_or("Failed to open stderr")?;
+        debug!("Opened stderr");
+
         let stdout = tokio::io::BufReader::new(stdout);
+
+        // Pipe stderr
+        let stderr_reader = tokio::io::BufReader::new(stderr);
+        tokio::spawn(async move {
+            let mut lines = stderr_reader.lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                eprintln!("LSP stderr: {}", line);
+            }
+        });
 
         // Check if the child process is still running
         match child.try_wait() {
