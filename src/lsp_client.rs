@@ -1,5 +1,6 @@
 use std::process::{Child};
-use std::io::{BufReader, BufWriter, Write};
+use std::io::Write;
+use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 use serde_json::{json, Value};
 use lsp_types::{
     InitializeParams, InitializedParams, InitializeResult, 
@@ -26,7 +27,7 @@ impl LspClient {
         let (mut tx_reader, rx_reader) = channel::<String>(32);
 
         tokio::spawn(async move {
-            let mut writer = BufWriter::new(stdin);
+            let mut writer = tokio::io::BufWriter::new(stdin);
             while let Some(message) = rx_writer.next().await {
                 writer.write_all(message.as_bytes()).await.expect("Failed to write to stdin");
                 writer.flush().await.expect("Failed to flush stdin");
