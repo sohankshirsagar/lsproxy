@@ -103,8 +103,8 @@ impl LspClient {
 
         debug!("Received initialize response: {:?}", response);
 
-        let result: InitializeResult = match response.result {
-            Some(result) => match serde_json::from_value(result) {
+        let result: InitializeResult = match &response.result {
+            Some(result) => match serde_json::from_value(result.clone()) {
                 Ok(r) => r,
                 Err(e) => {
                     error!("Failed to parse InitializeResult: {}. Response: {:?}", e, response);
