@@ -163,18 +163,8 @@ impl LspClient {
                             debug!("Read line ({} bytes): {}", n, line.trim());
                         
                             if line.trim().is_empty() {
-                                debug!("Empty line found, headers complete");
-                                if content_length.is_none() {
-                                    warn!("No Content-Length header found. Attempting to parse available data.");
-                                    break;
-                                }
-                                // Read the content
-                                let content_length = content_length.unwrap();
-                                buffer.clear();
-                                buffer.resize(content_length, 0);
-                                self.stdout.read_exact(&mut buffer).await?;
-                                debug!("Read content: {}", String::from_utf8_lossy(&buffer));
-                                break;
+                                debug!("Empty line found, continuing..");
+                                continue;
                             } else if line.starts_with("Content-Length: ") {
                                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
                                 debug!("Content-Length found: {:?}", content_length);
@@ -217,7 +207,8 @@ impl LspClient {
         debug!("Successfully parsed JSON response");
         Ok(response)
     }
-}
-fn log_non_json_rpc(&self, stream: &str, message: &str) {
-    debug!("Non-JSON-RPC message from {}: {}", stream, message);
+
+    fn log_non_json_rpc(&self, stream: &str, message: &str) {
+        debug!("Non-JSON-RPC message from {}: {}", stream, message);
+    }
 }
