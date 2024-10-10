@@ -20,10 +20,7 @@ use crate::types::{RepoKey, SupportedLSPs};
 #[openapi(
     paths(
         clone_repo,
-        list_repos,
         init_lsp,
-        get_function_definition,
-        get_document_symbols
     ),
     components(
         schemas(CloneRequest, RepoInfo, LspInitRequest)

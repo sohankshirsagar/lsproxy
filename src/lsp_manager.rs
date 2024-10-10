@@ -1,8 +1,9 @@
 use std::collections::HashMap;
-use std::process::{Command, Stdio};
 use std::sync::Arc;
+use std::process::Stdio; // Use std::process::Stdio for piping
 use log::{error, info, warn};
 use tokio::sync::Mutex;
+use tokio::process::Command; // Use tokio's Command for async process spawning
 use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
 
@@ -33,12 +34,13 @@ impl LspManager {
     }
 
     async fn start_python_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<(), String> {
+        // Spawn the LSP server using tokio's async process
         let process = match Command::new("pyright-langserver")
             .arg("--stdio")
             .current_dir(repo_path)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stdin(Stdio::piped())    // Use std::process::Stdio
+            .stdout(Stdio::piped())   // Use std::process::Stdio
+            .stderr(Stdio::piped())   // Use std::process::Stdio
             .spawn() {
                 Ok(child) => child,
                 Err(e) => {
@@ -60,8 +62,10 @@ impl LspManager {
         Err("Rust LSP not implemented".to_string())
     }
 
-    async fn create_and_initialize_client(&mut self, key: RepoKey, lsp_type: SupportedLSPs, process: std::process::Child, repo_path: String) -> Result<(), String> {
+    async fn create_and_initialize_client(&mut self, key: RepoKey, lsp_type: SupportedLSPs, process: tokio::process::Child, repo_path: String) -> Result<(), String> {
+        // Await the async function LspClient::new
         let client = LspClient::new(process)
+            .await
             .map_err(|e| format!("Failed to create LSP client: {}", e))?;
         let client = Arc::new(Mutex::new(client));
         self.clients.insert((key.clone(), lsp_type), client.clone());
