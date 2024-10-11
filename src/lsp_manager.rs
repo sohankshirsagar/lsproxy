@@ -11,6 +11,7 @@ use crate::types::{RepoKey, SupportedLSPs};
 use std::fs::File;
 use std::io::Read;
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};
+use crate::symbol_finder::python_symbol_finder;
 
 pub struct LspManager {
     clients: HashMap<(RepoKey, SupportedLSPs), Arc<Mutex<LspClient>>>,
@@ -72,23 +73,47 @@ impl LspManager {
 
     pub async fn get_definition(&self, key: &RepoKey, file_path: &str, symbol_name: &str) -> Result<Vec<GotoDefinitionResponse>, Box<dyn std::error::Error>> {
         let mut definitions = Vec::new();
-        if let Some(client) = self.get_client(key, self.detect_language(file_path)?) {
+        let lsp_type = self.detect_language(file_path)?;
+        
+        if let Some(client) = self.get_client(key, lsp_type) {
+            let occurrences = python_symbol_finder::find_symbol_occurrences(file_path, symbol_name)?;
+            
+            if occurrences.is_empty() {
+                info!("No occurrences of symbol '{}' found in file '{}'", symbol_name, file_path);
+                return Ok(vec![]);
+            }
+            
+            info!("Found {} occurrences of symbol '{}' in file '{}'", occurrences.len(), symbol_name, file_path);
+            
             let mut locked_client = client.lock().await;
-            let symbols = locked_client.get_symbols(file_path).await?;
-
-            if let DocumentSymbolResponse::Flat(symbols) = symbols {
-                for symbol in symbols {
-                    if symbol.name == symbol_name {
-                        let definition = locked_client.get_definition(
-                            file_path,
-                            symbol.location.range.start.line,
-                            symbol.location.range.start.character
-                        ).await?;
+            
+            for occurrence in occurrences {
+                match locked_client.get_definition(
+                    file_path,
+                    occurrence.start_line as u32 - 1,  // LSP uses 0-based line numbers
+                    occurrence.start_column as u32 - 1 // LSP uses 0-based column numbers
+                ).await {
+                    Ok(definition) => {
+                        info!("Found definition for symbol '{}' at line {}, column {}", 
+                              symbol_name, occurrence.start_line, occurrence.start_column);
                         definitions.push(definition);
+                    },
+                    Err(e) => {
+                        warn!("Failed to get definition for symbol '{}' at line {}, column {}: {}", 
+                              symbol_name, occurrence.start_line, occurrence.start_column, e);
                     }
                 }
             }
+        } else {
+            warn!("No LSP client found for file type {:?}", lsp_type);
         }
+        
+        if definitions.is_empty() {
+            info!("No definitions found for symbol '{}'", symbol_name);
+        } else {
+            info!("Found {} definition(s) for symbol '{}'", definitions.len(), symbol_name);
+        }
+        
         Ok(definitions)
     }
 
