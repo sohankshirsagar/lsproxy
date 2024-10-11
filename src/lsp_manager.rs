@@ -8,7 +8,7 @@ use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
 use std::fs::File;
 use std::io::Read;
-use lsp_types::DocumentSymbolResponse;
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, SymbolInformation};
 
 pub struct LspManager {
     clients: HashMap<(RepoKey, SupportedLSPs), Arc<Mutex<LspClient>>>,
@@ -126,5 +126,29 @@ impl LspManager {
     fn detect_language(&self, _content: &str) -> SupportedLSPs {
         // For now, always return Python
         SupportedLSPs::Python
+    }
+
+    pub async fn get_definition(&self, key: &RepoKey, file_path: &str, symbol_name: &str) -> Result<Vec<GotoDefinitionResponse>, Box<dyn std::error::Error>> {
+        let symbols = self.get_symbols(key, file_path).await?;
+        
+        let mut definitions = Vec::new();
+
+        if let DocumentSymbolResponse::Flat(symbols) = symbols {
+            for symbol in symbols {
+                if symbol.name == symbol_name {
+                    if let Some(client) = self.get_client(key, self.detect_language("")) {
+                        let mut locked_client = client.lock().await;
+                        let definition = locked_client.get_definition(
+                            file_path,
+                            symbol.location.range.start.line,
+                            symbol.location.range.start.character
+                        ).await?;
+                        definitions.push(definition);
+                    }
+                }
+            }
+        }
+
+        Ok(definitions)
     }
 }
