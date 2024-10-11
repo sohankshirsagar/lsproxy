@@ -37,10 +37,11 @@ impl LspManager {
     }
 
     async fn start_python_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<(), String> {
+        let python_path = self.find_python_root(repo_path).await;
         // Spawn the LSP server using tokio's async process
         let process = match Command::new("pyright-langserver")
             .arg("--stdio")
-            .current_dir(repo_path)
+            .current_dir(python_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -57,11 +58,13 @@ impl LspManager {
 
     async fn start_typescript_lsp(&mut self, _key: &RepoKey, repo_path: &str) -> Result<(), String> {
         warn!("TypeScript LSP start requested but not implemented for repo: {}", repo_path);
+        let _typescript_path = self.find_typescript_root(repo_path);
         Err("TypeScript LSP not implemented".to_string())
     }
 
     async fn start_rust_lsp(&mut self, _key: &RepoKey, repo_path: &str) -> Result<(), String> {
         warn!("Rust LSP start requested but not implemented for repo: {}", repo_path);
+        let _rust_path = self.find_rust_root(repo_path);
         Err("Rust LSP not implemented".to_string())
     }
 
@@ -81,6 +84,21 @@ impl LspManager {
 
         info!("Started and initialized {:?} LSP for repo: {}", lsp_type, repo_path);
         Ok(())
+    }
+
+    async fn find_python_root(&mut self, repo_path: &str) -> String {
+        //TODO Actually find and verify
+        repo_path.to_string()
+    }
+
+    async fn find_typescript_root(&mut self, repo_path: &str) -> String {
+        //TODO Actually find and verify
+        repo_path.to_string()
+    }
+
+    async fn find_rust_root(&mut self, repo_path: &str) -> String{
+        //TODO Actually find and verify
+        repo_path.to_string()
     }
 
     pub fn get_client(&self, key: &RepoKey, lsp_type: SupportedLSPs) -> Option<Arc<Mutex<LspClient>>> {
