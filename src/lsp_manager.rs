@@ -213,11 +213,11 @@ impl LspManager {
     }
 
     async fn find_typescript_root(&mut self, repo_path: &str) -> String {
-        let tsconfig_files = self.find_tsconfig_files(repo_path);
-        match tsconfig_files.first() {
-            Some(path) => path.parent().unwrap_or(PathBuf::from(repo_path)).to_string_lossy().into_owned(),
-            None => repo_path.to_string(),
-        }
+        self.find_tsconfig_files(repo_path)
+            .first()
+            .and_then(|path| path.parent())
+            .map(|path| path.to_string_lossy().into_owned())
+            .unwrap_or_else(|| repo_path.to_string())
     }
 
     fn find_tsconfig_files(&self, dir: &str) -> Vec<PathBuf> {
