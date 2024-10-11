@@ -7,6 +7,9 @@ use tokio::process::Command;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
+use std::fs::File;
+use std::io::Read;
+use lsp_types::DocumentSymbolResponse;
 
 pub struct LspManager {
     clients: HashMap<(RepoKey, SupportedLSPs), Arc<Mutex<LspClient>>>,
@@ -83,5 +86,34 @@ impl LspManager {
 
     pub fn get_client(&self, key: &RepoKey, lsp_type: SupportedLSPs) -> Option<Arc<Mutex<LspClient>>> {
         self.clients.get(&(key.clone(), lsp_type)).cloned()
+    }
+
+    pub async fn get_symbols(&self, key: &RepoKey, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
+        // Open the file
+        let mut file = File::open(file_path)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+
+        // Detect the language (for now, always return Python)
+        let language = self.detect_language(&content);
+
+        // Get the correct LSP client
+        let lsp_type = match language.as_str() {
+            "python" => SupportedLSPs::Python,
+            // Add more languages here as needed
+            _ => return Err("Unsupported language".into()),
+        };
+
+        let client = self.get_client(key, lsp_type)
+            .ok_or("LSP client not found")?;
+
+        // Call get_symbols on the LSP client
+        let mut locked_client = client.lock().await;
+        locked_client.get_symbols(file_path).await
+    }
+
+    fn detect_language(&self, _content: &str) -> String {
+        // For now, always return Python
+        "python".to_string()
     }
 }
