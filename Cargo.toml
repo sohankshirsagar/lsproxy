@@ -1,5 +1,5 @@
 [package]
-name = "github-clone-server"
+name = "lsp-adapter-server"
 version = "0.1.0"
 edition = "2021"
 
@@ -23,3 +23,4 @@ futures = "0.3"
 lsp-types = "0.94"
 tree-sitter = "0.20"
 tree-sitter-python = "0.20"
+glob = "0.3.1"

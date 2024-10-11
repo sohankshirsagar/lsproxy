@@ -1,9 +1,9 @@
 use log::{debug, error, warn};
 use lsp_types::{
-    ClientCapabilities, DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams,
-    GotoDefinitionResponse, InitializeParams, InitializeResult, Position,
-    TextDocumentClientCapabilities, TextDocumentPositionParams, Url, WorkspaceClientCapabilities,
-    WorkspaceFolder,
+    ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolParams, DocumentSymbolResponse,
+    GotoDefinitionParams, GotoDefinitionResponse, InitializeParams, InitializeResult, Position,
+    TextDocumentClientCapabilities, TextDocumentItem, TextDocumentPositionParams, Url,
+    WorkspaceClientCapabilities, WorkspaceFolder,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -161,7 +161,7 @@ impl LspClient {
             .await
     }
 
-    async fn send_lsp_request<T, U>(
+    pub async fn send_lsp_request<T, U>(
         &mut self,
         method: &str,
         params: T,

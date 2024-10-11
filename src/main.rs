@@ -13,7 +13,7 @@ mod lsp_manager;
 mod symbol_finder;
 mod types;
 use crate::lsp_manager::LspManager;
-use crate::types::{SupportedLSPs, MOUNT_DIR};
+use crate::types::{SupportedLSP, MOUNT_DIR};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -23,7 +23,7 @@ use crate::types::{SupportedLSPs, MOUNT_DIR};
         get_definition,
     ),
     components(
-        schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSPs)
+        schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSP)
     ),
     tags(
         (name = "github-clone-api", description = "GitHub Clone API")
@@ -39,7 +39,7 @@ struct GetDefinitionRequest {
 
 #[derive(Deserialize, utoipa::ToSchema)]
 struct LspInitRequest {
-    lsp_types: Vec<SupportedLSPs>,
+    lsp_types: Vec<SupportedLSP>,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
