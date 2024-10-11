@@ -26,7 +26,7 @@ use crate::types::{SupportedLSP, MOUNT_DIR};
         schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSP)
     ),
     tags(
-        (name = "github-clone-api", description = "GitHub Clone API")
+        (name = "lsp-adapter-api", description = "LSP Adapter API")
     )
 )]
 struct ApiDoc;

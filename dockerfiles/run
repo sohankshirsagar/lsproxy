@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g pyright
 
 # Copy the binary from the host into the container
-COPY target/release/github-clone-server .
+COPY target/release/lsp-adapter-server .
 
 # Document that the container listens on port 8080
 EXPOSE 8080
@@ -29,4 +29,4 @@ ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
 
 # Run the server directly
-CMD ["./github-clone-server"]
+CMD ["./lsp-adapter-server"]
