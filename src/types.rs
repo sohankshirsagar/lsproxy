@@ -19,13 +19,29 @@ pub enum SupportedLSPs {
     Rust,
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct UniqueDefinition {
     pub uri: Url,
     pub range_start: (u32, u32),
     pub range_end: (u32, u32),
     pub original: GotoDefinitionResponse,
 }
+
+impl Hash for UniqueDefinition {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.uri.hash(state);
+        self.range_start.hash(state);
+        self.range_end.hash(state);
+    }
+}
+
+impl PartialEq for UniqueDefinition {
+    fn eq(&self, other: &Self) -> bool {
+        self.uri == other.uri && self.range_start == other.range_start && self.range_end == other.range_end
+    }
+}
+
+impl Eq for UniqueDefinition {}
 
 impl From<GotoDefinitionResponse> for UniqueDefinition {
     fn from(response: GotoDefinitionResponse) -> Self {
