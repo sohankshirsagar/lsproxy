@@ -5,14 +5,14 @@ use log::{error, info, warn};
 use tokio::sync::Mutex;
 use tokio::process::Command;
 use crate::lsp_client::LspClient;
-use crate::types::{RepoKey, SupportedLSPs, UniqueDefinition};
+use crate::types::{SupportedLSPs, UniqueDefinition};
 use std::fs::File;
 use std::io::Read;
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult, Location};
 use crate::symbol_finder::python_symbol_finder;
 
 pub struct LspManager {
-    clients: HashMap<(RepoKey, SupportedLSPs), Arc<Mutex<LspClient>>>,
+    clients: HashMap<SupportedLSPs, Arc<Mutex<LspClient>>>,
 }
 
 impl LspManager {
@@ -22,12 +22,12 @@ impl LspManager {
         }
     }
 
-    pub async fn start_lsps(&mut self, key: RepoKey, repo_path: String, lsps: &[SupportedLSPs]) -> Result<(), String> {
+    pub async fn start_lsps(&mut self, repo_path: &str, lsps: &[SupportedLSPs]) -> Result<(), String> {
         for &lsp in lsps {
             let result = match lsp {
-                SupportedLSPs::Python => self.start_python_lsp(&key, &repo_path).await,
-                SupportedLSPs::TypeScript => self.start_typescript_lsp(&key, &repo_path).await,
-                SupportedLSPs::Rust => self.start_rust_lsp(&key, &repo_path).await,
+                SupportedLSPs::Python => self.start_python_lsp(repo_path).await,
+                SupportedLSPs::TypeScript => self.start_typescript_lsp(repo_path).await,
+                SupportedLSPs::Rust => self.start_rust_lsp(repo_path).await,
             };
             if let Err(e) = result {
                 error!("Failed to start {:?} LSP: {}", lsp, e);
@@ -37,18 +37,18 @@ impl LspManager {
         Ok(())
     }
 
-    async fn create_client(&mut self, key: RepoKey, lsp_type: SupportedLSPs, process: tokio::process::Child) -> Result<(), String> {
+    async fn create_client(&mut self, lsp_type: SupportedLSPs, process: tokio::process::Child) -> Result<(), String> {
         // Await the async function LspClient::new
         let client = LspClient::new(process)
             .await
             .map_err(|e| format!("Failed to create LSP client: {}", e))?;
         let client = Arc::new(Mutex::new(client));
-        self.clients.insert((key.clone(), lsp_type), client.clone());
+        self.clients.insert(lsp_type, client.clone());
         Ok(())
     }
 
-    async fn initialize_client(&mut self, key: RepoKey, lsp_type: SupportedLSPs, repo_path: String) -> Result<InitializeResult, Box<dyn std::error::Error>> {
-        let client = self.get_client(&key, lsp_type)
+    async fn initialize_client(&mut self, lsp_type: SupportedLSPs, repo_path: String) -> Result<InitializeResult, Box<dyn std::error::Error>> {
+        let client = self.get_client(lsp_type)
             .ok_or("LSP client not found")?;
 
         // Initialize the client
@@ -56,12 +56,12 @@ impl LspManager {
         locked_client.initialize(Some(repo_path.clone())).await
     }
 
-    pub async fn get_symbols(&self, key: &RepoKey, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
+    pub async fn get_symbols(&self, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
 
         // Detect the language
         let lsp_type = self.detect_language(&file_path)?;
 
-        let client = self.get_client(key, lsp_type)
+        let client = self.get_client(lsp_type)
             .ok_or("LSP client not found")?;
 
         // Call get_symbols on the LSP client
@@ -69,11 +69,11 @@ impl LspManager {
         locked_client.get_symbols(file_path).await
     }
 
-    pub async fn get_definition(&self, key: &RepoKey, file_path: &str, symbol_name: &str) -> Result<Vec<GotoDefinitionResponse>, Box<dyn std::error::Error>> {
+    pub async fn get_definition(&self, file_path: &str, symbol_name: &str) -> Result<Vec<GotoDefinitionResponse>, Box<dyn std::error::Error>> {
         let mut unique_definitions = HashSet::new();
         let lsp_type = self.detect_language(file_path)?;
         
-        if let Some(client) = self.get_client(key, lsp_type) {
+        if let Some(client) = self.get_client(lsp_type) {
             let occurrences = python_symbol_finder::find_symbol_occurrences(file_path, symbol_name)?;
             
             if occurrences.is_empty() {
@@ -120,7 +120,7 @@ impl LspManager {
         Ok(unique_definitions_vec)
     }
 
-    async fn start_python_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
+    async fn start_python_lsp(&mut self, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
         let python_path = self.find_python_root(repo_path).await;
         // Spawn the LSP server using tokio's async process
         let process = Command::new("pyright-langserver")
@@ -132,17 +132,17 @@ impl LspManager {
             .spawn()
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
-        self.create_client(key.clone(), SupportedLSPs::Python, process).await?;
-        self.initialize_client(key.clone(), SupportedLSPs::Python, python_path.to_string()).await
+        self.create_client(SupportedLSPs::Python, process).await?;
+        self.initialize_client(SupportedLSPs::Python, python_path.to_string()).await
     }
 
-    async fn start_typescript_lsp(&mut self, _key: &RepoKey, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
+    async fn start_typescript_lsp(&mut self, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
         warn!("TypeScript LSP start requested but not implemented for repo: {}", repo_path);
         let _typescript_path = self.find_typescript_root(repo_path).await;
         Err(Box::new(std::io::Error::new(std::io::ErrorKind::Unsupported, "TypeScript LSP not implemented")))
     }
 
-    async fn start_rust_lsp(&mut self, _key: &RepoKey, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
+    async fn start_rust_lsp(&mut self, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
         warn!("Rust LSP start requested but not implemented for repo: {}", repo_path);
         let _rust_path = self.find_rust_root(repo_path).await;
         Err(Box::new(std::io::Error::new(std::io::ErrorKind::Unsupported, "Rust LSP not implemented")))
@@ -162,8 +162,8 @@ impl LspManager {
         repo_path.to_string()
     }
 
-    pub fn get_client(&self, key: &RepoKey, lsp_type: SupportedLSPs) -> Option<Arc<Mutex<LspClient>>> {
-        self.clients.get(&(key.clone(), lsp_type)).cloned()
+    pub fn get_client(&self, lsp_type: SupportedLSPs) -> Option<Arc<Mutex<LspClient>>> {
+        self.clients.get(&lsp_type).cloned()
     }
 
     fn detect_language(&self, file_path: &str) -> Result<SupportedLSPs, Box<dyn std::error::Error>> {
