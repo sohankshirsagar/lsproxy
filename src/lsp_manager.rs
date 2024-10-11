@@ -4,8 +4,9 @@ use crate::types::{SupportedLSPs, UniqueDefinition};
 use log::{error, info, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult, Location};
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
+use std::fs::{File, read_dir};
 use std::io::Read;
+use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
 use tokio::process::Command;
@@ -212,8 +213,26 @@ impl LspManager {
     }
 
     async fn find_typescript_root(&mut self, repo_path: &str) -> String {
-        //TODO Actually find and verify
-        repo_path.to_string()
+        let tsconfig_files = self.find_tsconfig_files(repo_path);
+        match tsconfig_files.first() {
+            Some(path) => path.parent().unwrap_or(PathBuf::from(repo_path)).to_string_lossy().into_owned(),
+            None => repo_path.to_string(),
+        }
+    }
+
+    fn find_tsconfig_files(&self, dir: &str) -> Vec<PathBuf> {
+        let mut result = Vec::new();
+        if let Ok(entries) = read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    result.extend(self.find_tsconfig_files(path.to_str().unwrap()));
+                } else if path.file_name().unwrap() == "tsconfig.json" {
+                    result.push(path);
+                }
+            }
+        }
+        result
     }
 
     async fn find_rust_root(&mut self, repo_path: &str) -> String {
