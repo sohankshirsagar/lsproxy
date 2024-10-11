@@ -5,7 +5,7 @@ use log::{error, info, warn};
 use tokio::sync::Mutex;
 use tokio::process::Command;
 use crate::lsp_client::LspClient;
-use crate::types::{RepoKey, SupportedLSPs};
+use crate::types::{RepoKey, SupportedLSPs, UniqueDefinition};
 use std::fs::File;
 use std::io::Read;
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult, Location};
@@ -94,8 +94,8 @@ impl LspManager {
                     Ok(definition) => {
                         info!("Found definition for symbol '{}' at line {}, column {}", 
                               symbol_name, occurrence.start_line, occurrence.start_column);
-                        // Insert the definition into the HashSet
-                        unique_definitions.insert(definition);
+                        // Insert the UniqueDefinition into the HashSet
+                        unique_definitions.insert(UniqueDefinition::from(definition));
                     },
                     Err(e) => {
                         warn!("Failed to get definition for symbol '{}' at line {}, column {}: {}", 
@@ -107,7 +107,9 @@ impl LspManager {
             warn!("No LSP client found for file type {:?}", lsp_type);
         }
         
-        let unique_definitions_vec: Vec<GotoDefinitionResponse> = unique_definitions.into_iter().collect();
+        let unique_definitions_vec: Vec<GotoDefinitionResponse> = unique_definitions.into_iter()
+            .map(|ud| ud.original)
+            .collect();
         
         if unique_definitions_vec.is_empty() {
             info!("No unique definitions found for symbol '{}'", symbol_name);
