@@ -271,14 +271,38 @@ impl LspClient {
         debug!("Sending documentSymbol request: {}", request);
         self.send_request(&request).await?;
 
-        let response = self.read_response().await?;
-        debug!("Received documentSymbol response: {:?}", response);
+        let final_response;
+        loop {
+            let response = match self.read_response().await {
+                Ok(resp) => resp,
+                Err(e) => {
+                    error!("Failed to read response: {}", e);
+                    return Err(e.into());
+                }
+            };
+            debug!("Received response: {:?}", response);
 
-        let symbols: DocumentSymbolResponse = match &response.result {
+            if let Some(msg_type) = &response.method {
+                if msg_type == "window/logMessage" {
+                    debug!("Captured log message, continuing to next message");
+                    continue;
+                } else {
+                    debug!("Received non-log message: {}", msg_type);
+                    final_response = response;
+                    break;
+                }
+            } else {
+                debug!("Received response without method field");
+                final_response = response;
+                break;
+            }
+        }
+
+        let symbols: DocumentSymbolResponse = match &final_response.result {
             Some(result) => serde_json::from_value(result.clone())
-                .map_err(|e| format!("Failed to parse DocumentSymbolResponse: {}. Response: {:?}", e, response))?,
+                .map_err(|e| format!("Failed to parse DocumentSymbolResponse: {}. Response: {:?}", e, final_response))?,
             None => {
-                error!("No result in documentSymbol response: {:?}", response);
+                error!("No result in documentSymbol response: {:?}", final_response);
                 return Err("No result in documentSymbol response".into());
             }
         };
