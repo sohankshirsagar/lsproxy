@@ -106,6 +106,60 @@ impl LspClient {
         Ok(result)
     }
 
+    pub async fn get_symbols(&mut self, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
+        debug!("Getting symbols for file: {}", file_path);
+
+        let uri = Url::from_file_path(Path::new(file_path))
+            .map_err(|_| format!("Invalid file path: {}", file_path))?;
+
+        let params = DocumentSymbolParams {
+            text_document: lsp_types::TextDocumentIdentifier { uri },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        };
+
+        self.send_lsp_request("textDocument/documentSymbol", params).await
+    }
+
+    async fn send_lsp_request<T, U>(&mut self, method: &str, params: T) -> Result<U, Box<dyn std::error::Error>>
+    where
+        T: serde::Serialize,
+        U: serde::de::DeserializeOwned,
+    {
+        let request = self.create_jsonrpc_request(method, serde_json::to_value(params)?);
+        debug!("Sending {} request: {}", method, request);
+        self.send_jsonrpc_request(&request).await?;
+
+        loop {
+            let response = self.read_response().await?;
+            debug!("Received response: {:?}", response);
+
+            if let Some(msg_type) = &response.method {
+                if msg_type == "window/logMessage" {
+                    debug!("Captured log message, continuing to next message");
+                    continue;
+                }
+            }
+
+            if let Some(error) = response.error {
+                error!("Error in {} response: {:?}", method, error);
+                return Err(format!("Error in {} response: {}", method, error.message).into());
+            }
+
+            return match response.result {
+                Some(result) => {
+                    let parsed: U = serde_json::from_value(result)
+                        .map_err(|e| format!("Failed to parse {} response: {}", method, e))?;
+                    Ok(parsed)
+                }
+                None => {
+                    error!("No result in {} response: {:?}", method, response);
+                    Err(format!("No result in {} response", method).into())
+                }
+            };
+        }
+    }
+
     fn create_jsonrpc_request(&self, method: &str, params: Value) -> String {
         serde_json::json!({
             "jsonrpc": "2.0",
@@ -211,57 +265,4 @@ impl LspClient {
     fn log_non_json_rpc(&self, stream: &str, message: &str) {
         debug!("Non-JSON-RPC message from {}: {}", stream, message);
     }
-
-    pub async fn get_symbols(&mut self, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
-        debug!("Getting symbols for file: {}", file_path);
-
-        let uri = Url::from_file_path(Path::new(file_path))
-            .map_err(|_| format!("Invalid file path: {}", file_path))?;
-
-        let params = DocumentSymbolParams {
-            text_document: lsp_types::TextDocumentIdentifier { uri },
-            work_done_progress_params: Default::default(),
-            partial_result_params: Default::default(),
-        };
-
-        self.send_lsp_request("textDocument/documentSymbol", params).await
-    }
 }
-    async fn send_lsp_request<T, U>(&mut self, method: &str, params: T) -> Result<U, Box<dyn std::error::Error>>
-    where
-        T: serde::Serialize,
-        U: serde::de::DeserializeOwned,
-    {
-        let request = self.create_jsonrpc_request(method, serde_json::to_value(params)?);
-        debug!("Sending {} request: {}", method, request);
-        self.send_jsonrpc_request(&request).await?;
-
-        loop {
-            let response = self.read_response().await?;
-            debug!("Received response: {:?}", response);
-
-            if let Some(msg_type) = &response.method {
-                if msg_type == "window/logMessage" {
-                    debug!("Captured log message, continuing to next message");
-                    continue;
-                }
-            }
-
-            if let Some(error) = response.error {
-                error!("Error in {} response: {:?}", method, error);
-                return Err(format!("Error in {} response: {}", method, error.message).into());
-            }
-
-            return match response.result {
-                Some(result) => {
-                    let parsed: U = serde_json::from_value(result)
-                        .map_err(|e| format!("Failed to parse {} response: {}", method, e))?;
-                    Ok(parsed)
-                }
-                None => {
-                    error!("No result in {} response: {:?}", method, response);
-                    Err(format!("No result in {} response", method).into())
-                }
-            };
-        }
-    }
