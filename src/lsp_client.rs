@@ -238,8 +238,6 @@ impl LspClient {
                         }
                         Ok(n) => {
                             let line = String::from_utf8_lossy(&buffer[buffer.len() - n..]);
-                            debug!("Read line ({} bytes): {}", n, line.trim());
-
                             if line.trim().is_empty() {
                                 if let Some(length) = content_length {
                                     // Read the JSON content

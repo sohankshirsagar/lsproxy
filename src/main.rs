@@ -15,7 +15,6 @@ mod lsp_manager;
 mod lsp_client;
 mod types;
 mod symbol_finder;
-use crate::symbol_finder::python_symbol_finder;
 use crate::lsp_manager::LspManager;
 use crate::types::{RepoKey, SupportedLSPs};
 

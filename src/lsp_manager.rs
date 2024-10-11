@@ -2,10 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::process::Stdio;
 use log::{error, info, warn};
-use futures::StreamExt;
 use tokio::sync::Mutex;
 use tokio::process::Command;
-use futures::stream;
 use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
 use std::fs::File;
@@ -146,33 +144,7 @@ impl LspManager {
     }
 
     async fn find_python_root(&mut self, repo_path: &str) -> String {
-        use tokio::fs;
-        use std::path::Path;
-
-        let repo_path = Path::new(repo_path);
-        let mut entries = match fs::read_dir(repo_path).await {
-            Ok(entries) => entries,
-            Err(_) => {
-                warn!("Failed to read directory: {}", repo_path.display());
-                return repo_path.to_string_lossy().into_owned();
-            }
-        };
-
-        while let Ok(Some(entry)) = entries.next_entry().await {
-            if let Ok(file_type) = entry.file_type().await {
-                if file_type.is_dir() {
-                    let main_py_path = entry.path().join("__main__.py");
-                    if main_py_path.exists() {
-                        let python_root = entry.path().to_string_lossy().into_owned();
-                        info!("Found __main__.py in directory: {}", python_root);
-                        return python_root;
-                    }
-                }
-            }
-        }
-
-        warn!("No __main__.py found in first-level directories. Using repo_path as Python root.");
-        repo_path.to_string_lossy().into_owned()
+        repo_path.to_string()
     }
 
     async fn find_typescript_root(&mut self, repo_path: &str) -> String {
