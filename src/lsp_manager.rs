@@ -36,6 +36,7 @@ impl LspManager {
                 SupportedLSP::TypeScriptJavaScript => self.start_typescript_lsp(repo_path).await,
                 SupportedLSP::Rust => self.start_rust_lsp(repo_path).await,
             };
+            self.setup_workspace_for_client(lsp, repo_path).await?;
             if let Err(e) = result {
                 error!("Failed to start {:?} LSP: {}", lsp, e);
                 return Err(format!("Failed to start {:?} LSP: {}", lsp, e));
