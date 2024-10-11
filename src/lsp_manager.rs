@@ -219,6 +219,7 @@ impl LspManager {
                 return parent.to_string_lossy().into_owned();
             }
         }
+        debug!("Didn't find tsconfig");
         repo_path.to_string()
     }
 
