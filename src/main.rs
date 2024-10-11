@@ -9,6 +9,7 @@ use log::{info, error, debug};
 use env_logger::Env;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use std::path::Path;
 
 mod lsp_manager;
 mod lsp_client;
@@ -21,9 +22,10 @@ use crate::types::{RepoKey, SupportedLSPs};
     paths(
         clone_repo,
         init_lsp,
+        get_symbols,
     ),
     components(
-        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest)
+        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest, GetSymbolsRequest)
     ),
     tags(
         (name = "github-clone-api", description = "GitHub Clone API")
@@ -42,6 +44,12 @@ struct CloneRequest {
 struct LspInitRequest {
     repo_key: RepoKey,
     lsp_types: Vec<SupportedLSPs>,
+}
+
+#[derive(Deserialize, utoipa::ToSchema)]
+struct GetSymbolsRequest {
+    repo_key: RepoKey,
+    file_path: String,
 }
 
 #[derive(Serialize, Clone, utoipa::ToSchema)]
@@ -222,6 +230,49 @@ async fn init_lsp(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/get-symbols",
+    request_body = GetSymbolsRequest,
+    responses(
+        (status = 200, description = "Symbols retrieved successfully", body = String),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn get_symbols(
+    data: web::Data<AppState>,
+    info: web::Json<GetSymbolsRequest>,
+) -> HttpResponse {
+    info!("Received get_symbols request for repo: {:?}, file: {}", info.repo_key, info.file_path);
+
+    let temp_dir = {
+        let clones = data.clones.lock().unwrap();
+        match clones.get(&info.repo_key) {
+            Some(dir) => dir.path().to_string_lossy().into_owned(),
+            None => {
+                return HttpResponse::BadRequest().body("Repository not found");
+            }
+        }
+    };
+
+    let full_path = Path::new(&temp_dir).join(&info.file_path);
+    let full_path_str = full_path.to_str().unwrap_or("");
+
+    let result = {
+        let lsp_manager = data.lsp_manager.lock().unwrap();
+        lsp_manager.get_symbols(&info.repo_key, full_path_str).await
+    };
+
+    match result {
+        Ok(symbols) => HttpResponse::Ok().json(symbols),
+        Err(e) => {
+            error!("Failed to get symbols: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to get symbols: {}", e))
+        },
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting main function");
@@ -267,6 +318,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/clone").route(web::post().to(clone_repo)))
             .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
+            .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
     })
     .bind("0.0.0.0:8080")?;
 
