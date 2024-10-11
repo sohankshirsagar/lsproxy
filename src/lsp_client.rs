@@ -31,6 +31,7 @@ struct JsonRpcError {
 }
 
 pub struct LspClient {
+    curr_id: u32,
     child: tokio::process::Child,
     stdin: ChildStdin,
     stdout: tokio::io::BufReader<ChildStdout>,
@@ -68,6 +69,7 @@ impl LspClient {
         }
 
         Ok(LspClient {
+            curr_id: 1,
             child,
             stdin,
             stdout,
@@ -179,10 +181,12 @@ impl LspClient {
         }
     }
 
-    fn create_jsonrpc_request(&self, method: &str, params: Value) -> String {
+    fn create_jsonrpc_request(&mut self, method: &str, params: Value) -> String {
+        let id = self.curr_id;
+        self.curr_id += 1;
         serde_json::json!({
             "jsonrpc": "2.0",
-            "id": 1,
+            "id": id,
             "method": method,
             "params": params
         }).to_string()

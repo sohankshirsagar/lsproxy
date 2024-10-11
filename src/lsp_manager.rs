@@ -97,7 +97,7 @@ impl LspManager {
         // Spawn the LSP server using tokio's async process
         let process = Command::new("pyright-langserver")
             .arg("--stdio")
-            .current_dir(python_path)
+            .current_dir(repo_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -105,7 +105,7 @@ impl LspManager {
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
         self.create_client(key.clone(), SupportedLSPs::Python, process).await?;
-        self.initialize_client(key.clone(), SupportedLSPs::Python, repo_path.to_string()).await
+        self.initialize_client(key.clone(), SupportedLSPs::Python, python_path.to_string()).await
     }
 
     async fn start_typescript_lsp(&mut self, _key: &RepoKey, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
