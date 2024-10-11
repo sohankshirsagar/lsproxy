@@ -1,11 +1,23 @@
-use serde::{Serialize, Deserialize};
-use strum_macros::{EnumString, Display};
 use lsp_types::{GotoDefinitionResponse, Location, Url};
+use serde::{Deserialize, Serialize};
 use std::hash::Hash;
+use strum_macros::{Display, EnumString};
 
 pub const MOUNT_DIR: &str = "/mnt/repo";
 
-#[derive(Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
+#[derive(
+    Debug,
+    EnumString,
+    Display,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    utoipa::ToSchema,
+)]
 #[strum(serialize_all = "lowercase")]
 pub enum SupportedLSPs {
     Python,
@@ -31,7 +43,9 @@ impl Hash for UniqueDefinition {
 
 impl PartialEq for UniqueDefinition {
     fn eq(&self, other: &Self) -> bool {
-        self.uri == other.uri && self.range_start == other.range_start && self.range_end == other.range_end
+        self.uri == other.uri
+            && self.range_start == other.range_start
+            && self.range_end == other.range_end
     }
 }
 
@@ -43,11 +57,11 @@ impl From<GotoDefinitionResponse> for UniqueDefinition {
             GotoDefinitionResponse::Scalar(location) => Self::from_location(location, response),
             GotoDefinitionResponse::Array(locations) if !locations.is_empty() => {
                 Self::from_location(locations[0].clone(), response)
-            },
+            }
             GotoDefinitionResponse::Link(links) if !links.is_empty() => {
                 let location = Location::new(links[0].target_uri.clone(), links[0].target_range);
                 Self::from_location(location, response)
-            },
+            }
             _ => panic!("Unexpected empty GotoDefinitionResponse"),
         }
     }

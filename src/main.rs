@@ -1,17 +1,17 @@
-use actix_web::{web, App, HttpServer, HttpResponse};
 use actix_cors::Cors;
-use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
-use log::{info, error, debug};
+use actix_web::{web, App, HttpResponse, HttpServer};
 use env_logger::Env;
+use log::{debug, error, info};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use std::path::Path;
 
-mod lsp_manager;
 mod lsp_client;
-mod types;
+mod lsp_manager;
 mod symbol_finder;
+mod types;
 use crate::lsp_manager::LspManager;
 use crate::types::{SupportedLSPs, MOUNT_DIR};
 
@@ -65,14 +65,19 @@ async fn get_definition(
     data: web::Data<AppState>,
     info: web::Json<GetDefinitionRequest>,
 ) -> HttpResponse {
-    info!("Received get_definition request for file: {}, symbol: {}", info.file_path, info.symbol_name);
+    info!(
+        "Received get_definition request for file: {}, symbol: {}",
+        info.file_path, info.symbol_name
+    );
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
     let full_path_str = full_path.to_str().unwrap_or("");
 
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.get_definition(full_path_str, &info.symbol_name).await
+        lsp_manager
+            .get_definition(full_path_str, &info.symbol_name)
+            .await
     };
 
     match result {
@@ -80,7 +85,7 @@ async fn get_definition(
         Err(e) => {
             error!("Failed to get definition: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get definition: {}", e))
-        },
+        }
     }
 }
 
@@ -94,10 +99,7 @@ async fn get_definition(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn init_lsp(
-    data: web::Data<AppState>,
-    info: web::Json<LspInitRequest>,
-) -> HttpResponse {
+async fn init_lsp(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
     info!("Received LSP init request");
 
     let result = {
@@ -110,7 +112,7 @@ async fn init_lsp(
         Err(e) => {
             error!("Failed to initialize LSP: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e))
-        },
+        }
     }
 }
 
@@ -144,7 +146,7 @@ async fn get_symbols(
         Err(e) => {
             error!("Failed to get symbols: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get symbols: {}", e))
-        },
+        }
     }
 }
 
@@ -187,8 +189,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(app_state.clone())
             .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}")
-                    .url("/api-docs/openapi.json", openapi.clone())
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
             .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
