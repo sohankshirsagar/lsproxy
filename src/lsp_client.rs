@@ -1,17 +1,17 @@
+use log::{debug, error, warn};
+use lsp_types::{
+    ClientCapabilities, DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams,
+    GotoDefinitionResponse, InitializeParams, InitializeResult, Position,
+    TextDocumentClientCapabilities, TextDocumentPositionParams, Url, WorkspaceClientCapabilities,
+    WorkspaceFolder,
+};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::path::Path;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
-use serde_json::Value;
-use lsp_types::{
-    InitializeParams, InitializeResult, ClientCapabilities, TextDocumentClientCapabilities,
-    WorkspaceClientCapabilities, WorkspaceFolder, DocumentSymbolParams, DocumentSymbolResponse,
-    GotoDefinitionParams, GotoDefinitionResponse, TextDocumentPositionParams, Position,
-    Url,
-};
-use log::{error, debug, warn};
 use tokio::time::Duration;
-use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRpcMessage {
@@ -61,7 +61,10 @@ impl LspClient {
         // Check if the child process is still running
         match child.try_wait() {
             Ok(Some(status)) => {
-                error!("LSP server process exited immediately with status: {:?}", status);
+                error!(
+                    "LSP server process exited immediately with status: {:?}",
+                    status
+                );
                 return Err("LSP server process exited immediately".into());
             }
             Ok(None) => debug!("LSP server process is still running"),
@@ -76,7 +79,10 @@ impl LspClient {
         })
     }
 
-    pub async fn initialize(&mut self, repo_path: Option<String>) -> Result<InitializeResult, Box<dyn std::error::Error>> {
+    pub async fn initialize(
+        &mut self,
+        repo_path: Option<String>,
+    ) -> Result<InitializeResult, Box<dyn std::error::Error>> {
         debug!("Initializing LSP client with repo path: {:?}", repo_path);
         let capabilities = ClientCapabilities {
             text_document: Some(TextDocumentClientCapabilities::default()),
@@ -109,7 +115,10 @@ impl LspClient {
         Ok(result)
     }
 
-    pub async fn get_symbols(&mut self, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
+    pub async fn get_symbols(
+        &mut self,
+        file_path: &str,
+    ) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
         debug!("Getting symbols for file: {}", file_path);
 
         let uri = Url::from_file_path(Path::new(file_path))
@@ -121,11 +130,20 @@ impl LspClient {
             partial_result_params: Default::default(),
         };
 
-        self.send_lsp_request("textDocument/documentSymbol", params).await
+        self.send_lsp_request("textDocument/documentSymbol", params)
+            .await
     }
 
-    pub async fn get_definition(&mut self, file_path: &str, line: u32, character: u32) -> Result<GotoDefinitionResponse, Box<dyn std::error::Error>> {
-        debug!("Getting definition for file: {}, line: {}, character: {}", file_path, line, character);
+    pub async fn get_definition(
+        &mut self,
+        file_path: &str,
+        line: u32,
+        character: u32,
+    ) -> Result<GotoDefinitionResponse, Box<dyn std::error::Error>> {
+        debug!(
+            "Getting definition for file: {}, line: {}, character: {}",
+            file_path, line, character
+        );
 
         let uri = Url::from_file_path(Path::new(file_path))
             .map_err(|_| format!("Invalid file path: {}", file_path))?;
@@ -139,10 +157,15 @@ impl LspClient {
             partial_result_params: Default::default(),
         };
 
-        self.send_lsp_request("textDocument/definition", params).await
+        self.send_lsp_request("textDocument/definition", params)
+            .await
     }
 
-    async fn send_lsp_request<T, U>(&mut self, method: &str, params: T) -> Result<U, Box<dyn std::error::Error>>
+    async fn send_lsp_request<T, U>(
+        &mut self,
+        method: &str,
+        params: T,
+    ) -> Result<U, Box<dyn std::error::Error>>
     where
         T: serde::Serialize,
         U: serde::de::DeserializeOwned,
@@ -189,7 +212,8 @@ impl LspClient {
             "id": id,
             "method": method,
             "params": params
-        }).to_string()
+        })
+        .to_string()
     }
 
     fn create_notification(&self, method: &str, params: Value) -> String {
@@ -197,13 +221,17 @@ impl LspClient {
             "jsonrpc": "2.0",
             "method": method,
             "params": params
-        }).to_string()
+        })
+        .to_string()
     }
 
-    async fn send_jsonrpc_request(&mut self, request: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn send_jsonrpc_request(
+        &mut self,
+        request: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let content_length = request.len();
         let header = format!("Content-Length: {}\r\n\r\n", content_length);
-        
+
         self.stdin.write_all(header.as_bytes()).await?;
         self.stdin.write_all(request.as_bytes()).await?;
         self.stdin.flush().await?;
@@ -211,10 +239,13 @@ impl LspClient {
         Ok(())
     }
 
-    async fn send_notification(&mut self, notification: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn send_notification(
+        &mut self,
+        notification: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let content_length = notification.len();
         let header = format!("Content-Length: {}\r\n\r\n", content_length);
-        
+
         self.stdin.write_all(header.as_bytes()).await?;
         self.stdin.write_all(notification.as_bytes()).await?;
         self.stdin.flush().await?;
@@ -244,10 +275,10 @@ impl LspClient {
                                     let mut content = vec![0; length];
                                     self.stdout.read_exact(&mut content).await?;
                                     debug!("Read JSON content: {}", String::from_utf8_lossy(&content));
-                                    
+
                                     let response: JsonRpcMessage = serde_json::from_slice(&content)
                                         .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
-                                    
+
                                     debug!("Successfully parsed JSON response");
                                     return Ok(response);
                                 }
