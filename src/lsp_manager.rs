@@ -64,7 +64,9 @@ impl LspManager {
 
         // Initialize the client
         let mut locked_client = client.lock().await;
-        locked_client.initialize(Some(repo_path.clone())).await
+        locked_client
+            .initialize_and_notify(Some(repo_path.clone()))
+            .await
     }
 
     pub async fn get_symbols(
@@ -78,7 +80,7 @@ impl LspManager {
 
         // Call get_symbols on the LSP client
         let mut locked_client = client.lock().await;
-        locked_client.get_symbols(file_path).await
+        locked_client.text_document_symbols(file_path).await
     }
 
     pub async fn get_definition(
@@ -112,7 +114,7 @@ impl LspManager {
 
             for occurrence in occurrences {
                 match locked_client
-                    .get_definition(
+                    .text_document_definition(
                         file_path,
                         occurrence.start_line as u32 - 1, // LSP uses 0-based line numbers
                         occurrence.start_column as u32 - 1, // LSP uses 0-based column numbers

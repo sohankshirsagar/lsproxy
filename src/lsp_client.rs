@@ -79,11 +79,11 @@ impl LspClient {
         })
     }
 
-    pub async fn initialize(
+    pub async fn initialize_and_notify(
         &mut self,
-        repo_path: Option<String>,
+        root_path: Option<String>,
     ) -> Result<InitializeResult, Box<dyn std::error::Error>> {
-        debug!("Initializing LSP client with repo path: {:?}", repo_path);
+        debug!("Initializing LSP client with root path: {:?}", root_path);
         let capabilities = ClientCapabilities {
             text_document: Some(TextDocumentClientCapabilities::default()),
             workspace: Some(WorkspaceClientCapabilities::default()),
@@ -95,9 +95,9 @@ impl LspClient {
             ..Default::default()
         };
 
-        if let Some(path) = repo_path {
+        if let Some(path) = root_path {
             params.workspace_folders = Some(vec![WorkspaceFolder {
-                uri: lsp_types::Url::from_file_path(path).map_err(|_| "Invalid repo path")?,
+                uri: Url::from_file_path(path).map_err(|_| "Invalid repo path")?,
                 name: "workspace".to_string(),
             }]);
         }
@@ -115,7 +115,7 @@ impl LspClient {
         Ok(result)
     }
 
-    pub async fn get_symbols(
+    pub async fn text_document_symbols(
         &mut self,
         file_path: &str,
     ) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
@@ -134,7 +134,7 @@ impl LspClient {
             .await
     }
 
-    pub async fn get_definition(
+    pub async fn text_document_definition(
         &mut self,
         file_path: &str,
         line: u32,
