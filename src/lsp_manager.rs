@@ -1,8 +1,8 @@
 use crate::lsp_client::LspClient;
 use crate::symbol_finder::python_symbol_finder;
 use crate::types::{SupportedLSPs, UniqueDefinition};
-use log::{error, info, warn};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult, Location};
+use log::{error, info, warn, debug};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};
 use std::collections::{HashMap, HashSet};
 use std::fs::{File, read_dir};
 use std::io::Read;
@@ -215,6 +215,7 @@ impl LspManager {
     async fn find_typescript_root(&mut self, repo_path: &str) -> String {
         if let Some(first_tsconfig) = self.find_tsconfig_files(repo_path).first() {
             if let Some(parent) = first_tsconfig.parent() {
+                debug!("Found tsconfig at {}", parent.to_string_lossy().into_owned());
                 return parent.to_string_lossy().into_owned();
             }
         }
