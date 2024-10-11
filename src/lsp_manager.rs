@@ -94,15 +94,8 @@ impl LspManager {
         let mut content = String::new();
         file.read_to_string(&mut content)?;
 
-        // Detect the language (for now, always return Python)
-        let language = self.detect_language(&content);
-
-        // Get the correct LSP client
-        let lsp_type = match language.as_str() {
-            "python" => SupportedLSPs::Python,
-            // Add more languages here as needed
-            _ => return Err("Unsupported language".into()),
-        };
+        // Detect the language
+        let lsp_type = self.detect_language(&content);
 
         let client = self.get_client(key, lsp_type)
             .ok_or("LSP client not found")?;
@@ -112,8 +105,8 @@ impl LspManager {
         locked_client.get_symbols(file_path).await
     }
 
-    fn detect_language(&self, _content: &str) -> String {
+    fn detect_language(&self, _content: &str) -> SupportedLSPs {
         // For now, always return Python
-        "python".to_string()
+        SupportedLSPs::Python
     }
 }
