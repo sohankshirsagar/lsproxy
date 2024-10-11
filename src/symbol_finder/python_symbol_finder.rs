@@ -2,6 +2,7 @@ use tree_sitter::{Parser, Query, QueryCursor};
 use std::fs;
 use log::debug;
 
+#[derive(Debug)]
 pub struct SymbolOccurrence {
     pub start_line: usize,
     pub start_column: usize,
