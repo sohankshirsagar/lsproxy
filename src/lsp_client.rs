@@ -93,50 +93,7 @@ impl LspClient {
             }]);
         }
 
-        let request = self.create_request("initialize", serde_json::to_value(params)?);
-        debug!("Sending initialize request: {}", request);
-        self.send_request(&request).await?;
-
-        let final_response;
-        loop {
-            let response = match self.read_response().await {
-                Ok(resp) => resp,
-                Err(e) => {
-                    error!("Failed to read response: {}", e);
-                    return Err(e.into());
-                }
-            };
-            debug!("Received response: {:?}", response);
-
-            if let Some(msg_type) = &response.method {
-                if msg_type == "window/logMessage" {
-                    debug!("Captured log message, continuing to next message");
-                    continue;
-                } else {
-                    debug!("Received non-log message: {}", msg_type);
-                    final_response = response;
-                    break;
-                }
-            } else {
-                debug!("Received response without method field");
-                final_response = response;
-                break;
-            }
-        }
-
-        let result: InitializeResult = match &final_response.result {
-            Some(result) => match serde_json::from_value(result.clone()) {
-                Ok(r) => r,
-                Err(e) => {
-                    error!("Failed to parse InitializeResult: {}. Response: {:?}", e, final_response);
-                    return Err(format!("Failed to parse InitializeResult: {}. Response: {:?}", e, final_response).into());
-                }
-            },
-            None => {
-                error!("No result in initialize response: {:?}", final_response);
-                return Err("No result in initialize response".into());
-            }
-        };
+        let result: InitializeResult = self.send_lsp_request("initialize", params).await?;
 
         debug!("Sending initialized notification");
         let notification = self.create_notification("initialized", serde_json::json!({}));
@@ -149,7 +106,7 @@ impl LspClient {
         Ok(result)
     }
 
-    fn create_request(&self, method: &str, params: Value) -> String {
+    fn create_jsonrpc_request(&self, method: &str, params: Value) -> String {
         serde_json::json!({
             "jsonrpc": "2.0",
             "id": 1,
@@ -166,7 +123,7 @@ impl LspClient {
         }).to_string()
     }
 
-    async fn send_request(&mut self, request: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn send_jsonrpc_request(&mut self, request: &str) -> Result<(), Box<dyn std::error::Error>> {
         let content_length = request.len();
         let header = format!("Content-Length: {}\r\n\r\n", content_length);
         
@@ -267,46 +224,35 @@ impl LspClient {
             partial_result_params: Default::default(),
         };
 
-        let request = self.create_request("textDocument/documentSymbol", serde_json::to_value(params)?);
-        debug!("Sending documentSymbol request: {}", request);
-        self.send_request(&request).await?;
+        self.send_lsp_request("textDocument/documentSymbol", params).await
+    }
+}
+    async fn send_lsp_request<T, U>(&mut self, method: &str, params: T) -> Result<U, Box<dyn std::error::Error>>
+    where
+        T: serde::Serialize,
+        U: serde::de::DeserializeOwned,
+    {
+        let request = self.create_jsonrpc_request(method, serde_json::to_value(params)?);
+        debug!("Sending {} request: {}", method, request);
+        self.send_jsonrpc_request(&request).await?;
 
-        let final_response;
         loop {
-            let response = match self.read_response().await {
-                Ok(resp) => resp,
-                Err(e) => {
-                    error!("Failed to read response: {}", e);
-                    return Err(e.into());
-                }
-            };
+            let response = self.read_response().await?;
             debug!("Received response: {:?}", response);
 
             if let Some(msg_type) = &response.method {
                 if msg_type == "window/logMessage" {
                     debug!("Captured log message, continuing to next message");
                     continue;
-                } else {
-                    debug!("Received non-log message: {}", msg_type);
-                    final_response = response;
-                    break;
                 }
-            } else {
-                debug!("Received response without method field");
-                final_response = response;
-                break;
             }
+
+            return match &response.result {
+                Some(result) => Ok(serde_json::from_value(result.clone())?),
+                None => {
+                    error!("No result in {} response: {:?}", method, response);
+                    Err(format!("No result in {} response", method).into())
+                }
+            };
         }
-
-        let symbols: DocumentSymbolResponse = match &final_response.result {
-            Some(result) => serde_json::from_value(result.clone())
-                .map_err(|e| format!("Failed to parse DocumentSymbolResponse: {}. Response: {:?}", e, final_response))?,
-            None => {
-                error!("No result in documentSymbol response: {:?}", final_response);
-                return Err("No result in documentSymbol response".into());
-            }
-        };
-
-        Ok(symbols)
     }
-}
