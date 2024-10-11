@@ -27,8 +27,8 @@ pub fn find_symbol_occurrences(file_path: &str, symbol_name: &str) -> Result<Vec
 
     // Create a query to find the symbol
     let query = Query::new(tree_sitter_python::language(), &format!(r#"
-        (identifier) @id
-        (#eq? @id "{}")
+        ((identifier) @id
+         (#eq? @id "{}"))
     "#, symbol_name))?;
     debug!("Query created for symbol '{}'", symbol_name);
 
@@ -46,7 +46,8 @@ pub fn find_symbol_occurrences(file_path: &str, symbol_name: &str) -> Result<Vec
                 end_line: range.end_point.row + 1,
                 end_column: range.end_point.column + 1,
             };
-            debug!("Found occurrence: {:?}", occurrence);
+            let matched_text = capture.node.utf8_text(source_code.as_bytes()).unwrap_or("Unable to get text");
+            debug!("Found occurrence: {:?}, Text: '{}'", occurrence, matched_text);
             occurrences.push(occurrence);
         }
     }
