@@ -36,6 +36,23 @@ impl LspManager {
         Ok(())
     }
 
+    pub async fn get_symbols(&self, key: &RepoKey, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
+        // Open the file
+        let mut file = File::open(file_path)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+
+        // Detect the language
+        let lsp_type = self.detect_language(&content);
+
+        let client = self.get_client(key, lsp_type)
+            .ok_or("LSP client not found")?;
+
+        // Call get_symbols on the LSP client
+        let mut locked_client = client.lock().await;
+        locked_client.get_symbols(file_path).await
+    }
+
     async fn start_python_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<(), String> {
         let python_path = self.find_python_root(repo_path).await;
         // Spawn the LSP server using tokio's async process
@@ -105,22 +122,6 @@ impl LspManager {
         self.clients.get(&(key.clone(), lsp_type)).cloned()
     }
 
-    pub async fn get_symbols(&self, key: &RepoKey, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
-        // Open the file
-        let mut file = File::open(file_path)?;
-        let mut content = String::new();
-        file.read_to_string(&mut content)?;
-
-        // Detect the language
-        let lsp_type = self.detect_language(&content);
-
-        let client = self.get_client(key, lsp_type)
-            .ok_or("LSP client not found")?;
-
-        // Call get_symbols on the LSP client
-        let mut locked_client = client.lock().await;
-        locked_client.get_symbols(file_path).await
-    }
 
     fn detect_language(&self, _content: &str) -> SupportedLSPs {
         // For now, always return Python
