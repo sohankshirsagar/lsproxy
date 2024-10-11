@@ -23,15 +23,23 @@ use crate::types::{RepoKey, SupportedLSPs};
         clone_repo,
         init_lsp,
         get_symbols,
+        get_definition,
     ),
     components(
-        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest, GetSymbolsRequest, SupportedLSPs)
+        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSPs)
     ),
     tags(
         (name = "github-clone-api", description = "GitHub Clone API")
     )
 )]
 struct ApiDoc;
+
+#[derive(Deserialize, utoipa::ToSchema)]
+struct GetDefinitionRequest {
+    repo_key: RepoKey,
+    file_path: String,
+    symbol_name: String,
+}
 
 #[derive(Deserialize, utoipa::ToSchema)]
 struct CloneRequest {
@@ -83,6 +91,49 @@ fn get_branch_and_commit(repo: &Repository, reference: &str) -> Result<(Option<S
             Some((branch, _)) => Ok((branch.name()?.map(String::from), commit_id)),
             None => Ok((None, commit_id)),
         }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/get-definition",
+    request_body = GetDefinitionRequest,
+    responses(
+        (status = 200, description = "Definition retrieved successfully", body = String),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn get_definition(
+    data: web::Data<AppState>,
+    info: web::Json<GetDefinitionRequest>,
+) -> HttpResponse {
+    info!("Received get_definition request for repo: {:?}, file: {}, symbol: {}", info.repo_key, info.file_path, info.symbol_name);
+
+    let temp_dir = {
+        let clones = data.clones.lock().unwrap();
+        match clones.get(&info.repo_key) {
+            Some(dir) => dir.path().to_string_lossy().into_owned(),
+            None => {
+                return HttpResponse::BadRequest().body("Repository not found");
+            }
+        }
+    };
+
+    let full_path = Path::new(&temp_dir).join(&info.file_path);
+    let full_path_str = full_path.to_str().unwrap_or("");
+
+    let result = {
+        let lsp_manager = data.lsp_manager.lock().unwrap();
+        lsp_manager.get_definition(&info.repo_key, full_path_str, &info.symbol_name).await
+    };
+
+    match result {
+        Ok(definitions) => HttpResponse::Ok().json(definitions),
+        Err(e) => {
+            error!("Failed to get definition: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to get definition: {}", e))
+        },
     }
 }
 
@@ -319,6 +370,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/clone").route(web::post().to(clone_repo)))
             .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
+            .service(web::resource("/get-definition").route(web::post().to(get_definition)))
     })
     .bind("0.0.0.0:8080")?;
 
