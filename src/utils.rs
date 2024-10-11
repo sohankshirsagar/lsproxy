@@ -8,18 +8,18 @@ pub async fn get_files_for_workspace(
     repo_path: &str,
 ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
     let tsconfig_path = Path::new(repo_path).join("tsconfig.json");
-    let tsconfig_content = fs::read_to_string(tsconfig_path)?;
+    let tsconfig_content = fs::read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
     let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
 
     let mut included = Vec::new();
     let include_patterns = tsconfig["include"]
         .as_array()
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
-        .unwrap_or_default();
+        .unwrap_or_else(|| vec!["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]);
     let exclude_patterns = tsconfig["exclude"]
         .as_array()
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
-        .unwrap_or_default();
+        .unwrap_or_else(|| vec!["**/node_modules/**", "**/dist/**", "**/build/**", ".git/**"]);
 
     let files = get_typescript_files(repo_path, &include_patterns, &exclude_patterns)?;
 

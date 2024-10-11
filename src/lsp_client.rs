@@ -161,6 +161,17 @@ impl LspClient {
             .await
     }
 
+    pub async fn text_document_did_open(
+        &mut self,
+        item: TextDocumentItem,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let params = DidOpenTextDocumentParams {
+            text_document: item,
+        };
+        let notification = self.create_notification("textDocument/didOpen", serde_json::to_value(params)?);
+        self.send_notification(&notification).await
+    }
+
     pub async fn send_lsp_request<T, U>(
         &mut self,
         method: &str,

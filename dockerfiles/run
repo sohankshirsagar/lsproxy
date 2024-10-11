@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
 
 # Install Pyright globally
 RUN npm install -g pyright
+RUN npm install -g typescript-language-server typescript
+
 
 # Copy the binary from the host into the container
 COPY target/release/lsp-adapter-server .

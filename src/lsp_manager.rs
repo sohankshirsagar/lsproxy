@@ -94,9 +94,7 @@ impl LspManager {
                 .await
                 .map_err(|e| format!("Failed to setup TypeScript workspace: {}", e))?;
             for item in text_document_items {
-                locked_client
-                    .send_lsp_request::<TextDocumentItem, ()>("textDocument/didOpen", item)
-                    .await;
+                locked_client.text_document_did_open(item).await;
             }
         }
         Ok(())
