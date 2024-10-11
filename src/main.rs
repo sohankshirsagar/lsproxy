@@ -14,6 +14,7 @@ use std::path::Path;
 mod lsp_manager;
 mod lsp_client;
 mod types;
+mod symbol_finder;
 use crate::lsp_manager::LspManager;
 use crate::types::{RepoKey, SupportedLSPs};
 
