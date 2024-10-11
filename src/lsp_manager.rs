@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::process::Stdio;
 use log::{error, info, warn};
@@ -8,7 +8,7 @@ use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
 use std::fs::File;
 use std::io::Read;
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult, Location};
 use crate::symbol_finder::python_symbol_finder;
 
 pub struct LspManager {
@@ -70,7 +70,7 @@ impl LspManager {
     }
 
     pub async fn get_definition(&self, key: &RepoKey, file_path: &str, symbol_name: &str) -> Result<Vec<GotoDefinitionResponse>, Box<dyn std::error::Error>> {
-        let mut definitions = Vec::new();
+        let mut unique_definitions = HashSet::new();
         let lsp_type = self.detect_language(file_path)?;
         
         if let Some(client) = self.get_client(key, lsp_type) {
@@ -94,7 +94,8 @@ impl LspManager {
                     Ok(definition) => {
                         info!("Found definition for symbol '{}' at line {}, column {}", 
                               symbol_name, occurrence.start_line, occurrence.start_column);
-                        definitions.push(definition);
+                        // Insert the definition into the HashSet
+                        unique_definitions.insert(definition);
                     },
                     Err(e) => {
                         warn!("Failed to get definition for symbol '{}' at line {}, column {}: {}", 
@@ -106,13 +107,15 @@ impl LspManager {
             warn!("No LSP client found for file type {:?}", lsp_type);
         }
         
-        if definitions.is_empty() {
-            info!("No definitions found for symbol '{}'", symbol_name);
+        let unique_definitions_vec: Vec<GotoDefinitionResponse> = unique_definitions.into_iter().collect();
+        
+        if unique_definitions_vec.is_empty() {
+            info!("No unique definitions found for symbol '{}'", symbol_name);
         } else {
-            info!("Found {} definition(s) for symbol '{}'", definitions.len(), symbol_name);
+            info!("Found {} unique definition(s) for symbol '{}'", unique_definitions_vec.len(), symbol_name);
         }
         
-        Ok(definitions)
+        Ok(unique_definitions_vec)
     }
 
     async fn start_python_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<InitializeResult, Box<dyn std::error::Error>> {
