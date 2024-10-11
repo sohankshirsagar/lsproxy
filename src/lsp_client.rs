@@ -92,27 +92,43 @@ impl LspClient {
         debug!("Sending initialize request: {}", request);
         self.send_request(&request).await?;
 
-        debug!("Waiting for initialize response...");
-        let response = match self.read_response().await {
-            Ok(resp) => resp,
-            Err(e) => {
-                error!("Failed to read initialize response: {}", e);
-                return Err(e.into());
+        let final_response;
+        loop {
+            let response = match self.read_response().await {
+                Ok(resp) => resp,
+                Err(e) => {
+                    error!("Failed to read response: {}", e);
+                    return Err(e.into());
+                }
+            };
+            debug!("Received response: {:?}", response);
+
+            if let Some(msg_type) = &response.method {
+                if msg_type == "window/logMessage" {
+                    debug!("Captured log message, continuing to next message");
+                    continue;
+                } else {
+                    debug!("Received non-log message: {}", msg_type);
+                    final_response = response;
+                    break;
+                }
+            } else {
+                debug!("Received response without method field");
+                final_response = response;
+                break;
             }
-        };
+        }
 
-        debug!("Received initialize response: {:?}", response);
-
-        let result: InitializeResult = match &response.result {
+        let result: InitializeResult = match &final_response.result {
             Some(result) => match serde_json::from_value(result.clone()) {
                 Ok(r) => r,
                 Err(e) => {
-                    error!("Failed to parse InitializeResult: {}. Response: {:?}", e, response);
-                    return Err(format!("Failed to parse InitializeResult: {}. Response: {:?}", e, response).into());
+                    error!("Failed to parse InitializeResult: {}. Response: {:?}", e, final_response);
+                    return Err(format!("Failed to parse InitializeResult: {}. Response: {:?}", e, final_response).into());
                 }
             },
             None => {
-                error!("No result in initialize response: {:?}", response);
+                error!("No result in initialize response: {:?}", final_response);
                 return Err("No result in initialize response".into());
             }
         };
