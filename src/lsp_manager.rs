@@ -4,7 +4,6 @@ use std::process::Stdio;
 use log::{error, info, warn};
 use tokio::sync::Mutex;
 use tokio::process::Command;
-use tokio::io::{AsyncBufReadExt, BufReader};
 use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
 use std::fs::File;
@@ -56,12 +55,12 @@ impl LspManager {
         self.create_and_initialize_client(key.clone(), SupportedLSPs::Python, process, repo_path.to_string()).await
     }
 
-    async fn start_typescript_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<(), String> {
+    async fn start_typescript_lsp(&mut self, _key: &RepoKey, repo_path: &str) -> Result<(), String> {
         warn!("TypeScript LSP start requested but not implemented for repo: {}", repo_path);
         Err("TypeScript LSP not implemented".to_string())
     }
 
-    async fn start_rust_lsp(&mut self, key: &RepoKey, repo_path: &str) -> Result<(), String> {
+    async fn start_rust_lsp(&mut self, _key: &RepoKey, repo_path: &str) -> Result<(), String> {
         warn!("Rust LSP start requested but not implemented for repo: {}", repo_path);
         Err("Rust LSP not implemented".to_string())
     }
