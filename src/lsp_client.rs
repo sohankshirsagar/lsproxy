@@ -5,6 +5,7 @@ use serde_json::Value;
 use lsp_types::{
     InitializeParams, InitializeResult, ClientCapabilities, TextDocumentClientCapabilities,
     WorkspaceClientCapabilities, WorkspaceFolder, DocumentSymbolParams, DocumentSymbolResponse,
+    GotoDefinitionParams, GotoDefinitionResponse, TextDocumentPositionParams, Position,
     Url,
 };
 use log::{error, debug, warn};
@@ -119,6 +120,24 @@ impl LspClient {
         };
 
         self.send_lsp_request("textDocument/documentSymbol", params).await
+    }
+
+    pub async fn get_definition(&mut self, file_path: &str, line: u32, character: u32) -> Result<GotoDefinitionResponse, Box<dyn std::error::Error>> {
+        debug!("Getting definition for file: {}, line: {}, character: {}", file_path, line, character);
+
+        let uri = Url::from_file_path(Path::new(file_path))
+            .map_err(|_| format!("Invalid file path: {}", file_path))?;
+
+        let params = GotoDefinitionParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: lsp_types::TextDocumentIdentifier { uri },
+                position: Position { line, character },
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        };
+
+        self.send_lsp_request("textDocument/definition", params).await
     }
 
     async fn send_lsp_request<T, U>(&mut self, method: &str, params: T) -> Result<U, Box<dyn std::error::Error>>
