@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::process::Stdio;
 use log::{error, info, warn};
-use tokio::stream::StreamExt;
+use futures::StreamExt;
 use tokio::sync::Mutex;
 use tokio::process::Command;
+use futures::stream;
 use crate::lsp_client::LspClient;
 use crate::types::{RepoKey, SupportedLSPs};
 use std::fs::File;
@@ -126,7 +127,7 @@ impl LspManager {
         let repo_path = Path::new(repo_path);
         let mut entries = fs::read_dir(repo_path).await.unwrap_or_else(|_| {
             warn!("Failed to read directory: {}", repo_path.display());
-            return tokio::stream::empty().boxed();
+            return stream::empty().boxed();
         });
 
         while let Some(entry) = entries.next_entry().await.unwrap_or(None) {
