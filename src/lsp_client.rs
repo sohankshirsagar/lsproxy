@@ -2,10 +2,15 @@ use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
 use serde_json::Value;
-use lsp_types::{InitializeParams, InitializeResult, ClientCapabilities, TextDocumentClientCapabilities, WorkspaceClientCapabilities, WorkspaceFolder};
+use lsp_types::{
+    InitializeParams, InitializeResult, ClientCapabilities, TextDocumentClientCapabilities,
+    WorkspaceClientCapabilities, WorkspaceFolder, DocumentSymbolParams, DocumentSymbolResponse,
+    Url,
+};
 use log::{error, debug, warn};
 use tokio::time::Duration;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct JsonRpcMessage {
@@ -248,5 +253,36 @@ impl LspClient {
 
     fn log_non_json_rpc(&self, stream: &str, message: &str) {
         debug!("Non-JSON-RPC message from {}: {}", stream, message);
+    }
+
+    pub async fn get_symbols(&mut self, file_path: &str) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error>> {
+        debug!("Getting symbols for file: {}", file_path);
+
+        let uri = Url::from_file_path(Path::new(file_path))
+            .map_err(|_| format!("Invalid file path: {}", file_path))?;
+
+        let params = DocumentSymbolParams {
+            text_document: lsp_types::TextDocumentIdentifier { uri },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        };
+
+        let request = self.create_request("textDocument/documentSymbol", serde_json::to_value(params)?);
+        debug!("Sending documentSymbol request: {}", request);
+        self.send_request(&request).await?;
+
+        let response = self.read_response().await?;
+        debug!("Received documentSymbol response: {:?}", response);
+
+        let symbols: DocumentSymbolResponse = match &response.result {
+            Some(result) => serde_json::from_value(result.clone())
+                .map_err(|e| format!("Failed to parse DocumentSymbolResponse: {}. Response: {:?}", e, response))?,
+            None => {
+                error!("No result in documentSymbol response: {:?}", response);
+                return Err("No result in documentSymbol response".into());
+            }
+        };
+
+        Ok(symbols)
     }
 }
