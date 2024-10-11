@@ -247,8 +247,17 @@ impl LspClient {
                 }
             }
 
-            return match &response.result {
-                Some(result) => Ok(serde_json::from_value(result.clone())?),
+            if let Some(error) = response.error {
+                error!("Error in {} response: {:?}", method, error);
+                return Err(format!("Error in {} response: {}", method, error.message).into());
+            }
+
+            return match response.result {
+                Some(result) => {
+                    let parsed: U = serde_json::from_value(result)
+                        .map_err(|e| format!("Failed to parse {} response: {}", method, e))?;
+                    Ok(parsed)
+                }
                 None => {
                     error!("No result in {} response: {:?}", method, response);
                     Err(format!("No result in {} response", method).into())
