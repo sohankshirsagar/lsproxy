@@ -125,12 +125,15 @@ impl LspManager {
         use std::path::Path;
 
         let repo_path = Path::new(repo_path);
-        let mut entries = fs::read_dir(repo_path).await.unwrap_or_else(|_| {
-            warn!("Failed to read directory: {}", repo_path.display());
-            return stream::empty().boxed();
-        });
+        let mut entries = match fs::read_dir(repo_path).await {
+            Ok(entries) => entries,
+            Err(_) => {
+                warn!("Failed to read directory: {}", repo_path.display());
+                return repo_path.to_string_lossy().into_owned();
+            }
+        };
 
-        while let Some(entry) = entries.next_entry().await.unwrap_or(None) {
+        while let Ok(Some(entry)) = entries.next_entry().await {
             if let Ok(file_type) = entry.file_type().await {
                 if file_type.is_dir() {
                     let main_py_path = entry.path().join("__main__.py");
