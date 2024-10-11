@@ -1,13 +1,10 @@
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use env_logger::Env;
-use git2::{BranchType, Repository};
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use tempfile::TempDir;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -16,18 +13,17 @@ mod lsp_manager;
 mod symbol_finder;
 mod types;
 use crate::lsp_manager::LspManager;
-use crate::types::{RepoKey, SupportedLSPs};
+use crate::types::{SupportedLSPs, MOUNT_DIR};
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        clone_repo,
         init_lsp,
         get_symbols,
         get_definition,
     ),
     components(
-        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSPs)
+        schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSPs)
     ),
     tags(
         (name = "github-clone-api", description = "GitHub Clone API")
@@ -37,64 +33,22 @@ struct ApiDoc;
 
 #[derive(Deserialize, utoipa::ToSchema)]
 struct GetDefinitionRequest {
-    repo_key: RepoKey,
     file_path: String,
     symbol_name: String,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
-struct CloneRequest {
-    id: String,
-    github_url: String,
-    reference: Option<String>,
-}
-
-#[derive(Deserialize, utoipa::ToSchema)]
 struct LspInitRequest {
-    repo_key: RepoKey,
     lsp_types: Vec<SupportedLSPs>,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
 struct GetSymbolsRequest {
-    repo_key: RepoKey,
     file_path: String,
 }
 
-#[derive(Serialize, Clone, utoipa::ToSchema)]
-struct RepoInfo {
-    repo_key: RepoKey,
-    temp_dir: String,
-}
-
 struct AppState {
-    clones: Mutex<HashMap<RepoKey, TempDir>>,
     lsp_manager: Arc<Mutex<LspManager>>,
-}
-
-fn get_branch_and_commit(
-    repo: &Repository,
-    reference: &str,
-) -> Result<(Option<String>, String), git2::Error> {
-    let obj = repo.revparse_single(reference)?;
-    let commit = obj.peel_to_commit()?;
-    let commit_id = commit.id().to_string();
-
-    if let Ok(branch) = repo.find_branch(reference, BranchType::Local) {
-        Ok((Some(branch.name()?.unwrap_or("").to_string()), commit_id))
-    } else if let Ok(branch) = repo.find_branch(reference, BranchType::Remote) {
-        Ok((Some(branch.name()?.unwrap_or("").to_string()), commit_id))
-    } else {
-        let branches = repo.branches(None)?;
-        let branch = branches
-            .filter_map(|b| b.ok())
-            .find(|(branch, _)| branch.get().target() == Some(commit.id()));
-
-        match branch {
-            Some((branch, _)) => Ok((branch.name()?.map(String::from), commit_id)),
-            None => Ok((None, commit_id)),
-        }
-    }
 }
 
 #[utoipa::path(
@@ -112,27 +66,17 @@ async fn get_definition(
     info: web::Json<GetDefinitionRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_definition request for repo: {:?}, file: {}, symbol: {}",
-        info.repo_key, info.file_path, info.symbol_name
+        "Received get_definition request for file: {}, symbol: {}",
+        info.file_path, info.symbol_name
     );
 
-    let temp_dir = {
-        let clones = data.clones.lock().unwrap();
-        match clones.get(&info.repo_key) {
-            Some(dir) => dir.path().to_string_lossy().into_owned(),
-            None => {
-                return HttpResponse::BadRequest().body("Repository not found");
-            }
-        }
-    };
-
-    let full_path = Path::new(&temp_dir).join(&info.file_path);
+    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
     let full_path_str = full_path.to_str().unwrap_or("");
 
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
         lsp_manager
-            .get_definition(&info.repo_key, full_path_str, &info.symbol_name)
+            .get_definition(full_path_str, &info.symbol_name)
             .await
     };
 
@@ -147,112 +91,6 @@ async fn get_definition(
 
 #[utoipa::path(
     post,
-    path = "/clone",
-    request_body = CloneRequest,
-    responses(
-        (status = 200, description = "Repository cloned successfully", body = RepoInfo),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-async fn clone_repo(data: web::Data<AppState>, info: web::Json<CloneRequest>) -> HttpResponse {
-    info!(
-        "Received clone request for ID: {}, URL: {}",
-        info.id, info.github_url
-    );
-
-    let temp_dir = match TempDir::new() {
-        Ok(dir) => dir,
-        Err(e) => {
-            error!("Failed to create temp directory: {}", e);
-            return HttpResponse::InternalServerError().body("Failed to create temp directory");
-        }
-    };
-
-    let repo = match Repository::clone(&info.github_url, temp_dir.path()) {
-        Ok(repo) => repo,
-        Err(e) => {
-            error!("Failed to clone repository: {}", e);
-            return HttpResponse::BadRequest().body("Failed to clone repository");
-        }
-    };
-
-    let (branch, commit) = match &info.reference {
-        Some(ref_name) => {
-            debug!("Checking out reference: {}", ref_name);
-            match get_branch_and_commit(&repo, ref_name) {
-                Ok((branch, commit)) => {
-                    if let Err(e) = checkout_reference(&repo, ref_name) {
-                        error!("Failed to checkout specified reference: {}", e);
-                        return HttpResponse::BadRequest()
-                            .body("Failed to checkout specified reference");
-                    }
-                    (branch, commit)
-                }
-                Err(e) => {
-                    error!("Failed to get branch and commit info: {}", e);
-                    return HttpResponse::BadRequest().body("Failed to get branch and commit info");
-                }
-            }
-        }
-        None => match repo.head() {
-            Ok(head) => match head.peel_to_commit() {
-                Ok(commit_obj) => {
-                    let commit = commit_obj.id().to_string();
-                    (head.shorthand().map(String::from), commit)
-                }
-                Err(e) => {
-                    error!("Failed to get commit: {}", e);
-                    return HttpResponse::InternalServerError().body("Failed to get commit");
-                }
-            },
-            Err(e) => {
-                error!("Failed to get repository head: {}", e);
-                return HttpResponse::InternalServerError().body("Failed to get repository head");
-            }
-        },
-    };
-
-    let repo_key = RepoKey {
-        id: info.id.clone(),
-        github_url: info.github_url.clone(),
-        branch: branch.clone(),
-        commit: commit.clone(),
-    };
-
-    let repo_info = RepoInfo {
-        repo_key: repo_key.clone(),
-        temp_dir: temp_dir.path().to_string_lossy().into_owned(),
-    };
-
-    let mut clones = data.clones.lock().unwrap();
-    clones.insert(repo_key, temp_dir);
-
-    info!(
-        "Repository cloned successfully. ID: {}, URL: {}, Branch: {:?}, Commit: {}",
-        info.id, info.github_url, repo_info.repo_key.branch, repo_info.repo_key.commit
-    );
-    HttpResponse::Ok().json(repo_info)
-}
-
-fn checkout_reference(repo: &Repository, reference: &str) -> Result<(), git2::Error> {
-    if let Ok(oid) = repo
-        .revparse_single(reference)
-        .and_then(|obj| obj.peel_to_commit())
-    {
-        repo.checkout_tree(&oid.as_object(), None)?;
-        repo.set_head_detached(oid.id())?;
-    } else {
-        let branch = repo.find_branch(reference, BranchType::Remote)?;
-        let commit = branch.get().peel_to_commit()?;
-        repo.checkout_tree(&commit.as_object(), None)?;
-        repo.set_head(branch.get().name().unwrap())?;
-    }
-    Ok(())
-}
-
-#[utoipa::path(
-    post,
     path = "/init-lsp",
     request_body = LspInitRequest,
     responses(
@@ -262,23 +100,11 @@ fn checkout_reference(repo: &Repository, reference: &str) -> Result<(), git2::Er
     )
 )]
 async fn init_lsp(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
-    info!("Received LSP init request for repo: {:?}", info.repo_key);
-
-    let temp_dir = {
-        let clones = data.clones.lock().unwrap();
-        match clones.get(&info.repo_key) {
-            Some(dir) => dir.path().to_string_lossy().into_owned(),
-            None => {
-                return HttpResponse::BadRequest().body("Repository not found");
-            }
-        }
-    };
+    info!("Received LSP init request");
 
     let result = {
         let mut lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager
-            .start_lsps(info.repo_key.clone(), temp_dir, &info.lsp_types)
-            .await
+        lsp_manager.start_lsps(MOUNT_DIR, &info.lsp_types).await
     };
 
     match result {
@@ -304,27 +130,15 @@ async fn get_symbols(
     data: web::Data<AppState>,
     info: web::Json<GetSymbolsRequest>,
 ) -> HttpResponse {
-    info!(
-        "Received get_symbols request for repo: {:?}, file: {}",
-        info.repo_key, info.file_path
-    );
+    info!("Received get_symbols request for file: {}", info.file_path);
 
-    let temp_dir = {
-        let clones = data.clones.lock().unwrap();
-        match clones.get(&info.repo_key) {
-            Some(dir) => dir.path().to_string_lossy().into_owned(),
-            None => {
-                return HttpResponse::BadRequest().body("Repository not found");
-            }
-        }
-    };
-
-    let full_path = Path::new(&temp_dir).join(&info.file_path);
+    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
     let full_path_str = full_path.to_str().unwrap_or("");
+    debug!("Full path: {}", full_path_str);
 
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.get_symbols(&info.repo_key, full_path_str).await
+        lsp_manager.get_symbols(full_path_str).await
     };
 
     match result {
@@ -354,7 +168,6 @@ async fn main() -> std::io::Result<()> {
     // Initialize app state
     info!("Initializing app state");
     let app_state = web::Data::new(AppState {
-        clones: Mutex::new(HashMap::new()),
         lsp_manager: Arc::new(Mutex::new(LspManager::new())),
     });
     info!("App state initialized");
@@ -378,7 +191,6 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(web::resource("/clone").route(web::post().to(clone_repo)))
             .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
             .service(web::resource("/get-definition").route(web::post().to(get_definition)))

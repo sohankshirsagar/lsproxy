@@ -2,15 +2,8 @@ use lsp_types::{GotoDefinitionResponse, Location, Url};
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use strum_macros::{Display, EnumString};
-use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize, ToSchema)]
-pub struct RepoKey {
-    pub id: String,
-    pub github_url: String,
-    pub branch: Option<String>,
-    pub commit: String,
-}
+pub const MOUNT_DIR: &str = "/mnt/repo";
 
 #[derive(
     Debug,
