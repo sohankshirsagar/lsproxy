@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;
 use strum_macros::{EnumString, Display};
 use lsp_types::{GotoDefinitionResponse, Location, Url};
+use std::hash::Hash;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize, ToSchema)]
 pub struct RepoKey {
