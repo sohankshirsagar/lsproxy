@@ -10,7 +10,7 @@ pub struct RepoKey {
     pub commit: String,
 }
 
-#[derive(Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
 #[strum(serialize_all = "lowercase")]
 pub enum SupportedLSPs {
     Python,

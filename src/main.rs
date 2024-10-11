@@ -25,7 +25,7 @@ use crate::types::{RepoKey, SupportedLSPs};
         get_symbols,
     ),
     components(
-        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest, GetSymbolsRequest)
+        schemas(CloneRequest, RepoKey, RepoInfo, LspInitRequest, GetSymbolsRequest, SupportedLSPs)
     ),
     tags(
         (name = "github-clone-api", description = "GitHub Clone API")
