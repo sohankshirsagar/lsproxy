@@ -229,8 +229,10 @@ impl LspManager {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
-                    if path.file_name().unwrap() != "node_modules" {
-                        result.extend(self.find_tsconfig_files(path.to_str().unwrap()));
+                    if let Some(file_name) = path.file_name() {
+                        if file_name != "node_modules" {
+                            result.extend(self.find_tsconfig_files(&path.to_string_lossy().into_owned()));
+                        }
                     }
                 } else if path.file_name().unwrap() == "tsconfig.json" {
                     result.push(path);
