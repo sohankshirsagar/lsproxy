@@ -95,9 +95,7 @@ impl LspClient {
             ..Default::default()
         };
 
-        if let Err(e) = locked_client.text_document_did_open(item).await {
-            error!("Failed to open text document: {}", e);
-        }
+        if let Some(path) = root_path {
             params.workspace_folders = Some(vec![WorkspaceFolder {
                 uri: Url::from_file_path(path).map_err(|_| "Invalid repo path")?,
                 name: "workspace".to_string(),
