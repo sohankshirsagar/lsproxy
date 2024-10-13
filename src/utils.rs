@@ -26,7 +26,7 @@ pub async fn get_files_for_workspace(
     for file_path in files {
         let content = fs::read_to_string(&file_path)?;
         included.push(TextDocumentItem {
-            uri: Url::from_file_path(&file_path).unwrap(),
+            uri: Url::from_file_path(&file_path).map_err(|_| "Invalid file path")?,
             language_id: "typescript".to_string(),
             version: 1,
             text: content,
