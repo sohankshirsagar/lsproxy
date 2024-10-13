@@ -94,7 +94,7 @@ async fn get_definition(
     path = "/start-lsp",
     request_body = LspInitRequest,
     responses(
-        (status = 200, description = "LSP server initialized successfully"),
+        (status = 200, description = "LSP server started successfully"),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
