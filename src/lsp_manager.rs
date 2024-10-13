@@ -3,9 +3,7 @@ use crate::symbol_finder::python_symbol_finder;
 use crate::types::{SupportedLSP, UniqueDefinition};
 use log::{debug, error, info, warn};
 use lsp_adapter_server::utils::get_files_for_workspace;
-use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult,
-};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};
 use std::collections::{HashMap, HashSet};
 use std::fs::read_dir;
 use std::path::PathBuf;
@@ -31,6 +29,9 @@ impl LspManager {
         lsps: &[SupportedLSP],
     ) -> Result<(), String> {
         for &lsp in lsps {
+            if self.get_client(lsp).is_some() {
+                continue;
+            }
             let result = match lsp {
                 SupportedLSP::Python => self.start_python_lsp(repo_path).await,
                 SupportedLSP::TypeScriptJavaScript => self.start_typescript_lsp(repo_path).await,
@@ -307,10 +308,11 @@ impl LspManager {
         let path = PathBuf::from(file_path);
         match path.extension().and_then(|ext| ext.to_str()) {
             Some("py") => Ok(SupportedLSP::Python),
-            Some("js") | Some("ts") | Some("jsx") | Some("tsx") => Ok(SupportedLSP::TypeScriptJavaScript),
+            Some("js") | Some("ts") | Some("jsx") | Some("tsx") => {
+                Ok(SupportedLSP::TypeScriptJavaScript)
+            }
             Some("rs") => Ok(SupportedLSP::Rust),
             _ => Err("Unsupported file type".into()),
         }
     }
-
 }
