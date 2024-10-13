@@ -4,11 +4,10 @@ use crate::types::{SupportedLSP, UniqueDefinition};
 use log::{debug, error, info, warn};
 use lsp_adapter_server::utils::get_files_for_workspace;
 use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult, TextDocumentItem,
+    DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult,
 };
 use std::collections::{HashMap, HashSet};
-use std::fs::{read_dir, File};
-use std::io::Read;
+use std::fs::read_dir;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
@@ -305,14 +304,13 @@ impl LspManager {
 
     fn detect_language(&self, file_path: &str) -> Result<SupportedLSP, Box<dyn std::error::Error>> {
         // Open the file
-        let mut file = File::open(file_path)?;
-        let mut content = String::new();
-        file.read_to_string(&mut content)?;
-        Ok(self.detect_language_from_content(&content))
+        let path = PathBuf::from(file_path);
+        match path.extension().and_then(|ext| ext.to_str()) {
+            Some("py") => Ok(SupportedLSP::Python),
+            Some("js") | Some("ts") | Some("jsx") | Some("tsx") => Ok(SupportedLSP::TypeScriptJavaScript),
+            Some("rs") => Ok(SupportedLSP::Rust),
+            _ => Err("Unsupported file type".into()),
+        }
     }
 
-    fn detect_language_from_content(&self, _content: &str) -> SupportedLSP {
-        // For now, always return Python
-        SupportedLSP::Python
-    }
 }

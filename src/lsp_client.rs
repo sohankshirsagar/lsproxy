@@ -297,7 +297,9 @@ impl LspClient {
                                         .map_err(|e| format!("Failed to parse JSON: {}. Content: {}", e, String::from_utf8_lossy(&content)))?;
 
                                     debug!("Successfully parsed JSON response");
-                                    return Ok(response);
+                                    if response.id.is_some() {
+                                        return Ok(response);
+                                    }
                                 }
                             } else if line.starts_with("Content-Length: ") {
                                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
