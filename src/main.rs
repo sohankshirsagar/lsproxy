@@ -18,7 +18,7 @@ use crate::types::{SupportedLSP, MOUNT_DIR};
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        start_lsp,
+        start_langservers,
         get_symbols,
         get_definition,
     ),
@@ -91,7 +91,7 @@ async fn get_definition(
 
 #[utoipa::path(
     post,
-    path = "/start-lsp",
+    path = "/start-langservers",
     request_body = LspInitRequest,
     responses(
         (status = 200, description = "LSP server started successfully"),
@@ -99,12 +99,12 @@ async fn get_definition(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn start_lsp(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
+async fn start_langservers(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
     info!("Received LSP init request");
 
     let result = {
         let mut lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.start_lsps(MOUNT_DIR, &info.lsp_types).await
+        lsp_manager.start_langservers(MOUNT_DIR, &info.lsp_types).await
     };
 
     match result {
@@ -191,7 +191,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(web::resource("/start-lsp").route(web::post().to(start_lsp)))
+            .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
             .service(web::resource("/get-definition").route(web::post().to(get_definition)))
     })

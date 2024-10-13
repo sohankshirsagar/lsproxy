@@ -23,7 +23,7 @@ impl LspManager {
         }
     }
 
-    pub async fn start_lsps(
+    pub async fn start_langservers(
         &mut self,
         repo_path: &str,
         lsps: &[SupportedLSP],
