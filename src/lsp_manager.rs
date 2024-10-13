@@ -85,7 +85,7 @@ impl LspManager {
             let _ = locked_client
                 .send_lsp_request::<std::option::Option<()>, ()>(
                     "rust-analyzer/reloadWorkspace",
-                    None,
+                    None
                 )
                 .await;
         }
