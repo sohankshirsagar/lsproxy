@@ -18,7 +18,7 @@ use crate::types::{SupportedLSP, MOUNT_DIR};
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        init_lsp,
+        start_lsp,
         get_symbols,
         get_definition,
     ),
@@ -99,7 +99,7 @@ async fn get_definition(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn init_lsp(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
+async fn start_lsp(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
     info!("Received LSP init request");
 
     let result = {
@@ -191,7 +191,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
+            .service(web::resource("/start-lsp").route(web::post().to(start_lsp)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
             .service(web::resource("/get-definition").route(web::post().to(get_definition)))
     })
