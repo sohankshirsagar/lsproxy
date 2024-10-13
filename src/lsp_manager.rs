@@ -83,12 +83,15 @@ impl LspManager {
         let mut locked_client = client.lock().await;
         // nothing for python
         if lsp_type == SupportedLSP::Rust {
-            let _ = locked_client
+            if let Err(e) = locked_client
                 .send_lsp_request::<std::option::Option<()>, ()>(
                     "rust-analyzer/reloadWorkspace",
                     None,
                 )
-                .await;
+                .await
+            {
+                error!("Failed to reload Rust workspace: {}", e);
+            }
         }
         if lsp_type == SupportedLSP::TypeScriptJavaScript {
             let text_document_items = get_files_for_workspace(repo_path)
