@@ -91,7 +91,7 @@ async fn get_definition(
 
 #[utoipa::path(
     post,
-    path = "/init-lsp",
+    path = "/start-lsp",
     request_body = LspInitRequest,
     responses(
         (status = 200, description = "LSP server initialized successfully"),
