@@ -102,7 +102,10 @@ impl LspClient {
             }]);
         }
 
-        let result: InitializeResult = self.send_lsp_request("initialize", params).await?;
+        let result = self
+            .send_lsp_request("initialize", params)
+            .await?
+            .expect("No result in initialize response");
 
         debug!("Sending initialized notification");
         let notification = self.create_notification("initialized", serde_json::json!({}));
@@ -131,7 +134,8 @@ impl LspClient {
         };
 
         self.send_lsp_request("textDocument/documentSymbol", params)
-            .await
+            .await?
+            .ok_or_else(|| "No result in textDocument/documentSymbol response".into())
     }
 
     pub async fn text_document_definition(
@@ -158,7 +162,8 @@ impl LspClient {
         };
 
         self.send_lsp_request("textDocument/definition", params)
-            .await
+            .await?
+            .ok_or_else(|| "No result in textDocument/definition response".into())
     }
 
     pub async fn text_document_did_open(
@@ -168,7 +173,8 @@ impl LspClient {
         let params = DidOpenTextDocumentParams {
             text_document: item,
         };
-        let notification = self.create_notification("textDocument/didOpen", serde_json::to_value(params)?);
+        let notification =
+            self.create_notification("textDocument/didOpen", serde_json::to_value(params)?);
         self.send_notification(&notification).await
     }
 
@@ -176,7 +182,7 @@ impl LspClient {
         &mut self,
         method: &str,
         params: T,
-    ) -> Result<U, Box<dyn std::error::Error>>
+    ) -> Result<Option<U>, Box<dyn std::error::Error>>
     where
         T: serde::Serialize,
         U: serde::de::DeserializeOwned,
@@ -205,11 +211,11 @@ impl LspClient {
                 Some(result) => {
                     let parsed: U = serde_json::from_value(result)
                         .map_err(|e| format!("Failed to parse {} response: {}", method, e))?;
-                    Ok(parsed)
+                    Ok(Some(parsed))
                 }
                 None => {
-                    error!("No result in {} response: {:?}", method, response);
-                    Err(format!("No result in {} response", method).into())
+                    warn!("No result in {} response: {:?}", method, response);
+                    Ok(None)
                 }
             };
         }
