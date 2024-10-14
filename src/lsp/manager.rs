@@ -1,7 +1,5 @@
-use crate::client::{GenericClient, LspClient};
-use crate::json_rpc::JsonRpcHandler;
-use crate::process::ProcessHandler;
-use crate::types::{SupportedLSP, UniqueDefinition};
+use crate::lsp::{GenericClient, JsonRpcHandler, LspClient, ProcessHandler};
+use crate::lsp::types::{SupportedLSP, UniqueDefinition};
 use crate::utils::{find_symbol_occurrences, get_files_for_workspace};
 use log::{debug, error, info, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};

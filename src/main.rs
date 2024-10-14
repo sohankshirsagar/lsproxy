@@ -1,11 +1,3 @@
-mod client;
-mod errors;
-mod json_rpc;
-mod lsp_manager;
-mod process;
-mod types;
-mod utils;
-
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use env_logger::Env;
@@ -16,8 +8,11 @@ use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::lsp_manager::LspManager;
-use crate::types::{SupportedLSP, MOUNT_DIR};
+mod lsp;
+mod utils;
+
+use crate::lsp::manager::LspManager;
+use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -164,42 +159,24 @@ async fn main() -> std::io::Result<()> {
     println!("Starting main function");
     eprintln!("This is a test error message");
 
-    // Set up panic hook
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Server panicked: {:?}", panic_info);
     }));
 
-    // Initialize logger
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
-    println!("Logger initialized");
     info!("Logger initialized");
 
-    // Initialize app state
-    info!("Initializing app state");
     let app_state = web::Data::new(AppState {
         lsp_manager: Arc::new(Mutex::new(LspManager::new())),
     });
-    info!("App state initialized");
 
-    // Generate OpenAPI documentation
-    info!("Generating OpenAPI documentation");
     let openapi = ApiDoc::openapi();
-    info!("OpenAPI documentation generated");
 
-    // Initialize HTTP server
-    info!("Initializing HTTP server");
     let server = HttpServer::new(move || {
-        let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header();
-
         App::new()
-            .wrap(cors)
+            .wrap(Cors::default().allow_any_origin().allow_any_method().allow_any_header())
             .app_data(app_state.clone())
-            .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
-            )
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
             .service(web::resource("/get-definition").route(web::post().to(get_definition)))
@@ -207,7 +184,5 @@ async fn main() -> std::io::Result<()> {
     .bind("0.0.0.0:8080")?;
 
     info!("Starting server...");
-    println!("Server is about to start running...");
-
     server.run().await
 }

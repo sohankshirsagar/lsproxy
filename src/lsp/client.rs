@@ -1,5 +1,6 @@
-use crate::json_rpc::{JsonRpc, JsonRpcHandler, JsonRpcMessage};
-use crate::process::{Process, ProcessHandler};
+use crate::lsp::{JsonRpcHandler, ProcessHandler};
+use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
+use crate::lsp::process::{Process};
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
