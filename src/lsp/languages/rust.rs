@@ -25,6 +25,7 @@ impl LspClient for RustClient {
         &mut self,
         _root_path: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        // This is required for workspace features like go to definition to work
         self.send_lsp_request("rust-analyzer/reloadWorkspace", None)
             .await?;
         Ok(())
@@ -34,6 +35,7 @@ impl LspClient for RustClient {
         &mut self,
         root_path: String,
     ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
+        // TODO: find folders containing Cargo.toml from root_path
         Ok(vec![WorkspaceFolder {
             uri: Url::from_file_path(root_path.clone()).unwrap(),
             name: root_path,
