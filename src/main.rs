@@ -243,7 +243,10 @@ async fn get_references(
                 line: info.line,
                 character: info.character,
             },
-            info.include_declaration.unwrap_or(true),
+            info.include_declaration.unwrap_or_else(|| {
+                error!("include_declaration not provided, defaulting to true");
+                true
+            }),
         )
         .await;
     match result {
