@@ -281,6 +281,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/file-symbols").route(web::post().to(file_symbols)))
             .service(web::resource("/workspace-symbols").route(web::post().to(workspace_symbols)))
             .service(web::resource("/definition").route(web::post().to(get_definition)))
+            .service(web::resource("/references").route(web::post().to(get_references)))
     })
     .bind("0.0.0.0:8080")?;
 
