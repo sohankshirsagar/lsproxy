@@ -1,9 +1,9 @@
 use crate::lsp::client::{LspClient, PythonClient};
+use crate::lsp::languages::{RustClient, TypeScriptClient};
 use crate::lsp::types::{SupportedLSP, UniqueDefinition};
-use crate::lsp::{RustClient, TypeScriptClient};
 use crate::utils::find_symbol_occurrences;
 use log::{debug, info, warn};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::read_dir;
