@@ -1,16 +1,14 @@
 use crate::lsp::client::{LspClient, PythonClient};
 use crate::lsp::types::{SupportedLSP, UniqueDefinition};
-use crate::lsp::{JsonRpcHandler, ProcessHandler, TypeScriptClient};
-use crate::utils::{find_symbol_occurrences, get_files_for_workspace_typescript};
-use log::{debug, error, info, warn};
+use crate::lsp::TypeScriptClient;
+use crate::utils::find_symbol_occurrences;
+use log::{debug, info, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::read_dir;
 use std::path::PathBuf;
-use std::process::Stdio;
 use std::sync::Arc;
-use tokio::process::Command;
 use tokio::sync::Mutex;
 
 pub struct LspManager {
