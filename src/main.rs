@@ -26,7 +26,7 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
         schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSP)
     ),
     tags(
-        (name = "lsp-adapter-api", description = "LSP Adapter API")
+        (name = "lsp-proxy-api", description = "LSP Proxy API")
     )
 )]
 struct ApiDoc;
