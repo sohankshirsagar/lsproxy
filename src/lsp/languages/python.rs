@@ -22,9 +22,14 @@ impl LspClient for PythonClient {
         &mut self.json_rpc
     }
 
-    async fn workspace_symbols(&mut self, query: &str) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+    async fn workspace_symbols(
+        &mut self,
+        query: &str,
+    ) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
         if (query == "" || query == "*") {
-            warn!("Pyright doesn't support wildcards in workspace symbols query, expect empty result");
+            warn!(
+                "Pyright doesn't support wildcards in workspace symbols query, expect empty result"
+            );
         }
         LspClient::workspace_symbols(self, query).await
     }

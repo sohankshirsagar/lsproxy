@@ -142,7 +142,6 @@ pub trait LspClient: Send {
         }
     }
 
-
     async fn workspace_symbols(
         &mut self,
         query: &str,

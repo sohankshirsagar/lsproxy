@@ -83,7 +83,13 @@ async fn get_definition(
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
         lsp_manager
-            .get_definition(full_path_str, Position { line: info.line, character: info.character })
+            .get_definition(
+                full_path_str,
+                Position {
+                    line: info.line,
+                    character: info.character,
+                },
+            )
             .await
     };
 
@@ -176,7 +182,10 @@ async fn workspace_symbols(
     data: web::Data<AppState>,
     info: web::Json<WorkspaceSymbolsRequest>,
 ) -> HttpResponse {
-    info!("Received workspace_symbols request for query: {}", info.query);
+    info!(
+        "Received workspace_symbols request for query: {}",
+        info.query
+    );
 
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
@@ -187,7 +196,8 @@ async fn workspace_symbols(
         Ok(symbols) => HttpResponse::Ok().json(symbols),
         Err(e) => {
             error!("Failed to get workspace symbols: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to get workspace symbols: {}", e))
+            HttpResponse::InternalServerError()
+                .body(format!("Failed to get workspace symbols: {}", e))
         }
     }
 }

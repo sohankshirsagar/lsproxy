@@ -2,7 +2,9 @@ use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PythonClient, RustClient, TypeScriptClient};
 use crate::lsp::types::SupportedLSP;
 use log::{debug, warn};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Position, WorkspaceSymbolResponse};
+use lsp_types::{
+    DocumentSymbolResponse, GotoDefinitionResponse, Position, WorkspaceSymbolResponse,
+};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
@@ -79,7 +81,9 @@ impl LspManager {
 
         if let Some(client) = self.get_client(lsp_type) {
             let mut locked_client = client.lock().await;
-            locked_client.text_document_definition(file_path, position).await
+            locked_client
+                .text_document_definition(file_path, position)
+                .await
         } else {
             warn!("No LSP client found for file type {:?}", lsp_type);
             Err("No LSP client found for file type".into())
