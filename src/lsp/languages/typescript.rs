@@ -10,13 +10,13 @@ use crate::{
     utils::file_utils::get_files_for_workspace_typescript,
 };
 
-pub struct TypeScriptClient {
+pub struct TypeScriptLanguageClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
 }
 
 #[async_trait]
-impl LspClient for TypeScriptClient {
+impl LspClient for TypeScriptLanguageClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -55,7 +55,7 @@ impl LspClient for TypeScriptClient {
     }
 }
 
-impl TypeScriptClient {
+impl TypeScriptLanguageClient {
     pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("typescript-language-server")
             .arg("--stdio")

@@ -7,13 +7,13 @@ use tokio::process::Command;
 
 use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
 
-pub struct PythonClient {
+pub struct PyrightClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
 }
 
 #[async_trait]
-impl LspClient for PythonClient {
+impl LspClient for PyrightClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -35,7 +35,7 @@ impl LspClient for PythonClient {
     }
 }
 
-impl PythonClient {
+impl PyrightClient {
     pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("pyright-langserver")
             .arg("--stdio")

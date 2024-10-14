@@ -1,5 +1,5 @@
 use crate::lsp::client::LspClient;
-use crate::lsp::languages::{PythonClient, RustClient, TypeScriptClient};
+use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
 use crate::lsp::types::SupportedLSP;
 use log::{debug, warn};
 use lsp_types::{
@@ -34,17 +34,17 @@ impl LspManager {
             debug!("Starting {:?} LSP", lsp);
             let mut client: Box<dyn LspClient> = match lsp {
                 SupportedLSP::Python => Box::new(
-                    PythonClient::new(repo_path)
+                    PyrightClient::new(repo_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
                 SupportedLSP::TypeScriptJavaScript => Box::new(
-                    TypeScriptClient::new(repo_path)
+                    TypeScriptLanguageClient::new(repo_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
                 SupportedLSP::Rust => Box::new(
-                    RustClient::new(repo_path)
+                    RustAnalyzerClient::new(repo_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
