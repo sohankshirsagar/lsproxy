@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
+use uuid::Uuid;
 
 pub trait JsonRpc: Send + Sync {
-    fn create_request(&mut self, method: &str, params: Value) -> String;
+    fn create_request(&self, method: &str, params: Value) -> String;
     fn create_notification(&self, method: &str, params: Value) -> String;
     fn parse_message(&self, data: &str) -> Result<JsonRpcMessage, JsonRpcError>;
 }
@@ -33,23 +34,19 @@ impl fmt::Display for JsonRpcError {
 
 impl std::error::Error for JsonRpcError {}
 
-pub struct JsonRpcHandler {
-    pub current_id: u32,
-}
+pub struct JsonRpcHandler;
 
 impl JsonRpcHandler {
     pub fn new() -> Self {
-        Self { current_id: 1 }
+        Self
     }
 }
 
 impl JsonRpc for JsonRpcHandler {
-    fn create_request(&mut self, method: &str, params: Value) -> String {
-        let id = self.current_id;
-        self.current_id += 1;
+    fn create_request(&self, method: &str, params: Value) -> String {
         serde_json::json!({
             "jsonrpc": "2.0",
-            "id": id,
+            "id": Uuid::new_v4().to_string(),
             "method": method,
             "params": params
         })

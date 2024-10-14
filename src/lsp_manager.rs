@@ -1,8 +1,5 @@
-use crate::client::GenericClient;
-use crate::client::LspClient;
-use crate::json_rpc::JsonRpc;
+use crate::client::{GenericClient, LspClient};
 use crate::json_rpc::JsonRpcHandler;
-use crate::process::Process;
 use crate::process::ProcessHandler;
 use crate::symbol_finder::find_symbol_occurrences;
 use crate::types::{SupportedLSP, UniqueDefinition};
@@ -19,7 +16,7 @@ use tokio::process::Command;
 use tokio::sync::Mutex;
 
 pub struct LspManager {
-    clients: HashMap<SupportedLSP, Arc<Mutex<dyn LspClient<ProcessHandler, JsonRpcHandler> + Send + Sync>>>,
+    clients: HashMap<SupportedLSP, Arc<Mutex<Box<dyn LspClient>>>>,
 }
 
 impl LspManager {
@@ -65,7 +62,7 @@ impl LspManager {
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
         let json_rpc_handler = JsonRpcHandler::new();
         let client = GenericClient::new(process_handler, json_rpc_handler);
-        let client = Arc::new(Mutex::new(client));
+        let client = Arc::new(Mutex::new(Box::new(client) as Box<dyn LspClient>));
         debug!("Created client for {:?}", lsp_type);
         self.clients.insert(lsp_type, client);
         debug!("Inserted client for {:?}", lsp_type);
@@ -94,7 +91,7 @@ impl LspManager {
         // nothing for python
         if lsp_type == SupportedLSP::Rust {
             if let Err(e) = locked_client
-                .send_lsp_request::<Option<()>, ()>("rust-analyzer/reloadWorkspace", None)
+                .send_lsp_request("rust-analyzer/reloadWorkspace", None)
                 .await
             {
                 error!("Failed to reload Rust workspace: {}", e);
@@ -304,10 +301,7 @@ impl LspManager {
         repo_path.to_string()
     }
 
-    pub fn get_client(
-        &self,
-        lsp_type: SupportedLSP,
-    ) -> Option<Arc<Mutex<dyn LspClient<ProcessHandler, JsonRpcHandler> + Send + Sync>>> {
+    pub fn get_client(&self, lsp_type: SupportedLSP) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
         self.clients.get(&lsp_type).cloned()
     }
 
