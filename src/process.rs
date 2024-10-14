@@ -32,8 +32,8 @@ impl ProcessHandler {
 impl Process for ProcessHandler {
     async fn send(&mut self, data: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         debug!("Sending data to process: {}", data);
-        self.stdin.write_all(data.as_bytes()).await.unwrap();
-        self.stdin.flush().await.unwrap();
+        self.stdin.write_all(data.as_bytes()).await?;
+        self.stdin.flush().await?;
         Ok(())
     }
 
@@ -41,9 +41,9 @@ impl Process for ProcessHandler {
         debug!("Starting to read response");
         let mut content_length: Option<usize> = None;
         let mut buffer = Vec::new();
-        let mut timeout = tokio::time::interval(Duration::from_secs(5));
 
         loop {
+            let timeout = tokio::time::sleep(Duration::from_secs(30));
             tokio::select! {
                 result = self.stdout.read_until(b'\n', &mut buffer) => {
                     match result {
@@ -73,7 +73,7 @@ impl Process for ProcessHandler {
                     }
                     buffer.clear();
                 }
-                _ = timeout.tick() => {
+                _ = timeout => {
                     warn!("Timeout while reading response");
                     return Err("Timeout while reading response".into());
                 }

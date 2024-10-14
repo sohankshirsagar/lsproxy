@@ -22,16 +22,16 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
 
     pub async fn initialize(
         &mut self,
-        root_path: Option<String>,
+        root_path: String,
     ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
         debug!("Initializing LSP client with root path: {:?}", root_path);
         let params = InitializeParams {
             capabilities: Default::default(),
             workspace_folders: Some(vec![WorkspaceFolder {
-                uri: Url::from_file_path(root_path.clone().unwrap()).unwrap(),
-                name: root_path.clone().unwrap(),
+                uri: Url::from_file_path(root_path.clone()).unwrap(),
+                name: root_path.clone(),
             }]),
-            root_uri: Some(Url::from_file_path(root_path.clone().unwrap()).unwrap()),
+            root_uri: Some(Url::from_file_path(root_path.clone()).unwrap()),
             ..Default::default()
         };
         let request = self
@@ -39,8 +39,7 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
             .create_request("initialize", serde_json::to_value(params)?);
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.process.send(&message).await?;
-
-        let response = self.receive_response().await.unwrap().expect("No response");
+        let response = self.receive_response().await?.expect("No response");
         if let Some(result) = response.result {
             let init_result: InitializeResult = serde_json::from_value(result)?;
             debug!("Initialization successful: {:?}", init_result);
@@ -55,7 +54,7 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
         }
     }
 
-    pub async fn send_lsp_request<T: Serialize, R: serde::de::DeserializeOwned>(
+    pub async fn send_lsp_request<T: Serialize, R: serde::de::DeserializeOwned + Default>(
         &mut self,
         method: &str,
         params: T,
@@ -67,7 +66,8 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.process.send(&message).await?;
 
-        let response = self.receive_response().await.unwrap().expect("No response");
+        let response = self.receive_response().await?.unwrap();
+
         if let Some(result) = response.result {
             let result: R = serde_json::from_value(result)?;
             debug!("Received response for {}", method);
@@ -76,7 +76,8 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
             error!("Error in {} request: {:?}", method, error);
             Err(error.into())
         } else {
-            Err(format!("Unexpected response for {} request", method).into())
+            warn!("No response for {} request", method);
+            Ok(R::default())
         }
     }
 
@@ -141,7 +142,7 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.process.send(&message).await?;
 
-        let response = self.receive_response().await.unwrap().expect("No response");
+        let response = self.receive_response().await?.expect("No response");
         if let Some(result) = response.result {
             let goto_resp: GotoDefinitionResponse = serde_json::from_value(result)?;
             debug!("Received goto definition response");
@@ -189,11 +190,22 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
         &mut self,
     ) -> Result<Option<JsonRpcMessage>, Box<dyn Error + Send + Sync>> {
         debug!("Awaiting response from LSP server");
-        let raw_response = self.process.receive().await?;
-        let message = self.json_rpc.parse_message(&raw_response)?;
-        if message.id.is_some() {
-            return Ok(Some(message));
+        // todo this could be an inf loop, though timeout in receive will break it
+        loop {
+            let raw_response = self.process.receive().await?;
+            let message = self.json_rpc.parse_message(&raw_response)?;
+            debug!("Received response: {:?}", message);
+
+            if let Some(msg_type) = &message.method {
+                if msg_type == "window/logMessage" {
+                    debug!("Captured log message, continuing to next message");
+                    continue;
+                }
+            }
+
+            if message.id.is_some() {
+                return Ok(Some(message));
+            }
         }
-        Ok(None)
     }
 }

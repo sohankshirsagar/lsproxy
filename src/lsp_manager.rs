@@ -76,7 +76,7 @@ impl LspManager {
     ) -> Result<InitializeResult, Box<dyn std::error::Error + Send + Sync>> {
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
-        locked_client.initialize(Some(repo_path)).await
+        locked_client.initialize(repo_path).await
     }
 
     async fn setup_workspace_for_client(
@@ -91,7 +91,7 @@ impl LspManager {
         // nothing for python
         if lsp_type == SupportedLSP::Rust {
             if let Err(e) = locked_client
-                .send_lsp_request::<std::option::Option<()>, ()>(
+                .send_lsp_request::<Option<()>, ()>(
                     "rust-analyzer/reloadWorkspace",
                     None,
                 )
