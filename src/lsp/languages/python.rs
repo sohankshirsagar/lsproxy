@@ -1,9 +1,11 @@
 use std::process::Stdio;
 
 use async_trait::async_trait;
+use log::warn;
+use lsp_types::{WorkspaceSymbolParams, WorkspaceSymbolResponse};
 use tokio::process::Command;
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
+use crate::lsp::{JsonRpc, JsonRpcHandler, LspClient, Process, ProcessHandler};
 
 pub struct PythonClient {
     process: ProcessHandler,
@@ -18,6 +20,13 @@ impl LspClient for PythonClient {
 
     fn get_json_rpc(&mut self) -> &mut JsonRpcHandler {
         &mut self.json_rpc
+    }
+
+    async fn workspace_symbols(&mut self, query: &str) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+        if (query == "" || query == "*") {
+            warn!("Pyright doesn't support wildcards in workspace symbols query, expect empty result");
+        }
+        LspClient::workspace_symbols(self, query).await
     }
 }
 
