@@ -148,15 +148,6 @@ impl LspManager {
         Ok(unique_definitions_vec)
     }
 
-    async fn find_python_root(&mut self, repo_path: &str) -> String {
-        repo_path.to_string()
-    }
-
-    async fn find_rust_root(&mut self, repo_path: &str) -> String {
-        //TODO Actually find and verify
-        repo_path.to_string()
-    }
-
     pub fn get_client(&self, lsp_type: SupportedLSP) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
         self.clients.get(&lsp_type).cloned()
     }
