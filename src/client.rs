@@ -10,20 +10,14 @@ use lsp_types::{
 use serde::Serialize;
 use std::error::Error;
 
-pub struct LspClient<P: Process, J: JsonRpc> {
-    process: P,
-    json_rpc: J,
-}
-
-impl<P: Process, J: JsonRpc> LspClient<P, J> {
-    pub fn new(process: P, json_rpc: J) -> Self {
-        Self { process, json_rpc }
-    }
-
-    pub async fn initialize(
+pub trait LspClient<P: Process, J: JsonRpc> {
+    async fn initialize(
         &mut self,
         root_path: String,
-    ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
+    ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>>
+    where
+        Self: Sized,
+    {
         debug!("Initializing LSP client with root path: {:?}", root_path);
         let params = InitializeParams {
             capabilities: Default::default(),
@@ -35,15 +29,14 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
             ..Default::default()
         };
         let request = self
-            .json_rpc
+            .get_json_rpc()
             .create_request("initialize", serde_json::to_value(params)?);
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.process.send(&message).await?;
+        self.get_process().send(&message).await?;
         let response = self.receive_response().await?.expect("No response");
         if let Some(result) = response.result {
             let init_result: InitializeResult = serde_json::from_value(result)?;
             debug!("Initialization successful: {:?}", init_result);
-            // Send initialized notification
             self.send_initialized().await?;
             Ok(init_result)
         } else if let Some(error) = response.error {
@@ -54,17 +47,20 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
         }
     }
 
-    pub async fn send_lsp_request<T: Serialize, R: serde::de::DeserializeOwned + Default>(
+    async fn send_lsp_request<T: Serialize, R: serde::de::DeserializeOwned + Default>(
         &mut self,
         method: &str,
         params: T,
-    ) -> Result<R, Box<dyn Error + Send + Sync>> {
+    ) -> Result<R, Box<dyn Error + Send + Sync>>
+    where
+        Self: Sized,
+    {
         debug!("Sending LSP request: {}", method);
         let request = self
-            .json_rpc
+            .get_json_rpc()
             .create_request(method, serde_json::to_value(params)?);
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.process.send(&message).await?;
+        self.get_process().send(&message).await?;
 
         let response = self.receive_response().await?.unwrap();
 
@@ -81,44 +77,53 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
         }
     }
 
-    async fn send_initialized(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn send_initialized(&mut self) -> Result<(), Box<dyn Error + Send + Sync>>
+    where
+        Self: Sized,
+    {
         debug!("Sending 'initialized' notification");
         let notification = self
-            .json_rpc
+            .get_json_rpc()
             .create_notification("initialized", serde_json::json!({}));
         let message = format!(
             "Content-Length: {}\r\n\r\n{}",
             notification.len(),
             notification
         );
-        self.process.send(&message).await
+        self.get_process().send(&message).await
     }
 
-    pub async fn text_document_did_open(
+    async fn text_document_did_open(
         &mut self,
         item: lsp_types::TextDocumentItem,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> Result<(), Box<dyn Error + Send + Sync>>
+    where
+        Self: Sized,
+    {
         debug!("Sending 'didOpen' notification for document: {}", item.uri);
         let params = DidOpenTextDocumentParams {
             text_document: item,
         };
         let notification = self
-            .json_rpc
+            .get_json_rpc()
             .create_notification("textDocument/didOpen", serde_json::to_value(params)?);
         let message = format!(
             "Content-Length: {}\r\n\r\n{}",
             notification.len(),
             notification
         );
-        self.process.send(&message).await
+        self.get_process().send(&message).await
     }
 
-    pub async fn goto_definition(
+    async fn goto_definition(
         &mut self,
         file_path: &str,
         line: u32,
         character: u32,
-    ) -> Result<GotoDefinitionResponse, Box<dyn Error + Send + Sync>> {
+    ) -> Result<GotoDefinitionResponse, Box<dyn Error + Send + Sync>>
+    where
+        Self: Sized,
+    {
         debug!(
             "Requesting goto definition for {}, line {}, character {}",
             file_path, line, character
@@ -137,10 +142,10 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
             partial_result_params: PartialResultParams::default(),
         };
         let request = self
-            .json_rpc
+            .get_json_rpc()
             .create_request("textDocument/definition", serde_json::to_value(params)?);
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.process.send(&message).await?;
+        self.get_process().send(&message).await?;
 
         let response = self.receive_response().await?.expect("No response");
         if let Some(result) = response.result {
@@ -155,10 +160,13 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
         }
     }
 
-    pub async fn text_document_symbols(
+    async fn text_document_symbols(
         &mut self,
         file_path: &str,
-    ) -> Result<DocumentSymbolResponse, Box<dyn Error + Send + Sync>> {
+    ) -> Result<DocumentSymbolResponse, Box<dyn Error + Send + Sync>>
+    where
+        Self: Sized,
+    {
         debug!("Requesting document symbols for {}", file_path);
         let params = DocumentSymbolParams {
             text_document: TextDocumentIdentifier {
@@ -168,10 +176,10 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
             partial_result_params: PartialResultParams::default(),
         };
         let request = self
-            .json_rpc
+            .get_json_rpc()
             .create_request("textDocument/documentSymbol", serde_json::to_value(params)?);
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.process.send(&message).await?;
+        self.get_process().send(&message).await?;
 
         let response = self.receive_response().await.unwrap().expect("No response");
         if let Some(result) = response.result {
@@ -188,12 +196,15 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
 
     async fn receive_response(
         &mut self,
-    ) -> Result<Option<JsonRpcMessage>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Option<JsonRpcMessage>, Box<dyn Error + Send + Sync>>
+    where
+        Self: Sized,
+    {
         debug!("Awaiting response from LSP server");
         // todo this could be an inf loop, though timeout in receive will break it
         loop {
-            let raw_response = self.process.receive().await?;
-            let message = self.json_rpc.parse_message(&raw_response)?;
+            let raw_response = self.get_process().receive().await?;
+            let message = self.get_json_rpc().parse_message(&raw_response)?;
             debug!("Received response: {:?}", message);
 
             if let Some(msg_type) = &message.method {
@@ -207,5 +218,36 @@ impl<P: Process, J: JsonRpc> LspClient<P, J> {
                 return Ok(Some(message));
             }
         }
+    }
+
+    // Helper methods to access fields
+    fn get_process(&mut self) -> &mut P
+    where
+        Self: Sized;
+    fn get_json_rpc(&mut self) -> &mut J
+    where
+        Self: Sized;
+}
+
+pub struct GenericClient<P: Process, J: JsonRpc> {
+    process: P,
+    json_rpc: J,
+}
+
+impl<P: Process, J: JsonRpc> GenericClient<P, J> {
+    pub fn new(process: P, json_rpc: J) -> Self {
+        Self { process, json_rpc }
+    }
+}
+
+// Implement the trait for LspClient
+impl<P: Process, J: JsonRpc> LspClient<P, J> for GenericClient<P, J> {
+
+    fn get_process(&mut self) -> &mut P {
+        &mut self.process
+    }
+
+    fn get_json_rpc(&mut self) -> &mut J {
+        &mut self.json_rpc
     }
 }
