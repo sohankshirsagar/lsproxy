@@ -94,7 +94,7 @@ impl LspManager {
         &self,
         query: &str,
     ) -> Result<Vec<WorkspaceSymbolResponse>, Box<dyn std::error::Error + Send + Sync>> {
-        /* This returns results for all languages */
+        /* This returns results for all langservers*/
         let mut symbols = Vec::new();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
