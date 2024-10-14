@@ -1,7 +1,6 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
 use crate::lsp::{JsonRpcHandler, ProcessHandler};
-use crate::utils::get_files_for_workspace_typescript;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
