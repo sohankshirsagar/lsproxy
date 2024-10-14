@@ -1,5 +1,5 @@
-use crate::lsp::client::{LspClient, PythonClient};
-use crate::lsp::languages::{RustClient, TypeScriptClient};
+use crate::lsp::client::LspClient;
+use crate::lsp::languages::{PythonClient, RustClient, TypeScriptClient};
 use crate::lsp::types::{SupportedLSP, UniqueDefinition};
 use crate::utils::find_symbol_occurrences;
 use log::{debug, info, warn};
