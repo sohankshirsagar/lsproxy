@@ -156,8 +156,7 @@ impl LspManager {
         &self,
         file_path: &str,
     ) -> Result<SupportedLSP, Box<dyn Error + Send + Sync>> {
-        // Open the file
-        let path = PathBuf::from(file_path);
+        let path: PathBuf = PathBuf::from(file_path);
         match path.extension().and_then(|ext| ext.to_str()) {
             Some("py") => Ok(SupportedLSP::Python),
             Some("js") | Some("ts") | Some("jsx") | Some("tsx") => {
