@@ -1,6 +1,7 @@
-use log::{debug, error};
+use log::{debug, error, warn};
 use std::error::Error;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use std::time::Duration;
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 
 #[async_trait::async_trait]
@@ -37,13 +38,46 @@ impl Process for ProcessHandler {
     }
 
     async fn receive(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let mut buffer = String::new();
-        let bytes_read = self.stdout.read_line(&mut buffer).await?;
-        if bytes_read == 0 {
-            error!("Process stdout closed unexpectedly");
-            return Err("Process stdout closed".into());
+        debug!("Starting to read response");
+        let mut content_length: Option<usize> = None;
+        let mut buffer = Vec::new();
+        let mut timeout = tokio::time::interval(Duration::from_secs(5));
+
+        loop {
+            tokio::select! {
+                result = self.stdout.read_until(b'\n', &mut buffer) => {
+                    match result {
+                        Ok(0) => {
+                            debug!("Reached EOF");
+                            return Err("Unexpected EOF".into());
+                        }
+                        Ok(n) => {
+                            let line = String::from_utf8_lossy(&buffer[buffer.len() - n..]);
+                            if line.trim().is_empty() && content_length.is_some() {
+                                let length = content_length.unwrap();
+                                let mut content = vec![0; length];
+                                self.stdout.read_exact(&mut content).await?;
+                                debug!("Read content: {}", String::from_utf8_lossy(&content));
+                                return Ok(String::from_utf8(content)?);
+                            } else if line.starts_with("Content-Length: ") {
+                                content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
+                                debug!("Content-Length found: {:?}", content_length);
+                            } else {
+                                debug!("Received non-content line: {}", line.trim());
+                            }
+                        }
+                        Err(e) => {
+                            error!("Error reading from stdout: {}", e);
+                            return Err(e.into());
+                        }
+                    }
+                    buffer.clear();
+                }
+                _ = timeout.tick() => {
+                    warn!("Timeout while reading response");
+                    return Err("Timeout while reading response".into());
+                }
+            }
         }
-        debug!("Received data from process: {}", buffer.trim());
-        Ok(buffer)
     }
 }

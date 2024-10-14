@@ -67,7 +67,6 @@ impl LspManager {
         self.clients.insert(lsp_type, client);
         debug!("Inserted client for {:?}", lsp_type);
         Ok(())
-
     }
 
     async fn initialize_client(
@@ -85,7 +84,9 @@ impl LspManager {
         lsp_type: SupportedLSP,
         repo_path: &str,
     ) -> Result<(), String> {
-        let client = self.get_client(lsp_type).ok_or("LSP client not found when setting up workspace")?;
+        let client = self
+            .get_client(lsp_type)
+            .ok_or("LSP client not found when setting up workspace")?;
         let mut locked_client = client.lock().await;
         // nothing for python
         if lsp_type == SupportedLSP::Rust {
