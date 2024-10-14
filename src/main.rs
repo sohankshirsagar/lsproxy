@@ -5,9 +5,7 @@ use log::{debug, error, info};
 use lsp_types::Position;
 use serde::Deserialize;
 use std::path::Path;
-use std::result;
 use std::sync::{Arc, Mutex};
-use utoipa::openapi::response;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
