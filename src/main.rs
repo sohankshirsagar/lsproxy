@@ -5,7 +5,9 @@ use log::{debug, error, info};
 use lsp_types::Position;
 use serde::Deserialize;
 use std::path::Path;
+use std::result;
 use std::sync::{Arc, Mutex};
+use utoipa::openapi::response;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -22,9 +24,10 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
         file_symbols,
         workspace_symbols,
         get_definition,
+        get_references,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, SupportedLSP)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -37,6 +40,14 @@ struct GetDefinitionRequest {
     file_path: String,
     line: u32,
     character: u32,
+}
+
+#[derive(Deserialize, utoipa::ToSchema)]
+struct GetReferencesRequest {
+    file_path: String,
+    line: u32,
+    character: u32,
+    include_declaration: Option<bool>,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -202,11 +213,47 @@ async fn workspace_symbols(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/references",
+    request_body = GetReferencesRequest,
+    responses(
+        (status = 200, description = "References retrieved successfully", body = String),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn get_references(
+    data: web::Data<AppState>,
+    info: web::Json<GetReferencesRequest>,
+) -> HttpResponse {
+    info!(
+        "Received get_references request for file: {}, line: {}, character: {}",
+        info.file_path, info.line, info.character
+    );
+    let lsp_manager = data.lsp_manager.lock().unwrap();
+    let result = lsp_manager
+        .get_references(
+            &info.file_path,
+            Position {
+                line: info.line,
+                character: info.character,
+            },
+            info.include_declaration.unwrap_or(true),
+        )
+        .await;
+    match result {
+        Ok(references) => HttpResponse::Ok().json(references),
+        Err(e) => {
+            error!("Failed to get references: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to get references: {}", e))
+        }
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Starting main function");
-    eprintln!("This is a test error message");
-
+    println!("Starting...");
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Server panicked: {:?}", panic_info);
     }));

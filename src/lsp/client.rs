@@ -5,9 +5,10 @@ use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
     DidOpenTextDocumentParams, DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams,
-    GotoDefinitionResponse, InitializeParams, InitializeResult, PartialResultParams, Position,
-    TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
-    WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
+    GotoDefinitionResponse, InitializeParams, InitializeResult, Location, PartialResultParams,
+    Position, ReferenceContext, ReferenceParams, TextDocumentIdentifier,
+    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
+    WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
 
@@ -197,6 +198,45 @@ pub trait LspClient: Send {
             Err(error.into())
         } else {
             Err("Unexpected document symbols response".into())
+        }
+    }
+
+    async fn text_document_reference(
+        &mut self,
+        file_path: &str,
+        position: Position,
+        include_declaration: bool,
+    ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
+        let params = ReferenceParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier {
+                    uri: Url::from_file_path(file_path).unwrap(),
+                },
+                position: position,
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+            context: ReferenceContext {
+                include_declaration: include_declaration,
+            },
+        };
+
+        let request = self
+            .get_json_rpc()
+            .create_request("textDocument/references", serde_json::to_value(params)?);
+        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+        self.get_process().send(&message).await?;
+
+        let response = self.receive_response().await?.unwrap();
+        if let Some(result) = response.result {
+            let goto_resp: Vec<Location> = serde_json::from_value(result)?;
+            debug!("Received references response");
+            Ok(goto_resp)
+        } else if let Some(error) = response.error {
+            error!("References error: {:?}", error);
+            Err(error.into())
+        } else {
+            Err("Unexpected references response".into())
         }
     }
 

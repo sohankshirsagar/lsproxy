@@ -3,7 +3,7 @@ use crate::lsp::languages::{PythonClient, RustClient, TypeScriptClient};
 use crate::lsp::types::SupportedLSP;
 use log::{debug, warn};
 use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Position, WorkspaceSymbolResponse,
+    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
 };
 use std::collections::HashMap;
 use std::error::Error;
@@ -106,6 +106,20 @@ impl LspManager {
 
     pub fn get_client(&self, lsp_type: SupportedLSP) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
         self.clients.get(&lsp_type).cloned()
+    }
+
+    pub async fn get_references(
+        &self,
+        file_path: &str,
+        position: Position,
+        include_declaration: bool,
+    ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
+        let lsp_type = self.detect_language(file_path)?;
+        let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
+        let mut locked_client = client.lock().await;
+        locked_client
+            .text_document_reference(file_path, position, include_declaration)
+            .await
     }
 
     fn detect_language(
