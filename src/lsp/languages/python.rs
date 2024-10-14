@@ -1,7 +1,6 @@
 use std::process::Stdio;
 
 use async_trait::async_trait;
-use lsp_types::WorkspaceFolder;
 use tokio::process::Command;
 use url::Url;
 
