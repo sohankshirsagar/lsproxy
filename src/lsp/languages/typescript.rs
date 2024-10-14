@@ -48,7 +48,7 @@ impl LspClient for TypeScriptClient {
         root_path: String,
     ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
         /*
-        Nonetheless, we should find the folders with tsconfig.json or package.json
+        TODO: Nonetheless, we should find the folders with tsconfig.json or package.json
          */
         warn!("TypeScriptClient does not support finding workspace folders");
         Ok(vec![])

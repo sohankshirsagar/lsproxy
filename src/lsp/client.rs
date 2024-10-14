@@ -244,7 +244,7 @@ pub trait LspClient: Send {
         &mut self,
     ) -> Result<Option<JsonRpcMessage>, Box<dyn Error + Send + Sync>> {
         debug!("Awaiting response from LSP server");
-        // todo this could be an inf loop, though timeout in receive will break it
+        // TODO this could be an inf loop, though timeout in receive will break it
         loop {
             let raw_response = self.get_process().receive().await?;
             let message = self.get_json_rpc().parse_message(&raw_response)?;
