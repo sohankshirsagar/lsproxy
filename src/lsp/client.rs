@@ -227,7 +227,11 @@ pub trait LspClient: Send {
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
 
-        let response = self.receive_response().await?.unwrap();
+        let response = if let Some(resp) = self.receive_response().await? {
+            resp
+        } else {
+            return Err("No response received".into());
+        };
         if let Some(result) = response.result {
             let goto_resp: Vec<Location> = serde_json::from_value(result)?;
             debug!("Received references response");
