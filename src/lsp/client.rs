@@ -158,7 +158,7 @@ pub trait LspClient: Send {
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
 
-        let response = self.receive_response().await.unwrap().expect("No response");
+        let response = self.receive_response().await?.ok_or("No response received")?;
         if let Some(result) = response.result {
             let symbols: WorkspaceSymbolResponse = serde_json::from_value(result)?;
             Ok(symbols)
