@@ -233,7 +233,7 @@ async fn get_references(
 ) -> HttpResponse {
     info!(
         "Received get_references request for file: {}, line: {}, character: {}",
-        info.file_path, info.line, info.character
+        let GetReferencesRequest { file_path, line, character, include_declaration } = info.into_inner();
     );
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
