@@ -1,4 +1,3 @@
-use lsp_types::{GotoDefinitionResponse, Location, Url};
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use strum_macros::{Display, EnumString};
