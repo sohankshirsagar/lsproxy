@@ -211,7 +211,7 @@ pub trait LspClient: Send {
             text_document_position: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier {
                     uri: Url::from_file_path(file_path).unwrap(),
-                },
+                uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
                 position: position,
             },
             work_done_progress_params: WorkDoneProgressParams::default(),
