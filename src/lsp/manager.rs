@@ -1,6 +1,6 @@
 use crate::lsp::client::{LspClient, PythonClient};
 use crate::lsp::types::{SupportedLSP, UniqueDefinition};
-use crate::lsp::TypeScriptClient;
+use crate::lsp::{RustClient, TypeScriptClient};
 use crate::utils::find_symbol_occurrences;
 use log::{debug, info, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, InitializeResult};
@@ -43,7 +43,11 @@ impl LspManager {
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
-                SupportedLSP::Rust => return Err("Rust LSP not implemented yet".to_string()),
+                SupportedLSP::Rust => Box::new(
+                    RustClient::new(repo_path)
+                        .await
+                        .map_err(|e| e.to_string())?,
+                ),
                 _ => return Err(format!("Unsupported LSP {:?}", lsp)),
             };
             client
