@@ -26,7 +26,7 @@ impl LspClient for PythonClient {
         &mut self,
         query: &str,
     ) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
-        if query == "" || query == "*" {
+        if query.is_empty() || query == "*" {
             warn!(
                 "Pyright doesn't support wildcards in workspace symbols query, expect empty result"
             );
