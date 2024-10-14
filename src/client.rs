@@ -203,6 +203,27 @@ pub trait LspClient: Send {
     fn get_process(&mut self) -> &mut ProcessHandler;
 
     fn get_json_rpc(&mut self) -> &mut JsonRpcHandler;
+
+    async fn setup_workspace(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        /*
+        This should be server requests and notifications that are needed AFTER initialization but before all the features are available
+        Override this with-langserver specific logic
+         */
+        Ok(())
+    }
+
+    async fn find_workspace_folders(
+        &mut self,
+        root_path: String,
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
+        /*
+        Override this with-langserver specific logic
+         */
+        Ok(vec![WorkspaceFolder {
+            uri: Url::from_file_path(root_path.clone()).unwrap(),
+            name: root_path,
+        }])
+    }
 }
 
 pub struct GenericClient {
