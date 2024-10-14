@@ -63,7 +63,6 @@ impl LspManager {
         Ok(())
     }
 
-
     pub async fn get_symbols(
         &self,
         file_path: &str,
