@@ -90,7 +90,13 @@ async fn get_definition(
     let full_path_str = full_path.to_str().unwrap_or("");
 
     let result = {
-        let lsp_manager = data.lsp_manager.lock().unwrap();
+        let lsp_manager = match data.lsp_manager.lock() {
+            Ok(manager) => manager,
+            Err(poisoned) => {
+                error!("Failed to lock lsp_manager: {:?}", poisoned);
+                return HttpResponse::InternalServerError().finish();
+            }
+        };
         lsp_manager
             .get_definition(
                 full_path_str,
