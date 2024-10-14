@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use url::Url;
 
-pub async fn get_files_for_workspace(
+pub async fn get_files_for_workspace_typescript(
     repo_path: &str,
 ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
     let tsconfig_path = Path::new(repo_path).join("tsconfig.json");

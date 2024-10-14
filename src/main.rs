@@ -174,9 +174,16 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new(move || {
         App::new()
-            .wrap(Cors::default().allow_any_origin().allow_any_method().allow_any_header())
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_method()
+                    .allow_any_header(),
+            )
             .app_data(app_state.clone())
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+            )
             .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
             .service(web::resource("/get-definition").route(web::post().to(get_definition)))

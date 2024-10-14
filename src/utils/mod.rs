@@ -1,5 +1,4 @@
-mod file_utils;
-mod symbol_finder;
+pub(crate) mod file_utils;
+pub(crate) mod symbol_finder;
 
-pub use file_utils::*;
-pub use symbol_finder::*;
+pub use self::{file_utils::*, symbol_finder::*};

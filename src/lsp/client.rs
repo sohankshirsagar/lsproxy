@@ -1,6 +1,7 @@
-use crate::lsp::{JsonRpcHandler, ProcessHandler};
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
-use crate::lsp::process::{Process};
+use crate::lsp::process::Process;
+use crate::lsp::{JsonRpcHandler, ProcessHandler};
+use crate::utils::get_files_for_workspace_typescript;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
@@ -10,6 +11,8 @@ use lsp_types::{
     WorkspaceFolder,
 };
 use std::error::Error;
+use std::process::Stdio;
+use tokio::process::Command;
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -205,41 +208,25 @@ pub trait LspClient: Send {
 
     fn get_json_rpc(&mut self) -> &mut JsonRpcHandler;
 
-    async fn setup_workspace(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        /*
-        This should be server requests and notifications that are needed AFTER initialization but before all the features are available
-        Override this with-langserver specific logic
-         */
-        Ok(())
-    }
+    async fn setup_workspace(
+        &mut self,
+        root_path: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>>;
 
     async fn find_workspace_folders(
         &mut self,
         root_path: String,
-    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        /*
-        Override this with-langserver specific logic
-         */
-        Ok(vec![WorkspaceFolder {
-            uri: Url::from_file_path(root_path.clone()).unwrap(),
-            name: root_path,
-        }])
-    }
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>>;
 }
 
-pub struct GenericClient {
+
+pub struct PythonClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
 }
 
-impl GenericClient {
-    pub fn new(process: ProcessHandler, json_rpc: JsonRpcHandler) -> Self {
-        Self { process, json_rpc }
-    }
-}
-
-// Implement the trait for LspClient
-impl LspClient for GenericClient {
+#[async_trait]
+impl LspClient for PythonClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -247,4 +234,173 @@ impl LspClient for GenericClient {
     fn get_json_rpc(&mut self) -> &mut JsonRpcHandler {
         &mut self.json_rpc
     }
+
+    async fn setup_workspace(
+        &mut self,
+        root_path: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        Ok(())
+    }
+
+    async fn find_workspace_folders(
+        &mut self,
+        root_path: String,
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![WorkspaceFolder {
+            uri: Url::from_file_path(root_path.clone()).unwrap(),
+            name: root_path,
+        }])
+    }
 }
+
+impl PythonClient {
+    pub async fn new(repo_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let process = Command::new("pyright-langserver")
+            .arg("--stdio")
+            .current_dir(repo_path)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+        let process_handler = ProcessHandler::new(process)
+            .await
+            .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
+        let json_rpc_handler = JsonRpcHandler::new();
+
+        Ok(Self {
+            process: process_handler,
+            json_rpc: json_rpc_handler,
+        })
+    }
+
+    pub async fn find_workspace_folders(
+        &mut self,
+        root_path: String,
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(vec![WorkspaceFolder {
+            uri: Url::from_file_path(root_path.clone()).unwrap(),
+            name: root_path,
+        }])
+    }
+}
+
+pub struct TypeScriptClient {
+    process: ProcessHandler,
+    json_rpc: JsonRpcHandler,
+}
+
+#[async_trait]
+impl LspClient for TypeScriptClient {
+    fn get_process(&mut self) -> &mut ProcessHandler {
+        &mut self.process
+    }
+
+    fn get_json_rpc(&mut self) -> &mut JsonRpcHandler {
+        &mut self.json_rpc
+    }
+
+    async fn setup_workspace(
+        &mut self,
+        root_path: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        debug!("Setting up workspace for TypeScript client");
+        let text_document_items = get_files_for_workspace_typescript(root_path).await.unwrap();
+        for item in text_document_items {
+            debug!("Sent 'didOpen' for file: {}", item.uri.to_string());
+            self.text_document_did_open(item).await?;
+        }
+        debug!("Workspace setup completed for TypeScript client");
+        Ok(())
+    }
+
+    async fn find_workspace_folders(
+        &mut self,
+        root_path: String,
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
+        warn!("TypeScriptClient does not support finding workspace folders");
+        Ok(vec![])
+    }
+}
+
+impl TypeScriptClient {
+    pub async fn new(repo_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let process = Command::new("typescript-language-server")
+            .arg("--stdio")
+            .current_dir(repo_path)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+        let process_handler = ProcessHandler::new(process)
+            .await
+            .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
+        let json_rpc_handler = JsonRpcHandler::new();
+
+        Ok(Self {
+            process: process_handler,
+            json_rpc: json_rpc_handler,
+        })
+    }
+}
+
+pub struct RustClient {
+    process: ProcessHandler,
+    json_rpc: JsonRpcHandler,
+}
+
+#[async_trait]
+impl LspClient for RustClient {
+    fn get_process(&mut self) -> &mut ProcessHandler {
+        &mut self.process
+    }
+
+    fn get_json_rpc(&mut self) -> &mut JsonRpcHandler {
+        &mut self.json_rpc
+    }
+
+    async fn setup_workspace(
+        &mut self,
+        _root_path: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.send_lsp_request("rust-analyzer/reloadWorkspace", None).await?;
+        Ok(())
+    }
+
+    async fn find_workspace_folders(
+        &mut self,
+        root_path: String,
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![WorkspaceFolder {
+            uri: Url::from_file_path(root_path.clone()).unwrap(),
+            name: root_path,
+        }])
+    }
+}
+
+impl RustClient {
+    pub async fn new(repo_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let process = Command::new("rust-analyzer")
+            .current_dir(repo_path)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+        let process_handler = ProcessHandler::new(process)
+            .await
+            .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
+        let json_rpc_handler = JsonRpcHandler::new();
+
+        Ok(Self {
+            process: process_handler,
+            json_rpc: json_rpc_handler,
+        })
+    }
+}
+
+
