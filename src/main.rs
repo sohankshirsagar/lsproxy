@@ -19,11 +19,12 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
 #[openapi(
     paths(
         start_langservers,
-        get_symbols,
+        file_symbols,
+        workspace_symbols,
         get_definition,
     ),
     components(
-        schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSP)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, SupportedLSP)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -44,8 +45,13 @@ struct LspInitRequest {
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
-struct GetSymbolsRequest {
+struct FileSymbolsRequest {
     file_path: String,
+}
+
+#[derive(Deserialize, utoipa::ToSchema)]
+struct WorkspaceSymbolsRequest {
+    query: String,
 }
 
 struct AppState {
@@ -124,17 +130,17 @@ async fn start_langservers(
 
 #[utoipa::path(
     post,
-    path = "/get-symbols",
-    request_body = GetSymbolsRequest,
+    path = "/file-symbols",
+    request_body = FileSymbolsRequest,
     responses(
         (status = 200, description = "Symbols retrieved successfully", body = String),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn get_symbols(
+async fn file_symbols(
     data: web::Data<AppState>,
-    info: web::Json<GetSymbolsRequest>,
+    info: web::Json<FileSymbolsRequest>,
 ) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
 
@@ -144,7 +150,7 @@ async fn get_symbols(
 
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.get_symbols(full_path_str).await
+        lsp_manager.file_symbols(full_path_str).await
     };
 
     match result {
@@ -152,6 +158,36 @@ async fn get_symbols(
         Err(e) => {
             error!("Failed to get symbols: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get symbols: {}", e))
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/workspace-symbols",
+    request_body = WorkspaceSymbolsRequest,
+    responses(
+        (status = 200, description = "Workspace symbols retrieved successfully", body = String),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn workspace_symbols(
+    data: web::Data<AppState>,
+    info: web::Json<WorkspaceSymbolsRequest>,
+) -> HttpResponse {
+    info!("Received workspace_symbols request for query: {}", info.query);
+
+    let result = {
+        let lsp_manager = data.lsp_manager.lock().unwrap();
+        lsp_manager.workspace_symbols(&info.query).await
+    };
+
+    match result {
+        Ok(symbols) => HttpResponse::Ok().json(symbols),
+        Err(e) => {
+            error!("Failed to get workspace symbols: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to get workspace symbols: {}", e))
         }
     }
 }
@@ -187,8 +223,9 @@ async fn main() -> std::io::Result<()> {
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
             .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
-            .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
-            .service(web::resource("/get-definition").route(web::post().to(get_definition)))
+            .service(web::resource("/file-symbols").route(web::post().to(file_symbols)))
+            .service(web::resource("/workspace-symbols").route(web::post().to(workspace_symbols)))
+            .service(web::resource("/definition").route(web::post().to(get_definition)))
     })
     .bind("0.0.0.0:8080")?;
 

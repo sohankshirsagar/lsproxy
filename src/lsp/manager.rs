@@ -2,7 +2,7 @@ use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PythonClient, RustClient, TypeScriptClient};
 use crate::lsp::types::SupportedLSP;
 use log::{debug, warn};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Position};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Position, WorkspaceSymbolResponse};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
@@ -60,7 +60,7 @@ impl LspManager {
         Ok(())
     }
 
-    pub async fn get_symbols(
+    pub async fn file_symbols(
         &self,
         file_path: &str,
     ) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
@@ -84,6 +84,20 @@ impl LspManager {
             warn!("No LSP client found for file type {:?}", lsp_type);
             Err("No LSP client found for file type".into())
         }
+    }
+
+    pub async fn workspace_symbols(
+        &self,
+        query: &str,
+    ) -> Result<Vec<WorkspaceSymbolResponse>, Box<dyn std::error::Error + Send + Sync>> {
+        /* This returns results for all languages */
+        let mut symbols = Vec::new();
+        for client in self.clients.values() {
+            let mut locked_client = client.lock().await;
+            let client_symbols = locked_client.workspace_symbols(query).await?;
+            symbols.push(client_symbols);
+        }
+        Ok(symbols)
     }
 
     pub fn get_client(&self, lsp_type: SupportedLSP) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
