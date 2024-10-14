@@ -1,0 +1,64 @@
+use std::{error::Error, process::Stdio};
+
+use async_trait::async_trait;
+use lsp_types::{Url, WorkspaceFolder};
+use tokio::process::Command;
+
+use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
+
+pub struct RustClient {
+    process: ProcessHandler,
+    json_rpc: JsonRpcHandler,
+}
+
+#[async_trait]
+impl LspClient for RustClient {
+    fn get_process(&mut self) -> &mut ProcessHandler {
+        &mut self.process
+    }
+
+    fn get_json_rpc(&mut self) -> &mut JsonRpcHandler {
+        &mut self.json_rpc
+    }
+
+    async fn setup_workspace(
+        &mut self,
+        _root_path: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.send_lsp_request("rust-analyzer/reloadWorkspace", None)
+            .await?;
+        Ok(())
+    }
+
+    async fn find_workspace_folders(
+        &mut self,
+        root_path: String,
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![WorkspaceFolder {
+            uri: Url::from_file_path(root_path.clone()).unwrap(),
+            name: root_path,
+        }])
+    }
+}
+
+impl RustClient {
+    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let process = Command::new("rust-analyzer")
+            .current_dir(root_path)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+        let process_handler = ProcessHandler::new(process)
+            .await
+            .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
+        let json_rpc_handler = JsonRpcHandler::new();
+
+        Ok(Self {
+            process: process_handler,
+            json_rpc: json_rpc_handler,
+        })
+    }
+}

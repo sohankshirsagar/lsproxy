@@ -19,9 +19,9 @@ pub const MOUNT_DIR: &str = "/mnt/repo";
     utoipa::ToSchema,
 )]
 #[strum(serialize_all = "lowercase")]
-pub enum SupportedLSPs {
+pub enum SupportedLSP {
     Python,
-    TypeScript,
+    TypeScriptJavaScript,
     Rust,
 }
 

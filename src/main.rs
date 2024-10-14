@@ -2,31 +2,30 @@ use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use env_logger::Env;
 use log::{debug, error, info};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-mod lsp_client;
-mod lsp_manager;
-mod symbol_finder;
-mod types;
-use crate::lsp_manager::LspManager;
-use crate::types::{SupportedLSPs, MOUNT_DIR};
+mod lsp;
+mod utils;
+
+use crate::lsp::manager::LspManager;
+use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        init_lsp,
+        start_langservers,
         get_symbols,
         get_definition,
     ),
     components(
-        schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSPs)
+        schemas(LspInitRequest, GetSymbolsRequest, GetDefinitionRequest, SupportedLSP)
     ),
     tags(
-        (name = "github-clone-api", description = "GitHub Clone API")
+        (name = "lsp-adapter-api", description = "LSP Adapter API")
     )
 )]
 struct ApiDoc;
@@ -39,7 +38,7 @@ struct GetDefinitionRequest {
 
 #[derive(Deserialize, utoipa::ToSchema)]
 struct LspInitRequest {
-    lsp_types: Vec<SupportedLSPs>,
+    lsp_types: Vec<SupportedLSP>,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -91,26 +90,31 @@ async fn get_definition(
 
 #[utoipa::path(
     post,
-    path = "/init-lsp",
+    path = "/start-langservers",
     request_body = LspInitRequest,
     responses(
-        (status = 200, description = "LSP server initialized successfully"),
+        (status = 200, description = "LSP server started successfully"),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn init_lsp(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
+async fn start_langservers(
+    data: web::Data<AppState>,
+    info: web::Json<LspInitRequest>,
+) -> HttpResponse {
     info!("Received LSP init request");
 
     let result = {
         let mut lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.start_lsps(MOUNT_DIR, &info.lsp_types).await
+        lsp_manager
+            .start_langservers(MOUNT_DIR, &info.lsp_types)
+            .await
     };
 
     match result {
-        Ok(_) => HttpResponse::Ok().body("LSP initialized successfully"),
+        Ok(_) => HttpResponse::Ok().body("LSP started successfully"),
         Err(e) => {
-            error!("Failed to initialize LSP: {}", e);
+            error!("Failed to start LSP: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e))
         }
     }
@@ -155,50 +159,37 @@ async fn main() -> std::io::Result<()> {
     println!("Starting main function");
     eprintln!("This is a test error message");
 
-    // Set up panic hook
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Server panicked: {:?}", panic_info);
     }));
 
-    // Initialize logger
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
-    println!("Logger initialized");
     info!("Logger initialized");
 
-    // Initialize app state
-    info!("Initializing app state");
     let app_state = web::Data::new(AppState {
         lsp_manager: Arc::new(Mutex::new(LspManager::new())),
     });
-    info!("App state initialized");
 
-    // Generate OpenAPI documentation
-    info!("Generating OpenAPI documentation");
     let openapi = ApiDoc::openapi();
-    info!("OpenAPI documentation generated");
 
-    // Initialize HTTP server
-    info!("Initializing HTTP server");
     let server = HttpServer::new(move || {
-        let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header();
-
         App::new()
-            .wrap(cors)
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_method()
+                    .allow_any_header(),
+            )
             .app_data(app_state.clone())
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(web::resource("/init-lsp").route(web::post().to(init_lsp)))
+            .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
             .service(web::resource("/get-symbols").route(web::post().to(get_symbols)))
             .service(web::resource("/get-definition").route(web::post().to(get_definition)))
     })
     .bind("0.0.0.0:8080")?;
 
     info!("Starting server...");
-    println!("Server is about to start running...");
-
     server.run().await
 }
