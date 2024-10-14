@@ -6,7 +6,6 @@ use log::{debug, info, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::fs::read_dir;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
