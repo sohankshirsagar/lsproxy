@@ -34,7 +34,8 @@ struct ApiDoc;
 #[derive(Deserialize, utoipa::ToSchema)]
 struct GetDefinitionRequest {
     file_path: String,
-    position: Position,
+    line: u32,
+    character: u32,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -66,8 +67,8 @@ async fn get_definition(
     info: web::Json<GetDefinitionRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_definition request for file: {}, position: {:?}",
-        info.file_path, info.position
+        "Received get_definition request for file: {}, line: {}, character: {}",
+        info.file_path, info.line, info.character
     );
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
@@ -76,7 +77,7 @@ async fn get_definition(
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
         lsp_manager
-            .get_definition(full_path_str, info.position)
+            .get_definition(full_path_str, Position { line: info.line, character: info.character })
             .await
     };
 
