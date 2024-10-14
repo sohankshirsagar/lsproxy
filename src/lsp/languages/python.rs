@@ -44,14 +44,4 @@ impl PythonClient {
             json_rpc: json_rpc_handler,
         })
     }
-
-    pub async fn find_workspace_folders(
-        &mut self,
-        root_path: String,
-    ) -> Result<Vec<WorkspaceFolder>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(vec![WorkspaceFolder {
-            uri: Url::from_file_path(root_path.clone()).unwrap(),
-            name: root_path,
-        }])
-    }
 }
