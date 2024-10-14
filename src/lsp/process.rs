@@ -43,7 +43,7 @@ impl Process for ProcessHandler {
         let mut buffer = Vec::new();
 
         loop {
-            let timeout = tokio::time::sleep(Duration::from_secs(30));
+            let timeout = tokio::time::sleep(Duration::from_secs(5));
             tokio::select! {
                 result = self.stdout.read_until(b'\n', &mut buffer) => {
                     match result {

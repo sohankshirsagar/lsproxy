@@ -59,15 +59,6 @@ impl LspManager {
         Ok(())
     }
 
-    async fn initialize_client(
-        &mut self,
-        lsp_type: SupportedLSP,
-        repo_path: String,
-    ) -> Result<InitializeResult, Box<dyn std::error::Error + Send + Sync>> {
-        let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
-        let mut locked_client = client.lock().await;
-        locked_client.initialize(repo_path).await
-    }
 
     pub async fn get_symbols(
         &self,
@@ -156,41 +147,6 @@ impl LspManager {
 
     async fn find_python_root(&mut self, repo_path: &str) -> String {
         repo_path.to_string()
-    }
-
-    async fn find_typescript_root(&mut self, repo_path: &str) -> String {
-        if let Some(first_tsconfig) = self.find_tsconfig_files(repo_path).first() {
-            if let Some(parent) = first_tsconfig.parent() {
-                debug!(
-                    "Found tsconfig at {}",
-                    parent.to_string_lossy().into_owned()
-                );
-                return parent.to_string_lossy().into_owned();
-            }
-        }
-        debug!("Didn't find tsconfig");
-        repo_path.to_string()
-    }
-
-    fn find_tsconfig_files(&self, dir: &str) -> Vec<PathBuf> {
-        let mut result = Vec::new();
-        if let Ok(entries) = read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    if let Some(file_name) = path.file_name() {
-                        if file_name != "node_modules" {
-                            result.extend(
-                                self.find_tsconfig_files(&path.to_string_lossy().into_owned()),
-                            );
-                        }
-                    }
-                } else if path.file_name().unwrap() == "tsconfig.json" {
-                    result.push(path);
-                }
-            }
-        }
-        result
     }
 
     async fn find_rust_root(&mut self, repo_path: &str) -> String {
