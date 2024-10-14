@@ -1,18 +1,16 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
 use crate::lsp::{JsonRpcHandler, ProcessHandler};
-use crate::utils::get_files_for_workspace_typescript;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
     DidOpenTextDocumentParams, DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams,
-    GotoDefinitionResponse, InitializeParams, InitializeResult, PartialResultParams, Position,
-    TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
-    WorkspaceFolder,
+    GotoDefinitionResponse, InitializeParams, InitializeResult, Location, PartialResultParams,
+    Position, ReferenceContext, ReferenceParams, TextDocumentIdentifier,
+    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
+    WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
-use std::process::Stdio;
-use tokio::process::Command;
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -110,22 +108,18 @@ pub trait LspClient: Send {
     async fn text_document_definition(
         &mut self,
         file_path: &str,
-        line: u32,
-        character: u32,
+        position: Position,
     ) -> Result<GotoDefinitionResponse, Box<dyn Error + Send + Sync>> {
         debug!(
             "Requesting goto definition for {}, line {}, character {}",
-            file_path, line, character
+            file_path, position.line, position.character
         );
         let params = GotoDefinitionParams {
             text_document_position_params: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier {
                     uri: Url::from_file_path(file_path).unwrap(),
                 },
-                position: Position {
-                    line: line,
-                    character: character,
-                },
+                position: position,
             },
             work_done_progress_params: WorkDoneProgressParams::default(),
             partial_result_params: PartialResultParams::default(),
@@ -146,6 +140,36 @@ pub trait LspClient: Send {
             Err(error.into())
         } else {
             Err("Unexpected goto definition response".into())
+        }
+    }
+
+    async fn workspace_symbols(
+        &mut self,
+        query: &str,
+    ) -> Result<WorkspaceSymbolResponse, Box<dyn Error + Send + Sync>> {
+        debug!("Requesting workspace symbols with query: {}", query);
+        let params = WorkspaceSymbolParams {
+            query: query.to_string(),
+            ..Default::default()
+        };
+        let request = self
+            .get_json_rpc()
+            .create_request("workspace/symbol", serde_json::to_value(params)?);
+        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+        self.get_process().send(&message).await?;
+
+        let response = self
+            .receive_response()
+            .await?
+            .ok_or("No response received")?;
+        if let Some(result) = response.result {
+            let symbols: WorkspaceSymbolResponse = serde_json::from_value(result)?;
+            Ok(symbols)
+        } else if let Some(error) = response.error {
+            error!("Workspace symbols error: {:?}", error);
+            Err(error.into())
+        } else {
+            Err("Unexpected workspace symbols response".into())
         }
     }
 
@@ -180,11 +204,54 @@ pub trait LspClient: Send {
         }
     }
 
+    async fn text_document_reference(
+        &mut self,
+        file_path: &str,
+        position: Position,
+        include_declaration: bool,
+    ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
+        let params = ReferenceParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier {
+                    uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
+                },
+                position,
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+            context: ReferenceContext {
+                include_declaration,
+            },
+        };
+
+        let request = self
+            .get_json_rpc()
+            .create_request("textDocument/references", serde_json::to_value(params)?);
+
+        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+        self.get_process().send(&message).await?;
+
+        let response = self
+            .receive_response()
+            .await?
+            .ok_or("No response received")?;
+        if let Some(result) = response.result {
+            let references: Vec<Location> = serde_json::from_value(result)?;
+            debug!("Received references response");
+            Ok(references)
+        } else if let Some(error) = response.error {
+            error!("References error: {:?}", error);
+            Err(error.into())
+        } else {
+            Err("Unexpected references response".into())
+        }
+    }
+
     async fn receive_response(
         &mut self,
     ) -> Result<Option<JsonRpcMessage>, Box<dyn Error + Send + Sync>> {
         debug!("Awaiting response from LSP server");
-        // todo this could be an inf loop, though timeout in receive will break it
+        // TODO this could be an inf loop, though timeout in receive will break it
         loop {
             let raw_response = self.get_process().receive().await?;
             let message = self.get_json_rpc().parse_message(&raw_response)?;

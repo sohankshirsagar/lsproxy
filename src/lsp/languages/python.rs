@@ -1,17 +1,19 @@
 use std::process::Stdio;
 
 use async_trait::async_trait;
+use log::warn;
+use lsp_types::WorkspaceSymbolResponse;
 use tokio::process::Command;
 
 use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
 
-pub struct PythonClient {
+pub struct PyrightClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
 }
 
 #[async_trait]
-impl LspClient for PythonClient {
+impl LspClient for PyrightClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -19,9 +21,21 @@ impl LspClient for PythonClient {
     fn get_json_rpc(&mut self) -> &mut JsonRpcHandler {
         &mut self.json_rpc
     }
+
+    async fn workspace_symbols(
+        &mut self,
+        query: &str,
+    ) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+        if query.is_empty() || query == "*" {
+            warn!(
+                "Pyright doesn't support wildcards in workspace symbols query, expect empty result"
+            );
+        }
+        LspClient::workspace_symbols(self, query).await
+    }
 }
 
-impl PythonClient {
+impl PyrightClient {
     pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("pyright-langserver")
             .arg("--stdio")

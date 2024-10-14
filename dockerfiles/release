@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g pyright
 
 # Copy the binary from the builder stage and the openapi.yaml file
-COPY --from=builder /usr/src/app/target/release/lsp-adapter-server .
+COPY --from=builder /usr/src/app/target/release/lsp-proxy .
 
 # Document that the container listens on port 8080
 EXPOSE 8080
@@ -48,4 +48,4 @@ ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
 
 # Run the server directly
-CMD ["./lsp-adapter-server"]
+CMD ["./lsp-proxy"]

@@ -6,13 +6,13 @@ use tokio::process::Command;
 
 use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
 
-pub struct RustClient {
+pub struct RustAnalyzerClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
 }
 
 #[async_trait]
-impl LspClient for RustClient {
+impl LspClient for RustAnalyzerClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -43,7 +43,7 @@ impl LspClient for RustClient {
     }
 }
 
-impl RustClient {
+impl RustAnalyzerClient {
     pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("rust-analyzer")
             .current_dir(root_path)
