@@ -1,7 +1,7 @@
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PythonClient, RustClient, TypeScriptClient};
 use crate::lsp::types::SupportedLSP;
-use log::{debug, info, warn};
+use log::{debug, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Position};
 use std::collections::HashMap;
 use std::error::Error;
