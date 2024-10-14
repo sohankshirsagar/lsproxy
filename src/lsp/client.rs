@@ -243,10 +243,10 @@ impl LspClient for PythonClient {
 }
 
 impl PythonClient {
-    pub async fn new(repo_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("pyright-langserver")
             .arg("--stdio")
-            .current_dir(repo_path)
+            .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -314,10 +314,10 @@ impl LspClient for TypeScriptClient {
 }
 
 impl TypeScriptClient {
-    pub async fn new(repo_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("typescript-language-server")
             .arg("--stdio")
-            .current_dir(repo_path)
+            .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -372,9 +372,9 @@ impl LspClient for RustClient {
 }
 
 impl RustClient {
-    pub async fn new(repo_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("rust-analyzer")
-            .current_dir(repo_path)
+            .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
