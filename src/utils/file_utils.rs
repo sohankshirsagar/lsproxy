@@ -4,6 +4,7 @@ use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 use url::Url;
+
 pub async fn get_files_for_workspace(
     repo_path: &str,
 ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
@@ -11,7 +12,6 @@ pub async fn get_files_for_workspace(
     let tsconfig_content = fs::read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
     let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
 
-    let mut included = Vec::new();
     let include_patterns = tsconfig["include"]
         .as_array()
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
@@ -23,18 +23,18 @@ pub async fn get_files_for_workspace(
 
     let files = get_typescript_files(repo_path, &include_patterns, &exclude_patterns)?;
 
-    for file_path in files {
-        let content = fs::read_to_string(&file_path)
-            .map_err(|e| format!("Failed to read file {}: {}", file_path.display(), e))?;
-        included.push(TextDocumentItem {
-            uri: Url::from_file_path(&file_path).map_err(|_| "Invalid file path")?,
-            language_id: "typescript".to_string(),
-            version: 1,
-            text: content,
-        });
-    }
-
-    Ok(included)
+    files
+        .into_iter()
+        .map(|file_path| {
+            let content = fs::read_to_string(&file_path)?;
+            Ok(TextDocumentItem {
+                uri: Url::from_file_path(&file_path).map_err(|_| "Invalid file path")?,
+                language_id: "typescript".to_string(),
+                version: 1,
+                text: content,
+            })
+        })
+        .collect()
 }
 
 fn get_typescript_files(
@@ -42,26 +42,21 @@ fn get_typescript_files(
     include_patterns: &[&str],
     exclude_patterns: &[&str],
 ) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
-    let mut files = Vec::new();
-
-    for pattern in include_patterns {
-        let glob_pattern = format!("{}/{}", repo_path, pattern);
-        for entry in glob(&glob_pattern)? {
-            let path = entry?;
-            if !is_excluded(&path, repo_path, exclude_patterns) && path.is_file() {
-                files.push(path);
-            }
-        }
-    }
-
-    Ok(files)
+    include_patterns
+        .iter()
+        .try_fold(Vec::new(), |mut acc, pattern| {
+            let paths = glob(&format!("{}/{}", repo_path, pattern))?
+                .filter_map(Result::ok)
+                .filter(|path| !is_excluded(path, repo_path, exclude_patterns) && path.is_file());
+            acc.extend(paths);
+            Ok(acc)
+        })
 }
 
 fn is_excluded(path: &Path, repo_path: &str, exclude_patterns: &[&str]) -> bool {
     let relative_path = path.strip_prefix(repo_path).unwrap_or(path);
     exclude_patterns.iter().any(|pattern| {
-        let glob_pattern = format!("{}/{}", repo_path, pattern);
-        glob::Pattern::new(&glob_pattern)
+        glob::Pattern::new(&format!("{}/{}", repo_path, pattern))
             .map(|p| p.matches_path(relative_path))
             .unwrap_or(false)
     })

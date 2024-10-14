@@ -3,7 +3,6 @@ mod errors;
 mod json_rpc;
 mod lsp_manager;
 mod process;
-mod symbol_finder;
 mod types;
 mod utils;
 
