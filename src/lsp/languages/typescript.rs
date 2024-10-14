@@ -29,7 +29,7 @@ impl LspClient for TypeScriptClient {
         &mut self,
         root_path: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        /* 
+        /*
         The server needs to know about all the files in the workspace to provide features like go to definition.
         This is a limitation of the TypeScript language server.
          */

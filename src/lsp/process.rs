@@ -11,7 +11,6 @@ pub trait Process: Send + Sync {
 }
 
 pub struct ProcessHandler {
-    pub child: Child,
     pub stdin: ChildStdin,
     pub stdout: BufReader<ChildStdout>,
 }
@@ -21,7 +20,6 @@ impl ProcessHandler {
         let stdin = child.stdin.take().ok_or("Failed to open stdin")?;
         let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
         Ok(Self {
-            child,
             stdin: stdin,
             stdout: BufReader::new(stdout),
         })
