@@ -148,7 +148,7 @@ impl LspManager {
 
             for occurrence in occurrences {
                 match locked_client
-                    .goto_definition(
+                    .text_document_definition(
                         file_path,
                         occurrence.start_line as u32 - 1,
                         occurrence.start_column as u32 - 1,

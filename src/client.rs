@@ -103,7 +103,7 @@ pub trait LspClient: Send {
         self.get_process().send(&message).await
     }
 
-    async fn goto_definition(
+    async fn text_document_definition(
         &mut self,
         file_path: &str,
         line: u32,
