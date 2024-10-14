@@ -30,7 +30,6 @@ impl LspClient for PythonClient {
             warn!(
                 "Pyright doesn't support wildcards in workspace symbols query, expect empty result"
             );
-            return Ok(WorkspaceSymbolResponse::Flat(Vec::new()));
         }
         LspClient::workspace_symbols(self, query).await
     }
