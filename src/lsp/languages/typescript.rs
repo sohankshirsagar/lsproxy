@@ -7,7 +7,7 @@ use tokio::process::Command;
 
 use crate::{
     lsp::{JsonRpcHandler, LspClient, ProcessHandler},
-    utils::get_files_for_workspace_typescript,
+    utils::file_utils::get_files_for_workspace_typescript,
 };
 
 pub struct TypeScriptClient {
