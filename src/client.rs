@@ -8,7 +8,6 @@ use lsp_types::{
     TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
     WorkspaceFolder,
 };
-use serde::Serialize;
 use std::error::Error;
 
 #[async_trait]
