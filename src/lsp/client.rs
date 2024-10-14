@@ -8,11 +8,9 @@ use lsp_types::{
     DidOpenTextDocumentParams, DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams,
     GotoDefinitionResponse, InitializeParams, InitializeResult, PartialResultParams, Position,
     TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
-    WorkspaceFolder,
+    WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
-use std::process::Stdio;
-use tokio::process::Command;
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -110,22 +108,18 @@ pub trait LspClient: Send {
     async fn text_document_definition(
         &mut self,
         file_path: &str,
-        line: u32,
-        character: u32,
+        position: Position,
     ) -> Result<GotoDefinitionResponse, Box<dyn Error + Send + Sync>> {
         debug!(
             "Requesting goto definition for {}, line {}, character {}",
-            file_path, line, character
+            file_path, position.line, position.character
         );
         let params = GotoDefinitionParams {
             text_document_position_params: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier {
                     uri: Url::from_file_path(file_path).unwrap(),
                 },
-                position: Position {
-                    line: line,
-                    character: character,
-                },
+                position: position,
             },
             work_done_progress_params: WorkDoneProgressParams::default(),
             partial_result_params: PartialResultParams::default(),
@@ -146,6 +140,34 @@ pub trait LspClient: Send {
             Err(error.into())
         } else {
             Err("Unexpected goto definition response".into())
+        }
+    }
+
+
+    async fn workspace_symbols(
+        &mut self,
+        query: &str,
+    ) -> Result<WorkspaceSymbolResponse, Box<dyn Error + Send + Sync>> {
+        debug!("Requesting workspace symbols with query: {}", query);
+        let params = WorkspaceSymbolParams {
+            query: query.to_string(),
+            ..Default::default()
+        };
+        let request = self
+            .get_json_rpc()
+            .create_request("workspace/symbol", serde_json::to_value(params)?);
+        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+        self.get_process().send(&message).await?;
+
+        let response = self.receive_response().await.unwrap().expect("No response");
+        if let Some(result) = response.result {
+            let symbols: WorkspaceSymbolResponse = serde_json::from_value(result)?;
+            Ok(symbols)
+        } else if let Some(error) = response.error {
+            error!("Workspace symbols error: {:?}", error);
+            Err(error.into())
+        } else {
+            Err("Unexpected workspace symbols response".into())
         }
     }
 

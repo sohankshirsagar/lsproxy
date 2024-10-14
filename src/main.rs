@@ -2,6 +2,7 @@ use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use env_logger::Env;
 use log::{debug, error, info};
+use lsp_types::Position;
 use serde::Deserialize;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -33,7 +34,7 @@ struct ApiDoc;
 #[derive(Deserialize, utoipa::ToSchema)]
 struct GetDefinitionRequest {
     file_path: String,
-    symbol_name: String,
+    position: Position,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -65,8 +66,8 @@ async fn get_definition(
     info: web::Json<GetDefinitionRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_definition request for file: {}, symbol: {}",
-        info.file_path, info.symbol_name
+        "Received get_definition request for file: {}, position: {:?}",
+        info.file_path, info.position
     );
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
@@ -75,7 +76,7 @@ async fn get_definition(
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
         lsp_manager
-            .get_definition(full_path_str, &info.symbol_name)
+            .get_definition(full_path_str, info.position)
             .await
     };
 
