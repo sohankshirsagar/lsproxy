@@ -1,5 +1,5 @@
 use log::debug;
-use std::fs;
+use std::{error::Error, fs};
 use tree_sitter::{Parser, Query, QueryCursor};
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub struct SymbolOccurrence {
 pub fn find_symbol_occurrences(
     file_path: &str,
     symbol_name: &str,
-) -> Result<Vec<SymbolOccurrence>, Box<dyn std::error::Error>> {
+) -> Result<Vec<SymbolOccurrence>, Box<dyn Error + Send + Sync>> {
     debug!(
         "Searching for symbol '{}' in file '{}'",
         symbol_name, file_path

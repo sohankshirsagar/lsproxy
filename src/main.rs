@@ -1,3 +1,13 @@
+mod client;
+mod errors;
+mod json_rpc;
+mod lsp_manager;
+mod process;
+mod protocol;
+mod symbol_finder;
+mod types;
+mod utils;
+
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use env_logger::Env;
@@ -8,10 +18,6 @@ use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-mod lsp_client;
-mod lsp_manager;
-mod symbol_finder;
-mod types;
 use crate::lsp_manager::LspManager;
 use crate::types::{SupportedLSP, MOUNT_DIR};
 
@@ -99,18 +105,23 @@ async fn get_definition(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn start_langservers(data: web::Data<AppState>, info: web::Json<LspInitRequest>) -> HttpResponse {
+async fn start_langservers(
+    data: web::Data<AppState>,
+    info: web::Json<LspInitRequest>,
+) -> HttpResponse {
     info!("Received LSP init request");
 
     let result = {
         let mut lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.start_langservers(MOUNT_DIR, &info.lsp_types).await
+        lsp_manager
+            .start_langservers(MOUNT_DIR, &info.lsp_types)
+            .await
     };
 
     match result {
-        Ok(_) => HttpResponse::Ok().body("LSP initialized successfully"),
+        Ok(_) => HttpResponse::Ok().body("LSP started successfully"),
         Err(e) => {
-            error!("Failed to initialize LSP: {}", e);
+            error!("Failed to start LSP: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e))
         }
     }

@@ -1,1 +1,3 @@
-pub mod python_symbol_finder;
+mod python;
+
+pub use python::find_symbol_occurrences;
