@@ -211,12 +211,22 @@ pub trait LspClient: Send {
     async fn setup_workspace(
         &mut self,
         root_path: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>>;
+    ) -> Result<(), Box<dyn Error + Send + Sync>>
+    {
+        Ok(())
+    }
 
     async fn find_workspace_folders(
         &mut self,
         root_path: String,
-    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>>;
+    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![
+            WorkspaceFolder {
+                uri: Url::from_file_path(root_path.clone()).unwrap(),
+                name: root_path,
+            }
+        ])
+    }
 }
 
 
