@@ -235,10 +235,12 @@ async fn get_references(
         "Received get_references request for file: {}, line: {}, character: {}",
         info.file_path, info.line, info.character
     );
+    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
+    let full_path_str = full_path.to_str().unwrap_or("");
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
         .get_references(
-            &info.file_path,
+            full_path_str,
             Position {
                 line: info.line,
                 character: info.character,
