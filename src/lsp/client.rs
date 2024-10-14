@@ -158,7 +158,10 @@ pub trait LspClient: Send {
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
 
-        let response = self.receive_response().await?.ok_or("No response received")?;
+        let response = self
+            .receive_response()
+            .await?
+            .ok_or("No response received")?;
         if let Some(result) = response.result {
             let symbols: WorkspaceSymbolResponse = serde_json::from_value(result)?;
             Ok(symbols)
@@ -210,32 +213,32 @@ pub trait LspClient: Send {
         let params = ReferenceParams {
             text_document_position: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier {
-                    uri: Url::from_file_path(file_path).unwrap(),
-                uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
-                position: position,
+                    uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
+                },
+                position,
             },
             work_done_progress_params: WorkDoneProgressParams::default(),
             partial_result_params: PartialResultParams::default(),
             context: ReferenceContext {
-                include_declaration: include_declaration,
+                include_declaration,
             },
         };
 
         let request = self
             .get_json_rpc()
             .create_request("textDocument/references", serde_json::to_value(params)?);
+
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
 
-        let response = if let Some(resp) = self.receive_response().await? {
-            resp
-        } else {
-            return Err("No response received".into());
-        };
+        let response = self
+            .receive_response()
+            .await?
+            .ok_or("No response received")?;
         if let Some(result) = response.result {
-            let goto_resp: Vec<Location> = serde_json::from_value(result)?;
+            let references: Vec<Location> = serde_json::from_value(result)?;
             debug!("Received references response");
-            Ok(goto_resp)
+            Ok(references)
         } else if let Some(error) = response.error {
             error!("References error: {:?}", error);
             Err(error.into())

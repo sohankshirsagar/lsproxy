@@ -116,7 +116,7 @@ impl LspManager {
     ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
         let lsp_type = self.detect_language(file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
-        let client = self.get_client(lsp_type).ok_or_else(|| format!("LSP client not found for {:?}", lsp_type))?;
+        let mut locked_client = client.lock().await;
         locked_client
             .text_document_reference(file_path, position, include_declaration)
             .await
