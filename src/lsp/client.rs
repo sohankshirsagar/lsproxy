@@ -211,8 +211,7 @@ pub trait LspClient: Send {
     async fn setup_workspace(
         &mut self,
         root_path: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>>
-    {
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         Ok(())
     }
 
@@ -220,15 +219,12 @@ pub trait LspClient: Send {
         &mut self,
         root_path: String,
     ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![
-            WorkspaceFolder {
-                uri: Url::from_file_path(root_path.clone()).unwrap(),
-                name: root_path,
-            }
-        ])
+        Ok(vec![WorkspaceFolder {
+            uri: Url::from_file_path(root_path.clone()).unwrap(),
+            name: root_path,
+        }])
     }
 }
-
 
 pub struct PythonClient {
     process: ProcessHandler,
@@ -359,7 +355,8 @@ impl LspClient for RustClient {
         &mut self,
         _root_path: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.send_lsp_request("rust-analyzer/reloadWorkspace", None).await?;
+        self.send_lsp_request("rust-analyzer/reloadWorkspace", None)
+            .await?;
         Ok(())
     }
 
@@ -395,5 +392,3 @@ impl RustClient {
         })
     }
 }
-
-
