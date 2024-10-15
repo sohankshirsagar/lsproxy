@@ -23,9 +23,10 @@ pub trait LspClient: Send {
         debug!("Initializing LSP client with root path: {:?}", root_path);
 
         let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
+        debug!("Found workspace folders: {:?}", workspace_folders);
         let params = InitializeParams {
             capabilities: Default::default(),
-            workspace_folders: Some(workspace_folders),
+            workspace_folders: None,
             root_uri: Some(Url::from_file_path(root_path.clone()).unwrap()),
             ..Default::default()
         };
@@ -316,6 +317,17 @@ pub trait LspClient: Send {
         vec![".git".to_string()]
     }
 
+    fn get_exclude_patterns(&mut self) -> Vec<String> {
+        vec![
+            "**/node_modules".to_string(),
+            "**/__pycache__".to_string(),
+            "**/.*".to_string(),
+            "**/dist".to_string(),
+            "**/target".to_string(),
+            ".git".to_string(),
+        ]
+    }
+
     async fn setup_workspace(
         &mut self,
         root_path: &str,
@@ -328,33 +340,35 @@ pub trait LspClient: Send {
         root_path: String,
     ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
         let mut workspace_folders: Vec<WorkspaceFolder> = Vec::new();
+        let include_patterns = self
+            .get_root_files()
+            .into_iter()
+            .map(|f| format!("**/{f}"))
+            .collect();
+        debug!("include_patterns: {:?}", include_patterns);
+        let exclude_patterns = self.get_exclude_patterns();
 
-        match search_directories(&Path::new(&root_path)) {
+        match search_directories(&Path::new(&root_path), include_patterns, exclude_patterns) {
             Ok(dirs) => {
                 for dir in dirs {
-                    for root_file in self.get_root_files() {
-                        let folder_path = dir.join(&root_file);
-                        if folder_path.exists() {
-                            if let Ok(uri) = Url::from_file_path(&folder_path) {
-                                // remore folders that are parents of this one, because we prefer more specific paths
-                                // this is pretty inefficient but moving on
-                                workspace_folders.retain(|folder: &WorkspaceFolder| {
-                                    !uri.to_file_path()
-                                        .unwrap()
-                                        .starts_with(folder.uri.to_file_path().unwrap())
-                                });
+                    let folder_path = Path::new(&root_path).join(&dir);
+                    if let Ok(uri) = Url::from_file_path(&folder_path) {
+                        // remore folders that are parents of this one, because we prefer more specific paths
+                        // this is pretty inefficient but moving on
+                        workspace_folders.retain(|folder: &WorkspaceFolder| {
+                            !uri.to_file_path()
+                                .unwrap()
+                                .starts_with(folder.uri.to_file_path().unwrap())
+                        });
 
-                                workspace_folders.push(WorkspaceFolder {
-                                    uri,
-                                    name: folder_path
-                                        .file_name()
-                                        .and_then(|n| n.to_str())
-                                        .unwrap_or("")
-                                        .to_string(),
-                                });
-                            }
-                            break; // Found a root file, no need to check others in this directory
-                        }
+                        workspace_folders.push(WorkspaceFolder {
+                            uri,
+                            name: folder_path
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("")
+                                .to_string(),
+                        });
                     }
                 }
             }

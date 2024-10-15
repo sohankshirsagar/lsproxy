@@ -1,4 +1,4 @@
-use std::{error::Error, process::Stdio};
+use std::{error::Error, process::Stdio, vec};
 
 use async_trait::async_trait;
 use log::{debug, warn};
@@ -50,14 +50,6 @@ impl LspClient for TypeScriptLanguageClient {
         }
         debug!("Workspace setup completed for TypeScript client");
         Ok(())
-    }
-
-    async fn find_workspace_folders(
-        &mut self,
-        root_path: String,
-    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        warn!("TypeScriptClient does not support finding workspace folders. Start multiple instances and use root uri");
-        LspClient::find_workspace_folders(self, root_path).await
     }
 }
 
