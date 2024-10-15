@@ -27,7 +27,7 @@ impl LspClient for RustAnalyzerClient {
     fn get_root_files(&mut self) -> Vec<String> {
         RUST_ANALYZER_ROOT_FILES
             .iter()
-            .map(|&s| s.to_string())
+            .map(|&s| s.to_owned())
             .collect()
     }
 
