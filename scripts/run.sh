@@ -15,4 +15,4 @@ fi
 docker build -t lsp-box-runner -f dockerfiles/run .
 
 # Run the application
-docker run -p 8080:8080 -v $1:/mnt/repo lsp-box-runner
+docker run --rm -p 8080:8080 -v $1:/mnt/repo lsp-box-runner

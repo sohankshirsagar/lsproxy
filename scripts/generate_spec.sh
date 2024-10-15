@@ -14,5 +14,13 @@ fi
 # Build the runner image
 docker build -t lsp-box-runner -f dockerfiles/run .
 
-# Run the application
-docker run -p 8080:8080 lsp-box-runner -w
+# Run the application to generate the OpenAPI spec
+docker run --name temp_lsp_box lsp-box-runner -w
+
+# Copy the generated OpenAPI spec from the container to the host
+docker cp temp_lsp_box:/usr/src/app/openapi.json ./openapi.json
+
+# Remove the temporary container
+docker rm temp_lsp_box
+
+echo "OpenAPI specification has been generated and saved as openapi.json"
