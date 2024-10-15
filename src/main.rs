@@ -73,13 +73,9 @@ struct AppState {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Write OpenAPI spec to file (default: openapi.json)
+    /// Write OpenAPI spec to file (openapi.json)
     #[arg(short, long)]
     write_openapi: bool,
-
-    /// Custom output file path for OpenAPI spec
-    #[arg(short, long, value_name = "FILE")]
-    output: Option<PathBuf>,
 }
 
 #[utoipa::path(
@@ -292,7 +288,7 @@ async fn main() -> std::io::Result<()> {
     let openapi = ApiDoc::openapi();
 
     if cli.write_openapi {
-        let file_path = cli.output.unwrap_or_else(|| PathBuf::from("openapi.json"));
+        let file_path = PathBuf::from("openapi.json");
         let openapi_json = serde_json::to_string_pretty(&openapi).unwrap();
         let mut file = File::create(&file_path).unwrap();
         file.write_all(openapi_json.as_bytes()).unwrap();
