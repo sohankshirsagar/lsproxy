@@ -25,7 +25,7 @@ RUN npm install -g typescript-language-server typescript
 
 
 # Copy the binary from the host into the container
-COPY target/release/lsp-proxy .
+COPY target/release/lsproxy .
 
 # Document that the container listens on port 8080
 EXPOSE 8080
@@ -35,4 +35,4 @@ ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
 
 # Run the server directly
-CMD ["./lsp-proxy"]
+CMD ["./lsproxy"]
