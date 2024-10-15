@@ -34,17 +34,17 @@ impl LspClient for PyrightClient {
         ]
     }
 
-    async fn workspace_symbols(
-        &mut self,
-        query: &str,
-    ) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
-        if query.is_empty() || query == "*" {
-            warn!(
-                "Pyright doesn't support wildcards in workspace symbols query, expect empty result"
-            );
-        }
-        LspClient::workspace_symbols(self, query).await
-    }
+    // async fn workspace_symbols(
+    //     &mut self,
+    //     query: &str,
+    // ) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+    //     if query.is_empty() || query == "*" {
+    //         warn!(
+    //             "Pyright doesn't support wildcards in workspace symbols query, expect empty result"
+    //         );
+    //     }
+    //     super::LspClient::workspace_symbols(self, query).await
+    // }
 }
 
 impl PyrightClient {

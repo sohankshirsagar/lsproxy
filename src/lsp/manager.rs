@@ -3,7 +3,8 @@ use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguag
 use crate::lsp::types::SupportedLSP;
 use log::{debug, warn};
 use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
+    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range,
+    WorkspaceSymbolResponse,
 };
 use std::collections::HashMap;
 use std::error::Error;
@@ -120,6 +121,17 @@ impl LspManager {
         locked_client
             .text_document_reference(file_path, position, include_declaration)
             .await
+    }
+
+    pub async fn selection_range(
+        &self,
+        file_path: &str,
+        position: Position,
+    ) -> Result<Vec<Range>, Box<dyn Error + Send + Sync>> {
+        let lsp_type = self.detect_language(file_path)?;
+        let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
+        let mut locked_client = client.lock().await;
+        locked_client.selection_range(file_path, position).await
     }
 
     fn detect_language(

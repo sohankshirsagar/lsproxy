@@ -6,7 +6,7 @@ use lsp_types::Position;
 use serde::Deserialize;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use utoipa::OpenApi;
+use utoipa::{IntoParams, OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 
 mod lsp;
@@ -33,14 +33,21 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
 )]
 struct ApiDoc;
 
-#[derive(Deserialize, utoipa::ToSchema)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 struct GetDefinitionRequest {
     file_path: String,
     line: u32,
     character: u32,
 }
 
-#[derive(Deserialize, utoipa::ToSchema)]
+#[derive(Deserialize, ToSchema, IntoParams)]
+struct GetSelectionRangeRequest {
+    file_path: String,
+    line: u32,
+    character: u32,
+}
+
+#[derive(Deserialize, ToSchema, IntoParams)]
 struct GetReferencesRequest {
     file_path: String,
     line: u32,
@@ -48,17 +55,17 @@ struct GetReferencesRequest {
     include_declaration: Option<bool>,
 }
 
-#[derive(Deserialize, utoipa::ToSchema)]
+#[derive(Deserialize, ToSchema)]
 struct LspInitRequest {
     lsp_types: Vec<SupportedLSP>,
 }
 
-#[derive(Deserialize, utoipa::ToSchema)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 struct FileSymbolsRequest {
     file_path: String,
 }
 
-#[derive(Deserialize, utoipa::ToSchema)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 struct WorkspaceSymbolsRequest {
     query: String,
 }
@@ -68,18 +75,18 @@ struct AppState {
 }
 
 #[utoipa::path(
-    post,
+    get,
     path = "/get-definition",
-    request_body = GetDefinitionRequest,
+    params(GetDefinitionRequest),
     responses(
-        (status = 200, description = "Definition retrieved successfully", body = String),
+        (status = 200, description = "Definition retrieved successfully", body = Vec<Location>),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
 async fn get_definition(
     data: web::Data<AppState>,
-    info: web::Json<GetDefinitionRequest>,
+    info: web::Query<GetDefinitionRequest>,
 ) -> HttpResponse {
     info!(
         "Received get_definition request for file: {}, line: {}, character: {}",
@@ -87,36 +94,33 @@ async fn get_definition(
     );
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
-    let full_path_str = full_path.to_str().unwrap_or("");
+    let full_path_str = full_path.to_str().unwrap_or_default();
 
-    let result = {
-        let lsp_manager = match data.lsp_manager.lock() {
-            Ok(manager) => manager,
-            Err(poisoned) => {
-                error!("Failed to lock lsp_manager: {:?}", poisoned);
-                return HttpResponse::InternalServerError().finish();
+    match data.lsp_manager.lock() {
+        Ok(lsp_manager) => {
+            match lsp_manager
+                .get_definition(
+                    full_path_str,
+                    Position {
+                        line: info.line,
+                        character: info.character,
+                    },
+                )
+                .await
+            {
+                Ok(definitions) => HttpResponse::Ok().json(definitions),
+                Err(e) => {
+                    error!("Failed to get definition: {}", e);
+                    HttpResponse::InternalServerError().body(e.to_string())
+                }
             }
-        };
-        lsp_manager
-            .get_definition(
-                full_path_str,
-                Position {
-                    line: info.line,
-                    character: info.character,
-                },
-            )
-            .await
-    };
-
-    match result {
-        Ok(definitions) => HttpResponse::Ok().json(definitions),
+        }
         Err(e) => {
-            error!("Failed to get definition: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to get definition: {}", e))
+            error!("Failed to lock lsp_manager: {:?}", e);
+            HttpResponse::InternalServerError().finish()
         }
     }
 }
-
 #[utoipa::path(
     post,
     path = "/start-langservers",
@@ -150,9 +154,9 @@ async fn start_langservers(
 }
 
 #[utoipa::path(
-    post,
+    get,
     path = "/file-symbols",
-    request_body = FileSymbolsRequest,
+    params(FileSymbolsRequest),
     responses(
         (status = 200, description = "Symbols retrieved successfully", body = String),
         (status = 400, description = "Bad request"),
@@ -161,7 +165,7 @@ async fn start_langservers(
 )]
 async fn file_symbols(
     data: web::Data<AppState>,
-    info: web::Json<FileSymbolsRequest>,
+    info: web::Query<FileSymbolsRequest>,
 ) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
 
@@ -184,9 +188,9 @@ async fn file_symbols(
 }
 
 #[utoipa::path(
-    post,
+    get,
     path = "/workspace-symbols",
-    request_body = WorkspaceSymbolsRequest,
+    params(WorkspaceSymbolsRequest),
     responses(
         (status = 200, description = "Workspace symbols retrieved successfully", body = String),
         (status = 400, description = "Bad request"),
@@ -195,7 +199,7 @@ async fn file_symbols(
 )]
 async fn workspace_symbols(
     data: web::Data<AppState>,
-    info: web::Json<WorkspaceSymbolsRequest>,
+    info: web::Query<WorkspaceSymbolsRequest>,
 ) -> HttpResponse {
     info!(
         "Received workspace_symbols request for query: {}",
@@ -218,9 +222,9 @@ async fn workspace_symbols(
 }
 
 #[utoipa::path(
-    post,
+    get,
     path = "/references",
-    request_body = GetReferencesRequest,
+    params(GetReferencesRequest),
     responses(
         (status = 200, description = "References retrieved successfully", body = String),
         (status = 400, description = "Bad request"),
@@ -229,7 +233,7 @@ async fn workspace_symbols(
 )]
 async fn get_references(
     data: web::Data<AppState>,
-    info: web::Json<GetReferencesRequest>,
+    info: web::Query<GetReferencesRequest>,
 ) -> HttpResponse {
     info!(
         "Received get_references request for file: {}, line: {}, character: {}",
@@ -256,6 +260,48 @@ async fn get_references(
         Err(e) => {
             error!("Failed to get references: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get references: {}", e))
+        }
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/selection-range",
+    params(GetSelectionRangeRequest),
+    responses(
+        (status = 200, description = "Selection range retrieved successfully", body = String),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn get_selection_range(
+    data: web::Data<AppState>,
+    info: web::Query<GetSelectionRangeRequest>,
+) -> HttpResponse {
+    info!(
+        "Received get_selection_range request for file: {}, line: {}, character: {}",
+        info.file_path, info.line, info.character
+    );
+
+    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
+    let full_path_str = full_path.to_str().unwrap_or("");
+    let lsp_manager = data.lsp_manager.lock().unwrap();
+    let result = lsp_manager
+        .selection_range(
+            full_path_str,
+            Position {
+                line: info.line,
+                character: info.character,
+            },
+        )
+        .await;
+
+    match result {
+        Ok(ranges) => HttpResponse::Ok().json(ranges),
+        Err(e) => {
+            error!("Failed to get selection range: {}", e);
+            HttpResponse::InternalServerError()
+                .body(format!("Failed to get selection range: {}", e))
         }
     }
 }
@@ -289,10 +335,11 @@ async fn main() -> std::io::Result<()> {
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
             .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
-            .service(web::resource("/file-symbols").route(web::post().to(file_symbols)))
-            .service(web::resource("/workspace-symbols").route(web::post().to(workspace_symbols)))
-            .service(web::resource("/definition").route(web::post().to(get_definition)))
-            .service(web::resource("/references").route(web::post().to(get_references)))
+            .service(web::resource("/file-symbols").route(web::get().to(file_symbols)))
+            .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
+            .service(web::resource("/definition").route(web::get().to(get_definition)))
+            .service(web::resource("/references").route(web::get().to(get_references)))
+            .service(web::resource("/selection-range").route(web::get().to(get_selection_range)))
     })
     .bind("0.0.0.0:8080")?;
 
