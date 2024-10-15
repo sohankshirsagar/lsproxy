@@ -18,7 +18,6 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        start_langservers,
         file_symbols,
         workspace_symbols,
         get_definition,
@@ -111,37 +110,6 @@ async fn get_definition(
         Err(e) => {
             error!("Failed to lock lsp_manager: {:?}", e);
             HttpResponse::InternalServerError().finish()
-        }
-    }
-}
-#[utoipa::path(
-    post,
-    path = "/start-langservers",
-    request_body = LspInitRequest,
-    responses(
-        (status = 200, description = "LSP server started successfully"),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-async fn start_langservers(
-    data: web::Data<AppState>,
-    info: web::Json<LspInitRequest>,
-) -> HttpResponse {
-    info!("Received LSP init request");
-
-    let result = {
-        let mut lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager
-            .start_langservers(MOUNT_DIR, &info.lsp_types)
-            .await
-    };
-
-    match result {
-        Ok(_) => HttpResponse::Ok().body("LSP started successfully"),
-        Err(e) => {
-            error!("Failed to start LSP: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e))
         }
     }
 }
@@ -257,7 +225,6 @@ async fn get_references(
     }
 }
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting...");
@@ -267,9 +234,15 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Logger initialized");
-
+    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
+    lsp_manager
+        .lock()
+        .unwrap()
+        .start_langservers(MOUNT_DIR)
+        .await
+        .unwrap();
     let app_state = web::Data::new(AppState {
-        lsp_manager: Arc::new(Mutex::new(LspManager::new())),
+        lsp_manager: lsp_manager,
     });
 
     let openapi = ApiDoc::openapi();
@@ -286,7 +259,6 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
             .service(web::resource("/file-symbols").route(web::get().to(file_symbols)))
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
             .service(web::resource("/definition").route(web::get().to(get_definition)))

@@ -7,12 +7,22 @@ use log::{debug, error, warn};
 use lsp_types::{
     ClientCapabilities, Command, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext, ReferenceParams, TextDocumentClientCapabilities,
-    TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
-    WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext,
+    ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
+    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
+    WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
 use std::path::Path;
+
+pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "**/dist",
+    "**/target",
+    ".git",
+];
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -32,6 +42,7 @@ pub trait LspClient: Send {
             }),
             ..Default::default()
         });
+
         let params = InitializeParams {
             capabilities: capabilities,
             workspace_folders: Some(workspace_folders.clone()),
@@ -287,17 +298,14 @@ pub trait LspClient: Send {
     fn get_root_files(&mut self) -> Vec<String> {
         vec![".git".to_string()]
     }
-
     fn get_exclude_patterns(&mut self) -> Vec<String> {
-        vec![
-            "**/node_modules".to_string(),
-            "**/__pycache__".to_string(),
-            "**/.*".to_string(),
-            "**/dist".to_string(),
-            "**/target".to_string(),
-            ".git".to_string(),
-        ]
+        DEFAULT_EXCLUDE_PATTERNS
+            .iter()
+            .map(|&s| s.to_string())
+            .collect()
     }
+
+    fn get_file_patterns(&mut self) -> Vec<String>;
 
     async fn setup_workspace(
         &mut self,
