@@ -1,8 +1,7 @@
 use std::{error::Error, process::Stdio, vec};
 
 use async_trait::async_trait;
-use log::{debug, warn};
-use lsp_types::WorkspaceFolder;
+use log::debug;
 use tokio::process::Command;
 
 use crate::{
