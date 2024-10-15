@@ -5,7 +5,7 @@ use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
-    ClientCapabilities, Command, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
+    ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
     InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext,
     ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
@@ -298,6 +298,7 @@ pub trait LspClient: Send {
     fn get_root_files(&mut self) -> Vec<String> {
         vec![".git".to_string()]
     }
+
     fn get_exclude_patterns(&mut self) -> Vec<String> {
         DEFAULT_EXCLUDE_PATTERNS
             .iter()
@@ -305,8 +306,7 @@ pub trait LspClient: Send {
             .collect()
     }
 
-    fn get_file_patterns(&mut self) -> Vec<String>;
-
+    #[allow(unused)]
     async fn setup_workspace(
         &mut self,
         root_path: &str,
@@ -355,10 +355,5 @@ pub trait LspClient: Send {
         }
 
         Ok(workspace_folders.into_iter().collect())
-    }
-
-    fn list_commands(&mut self) -> Result<Vec<Command>, Box<dyn Error + Send + Sync>> {
-        /* shows which commands are available for this language server */
-        Ok(vec![])
     }
 }

@@ -35,13 +35,6 @@ impl LspClient for PyrightClient {
     fn get_root_files(&mut self) -> Vec<String> {
         PYRIGHT_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
     }
-
-    fn get_file_patterns(&mut self) -> Vec<String> {
-        PYRIGHT_FILE_PATTERNS
-            .iter()
-            .map(|&s| s.to_string())
-            .collect()
-    }
 }
 
 impl PyrightClient {
