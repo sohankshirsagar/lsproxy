@@ -24,7 +24,7 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
         get_references,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP)
+        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -45,11 +45,6 @@ struct GetReferencesRequest {
     line: u32,
     character: u32,
     include_declaration: Option<bool>,
-}
-
-#[derive(Deserialize, ToSchema)]
-struct LspInitRequest {
-    lsp_types: Vec<SupportedLSP>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
