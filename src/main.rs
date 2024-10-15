@@ -1,9 +1,12 @@
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
+use clap::Parser;
 use env_logger::Env;
 use log::{debug, error, info};
 use lsp_types::Position;
 use serde::Deserialize;
+use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use utoipa::{IntoParams, OpenApi, ToSchema};
@@ -65,6 +68,14 @@ struct WorkspaceSymbolsRequest {
 
 struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Write OpenAPI spec to file
+    #[arg(short, long, value_name = "FILE")]
+    write_openapi: Option<String>,
 }
 
 #[utoipa::path(
@@ -268,11 +279,21 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Logger initialized");
 
+    let cli = Cli::parse();
+
     let app_state = web::Data::new(AppState {
         lsp_manager: Arc::new(Mutex::new(LspManager::new())),
     });
 
     let openapi = ApiDoc::openapi();
+
+    if let Some(file_path) = cli.write_openapi {
+        let openapi_json = serde_json::to_string_pretty(&openapi).unwrap();
+        let mut file = File::create(file_path.clone()).unwrap();
+        file.write_all(openapi_json.as_bytes()).unwrap();
+        println!("OpenAPI spec written to: {}", file_path);
+        return Ok(());
+    }
 
     let server = HttpServer::new(move || {
         App::new()
