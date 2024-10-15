@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
+use std::path::PathBuf;
 use strum_macros::{Display, EnumString};
-use lsp_types::{DocumentSymbolResponse, SymbolKind, DocumentSymbol};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, SymbolKind, DocumentSymbol, LocationLink, Location};
 
 pub const MOUNT_DIR: &str = "/mnt/repo";
 
@@ -25,6 +26,13 @@ pub enum SupportedLSP {
     Rust,
 }
 
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct SimplifiedLocation {
+    pub uri: String,
+    pub line: u32,
+    pub character: u32,
+}
+
  #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
  pub struct SimplifiedSymbol {
      pub name: String,
@@ -32,6 +40,28 @@ pub enum SupportedLSP {
      pub line: u32,
      pub character: u32,
  }
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct CustomGotoDefinitionResponse {
+    raw_response: serde_json::Value,
+    simplified: Vec<SimplifiedLocation>,
+}
+
+impl From<GotoDefinitionResponse> for CustomGotoDefinitionResponse {
+    fn from(response: GotoDefinitionResponse) -> Self {
+        let raw_response = serde_json::to_value(&response).unwrap_or_default();
+        let simplified = match response {
+            GotoDefinitionResponse::Scalar(location) => vec![simplify_location(location)],
+            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(simplify_location).collect(),
+            GotoDefinitionResponse::Link(links) => links.into_iter().map(simplify_location_link).collect(),
+        };
+        CustomGotoDefinitionResponse {
+            raw_response,
+            simplified,
+        }
+    }
+}
+
 
  #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct CustomDocumentSymbolResponse {
@@ -59,6 +89,31 @@ impl From<DocumentSymbolResponse> for CustomDocumentSymbolResponse {
             simplified,
         }
     }
+}
+
+fn simplify_location(location: Location) -> SimplifiedLocation {
+    SimplifiedLocation {
+        uri: simplify_uri(location.uri),
+        line: location.range.start.line,
+        character: location.range.start.character,
+    }
+}
+
+fn simplify_location_link(link: LocationLink) -> SimplifiedLocation {
+    SimplifiedLocation {
+        uri: simplify_uri(link.target_uri),
+        line: link.target_range.start.line,
+        character: link.target_range.start.character,
+    }
+}
+
+fn simplify_uri(uri: lsp_types::Url) -> String {
+    let path = uri.to_file_path().unwrap_or_else(|_| PathBuf::from(uri.path()));
+    let current_dir = std::env::current_dir().unwrap_or_default();
+
+    path.strip_prefix(&current_dir)
+        .map(|relative| relative.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| path.to_string_lossy().into_owned())
 }
 
 fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>) -> Vec<SimplifiedSymbol> {

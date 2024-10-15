@@ -16,7 +16,7 @@ mod lsp;
 mod utils;
 
 use crate::lsp::manager::LspManager;
-use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, SimplifiedSymbol};
+use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, SimplifiedSymbol, SimplifiedLocation};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -28,7 +28,7 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, S
         get_references,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomDocumentSymbolResponse, SimplifiedSymbol)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, SimplifiedLocation, SimplifiedSymbol)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -83,7 +83,7 @@ struct Cli {
     path = "/get-definition",
     params(GetDefinitionRequest),
     responses(
-        (status = 200, description = "Definition retrieved successfully", body = Vec<Location>),
+        (status = 200, description = "Definition retrieved successfully", body = CustomGotoDefinitionResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
