@@ -63,7 +63,7 @@ struct AppState {
 
 #[utoipa::path(
     get,
-    path = "/get-definition",
+    path = "/definition",
     params(GetDefinitionRequest),
     responses(
         (status = 200, description = "Definition retrieved successfully", body = String),
