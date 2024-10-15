@@ -23,10 +23,9 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
         workspace_symbols,
         get_definition,
         get_references,
-        get_selection_range,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, GetSelectionRangeRequest, SupportedLSP)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -36,13 +35,6 @@ struct ApiDoc;
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 struct GetDefinitionRequest {
-    file_path: String,
-    line: u32,
-    character: u32,
-}
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct GetSelectionRangeRequest {
     file_path: String,
     line: u32,
     character: u32,
@@ -265,47 +257,6 @@ async fn get_references(
     }
 }
 
-#[utoipa::path(
-    get,
-    path = "/selection-range",
-    params(GetSelectionRangeRequest),
-    responses(
-        (status = 200, description = "Selection range retrieved successfully", body = String),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-async fn get_selection_range(
-    data: web::Data<AppState>,
-    info: web::Query<GetSelectionRangeRequest>,
-) -> HttpResponse {
-    info!(
-        "Received get_selection_range request for file: {}, line: {}, character: {}",
-        info.file_path, info.line, info.character
-    );
-
-    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
-    let full_path_str = full_path.to_str().unwrap_or("");
-    let lsp_manager = data.lsp_manager.lock().unwrap();
-    let result = lsp_manager
-        .selection_range(
-            full_path_str,
-            Position {
-                line: info.line,
-                character: info.character,
-            },
-        )
-        .await;
-
-    match result {
-        Ok(ranges) => HttpResponse::Ok().json(ranges),
-        Err(e) => {
-            error!("Failed to get selection range: {}", e);
-            HttpResponse::InternalServerError()
-                .body(format!("Failed to get selection range: {}", e))
-        }
-    }
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -340,7 +291,6 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
             .service(web::resource("/definition").route(web::get().to(get_definition)))
             .service(web::resource("/references").route(web::get().to(get_references)))
-            .service(web::resource("/selection-range").route(web::get().to(get_selection_range)))
     })
     .bind("0.0.0.0:8080")?;
 

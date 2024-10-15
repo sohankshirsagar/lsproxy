@@ -123,16 +123,6 @@ impl LspManager {
             .await
     }
 
-    pub async fn selection_range(
-        &self,
-        file_path: &str,
-        position: Position,
-    ) -> Result<Vec<Range>, Box<dyn Error + Send + Sync>> {
-        let lsp_type = self.detect_language(file_path)?;
-        let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
-        let mut locked_client = client.lock().await;
-        locked_client.selection_range(file_path, position).await
-    }
 
     fn detect_language(
         &self,

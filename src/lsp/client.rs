@@ -7,8 +7,7 @@ use log::{debug, error, warn};
 use lsp_types::{
     ClientCapabilities, Command, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position, Range,
-    ReferenceContext, ReferenceParams, SelectionRangeParams, TextDocumentClientCapabilities,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext, ReferenceParams, TextDocumentClientCapabilities,
     TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
     WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
@@ -255,43 +254,6 @@ pub trait LspClient: Send {
             Err(error.into())
         } else {
             Err("Unexpected references response".into())
-        }
-    }
-
-    async fn selection_range(
-        &mut self,
-        file_path: &str,
-        position: Position,
-    ) -> Result<Vec<Range>, Box<dyn Error + Send + Sync>> {
-        let params = SelectionRangeParams {
-            text_document: TextDocumentIdentifier {
-                uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
-            },
-            positions: vec![position],
-            work_done_progress_params: WorkDoneProgressParams::default(),
-            partial_result_params: PartialResultParams::default(),
-        };
-        let request = self
-            .get_json_rpc()
-            .create_request("textDocument/selectionRange", serde_json::to_value(params)?);
-
-        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.get_process().send(&message).await?;
-
-        let response = self
-            .receive_response()
-            .await?
-            .ok_or("No response received")?;
-
-        if let Some(result) = response.result {
-            let ranges: Vec<Range> = serde_json::from_value(result)?;
-            debug!("Received selection ranges response");
-            Ok(ranges)
-        } else if let Some(error) = response.error {
-            error!("Selection ranges error: {:?}", error);
-            Err(error.into())
-        } else {
-            Err("Unexpected selection ranges response".into())
         }
     }
 
