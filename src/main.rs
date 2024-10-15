@@ -7,7 +7,7 @@ use lsp_types::Position;
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use utoipa::{IntoParams, OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
@@ -73,9 +73,13 @@ struct AppState {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Write OpenAPI spec to file
+    /// Write OpenAPI spec to file (default: openapi.json)
+    #[arg(short, long)]
+    write_openapi: bool,
+
+    /// Custom output file path for OpenAPI spec
     #[arg(short, long, value_name = "FILE")]
-    write_openapi: Option<String>,
+    output: Option<PathBuf>,
 }
 
 #[utoipa::path(
@@ -287,11 +291,12 @@ async fn main() -> std::io::Result<()> {
 
     let openapi = ApiDoc::openapi();
 
-    if let Some(file_path) = cli.write_openapi {
+    if cli.write_openapi {
+        let file_path = cli.output.unwrap_or_else(|| PathBuf::from("openapi.json"));
         let openapi_json = serde_json::to_string_pretty(&openapi).unwrap();
-        let mut file = File::create(file_path.clone()).unwrap();
+        let mut file = File::create(&file_path).unwrap();
         file.write_all(openapi_json.as_bytes()).unwrap();
-        println!("OpenAPI spec written to: {}", file_path);
+        println!("OpenAPI spec written to: {}", file_path.display());
         return Ok(());
     }
 
