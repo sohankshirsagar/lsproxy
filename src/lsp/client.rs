@@ -301,7 +301,7 @@ pub trait LspClient: Send {
     fn get_exclude_patterns(&mut self) -> Vec<String> {
         DEFAULT_EXCLUDE_PATTERNS
             .iter()
-            .map(|&s| s.to_string())
+            .map(|&s| s.to_owned())
             .collect()
     }
 
