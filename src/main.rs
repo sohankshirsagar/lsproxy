@@ -66,7 +66,7 @@ struct AppState {
     path = "/get-definition",
     params(GetDefinitionRequest),
     responses(
-        (status = 200, description = "Definition retrieved successfully", body = Vec<Location>),
+        (status = 200, description = "Definition retrieved successfully", body = String),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
