@@ -5,9 +5,10 @@ use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
-    Command, DidOpenTextDocumentParams, DocumentSymbolParams, DocumentSymbolResponse,
-    GotoDefinitionParams, GotoDefinitionResponse, InitializeParams, InitializeResult, Location,
-    PartialResultParams, Position, Range, ReferenceContext, ReferenceParams, SelectionRangeParams,
+    ClientCapabilities, Command, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
+    DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position, Range,
+    ReferenceContext, ReferenceParams, SelectionRangeParams, TextDocumentClientCapabilities,
     TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
     WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
@@ -24,8 +25,16 @@ pub trait LspClient: Send {
 
         let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
         debug!("Found workspace folders: {:?}", workspace_folders);
+        let mut capabilities = ClientCapabilities::default();
+        capabilities.text_document = Some(TextDocumentClientCapabilities {
+            document_symbol: Some(DocumentSymbolClientCapabilities {
+                hierarchical_document_symbol_support: Some(true),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
         let params = InitializeParams {
-            capabilities: Default::default(),
+            capabilities: capabilities,
             workspace_folders: Some(workspace_folders.clone()),
             root_uri: Some(workspace_folders[0].uri.clone()),
             ..Default::default()

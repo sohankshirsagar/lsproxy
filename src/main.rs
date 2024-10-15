@@ -23,9 +23,10 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
         workspace_symbols,
         get_definition,
         get_references,
+        get_selection_range,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, GetSelectionRangeRequest, SupportedLSP)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
