@@ -1,4 +1,5 @@
-use glob::glob;
+use ignore::WalkBuilder;
+use log::debug;
 use lsp_types::TextDocumentItem;
 use serde_json::Value;
 use std::fs;
@@ -21,7 +22,11 @@ pub async fn get_files_for_workspace_typescript(
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
         .unwrap_or_else(|| vec!["**/node_modules/**", "**/dist/**", "**/build/**", ".git/**"]);
 
-    let files = get_typescript_files(repo_path, &include_patterns, &exclude_patterns)?;
+    let files = search_files(
+        Path::new(repo_path),
+        include_patterns.into_iter().map(String::from).collect(),
+        exclude_patterns.into_iter().map(String::from).collect(),
+    )?;
 
     files
         .into_iter()
@@ -37,27 +42,84 @@ pub async fn get_files_for_workspace_typescript(
         .collect()
 }
 
-fn get_typescript_files(
-    repo_path: &str,
-    include_patterns: &[&str],
-    exclude_patterns: &[&str],
-) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
-    include_patterns
-        .iter()
-        .try_fold(Vec::new(), |mut acc, pattern| {
-            let paths = glob(&format!("{}/{}", repo_path, pattern))?
-                .filter_map(Result::ok)
-                .filter(|path| !is_excluded(path, repo_path, exclude_patterns) && path.is_file());
-            acc.extend(paths);
-            Ok(acc)
-        })
+pub fn search_files(
+    path: &std::path::Path,
+    include_patterns: Vec<String>,
+    exclude_patterns: Vec<String>,
+) -> std::io::Result<Vec<std::path::PathBuf>> {
+    let mut files = Vec::new();
+    let walk = build_walk(path, exclude_patterns);
+
+    for result in walk {
+        match result {
+            Ok(entry) => {
+                let path = entry.path();
+                if !include_patterns.iter().any(|pattern| {
+                    glob::Pattern::new(pattern)
+                        .map(|p| p.matches_path(&path))
+                        .unwrap_or(false)
+                }) {
+                    continue;
+                }
+                if path.is_file() {
+                    files.push(path.to_path_buf());
+                }
+            }
+            Err(err) => eprintln!("Error: {}", err),
+        }
+    }
+
+    Ok(files)
 }
 
-fn is_excluded(path: &Path, repo_path: &str, exclude_patterns: &[&str]) -> bool {
-    let relative_path = path.strip_prefix(repo_path).unwrap_or(path);
-    exclude_patterns.iter().any(|pattern| {
-        glob::Pattern::new(&format!("{}/{}", repo_path, pattern))
-            .map(|p| p.matches_path(relative_path))
-            .unwrap_or(false)
-    })
+pub fn search_directories(
+    root_path: &std::path::Path,
+    include_patterns: Vec<String>,
+    exclude_patterns: Vec<String>,
+) -> std::io::Result<Vec<PathBuf>> {
+    let mut dirs = Vec::new();
+    let walk = build_walk(root_path, exclude_patterns);
+    for result in walk {
+        match result {
+            Ok(entry) => {
+                let path = entry.path().to_path_buf();
+                if !include_patterns.iter().any(|pattern| {
+                    glob::Pattern::new(pattern)
+                        .map(|p| p.matches_path(&path))
+                        .unwrap_or(false)
+                }) {
+                    continue;
+                }
+                if path.is_dir() {
+                    dirs.push(path);
+                } else {
+                    dirs.push(path.parent().unwrap().to_path_buf());
+                }
+            }
+            Err(err) => eprintln!("Error: {}", err),
+        }
+    }
+    debug!("dirs: {:?}", dirs);
+    Ok(dirs)
+}
+
+fn build_walk(path: &Path, exclude_patterns: Vec<String>) -> ignore::Walk {
+    let walk = WalkBuilder::new(path)
+        .filter_entry(move |entry| {
+            let path = entry.path();
+            debug!("Checking path: {:?}", path);
+
+            let is_excluded = exclude_patterns.iter().any(|pattern| {
+                let matches = glob::Pattern::new(pattern)
+                    .map(|p| p.matches_path(path))
+                    .unwrap_or(false);
+                if matches {
+                    debug!("Excluded: {:?} matches pattern {:?}", path, pattern);
+                }
+                matches
+            });
+            !is_excluded
+        })
+        .build();
+    walk
 }

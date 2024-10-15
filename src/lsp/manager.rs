@@ -3,7 +3,8 @@ use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguag
 use crate::lsp::types::SupportedLSP;
 use log::{debug, warn};
 use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
+    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range,
+    WorkspaceSymbolResponse,
 };
 use std::collections::HashMap;
 use std::error::Error;
@@ -121,6 +122,7 @@ impl LspManager {
             .text_document_reference(file_path, position, include_declaration)
             .await
     }
+
 
     fn detect_language(
         &self,

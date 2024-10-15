@@ -21,6 +21,10 @@ impl LspClient for RustAnalyzerClient {
         &mut self.json_rpc
     }
 
+    fn get_root_files(&mut self) -> Vec<String> {
+        vec!["Cargo.toml".to_string()]
+    }
+
     async fn setup_workspace(
         &mut self,
         _root_path: &str,

@@ -1,8 +1,7 @@
-use std::{error::Error, process::Stdio};
+use std::{error::Error, process::Stdio, vec};
 
 use async_trait::async_trait;
-use log::{debug, warn};
-use lsp_types::WorkspaceFolder;
+use log::debug;
 use tokio::process::Command;
 
 use crate::{
@@ -25,6 +24,15 @@ impl LspClient for TypeScriptLanguageClient {
         &mut self.json_rpc
     }
 
+    fn get_root_files(&mut self) -> Vec<String> {
+        vec![
+            "tsconfig.json".to_string(),
+            "jsconfig.json".to_string(),
+            "package.json".to_string(),
+            ".git".to_string(),
+        ]
+    }
+
     async fn setup_workspace(
         &mut self,
         root_path: &str,
@@ -41,17 +49,6 @@ impl LspClient for TypeScriptLanguageClient {
         }
         debug!("Workspace setup completed for TypeScript client");
         Ok(())
-    }
-
-    async fn find_workspace_folders(
-        &mut self,
-        root_path: String,
-    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        /*
-        TODO: Nonetheless, we should find the folders with tsconfig.json or package.json
-         */
-        warn!("TypeScriptClient does not support finding workspace folders");
-        Ok(vec![])
     }
 }
 

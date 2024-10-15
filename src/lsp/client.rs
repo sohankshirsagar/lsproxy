@@ -1,16 +1,18 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
 use crate::lsp::{JsonRpcHandler, ProcessHandler};
+use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
-    DidOpenTextDocumentParams, DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams,
-    GotoDefinitionResponse, InitializeParams, InitializeResult, Location, PartialResultParams,
-    Position, ReferenceContext, ReferenceParams, TextDocumentIdentifier,
-    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
-    WorkspaceSymbolParams, WorkspaceSymbolResponse,
+    ClientCapabilities, Command, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
+    DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext, ReferenceParams, TextDocumentClientCapabilities,
+    TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
+    WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
+use std::path::Path;
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -19,13 +21,21 @@ pub trait LspClient: Send {
         root_path: String,
     ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
         debug!("Initializing LSP client with root path: {:?}", root_path);
+
+        let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
+        debug!("Found workspace folders: {:?}", workspace_folders);
+        let mut capabilities = ClientCapabilities::default();
+        capabilities.text_document = Some(TextDocumentClientCapabilities {
+            document_symbol: Some(DocumentSymbolClientCapabilities {
+                hierarchical_document_symbol_support: Some(true),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
         let params = InitializeParams {
-            capabilities: Default::default(),
-            workspace_folders: Some(vec![WorkspaceFolder {
-                uri: Url::from_file_path(root_path.clone()).unwrap(),
-                name: root_path.clone(),
-            }]),
-            root_uri: Some(Url::from_file_path(root_path.clone()).unwrap()),
+            capabilities: capabilities,
+            workspace_folders: Some(workspace_folders.clone()),
+            root_uri: Some(workspace_folders[0].uri.clone()),
             ..Default::default()
         };
         let request = self
@@ -270,10 +280,24 @@ pub trait LspClient: Send {
         }
     }
 
-    // Helper methods to access fields
     fn get_process(&mut self) -> &mut ProcessHandler;
 
     fn get_json_rpc(&mut self) -> &mut JsonRpcHandler;
+
+    fn get_root_files(&mut self) -> Vec<String> {
+        vec![".git".to_string()]
+    }
+
+    fn get_exclude_patterns(&mut self) -> Vec<String> {
+        vec![
+            "**/node_modules".to_string(),
+            "**/__pycache__".to_string(),
+            "**/.*".to_string(),
+            "**/dist".to_string(),
+            "**/target".to_string(),
+            ".git".to_string(),
+        ]
+    }
 
     async fn setup_workspace(
         &mut self,
@@ -286,9 +310,47 @@ pub trait LspClient: Send {
         &mut self,
         root_path: String,
     ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![WorkspaceFolder {
-            uri: Url::from_file_path(root_path.clone()).unwrap(),
-            name: root_path,
-        }])
+        let mut workspace_folders: Vec<WorkspaceFolder> = Vec::new();
+        let include_patterns = self
+            .get_root_files()
+            .into_iter()
+            .map(|f| format!("**/{f}"))
+            .collect();
+        debug!("include_patterns: {:?}", include_patterns);
+        let exclude_patterns = self.get_exclude_patterns();
+
+        match search_directories(&Path::new(&root_path), include_patterns, exclude_patterns) {
+            Ok(dirs) => {
+                for dir in dirs {
+                    let folder_path = Path::new(&root_path).join(&dir);
+                    if let Ok(uri) = Url::from_file_path(&folder_path) {
+                        // remore folders that are parents of this one, because we prefer more specific paths
+                        // this is pretty inefficient but moving on
+                        workspace_folders.retain(|folder: &WorkspaceFolder| {
+                            !uri.to_file_path()
+                                .unwrap()
+                                .starts_with(folder.uri.to_file_path().unwrap())
+                        });
+
+                        workspace_folders.push(WorkspaceFolder {
+                            uri,
+                            name: folder_path
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("")
+                                .to_string(),
+                        });
+                    }
+                }
+            }
+            Err(e) => return Err(Box::new(e)),
+        }
+
+        Ok(workspace_folders.into_iter().collect())
+    }
+
+    fn list_commands(&mut self) -> Result<Vec<Command>, Box<dyn Error + Send + Sync>> {
+        /* shows which commands are available for this language server */
+        Ok(vec![])
     }
 }
