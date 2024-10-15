@@ -1,6 +1,7 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
 use crate::lsp::{JsonRpcHandler, ProcessHandler};
+use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
@@ -11,6 +12,7 @@ use lsp_types::{
     WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
+use std::path::Path;
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -307,10 +309,13 @@ pub trait LspClient: Send {
         }
     }
 
-    // Helper methods to access fields
     fn get_process(&mut self) -> &mut ProcessHandler;
 
     fn get_json_rpc(&mut self) -> &mut JsonRpcHandler;
+
+    fn get_root_files(&mut self) -> Vec<String> {
+        vec![".git".to_string()]
+    }
 
     async fn setup_workspace(
         &mut self,
@@ -323,10 +328,41 @@ pub trait LspClient: Send {
         &mut self,
         root_path: String,
     ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![WorkspaceFolder {
-            uri: Url::from_file_path(root_path.clone()).unwrap(),
-            name: root_path,
-        }])
+        let mut workspace_folders: Vec<WorkspaceFolder> = Vec::new();
+
+        match search_directories(&Path::new(&root_path)) {
+            Ok(dirs) => {
+                for dir in dirs {
+                    for root_file in self.get_root_files() {
+                        let folder_path = dir.join(&root_file);
+                        if folder_path.exists() {
+                            if let Ok(uri) = Url::from_file_path(&folder_path) {
+                                // remore folders that are parents of this one, because we prefer more specific paths
+                                // this is pretty inefficient but moving on
+                                workspace_folders.retain(|folder: &WorkspaceFolder| {
+                                    !uri.to_file_path()
+                                        .unwrap()
+                                        .starts_with(folder.uri.to_file_path().unwrap())
+                                });
+
+                                workspace_folders.push(WorkspaceFolder {
+                                    uri,
+                                    name: folder_path
+                                        .file_name()
+                                        .and_then(|n| n.to_str())
+                                        .unwrap_or("")
+                                        .to_string(),
+                                });
+                            }
+                            break; // Found a root file, no need to check others in this directory
+                        }
+                    }
+                }
+            }
+            Err(e) => return Err(Box::new(e)),
+        }
+
+        Ok(workspace_folders.into_iter().collect())
     }
 
     fn list_commands(&mut self) -> Result<Vec<Command>, Box<dyn Error + Send + Sync>> {

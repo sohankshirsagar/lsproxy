@@ -61,3 +61,24 @@ fn is_excluded(path: &Path, repo_path: &str, exclude_patterns: &[&str]) -> bool 
             .unwrap_or(false)
     })
 }
+
+pub fn is_hidden(entry: &std::fs::DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s.starts_with("."))
+        .unwrap_or(false)
+}
+
+pub fn search_directories(path: &std::path::Path) -> std::io::Result<Vec<std::path::PathBuf>> {
+    let mut dirs = Vec::new();
+    for entry in std::fs::read_dir(path)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() && !is_hidden(&entry) {
+            dirs.push(path.clone());
+            dirs.extend(search_directories(&path)?);
+        }
+    }
+    Ok(dirs)
+}

@@ -22,6 +22,18 @@ impl LspClient for PyrightClient {
         &mut self.json_rpc
     }
 
+    fn get_root_files(&mut self) -> Vec<String> {
+        vec![
+            ".git".to_string(),
+            "pyproject.toml".to_string(),
+            "setup.py".to_string(),
+            "setup.cfg".to_string(),
+            "requirements.txt".to_string(),
+            "Pipfile".to_string(),
+            "pyrightconfig.json".to_string(),
+        ]
+    }
+
     async fn workspace_symbols(
         &mut self,
         query: &str,
