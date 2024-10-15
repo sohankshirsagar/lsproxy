@@ -53,13 +53,6 @@ impl LspClient for TypeScriptLanguageClient {
         debug!("Workspace setup completed for TypeScript client");
         Ok(())
     }
-
-    fn get_file_patterns(&mut self) -> Vec<String> {
-        TYPESCRIPT_FILE_PATTERNS
-            .iter()
-            .map(|&s| s.to_string())
-            .collect()
-    }
 }
 
 impl TypeScriptLanguageClient {

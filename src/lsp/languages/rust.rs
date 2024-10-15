@@ -31,13 +31,6 @@ impl LspClient for RustAnalyzerClient {
             .collect()
     }
 
-    fn get_file_patterns(&mut self) -> Vec<String> {
-        RUST_ANALYZER_FILE_PATTERNS
-            .iter()
-            .map(|&s| s.to_string())
-            .collect()
-    }
-
     async fn setup_workspace(
         &mut self,
         _root_path: &str,
