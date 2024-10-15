@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use strum_macros::{Display, EnumString};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, SymbolKind, DocumentSymbol, LocationLink, Location};
 
@@ -33,6 +33,16 @@ pub struct SimplifiedLocation {
     pub character: u32,
 }
 
+impl From<Location> for SimplifiedLocation {
+    fn from(location: Location) -> Self {
+        SimplifiedLocation {
+            uri: simplify_uri(location.uri),
+            line: location.range.start.line,
+            character: location.range.start.character,
+        }
+    }
+}
+
  #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
  pub struct SimplifiedSymbol {
      pub name: String,
@@ -40,6 +50,23 @@ pub struct SimplifiedLocation {
      pub line: u32,
      pub character: u32,
  }
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct CustomReferenceResponse {
+    raw_response: serde_json::Value,
+    simplified: Vec<SimplifiedLocation>,
+}
+
+impl From<Vec<Location>> for CustomReferenceResponse {
+    fn from(locations: Vec<Location>) -> Self {
+        let raw_response = serde_json::to_value(&locations).unwrap_or_default();
+        let simplified = locations.into_iter().map(SimplifiedLocation::from).collect();
+        CustomReferenceResponse {
+            raw_response,
+            simplified
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct CustomGotoDefinitionResponse {
@@ -51,8 +78,8 @@ impl From<GotoDefinitionResponse> for CustomGotoDefinitionResponse {
     fn from(response: GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let simplified = match response {
-            GotoDefinitionResponse::Scalar(location) => vec![simplify_location(location)],
-            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(simplify_location).collect(),
+            GotoDefinitionResponse::Scalar(location) => vec![SimplifiedLocation::from(location)],
+            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(SimplifiedLocation::from).collect(),
             GotoDefinitionResponse::Link(links) => links.into_iter().map(simplify_location_link).collect(),
         };
         CustomGotoDefinitionResponse {
@@ -91,14 +118,6 @@ impl From<DocumentSymbolResponse> for CustomDocumentSymbolResponse {
     }
 }
 
-fn simplify_location(location: Location) -> SimplifiedLocation {
-    SimplifiedLocation {
-        uri: simplify_uri(location.uri),
-        line: location.range.start.line,
-        character: location.range.start.character,
-    }
-}
-
 fn simplify_location_link(link: LocationLink) -> SimplifiedLocation {
     SimplifiedLocation {
         uri: simplify_uri(link.target_uri),
@@ -111,9 +130,16 @@ fn simplify_uri(uri: lsp_types::Url) -> String {
     let path = uri.to_file_path().unwrap_or_else(|_| PathBuf::from(uri.path()));
     let current_dir = std::env::current_dir().unwrap_or_default();
 
-    path.strip_prefix(&current_dir)
-        .map(|relative| relative.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| path.to_string_lossy().into_owned())
+    let simplified = path
+        .strip_prefix(&current_dir)
+        .map(|p| p.to_path_buf())
+        .unwrap_or(path);
+
+    let mount_dir = Path::new(MOUNT_DIR);
+    simplified
+        .strip_prefix(mount_dir)
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| simplified.to_string_lossy().into_owned())
 }
 
 fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>) -> Vec<SimplifiedSymbol> {

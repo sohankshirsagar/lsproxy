@@ -1,8 +1,8 @@
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
-use crate::lsp::types::{CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, SupportedLSP};
+use crate::lsp::types::{CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, CustomReferenceResponse, SupportedLSP};
 use log::{debug, warn};
-use lsp_types::{Location, Position, WorkspaceSymbolResponse
+use lsp_types::{Position, WorkspaceSymbolResponse
 };
 use std::collections::HashMap;
 use std::error::Error;
@@ -116,13 +116,16 @@ impl LspManager {
         file_path: &str,
         position: Position,
         include_declaration: bool,
-    ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<CustomReferenceResponse, Box<dyn Error + Send + Sync>> {
         let lsp_type = self.detect_language(file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
-        locked_client
+
+        let locations = locked_client
             .text_document_reference(file_path, position, include_declaration)
-            .await
+            .await?;
+
+        Ok(CustomReferenceResponse::from(locations))
     }
 
 

@@ -16,7 +16,7 @@ mod lsp;
 mod utils;
 
 use crate::lsp::manager::LspManager;
-use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, SimplifiedSymbol, SimplifiedLocation};
+use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, SimplifiedSymbol, SimplifiedLocation, CustomReferenceResponse};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -28,7 +28,7 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, C
         get_references,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, SimplifiedLocation, SimplifiedSymbol)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, CustomReferenceResponse, SimplifiedLocation, SimplifiedSymbol)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -80,7 +80,7 @@ struct Cli {
 
 #[utoipa::path(
     get,
-    path = "/get-definition",
+    path = "/definition",
     params(GetDefinitionRequest),
     responses(
         (status = 200, description = "Definition retrieved successfully", body = CustomGotoDefinitionResponse),
@@ -230,7 +230,7 @@ async fn workspace_symbols(
     path = "/references",
     params(GetReferencesRequest),
     responses(
-        (status = 200, description = "References retrieved successfully", body = String),
+        (status = 200, description = "References retrieved successfully", body = CustomReferenceResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
