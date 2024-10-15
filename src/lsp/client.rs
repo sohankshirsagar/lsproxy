@@ -26,7 +26,7 @@ pub trait LspClient: Send {
         debug!("Found workspace folders: {:?}", workspace_folders);
         let params = InitializeParams {
             capabilities: Default::default(),
-            workspace_folders: None,
+            workspace_folders: Some(workspace_folders),
             root_uri: Some(Url::from_file_path(root_path.clone()).unwrap()),
             ..Default::default()
         };
