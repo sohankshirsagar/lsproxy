@@ -1,4 +1,4 @@
-use std::{error::Error, process::Stdio, vec};
+use std::{error::Error, process::Stdio};
 
 use async_trait::async_trait;
 use log::debug;

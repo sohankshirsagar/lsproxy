@@ -8,7 +8,7 @@ use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
 use log::{debug, warn};
 use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range,
+    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position,
     WorkspaceSymbolResponse,
 };
 use std::collections::HashMap;
