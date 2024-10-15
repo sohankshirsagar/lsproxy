@@ -21,12 +21,11 @@ pub trait LspClient: Send {
         root_path: String,
     ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
         debug!("Initializing LSP client with root path: {:?}", root_path);
+
+        let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
         let params = InitializeParams {
             capabilities: Default::default(),
-            workspace_folders: Some(vec![WorkspaceFolder {
-                uri: Url::from_file_path(root_path.clone()).unwrap(),
-                name: root_path.clone(),
-            }]),
+            workspace_folders: Some(workspace_folders),
             root_uri: Some(Url::from_file_path(root_path.clone()).unwrap()),
             ..Default::default()
         };
