@@ -1,10 +1,8 @@
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
-use crate::lsp::types::SupportedLSP;
+use crate::lsp::types::{CustomDocumentSymbolResponse, SupportedLSP};
 use log::{debug, warn};
-use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range,
-    WorkspaceSymbolResponse,
+use lsp_types::{GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse
 };
 use std::collections::HashMap;
 use std::error::Error;
@@ -66,11 +64,13 @@ impl LspManager {
     pub async fn file_symbols(
         &self,
         file_path: &str,
-    ) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<CustomDocumentSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
         let lsp_type = self.detect_language(&file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
-        locked_client.text_document_symbols(file_path).await
+        let document_symbol_response = locked_client.text_document_symbols(file_path).await?;
+        let custom_document_symbol_response = CustomDocumentSymbolResponse::from(document_symbol_response);
+        Ok(custom_document_symbol_response)
     }
 
     pub async fn get_definition(

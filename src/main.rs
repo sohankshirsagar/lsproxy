@@ -16,7 +16,7 @@ mod lsp;
 mod utils;
 
 use crate::lsp::manager::LspManager;
-use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
+use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, SimplifiedSymbol};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -28,7 +28,7 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
         get_references,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomDocumentSymbolResponse, SimplifiedSymbol)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -162,7 +162,7 @@ async fn start_langservers(
     path = "/file-symbols",
     params(FileSymbolsRequest),
     responses(
-        (status = 200, description = "Symbols retrieved successfully", body = String),
+        (status = 200, description = "Symbols retrieved successfully", body = CustomDocumentSymbolResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
