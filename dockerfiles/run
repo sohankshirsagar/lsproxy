@@ -35,4 +35,4 @@ ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
 
 # Run the server directly
-CMD ["./lsp-proxy"]
+CMD ["./lsproxy"]
