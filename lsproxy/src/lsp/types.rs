@@ -1,8 +1,11 @@
+use lsp_types::{
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink, OneOf,
+    SymbolInformation, SymbolKind, Url, WorkspaceSymbol, WorkspaceSymbolResponse,
+};
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use strum_macros::{Display, EnumString};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, SymbolKind, DocumentSymbol, LocationLink, Location, WorkspaceSymbolResponse, WorkspaceSymbol, OneOf, SymbolInformation, Url};
 
 pub const MOUNT_DIR: &str = "/mnt/repo";
 
@@ -33,15 +36,15 @@ pub struct SimpleLocation {
     pub identifier_start_character: u32,
 }
 
- #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
- pub struct SimpleSymbol {
-     pub name: String,
-     pub kind: String,
-     pub location: SimpleLocation,
- }
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct SimpleSymbol {
+    pub name: String,
+    pub kind: String,
+    pub location: SimpleLocation,
+}
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimpleGotoDefinitionResponse{
+pub struct SimpleGotoDefinitionResponse {
     raw_response: serde_json::Value,
     definitions: Vec<SimpleLocation>,
 }
@@ -95,12 +98,14 @@ impl From<SymbolInformation> for SimpleSymbol {
 impl From<WorkspaceSymbol> for SimpleSymbol {
     fn from(symbol: WorkspaceSymbol) -> Self {
         let (path, identifier_start_line, identifier_start_character) = match symbol.location {
-            OneOf::Left(location) => {
-                (uri_to_path_str(location.uri), location.range.start.line, location.range.start.character)
-            },
+            OneOf::Left(location) => (
+                uri_to_path_str(location.uri),
+                location.range.start.line,
+                location.range.start.character,
+            ),
             OneOf::Right(workspace_location) => {
                 (uri_to_path_str(workspace_location.uri), 0, 0) // Default to 0 for line and character
-            },
+            }
         };
 
         SimpleSymbol {
@@ -115,16 +120,19 @@ impl From<WorkspaceSymbol> for SimpleSymbol {
     }
 }
 
-impl From<GotoDefinitionResponse> for SimpleGotoDefinitionResponse{
+impl From<GotoDefinitionResponse> for SimpleGotoDefinitionResponse {
     fn from(response: GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let definitions = match response {
             GotoDefinitionResponse::Scalar(location) => vec![SimpleLocation::from(location)],
-            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(SimpleLocation::from).collect(),
-            GotoDefinitionResponse::Link(links) => links.into_iter().map(SimpleLocation::from).collect(),
+            GotoDefinitionResponse::Array(locations) => {
+                locations.into_iter().map(SimpleLocation::from).collect()
+            }
+            GotoDefinitionResponse::Link(links) => {
+                links.into_iter().map(SimpleLocation::from).collect()
+            }
         };
-        SimpleGotoDefinitionResponse
-    {
+        SimpleGotoDefinitionResponse {
             raw_response,
             definitions,
         }
@@ -145,16 +153,19 @@ impl From<Vec<Location>> for SimpleReferenceResponse {
 impl From<Vec<WorkspaceSymbolResponse>> for SimpleSymbolResponse {
     fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
         let raw_response = serde_json::to_value(&responses).unwrap_or_default();
-        let symbols: Vec<SimpleSymbol> = responses.into_iter().flat_map(|response| {
-            match response {
-                WorkspaceSymbolResponse::Flat(symbols) => {
-                    symbols.into_iter().map(SimpleSymbol::from).collect::<Vec<_>>()
-                },
-                WorkspaceSymbolResponse::Nested(symbols) => {
-                    symbols.into_iter().map(SimpleSymbol::from).collect::<Vec<_>>()
-                },
-            }
-        }).collect();
+        let symbols: Vec<SimpleSymbol> = responses
+            .into_iter()
+            .flat_map(|response| match response {
+                WorkspaceSymbolResponse::Flat(symbols) => symbols
+                    .into_iter()
+                    .map(SimpleSymbol::from)
+                    .collect::<Vec<_>>(),
+                WorkspaceSymbolResponse::Nested(symbols) => symbols
+                    .into_iter()
+                    .map(SimpleSymbol::from)
+                    .collect::<Vec<_>>(),
+            })
+            .collect();
 
         SimpleSymbolResponse {
             raw_response,
@@ -176,7 +187,7 @@ impl SimpleSymbolResponse {
                         path: file_path.to_string(),
                         identifier_start_line: symbol.location.range.start.line,
                         identifier_start_character: symbol.location.range.start.character,
-                    }
+                    },
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, file_path),
@@ -189,7 +200,9 @@ impl SimpleSymbolResponse {
 }
 
 fn uri_to_path_str(uri: Url) -> String {
-    let path = uri.to_file_path().unwrap_or_else(|_| PathBuf::from(uri.path()));
+    let path = uri
+        .to_file_path()
+        .unwrap_or_else(|_| PathBuf::from(uri.path()));
     let current_dir = std::env::current_dir().unwrap_or_default();
 
     let simplified = path

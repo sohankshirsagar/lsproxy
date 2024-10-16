@@ -1,13 +1,15 @@
 use crate::lsp::client::LspClient;
-use crate::lsp::types::{SimpleSymbolResponse, SimpleGotoDefinitionResponse, SimpleReferenceResponse, SupportedLSP};
-use lsp_types::Position;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
     RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
 };
+use crate::lsp::types::{
+    SimpleGotoDefinitionResponse, SimpleReferenceResponse, SimpleSymbolResponse, SupportedLSP,
+};
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
 use log::{debug, warn};
+use lsp_types::Position;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -113,7 +115,10 @@ impl LspManager {
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
         let document_symbol_response = locked_client.text_document_symbols(file_path).await?;
-        let custom_document_symbol_response = SimpleSymbolResponse::new(document_symbol_response, file_path.strip_prefix(MOUNT_DIR).unwrap_or_default());
+        let custom_document_symbol_response = SimpleSymbolResponse::new(
+            document_symbol_response,
+            file_path.strip_prefix(MOUNT_DIR).unwrap_or_default(),
+        );
         Ok(custom_document_symbol_response)
     }
 

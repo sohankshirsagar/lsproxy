@@ -16,7 +16,10 @@ mod lsp;
 mod utils;
 
 use crate::lsp::manager::LspManager;
-use crate::lsp::types::{SupportedLSP, MOUNT_DIR, SimpleSymbolResponse, SimpleGotoDefinitionResponse, SimpleSymbol, SimpleLocation, SimpleReferenceResponse, };
+use crate::lsp::types::{
+    SimpleGotoDefinitionResponse, SimpleLocation, SimpleReferenceResponse, SimpleSymbol,
+    SimpleSymbolResponse, SupportedLSP, MOUNT_DIR,
+};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -250,9 +253,7 @@ async fn main() -> std::io::Result<()> {
         .start_langservers(MOUNT_DIR)
         .await
         .unwrap();
-    let app_state = web::Data::new(AppState {
-        lsp_manager,
-    });
+    let app_state = web::Data::new(AppState { lsp_manager });
 
     let openapi = ApiDoc::openapi();
 
