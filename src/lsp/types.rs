@@ -53,25 +53,25 @@ pub struct SimplifiedWorkspaceSymbol {
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct CustomGotoDefinitionResponse {
     raw_response: serde_json::Value,
-    simplified: Vec<SimplifiedLocation>,
+    definitions: Vec<SimplifiedLocation>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct CustomWorkspaceSymbolResponse {
     raw_response: serde_json::Value,
-    simplified: Vec<SimplifiedWorkspaceSymbol>,
+    workspace_symbols: Vec<SimplifiedWorkspaceSymbol>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct CustomReferenceResponse {
     raw_response: serde_json::Value,
-    simplified: Vec<SimplifiedLocation>,
+    references: Vec<SimplifiedLocation>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct CustomDocumentSymbolResponse {
     raw_response: serde_json::Value,
-    simplified: Vec<SimplifiedDocumentSymbol>,
+    document_symbols: Vec<SimplifiedDocumentSymbol>,
 }
 
 impl From<Location> for SimplifiedLocation {
@@ -130,14 +130,14 @@ impl From<WorkspaceSymbol> for SimplifiedWorkspaceSymbol {
 impl From<GotoDefinitionResponse> for CustomGotoDefinitionResponse {
     fn from(response: GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
-        let simplified = match response {
+        let definitions = match response {
             GotoDefinitionResponse::Scalar(location) => vec![SimplifiedLocation::from(location)],
             GotoDefinitionResponse::Array(locations) => locations.into_iter().map(SimplifiedLocation::from).collect(),
             GotoDefinitionResponse::Link(links) => links.into_iter().map(SimplifiedLocation::from).collect(),
         };
         CustomGotoDefinitionResponse {
             raw_response,
-            simplified,
+            definitions,
         }
     }
 }
@@ -145,7 +145,7 @@ impl From<GotoDefinitionResponse> for CustomGotoDefinitionResponse {
 impl From<Vec<WorkspaceSymbolResponse>> for CustomWorkspaceSymbolResponse {
     fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
         let raw_response = serde_json::to_value(&responses).unwrap_or_default();
-        let simplified: Vec<SimplifiedWorkspaceSymbol> = responses.into_iter().flat_map(|response| {
+        let workspace_symbols: Vec<SimplifiedWorkspaceSymbol> = responses.into_iter().flat_map(|response| {
             match response {
                 WorkspaceSymbolResponse::Flat(symbols) => {
                     symbols.into_iter().map(SimplifiedWorkspaceSymbol::from).collect::<Vec<_>>()
@@ -158,7 +158,7 @@ impl From<Vec<WorkspaceSymbolResponse>> for CustomWorkspaceSymbolResponse {
 
         CustomWorkspaceSymbolResponse {
             raw_response,
-            simplified,
+            workspace_symbols,
         }
     }
 }
@@ -166,10 +166,10 @@ impl From<Vec<WorkspaceSymbolResponse>> for CustomWorkspaceSymbolResponse {
 impl From<Vec<Location>> for CustomReferenceResponse {
     fn from(locations: Vec<Location>) -> Self {
         let raw_response = serde_json::to_value(&locations).unwrap_or_default();
-        let simplified = locations.into_iter().map(SimplifiedLocation::from).collect();
+        let references = locations.into_iter().map(SimplifiedLocation::from).collect();
         CustomReferenceResponse {
             raw_response,
-            simplified
+            references,
         }
     }
 }
@@ -177,7 +177,7 @@ impl From<Vec<Location>> for CustomReferenceResponse {
 impl From<DocumentSymbolResponse> for CustomDocumentSymbolResponse {
     fn from(response: DocumentSymbolResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
-        let simplified = match response {
+        let document_symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
                 .into_iter()
                 .map(|symbol| SimplifiedDocumentSymbol {
@@ -191,7 +191,7 @@ impl From<DocumentSymbolResponse> for CustomDocumentSymbolResponse {
         };
         CustomDocumentSymbolResponse {
             raw_response,
-            simplified,
+            document_symbols,
         }
     }
 }
