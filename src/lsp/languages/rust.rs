@@ -40,17 +40,6 @@ impl LspClient for RustAnalyzerClient {
             .await?;
         Ok(())
     }
-
-    async fn find_workspace_folders(
-        &mut self,
-        root_path: String,
-    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        // TODO: find folders containing Cargo.toml from root_path
-        Ok(vec![WorkspaceFolder {
-            uri: Url::from_file_path(root_path.clone()).unwrap(),
-            name: root_path,
-        }])
-    }
 }
 
 impl RustAnalyzerClient {
