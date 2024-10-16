@@ -19,10 +19,9 @@ from typing_extensions import Annotated
 from pydantic import Field, StrictBool, StrictStr
 from typing import Optional
 from typing_extensions import Annotated
-from openapi_client.models.custom_document_symbol_response import CustomDocumentSymbolResponse
-from openapi_client.models.custom_goto_definition_response import CustomGotoDefinitionResponse
-from openapi_client.models.custom_reference_response import CustomReferenceResponse
-from openapi_client.models.custom_workspace_symbol_response import CustomWorkspaceSymbolResponse
+from openapi_client.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
+from openapi_client.models.simple_reference_response import SimpleReferenceResponse
+from openapi_client.models.simple_symbol_response import SimpleSymbolResponse
 
 from openapi_client.api_client import ApiClient, RequestSerialized
 from openapi_client.api_response import ApiResponse
@@ -58,7 +57,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> CustomDocumentSymbolResponse:
+    ) -> SimpleSymbolResponse:
         """file_symbols
 
 
@@ -95,7 +94,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomDocumentSymbolResponse",
+            '200': "SimpleSymbolResponse",
             '400': None,
             '500': None,
         }
@@ -126,7 +125,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[CustomDocumentSymbolResponse]:
+    ) -> ApiResponse[SimpleSymbolResponse]:
         """file_symbols
 
 
@@ -163,7 +162,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomDocumentSymbolResponse",
+            '200': "SimpleSymbolResponse",
             '400': None,
             '500': None,
         }
@@ -231,7 +230,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomDocumentSymbolResponse",
+            '200': "SimpleSymbolResponse",
             '400': None,
             '500': None,
         }
@@ -325,7 +324,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> CustomGotoDefinitionResponse:
+    ) -> SimpleGotoDefinitionResponse:
         """get_definition
 
 
@@ -368,7 +367,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomGotoDefinitionResponse",
+            '200': "SimpleGotoDefinitionResponse",
             '400': None,
             '500': None,
         }
@@ -401,7 +400,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[CustomGotoDefinitionResponse]:
+    ) -> ApiResponse[SimpleGotoDefinitionResponse]:
         """get_definition
 
 
@@ -444,7 +443,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomGotoDefinitionResponse",
+            '200': "SimpleGotoDefinitionResponse",
             '400': None,
             '500': None,
         }
@@ -520,7 +519,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomGotoDefinitionResponse",
+            '200': "SimpleGotoDefinitionResponse",
             '400': None,
             '500': None,
         }
@@ -625,7 +624,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> CustomReferenceResponse:
+    ) -> SimpleReferenceResponse:
         """get_references
 
 
@@ -671,7 +670,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomReferenceResponse",
+            '200': "SimpleReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -705,7 +704,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[CustomReferenceResponse]:
+    ) -> ApiResponse[SimpleReferenceResponse]:
         """get_references
 
 
@@ -751,7 +750,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomReferenceResponse",
+            '200': "SimpleReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -831,7 +830,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomReferenceResponse",
+            '200': "SimpleReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -938,7 +937,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> CustomWorkspaceSymbolResponse:
+    ) -> SimpleSymbolResponse:
         """workspace_symbols
 
 
@@ -975,7 +974,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomWorkspaceSymbolResponse",
+            '200': "SimpleSymbolResponse",
             '400': None,
             '500': None,
         }
@@ -1006,7 +1005,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[CustomWorkspaceSymbolResponse]:
+    ) -> ApiResponse[SimpleSymbolResponse]:
         """workspace_symbols
 
 
@@ -1043,7 +1042,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomWorkspaceSymbolResponse",
+            '200': "SimpleSymbolResponse",
             '400': None,
             '500': None,
         }
@@ -1111,7 +1110,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "CustomWorkspaceSymbolResponse",
+            '200': "SimpleSymbolResponse",
             '400': None,
             '500': None,
         }

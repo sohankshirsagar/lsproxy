@@ -19,15 +19,15 @@ import json
 
 from pydantic import BaseModel, ConfigDict
 from typing import Any, ClassVar, Dict, List, Optional
-from openapi_client.models.simplified_location import SimplifiedLocation
+from openapi_client.models.simple_location import SimpleLocation
 from typing import Optional, Set
 from typing_extensions import Self
 
-class CustomGotoDefinitionResponse(BaseModel):
+class SimpleGotoDefinitionResponse(BaseModel):
     """
-    CustomGotoDefinitionResponse
+    SimpleGotoDefinitionResponse
     """ # noqa: E501
-    definitions: List[SimplifiedLocation]
+    definitions: List[SimpleLocation]
     raw_response: Optional[Any]
     __properties: ClassVar[List[str]] = ["definitions", "raw_response"]
 
@@ -49,7 +49,7 @@ class CustomGotoDefinitionResponse(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of CustomGotoDefinitionResponse from a JSON string"""
+        """Create an instance of SimpleGotoDefinitionResponse from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -86,7 +86,7 @@ class CustomGotoDefinitionResponse(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of CustomGotoDefinitionResponse from a dict"""
+        """Create an instance of SimpleGotoDefinitionResponse from a dict"""
         if obj is None:
             return None
 
@@ -94,7 +94,7 @@ class CustomGotoDefinitionResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "definitions": [SimplifiedLocation.from_dict(_item) for _item in obj["definitions"]] if obj.get("definitions") is not None else None,
+            "definitions": [SimpleLocation.from_dict(_item) for _item in obj["definitions"]] if obj.get("definitions") is not None else None,
             "raw_response": obj.get("raw_response")
         })
         return _obj

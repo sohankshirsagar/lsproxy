@@ -17,22 +17,19 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
-from typing import Any, ClassVar, Dict, List
-from typing_extensions import Annotated
+from pydantic import BaseModel, ConfigDict
+from typing import Any, ClassVar, Dict, List, Optional
+from openapi_client.models.simple_location import SimpleLocation
 from typing import Optional, Set
 from typing_extensions import Self
 
-class SimplifiedWorkspaceSymbol(BaseModel):
+class SimpleReferenceResponse(BaseModel):
     """
-    SimplifiedWorkspaceSymbol
+    SimpleReferenceResponse
     """ # noqa: E501
-    character: Annotated[int, Field(strict=True, ge=0)]
-    kind: StrictStr
-    line: Annotated[int, Field(strict=True, ge=0)]
-    name: StrictStr
-    uri: StrictStr
-    __properties: ClassVar[List[str]] = ["character", "kind", "line", "name", "uri"]
+    raw_response: Optional[Any]
+    references: List[SimpleLocation]
+    __properties: ClassVar[List[str]] = ["raw_response", "references"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -52,7 +49,7 @@ class SimplifiedWorkspaceSymbol(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of SimplifiedWorkspaceSymbol from a JSON string"""
+        """Create an instance of SimpleReferenceResponse from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -73,11 +70,23 @@ class SimplifiedWorkspaceSymbol(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of each item in references (list)
+        _items = []
+        if self.references:
+            for _item_references in self.references:
+                if _item_references:
+                    _items.append(_item_references.to_dict())
+            _dict['references'] = _items
+        # set to None if raw_response (nullable) is None
+        # and model_fields_set contains the field
+        if self.raw_response is None and "raw_response" in self.model_fields_set:
+            _dict['raw_response'] = None
+
         return _dict
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of SimplifiedWorkspaceSymbol from a dict"""
+        """Create an instance of SimpleReferenceResponse from a dict"""
         if obj is None:
             return None
 
@@ -85,11 +94,8 @@ class SimplifiedWorkspaceSymbol(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "character": obj.get("character"),
-            "kind": obj.get("kind"),
-            "line": obj.get("line"),
-            "name": obj.get("name"),
-            "uri": obj.get("uri")
+            "raw_response": obj.get("raw_response"),
+            "references": [SimpleLocation.from_dict(_item) for _item in obj["references"]] if obj.get("references") is not None else None
         })
         return _obj
 

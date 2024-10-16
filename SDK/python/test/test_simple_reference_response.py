@@ -14,10 +14,10 @@
 
 import unittest
 
-from openapi_client.models.custom_reference_response import CustomReferenceResponse
+from openapi_client.models.simple_reference_response import SimpleReferenceResponse
 
-class TestCustomReferenceResponse(unittest.TestCase):
-    """CustomReferenceResponse unit test stubs"""
+class TestSimpleReferenceResponse(unittest.TestCase):
+    """SimpleReferenceResponse unit test stubs"""
 
     def setUp(self):
         pass
@@ -25,38 +25,38 @@ class TestCustomReferenceResponse(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def make_instance(self, include_optional) -> CustomReferenceResponse:
-        """Test CustomReferenceResponse
+    def make_instance(self, include_optional) -> SimpleReferenceResponse:
+        """Test SimpleReferenceResponse
             include_optional is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `CustomReferenceResponse`
+        # uncomment below to create an instance of `SimpleReferenceResponse`
         """
-        model = CustomReferenceResponse()
+        model = SimpleReferenceResponse()
         if include_optional:
-            return CustomReferenceResponse(
+            return SimpleReferenceResponse(
                 raw_response = None,
                 references = [
-                    openapi_client.models.simplified_location.SimplifiedLocation(
-                        character = 0, 
-                        line = 0, 
+                    openapi_client.models.simple_location.SimpleLocation(
+                        identifier_start_character = 0, 
+                        identifier_start_line = 0, 
                         uri = '', )
                     ]
             )
         else:
-            return CustomReferenceResponse(
+            return SimpleReferenceResponse(
                 raw_response = None,
                 references = [
-                    openapi_client.models.simplified_location.SimplifiedLocation(
-                        character = 0, 
-                        line = 0, 
+                    openapi_client.models.simple_location.SimpleLocation(
+                        identifier_start_character = 0, 
+                        identifier_start_line = 0, 
                         uri = '', )
                     ],
         )
         """
 
-    def testCustomReferenceResponse(self):
-        """Test CustomReferenceResponse"""
+    def testSimpleReferenceResponse(self):
+        """Test SimpleReferenceResponse"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 

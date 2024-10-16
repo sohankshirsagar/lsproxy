@@ -14,10 +14,10 @@
 
 import unittest
 
-from openapi_client.models.simplified_workspace_symbol import SimplifiedWorkspaceSymbol
+from openapi_client.models.simple_location import SimpleLocation
 
-class TestSimplifiedWorkspaceSymbol(unittest.TestCase):
-    """SimplifiedWorkspaceSymbol unit test stubs"""
+class TestSimpleLocation(unittest.TestCase):
+    """SimpleLocation unit test stubs"""
 
     def setUp(self):
         pass
@@ -25,34 +25,30 @@ class TestSimplifiedWorkspaceSymbol(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def make_instance(self, include_optional) -> SimplifiedWorkspaceSymbol:
-        """Test SimplifiedWorkspaceSymbol
+    def make_instance(self, include_optional) -> SimpleLocation:
+        """Test SimpleLocation
             include_optional is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `SimplifiedWorkspaceSymbol`
+        # uncomment below to create an instance of `SimpleLocation`
         """
-        model = SimplifiedWorkspaceSymbol()
+        model = SimpleLocation()
         if include_optional:
-            return SimplifiedWorkspaceSymbol(
-                character = 0,
-                kind = '',
-                line = 0,
-                name = '',
+            return SimpleLocation(
+                identifier_start_character = 0,
+                identifier_start_line = 0,
                 uri = ''
             )
         else:
-            return SimplifiedWorkspaceSymbol(
-                character = 0,
-                kind = '',
-                line = 0,
-                name = '',
+            return SimpleLocation(
+                identifier_start_character = 0,
+                identifier_start_line = 0,
                 uri = '',
         )
         """
 
-    def testSimplifiedWorkspaceSymbol(self):
-        """Test SimplifiedWorkspaceSymbol"""
+    def testSimpleLocation(self):
+        """Test SimpleLocation"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 

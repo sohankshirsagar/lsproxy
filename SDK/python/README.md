@@ -92,16 +92,14 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [CustomDocumentSymbolResponse](docs/CustomDocumentSymbolResponse.md)
- - [CustomGotoDefinitionResponse](docs/CustomGotoDefinitionResponse.md)
- - [CustomReferenceResponse](docs/CustomReferenceResponse.md)
- - [CustomWorkspaceSymbolResponse](docs/CustomWorkspaceSymbolResponse.md)
  - [FileSymbolsRequest](docs/FileSymbolsRequest.md)
  - [GetDefinitionRequest](docs/GetDefinitionRequest.md)
  - [GetReferencesRequest](docs/GetReferencesRequest.md)
- - [SimplifiedDocumentSymbol](docs/SimplifiedDocumentSymbol.md)
- - [SimplifiedLocation](docs/SimplifiedLocation.md)
- - [SimplifiedWorkspaceSymbol](docs/SimplifiedWorkspaceSymbol.md)
+ - [SimpleGotoDefinitionResponse](docs/SimpleGotoDefinitionResponse.md)
+ - [SimpleLocation](docs/SimpleLocation.md)
+ - [SimpleReferenceResponse](docs/SimpleReferenceResponse.md)
+ - [SimpleSymbol](docs/SimpleSymbol.md)
+ - [SimpleSymbolResponse](docs/SimpleSymbolResponse.md)
  - [SupportedLSP](docs/SupportedLSP.md)
  - [WorkspaceSymbolsRequest](docs/WorkspaceSymbolsRequest.md)
 

@@ -16,7 +16,7 @@ mod lsp;
 mod utils;
 
 use crate::lsp::manager::LspManager;
-use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, SimplifiedDocumentSymbol, SimplifiedWorkspaceSymbol, SimplifiedLocation, CustomReferenceResponse, CustomWorkspaceSymbolResponse};
+use crate::lsp::types::{SupportedLSP, MOUNT_DIR, SimpleSymbolResponse, SimpleGotoDefinitionResponse, SimpleSymbol, SimpleLocation, SimpleReferenceResponse, };
 
 #[derive(OpenApi)]
 #[openapi(
@@ -27,7 +27,7 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, C
         get_references,
     ),
     components(
-        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, CustomReferenceResponse, CustomWorkspaceSymbolResponse, SimplifiedLocation, SimplifiedDocumentSymbol, SimplifiedWorkspaceSymbol)
+        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, SimpleGotoDefinitionResponse, SimpleSymbolResponse, SimpleReferenceResponse, SimpleLocation, SimpleSymbol)
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
@@ -77,7 +77,7 @@ struct Cli {
     path = "/definition",
     params(GetDefinitionRequest),
     responses(
-        (status = 200, description = "Definition retrieved successfully", body = CustomGotoDefinitionResponse),
+        (status = 200, description = "Definition retrieved successfully", body = SimpleGotoDefinitionResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -125,7 +125,7 @@ async fn get_definition(
     path = "/file-symbols",
     params(FileSymbolsRequest),
     responses(
-        (status = 200, description = "Symbols retrieved successfully", body = CustomDocumentSymbolResponse),
+        (status = 200, description = "Symbols retrieved successfully", body = SimpleSymbolResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -159,7 +159,7 @@ async fn file_symbols(
     path = "/workspace-symbols",
     params(WorkspaceSymbolsRequest),
     responses(
-        (status = 200, description = "Workspace symbols retrieved successfully", body = CustomWorkspaceSymbolResponse),
+        (status = 200, description = "Workspace symbols retrieved successfully", body = SimpleSymbolResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -193,7 +193,7 @@ async fn workspace_symbols(
     path = "/references",
     params(GetReferencesRequest),
     responses(
-        (status = 200, description = "References retrieved successfully", body = CustomReferenceResponse),
+        (status = 200, description = "References retrieved successfully", body = SimpleReferenceResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -251,7 +251,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .unwrap();
     let app_state = web::Data::new(AppState {
-        lsp_manager: lsp_manager,
+        lsp_manager,
     });
 
     let openapi = ApiDoc::openapi();

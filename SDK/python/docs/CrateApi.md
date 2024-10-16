@@ -11,7 +11,7 @@ Method | HTTP request | Description
 
 
 # **file_symbols**
-> CustomDocumentSymbolResponse file_symbols(file_path)
+> SimpleSymbolResponse file_symbols(file_path)
 
 
 
@@ -20,7 +20,7 @@ Method | HTTP request | Description
 
 ```python
 import openapi_client
-from openapi_client.models.custom_document_symbol_response import CustomDocumentSymbolResponse
+from openapi_client.models.simple_symbol_response import SimpleSymbolResponse
 from openapi_client.rest import ApiException
 from pprint import pprint
 
@@ -56,7 +56,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**CustomDocumentSymbolResponse**](CustomDocumentSymbolResponse.md)
+[**SimpleSymbolResponse**](SimpleSymbolResponse.md)
 
 ### Authorization
 
@@ -78,7 +78,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_definition**
-> CustomGotoDefinitionResponse get_definition(file_path, line, character)
+> SimpleGotoDefinitionResponse get_definition(file_path, line, character)
 
 
 
@@ -87,7 +87,7 @@ No authorization required
 
 ```python
 import openapi_client
-from openapi_client.models.custom_goto_definition_response import CustomGotoDefinitionResponse
+from openapi_client.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
 from openapi_client.rest import ApiException
 from pprint import pprint
 
@@ -127,7 +127,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**CustomGotoDefinitionResponse**](CustomGotoDefinitionResponse.md)
+[**SimpleGotoDefinitionResponse**](SimpleGotoDefinitionResponse.md)
 
 ### Authorization
 
@@ -149,7 +149,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_references**
-> CustomReferenceResponse get_references(file_path, line, character, include_declaration=include_declaration)
+> SimpleReferenceResponse get_references(file_path, line, character, include_declaration=include_declaration)
 
 
 
@@ -158,7 +158,7 @@ No authorization required
 
 ```python
 import openapi_client
-from openapi_client.models.custom_reference_response import CustomReferenceResponse
+from openapi_client.models.simple_reference_response import SimpleReferenceResponse
 from openapi_client.rest import ApiException
 from pprint import pprint
 
@@ -200,7 +200,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**CustomReferenceResponse**](CustomReferenceResponse.md)
+[**SimpleReferenceResponse**](SimpleReferenceResponse.md)
 
 ### Authorization
 
@@ -222,7 +222,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **workspace_symbols**
-> CustomWorkspaceSymbolResponse workspace_symbols(query)
+> SimpleSymbolResponse workspace_symbols(query)
 
 
 
@@ -231,7 +231,7 @@ No authorization required
 
 ```python
 import openapi_client
-from openapi_client.models.custom_workspace_symbol_response import CustomWorkspaceSymbolResponse
+from openapi_client.models.simple_symbol_response import SimpleSymbolResponse
 from openapi_client.rest import ApiException
 from pprint import pprint
 
@@ -267,7 +267,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**CustomWorkspaceSymbolResponse**](CustomWorkspaceSymbolResponse.md)
+[**SimpleSymbolResponse**](SimpleSymbolResponse.md)
 
 ### Authorization
 

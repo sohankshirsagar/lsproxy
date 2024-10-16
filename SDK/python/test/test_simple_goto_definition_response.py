@@ -14,10 +14,10 @@
 
 import unittest
 
-from openapi_client.models.custom_goto_definition_response import CustomGotoDefinitionResponse
+from openapi_client.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
 
-class TestCustomGotoDefinitionResponse(unittest.TestCase):
-    """CustomGotoDefinitionResponse unit test stubs"""
+class TestSimpleGotoDefinitionResponse(unittest.TestCase):
+    """SimpleGotoDefinitionResponse unit test stubs"""
 
     def setUp(self):
         pass
@@ -25,38 +25,38 @@ class TestCustomGotoDefinitionResponse(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def make_instance(self, include_optional) -> CustomGotoDefinitionResponse:
-        """Test CustomGotoDefinitionResponse
+    def make_instance(self, include_optional) -> SimpleGotoDefinitionResponse:
+        """Test SimpleGotoDefinitionResponse
             include_optional is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `CustomGotoDefinitionResponse`
+        # uncomment below to create an instance of `SimpleGotoDefinitionResponse`
         """
-        model = CustomGotoDefinitionResponse()
+        model = SimpleGotoDefinitionResponse()
         if include_optional:
-            return CustomGotoDefinitionResponse(
+            return SimpleGotoDefinitionResponse(
                 definitions = [
-                    openapi_client.models.simplified_location.SimplifiedLocation(
-                        character = 0, 
-                        line = 0, 
+                    openapi_client.models.simple_location.SimpleLocation(
+                        identifier_start_character = 0, 
+                        identifier_start_line = 0, 
                         uri = '', )
                     ],
                 raw_response = None
             )
         else:
-            return CustomGotoDefinitionResponse(
+            return SimpleGotoDefinitionResponse(
                 definitions = [
-                    openapi_client.models.simplified_location.SimplifiedLocation(
-                        character = 0, 
-                        line = 0, 
+                    openapi_client.models.simple_location.SimpleLocation(
+                        identifier_start_character = 0, 
+                        identifier_start_line = 0, 
                         uri = '', )
                     ],
                 raw_response = None,
         )
         """
 
-    def testCustomGotoDefinitionResponse(self):
-        """Test CustomGotoDefinitionResponse"""
+    def testSimpleGotoDefinitionResponse(self):
+        """Test SimpleGotoDefinitionResponse"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 

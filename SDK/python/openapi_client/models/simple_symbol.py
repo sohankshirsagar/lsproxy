@@ -17,19 +17,20 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict
-from typing import Any, ClassVar, Dict, List, Optional
-from openapi_client.models.simplified_document_symbol import SimplifiedDocumentSymbol
+from pydantic import BaseModel, ConfigDict, StrictStr
+from typing import Any, ClassVar, Dict, List
+from openapi_client.models.simple_location import SimpleLocation
 from typing import Optional, Set
 from typing_extensions import Self
 
-class CustomDocumentSymbolResponse(BaseModel):
+class SimpleSymbol(BaseModel):
     """
-    CustomDocumentSymbolResponse
+    SimpleSymbol
     """ # noqa: E501
-    document_symbols: List[SimplifiedDocumentSymbol]
-    raw_response: Optional[Any]
-    __properties: ClassVar[List[str]] = ["document_symbols", "raw_response"]
+    kind: StrictStr
+    location: SimpleLocation
+    name: StrictStr
+    __properties: ClassVar[List[str]] = ["kind", "location", "name"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -49,7 +50,7 @@ class CustomDocumentSymbolResponse(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of CustomDocumentSymbolResponse from a JSON string"""
+        """Create an instance of SimpleSymbol from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -70,23 +71,14 @@ class CustomDocumentSymbolResponse(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of each item in document_symbols (list)
-        _items = []
-        if self.document_symbols:
-            for _item_document_symbols in self.document_symbols:
-                if _item_document_symbols:
-                    _items.append(_item_document_symbols.to_dict())
-            _dict['document_symbols'] = _items
-        # set to None if raw_response (nullable) is None
-        # and model_fields_set contains the field
-        if self.raw_response is None and "raw_response" in self.model_fields_set:
-            _dict['raw_response'] = None
-
+        # override the default output from pydantic by calling `to_dict()` of location
+        if self.location:
+            _dict['location'] = self.location.to_dict()
         return _dict
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of CustomDocumentSymbolResponse from a dict"""
+        """Create an instance of SimpleSymbol from a dict"""
         if obj is None:
             return None
 
@@ -94,8 +86,9 @@ class CustomDocumentSymbolResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "document_symbols": [SimplifiedDocumentSymbol.from_dict(_item) for _item in obj["document_symbols"]] if obj.get("document_symbols") is not None else None,
-            "raw_response": obj.get("raw_response")
+            "kind": obj.get("kind"),
+            "location": SimpleLocation.from_dict(obj["location"]) if obj.get("location") is not None else None,
+            "name": obj.get("name")
         })
         return _obj
 

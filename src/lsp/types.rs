@@ -27,88 +27,74 @@ pub enum SupportedLSP {
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimplifiedLocation {
+pub struct SimpleLocation {
     pub uri: String,
-    pub line: u32,
-    pub character: u32,
+    pub identifier_start_line: u32,
+    pub identifier_start_character: u32,
 }
 
  #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
- pub struct SimplifiedDocumentSymbol {
+ pub struct SimpleSymbol {
      pub name: String,
      pub kind: String,
-     pub line: u32,
-     pub character: u32,
+     pub location: SimpleLocation,
  }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimplifiedWorkspaceSymbol {
-    pub name: String,
-    pub kind: String,
-    pub uri: String,
-    pub line: u32,
-    pub character: u32,
+pub struct SimpleGotoDefinitionResponse{
+    raw_response: serde_json::Value,
+    definitions: Vec<SimpleLocation>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct CustomGotoDefinitionResponse {
+pub struct SimpleReferenceResponse {
     raw_response: serde_json::Value,
-    definitions: Vec<SimplifiedLocation>,
+    references: Vec<SimpleLocation>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct CustomWorkspaceSymbolResponse {
+pub struct SimpleSymbolResponse {
     raw_response: serde_json::Value,
-    workspace_symbols: Vec<SimplifiedWorkspaceSymbol>,
+    symbols: Vec<SimpleSymbol>,
 }
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct CustomReferenceResponse {
-    raw_response: serde_json::Value,
-    references: Vec<SimplifiedLocation>,
-}
-
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct CustomDocumentSymbolResponse {
-    raw_response: serde_json::Value,
-    document_symbols: Vec<SimplifiedDocumentSymbol>,
-}
-
-impl From<Location> for SimplifiedLocation {
+impl From<Location> for SimpleLocation {
     fn from(location: Location) -> Self {
-        SimplifiedLocation {
+        SimpleLocation {
             uri: simplify_uri(location.uri),
-            line: location.range.start.line,
-            character: location.range.start.character,
+            identifier_start_line: location.range.start.line,
+            identifier_start_character: location.range.start.character,
         }
     }
 }
 
-impl From<LocationLink> for SimplifiedLocation {
+impl From<LocationLink> for SimpleLocation {
     fn from(link: LocationLink) -> Self {
-        SimplifiedLocation {
+        SimpleLocation {
             uri: simplify_uri(link.target_uri),
-            line: link.target_range.start.line,
-            character: link.target_range.start.character,
+            identifier_start_line: link.target_range.start.line,
+            identifier_start_character: link.target_range.start.character,
         }
     }
 }
 
-impl From<SymbolInformation> for SimplifiedWorkspaceSymbol {
+impl From<SymbolInformation> for SimpleSymbol {
     fn from(symbol: SymbolInformation) -> Self {
-        SimplifiedWorkspaceSymbol {
+        SimpleSymbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            uri: symbol.location.uri.to_string(),
-            line: symbol.location.range.start.line,
-            character: symbol.location.range.start.character,
+            location: SimpleLocation {
+                uri: symbol.location.uri.to_string(),
+                identifier_start_line: symbol.location.range.start.line,
+                identifier_start_character: symbol.location.range.start.character,
+            },
         }
     }
 }
 
-impl From<WorkspaceSymbol> for SimplifiedWorkspaceSymbol {
+impl From<WorkspaceSymbol> for SimpleSymbol {
     fn from(symbol: WorkspaceSymbol) -> Self {
-        let (uri, line, character) = match symbol.location {
+        let (uri, identifier_start_line, identifier_start_character) = match symbol.location {
             OneOf::Left(location) => {
                 (location.uri.to_string(), location.range.start.line, location.range.start.character)
             },
@@ -117,81 +103,87 @@ impl From<WorkspaceSymbol> for SimplifiedWorkspaceSymbol {
             },
         };
 
-        SimplifiedWorkspaceSymbol {
+        SimpleSymbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            uri,
-            line,
-            character,
+            location: SimpleLocation {
+                uri,
+                identifier_start_line,
+                identifier_start_character,
+            },
         }
     }
 }
 
-impl From<GotoDefinitionResponse> for CustomGotoDefinitionResponse {
+impl From<GotoDefinitionResponse> for SimpleGotoDefinitionResponse{
     fn from(response: GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let definitions = match response {
-            GotoDefinitionResponse::Scalar(location) => vec![SimplifiedLocation::from(location)],
-            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(SimplifiedLocation::from).collect(),
-            GotoDefinitionResponse::Link(links) => links.into_iter().map(SimplifiedLocation::from).collect(),
+            GotoDefinitionResponse::Scalar(location) => vec![SimpleLocation::from(location)],
+            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(SimpleLocation::from).collect(),
+            GotoDefinitionResponse::Link(links) => links.into_iter().map(SimpleLocation::from).collect(),
         };
-        CustomGotoDefinitionResponse {
+        SimpleGotoDefinitionResponse
+    {
             raw_response,
             definitions,
         }
     }
 }
 
-impl From<Vec<WorkspaceSymbolResponse>> for CustomWorkspaceSymbolResponse {
+impl From<Vec<WorkspaceSymbolResponse>> for SimpleSymbolResponse {
     fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
         let raw_response = serde_json::to_value(&responses).unwrap_or_default();
-        let workspace_symbols: Vec<SimplifiedWorkspaceSymbol> = responses.into_iter().flat_map(|response| {
+        let symbols: Vec<SimpleSymbol> = responses.into_iter().flat_map(|response| {
             match response {
                 WorkspaceSymbolResponse::Flat(symbols) => {
-                    symbols.into_iter().map(SimplifiedWorkspaceSymbol::from).collect::<Vec<_>>()
+                    symbols.into_iter().map(SimpleSymbol::from).collect::<Vec<_>>()
                 },
                 WorkspaceSymbolResponse::Nested(symbols) => {
-                    symbols.into_iter().map(SimplifiedWorkspaceSymbol::from).collect::<Vec<_>>()
+                    symbols.into_iter().map(SimpleSymbol::from).collect::<Vec<_>>()
                 },
             }
         }).collect();
 
-        CustomWorkspaceSymbolResponse {
+        SimpleSymbolResponse {
             raw_response,
-            workspace_symbols,
+            symbols,
         }
     }
 }
 
-impl From<Vec<Location>> for CustomReferenceResponse {
+impl From<Vec<Location>> for SimpleReferenceResponse {
     fn from(locations: Vec<Location>) -> Self {
         let raw_response = serde_json::to_value(&locations).unwrap_or_default();
-        let references = locations.into_iter().map(SimplifiedLocation::from).collect();
-        CustomReferenceResponse {
+        let references = locations.into_iter().map(SimpleLocation::from).collect();
+        SimpleReferenceResponse {
             raw_response,
             references,
         }
     }
 }
 
-impl From<DocumentSymbolResponse> for CustomDocumentSymbolResponse {
-    fn from(response: DocumentSymbolResponse) -> Self {
+impl SimpleSymbolResponse {
+    pub fn new(response: DocumentSymbolResponse, file_path: &str) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
-        let document_symbols = match response {
+        let symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
                 .into_iter()
-                .map(|symbol| SimplifiedDocumentSymbol {
+                .map(|symbol| SimpleSymbol {
                     name: symbol.name,
                     kind: symbol_kind_to_string(&symbol.kind).to_string(),
-                    line: symbol.location.range.start.line,
-                    character: symbol.location.range.start.character,
+                    location: SimpleLocation {
+                        uri: file_path.to_string(),
+                        identifier_start_line: symbol.location.range.start.line,
+                        identifier_start_character: symbol.location.range.start.character,
+                    }
                 })
                 .collect(),
-            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols)
+            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, file_path),
         };
-        CustomDocumentSymbolResponse {
+        SimpleSymbolResponse {
             raw_response,
-            document_symbols,
+            symbols,
         }
     }
 }
@@ -212,23 +204,26 @@ fn simplify_uri(uri: Url) -> String {
         .unwrap_or_else(|_| simplified.to_string_lossy().into_owned())
 }
 
-fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>) -> Vec<SimplifiedDocumentSymbol> {
-    fn recursive_flatten(symbol: DocumentSymbol, result: &mut Vec<SimplifiedDocumentSymbol>) {
-        result.push(SimplifiedDocumentSymbol {
+fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<SimpleSymbol> {
+    fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<SimpleSymbol>) {
+        result.push(SimpleSymbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            line: symbol.selection_range.start.line,
-            character: symbol.selection_range.start.character,
+            location: SimpleLocation {
+                uri: file_path.to_string(),
+                identifier_start_line: symbol.selection_range.start.line,
+                identifier_start_character: symbol.selection_range.start.character,
+            },
         });
 
         for child in symbol.children.unwrap_or_default() {
-            recursive_flatten(child, result);
+            recursive_flatten(child, file_path, result);
         }
     }
 
     let mut flattened = Vec::new();
     for symbol in symbols {
-        recursive_flatten(symbol, &mut flattened);
+        recursive_flatten(symbol, file_path, &mut flattened);
     }
     flattened
 }
