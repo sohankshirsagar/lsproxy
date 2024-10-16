@@ -49,7 +49,8 @@ pub struct GetDefinitionRequest {
 pub struct GetReferencesRequest {
     #[serde(deserialize_with = "deserialize_file_position")]
     pub symbol_identifier_position: FilePosition,
-    pub include_declaration: Option<bool>,
+    #[serde(default)]
+    pub include_declaration: bool,
     #[serde(default)]
     pub include_raw_response: bool,
 }

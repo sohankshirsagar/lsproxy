@@ -214,10 +214,7 @@ async fn references(
                 line: info.symbol_identifier_position.line,
                 character: info.symbol_identifier_position.character,
             },
-            info.include_declaration.unwrap_or_else(|| {
-                error!("include_declaration not provided, defaulting to true");
-                true
-            }),
+            info.include_declaration,
         )
         .await;
     match result {
