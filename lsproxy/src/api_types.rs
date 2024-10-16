@@ -255,7 +255,10 @@ fn uri_to_path_str(uri: Url) -> String {
     let mount_dir = Path::new(MOUNT_DIR);
     path.strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| path.to_string_lossy().into_owned())
+        .unwrap_or_else(|e| {
+            warn!("Failed to strip prefix: {:?}", e);
+            path.to_string_lossy().into_owned()
+        })
 }
 
 fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<Symbol> {
