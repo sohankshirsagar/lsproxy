@@ -9,7 +9,7 @@ use url::Url;
 
 use crate::{
     lsp::{JsonRpcHandler, LspClient, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS},
-    utils::file_utils::{search_files},
+    utils::file_utils::search_files,
 };
 
 pub struct TypeScriptLanguageClient {

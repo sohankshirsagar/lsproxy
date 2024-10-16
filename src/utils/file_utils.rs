@@ -1,10 +1,6 @@
 use ignore::WalkBuilder;
 use log::debug;
-use lsp_types::TextDocumentItem;
-use serde_json::Value;
-use std::fs;
 use std::path::{Path, PathBuf};
-use url::Url;
 
 pub fn search_files(
     path: &std::path::Path,
