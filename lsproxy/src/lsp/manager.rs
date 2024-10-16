@@ -146,10 +146,14 @@ impl LspManager {
     ) -> Result<SymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
         /* This returns results for all langservers*/
         let mut symbols = Vec::new();
-        for client in self.clients.values() {
+        for (lang, client) in self.clients.iter() {
+            debug!("Requesting workspace symbols with query: {} for {:?}", query, lang);
             let mut locked_client = client.lock().await;
-            let client_symbols = locked_client.workspace_symbols(query).await?;
-            symbols.push(client_symbols);
+            let client_symbols = locked_client.workspace_symbols(query).await;
+            match client_symbols {
+                Ok(response) => symbols.push(response),
+                Err(e) => warn!("Error requesting workspace symbols for {:?}: {:?}", lang, e),
+            }
         }
         Ok(SymbolResponse::from(symbols))
     }
