@@ -1,30 +1,30 @@
-# SimpleSymbol
+# Symbol
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**identifier_start_position** | [**FilePosition**](FilePosition.md) |  | 
 **kind** | **str** |  | 
-**location** | [**SimpleLocation**](SimpleLocation.md) |  | 
 **name** | **str** |  | 
 
 ## Example
 
 ```python
-from lsproxy_sdk.models.simple_symbol import SimpleSymbol
+from lsproxy_sdk.models.symbol import Symbol
 
 # TODO update the JSON string below
 json = "{}"
-# create an instance of SimpleSymbol from a JSON string
-simple_symbol_instance = SimpleSymbol.from_json(json)
+# create an instance of Symbol from a JSON string
+symbol_instance = Symbol.from_json(json)
 # print the JSON string representation of the object
-print(SimpleSymbol.to_json())
+print(Symbol.to_json())
 
 # convert the object into a dict
-simple_symbol_dict = simple_symbol_instance.to_dict()
-# create an instance of SimpleSymbol from a dict
-simple_symbol_from_dict = SimpleSymbol.from_dict(simple_symbol_dict)
+symbol_dict = symbol_instance.to_dict()
+# create an instance of Symbol from a dict
+symbol_from_dict = Symbol.from_dict(symbol_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

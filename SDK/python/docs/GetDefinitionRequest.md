@@ -5,9 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**character** | **int** |  | 
-**file_path** | **str** |  | 
-**line** | **int** |  | 
+**position** | [**FilePosition**](FilePosition.md) |  | 
 
 ## Example
 

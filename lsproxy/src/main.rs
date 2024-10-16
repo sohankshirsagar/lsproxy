@@ -33,8 +33,8 @@ fn check_mount_dir() -> std::io::Result<()> {
     paths(
         file_symbols,
         workspace_symbols,
-        get_definition,
-        get_references,
+        definition,
+        references,
     ),
     components(
         schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, FilePosition, Symbol)
@@ -67,13 +67,15 @@ struct Cli {
         (status = 500, description = "Internal server error")
     )
 )]
-async fn get_definition(
+async fn definition(
     data: web::Data<AppState>,
     info: web::Query<GetDefinitionRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_definition request for file: {}, line: {}, character: {}",
-        info.position.path, info.position.line, info.position.character
+        "Received definition request for file: {}, line: {}, character: {}",
+        info.position.path,
+        info.position.line,
+        info.position.character
     );
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.position.path);
@@ -82,7 +84,7 @@ async fn get_definition(
     match data.lsp_manager.lock() {
         Ok(lsp_manager) => {
             match lsp_manager
-                .get_definition(
+                .definition(
                     full_path_str,
                     Position {
                         line: info.position.line,
@@ -192,12 +194,12 @@ async fn workspace_symbols(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn get_references(
+async fn references(
     data: web::Data<AppState>,
     info: web::Query<GetReferencesRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_references request for file: {}, line: {}, character: {}",
+        "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
         info.symbol_identifier_position.line,
         info.symbol_identifier_position.character
@@ -206,7 +208,7 @@ async fn get_references(
     let full_path_str = full_path.to_str().unwrap_or("");
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
-        .get_references(
+        .references(
             full_path_str,
             Position {
                 line: info.symbol_identifier_position.line,
@@ -240,22 +242,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Logger initialized");
 
-    // Check if MOUNT_DIR exists and is mounted
-    if let Err(e) = check_mount_dir() {
-        eprintln!("Error: Your repo isn't mounted at '{}'. Please mount your repository at this location in your docker run or docker compose commands.", MOUNT_DIR);
-        return Err(e);
-    }
-
     let cli = Cli::parse();
-
-    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
-    lsp_manager
-        .lock()
-        .unwrap()
-        .start_langservers(MOUNT_DIR)
-        .await
-        .unwrap();
-    let app_state = web::Data::new(AppState { lsp_manager });
 
     let openapi = ApiDoc::openapi();
 
@@ -267,6 +254,22 @@ async fn main() -> std::io::Result<()> {
         println!("OpenAPI spec written to: {}", file_path.display());
         return Ok(());
     }
+
+    // Check if MOUNT_DIR exists and is mounted
+    if let Err(e) = check_mount_dir() {
+        eprintln!("Error: Your repo isn't mounted at '{}'. Please mount your repository at this location in your docker run or docker compose commands.", MOUNT_DIR);
+        return Err(e);
+    }
+
+    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
+    lsp_manager
+        .lock()
+        .unwrap()
+        .start_langservers(MOUNT_DIR)
+        .await
+        .unwrap();
+    let app_state = web::Data::new(AppState { lsp_manager });
+
 
     let server = HttpServer::new(move || {
         App::new()
@@ -282,8 +285,8 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/file-symbols").route(web::get().to(file_symbols)))
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
-            .service(web::resource("/definition").route(web::get().to(get_definition)))
-            .service(web::resource("/references").route(web::get().to(get_references)))
+            .service(web::resource("/definition").route(web::get().to(definition)))
+            .service(web::resource("/references").route(web::get().to(references)))
     })
     .bind("0.0.0.0:8080")?;
 

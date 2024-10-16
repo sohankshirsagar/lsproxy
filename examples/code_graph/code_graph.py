@@ -4,14 +4,9 @@ import argparse
 import sys
 from typing import Dict, Any, Optional
 
-import openapi_client
-from openapi_client.rest import ApiException
-
-BASE_URL = "http://localhost:8080"  # You can change this to an environment variable if needed
-
-configuration = openapi_client.Configuration(
-    host = BASE_URL
-)
+from lsproxy_sdk import ApiClient, CrateApi, Configuration
+from lsproxy_sdk.models import FilePosition
+from lsproxy_sdk.rest import ApiException
 
 def save_edge_data(data: Dict[str, set], output_file: str = 'edge_data.json'):
     graph_data = [{'from': edge[0], 'to': edge[1], 'referenced_symbols': list(referenced_symbols)} for edge, referenced_symbols in data.items()]
@@ -20,21 +15,23 @@ def save_edge_data(data: Dict[str, set], output_file: str = 'edge_data.json'):
     print(f"Dependency data saved to {output_file}")
 
 def process_file(file_path: str):
-    with openapi_client.ApiClient(configuration) as api_client:
-        api_instance = openapi_client.CrateApi(api_client)
+    with ApiClient(Configuration(host="http://localhost:8080")) as lsproxy_client:
+        lsproxy = CrateApi(lsproxy_client)
     try:
         edges = {}
-        document_symbols = api_instance.file_symbols(file_path).document_symbols
+        symbols = lsproxy.file_symbols(file_path).symbols or [] 
 
-        if document_symbols:
-            for symbol in document_symbols:
-                name, line, character = symbol.name, symbol.line, symbol.character
-                references = api_instance.get_references(file_path, line, character).references
-                for reference in references:
-                    dest_file = reference.uri
-                    if dest_file == file_path:
-                        continue
-                    edges.setdefault((file_path, dest_file), set()).add(name)
+        for symbol in symbols:
+            name = symbol.name
+            line = symbol.identifier_start_position.line
+            character = symbol.identifier_start_position.character
+            references = lsproxy.references(FilePosition(path=file_path, line=line, character=character)).references
+            for reference in references:
+                dest_file = reference.path
+                if dest_file == file_path:
+                    continue
+                print(f"`{dest_file}` references `{name}` from `{file_path}`")
+                edges.setdefault((file_path, dest_file), set()).add(name)
         
         save_edge_data(edges)
     except ApiException as e:

@@ -17,20 +17,19 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictStr
-from typing import Any, ClassVar, Dict, List
-from lsproxy_sdk.models.simple_location import SimpleLocation
+from pydantic import BaseModel, ConfigDict
+from typing import Any, ClassVar, Dict, List, Optional
+from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
 from typing_extensions import Self
 
-class SimpleSymbol(BaseModel):
+class DefinitionResponse(BaseModel):
     """
-    SimpleSymbol
+    DefinitionResponse
     """ # noqa: E501
-    kind: StrictStr
-    location: SimpleLocation
-    name: StrictStr
-    __properties: ClassVar[List[str]] = ["kind", "location", "name"]
+    definitions: List[FilePosition]
+    raw_response: Optional[Any]
+    __properties: ClassVar[List[str]] = ["definitions", "raw_response"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -50,7 +49,7 @@ class SimpleSymbol(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of SimpleSymbol from a JSON string"""
+        """Create an instance of DefinitionResponse from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -71,14 +70,23 @@ class SimpleSymbol(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of location
-        if self.location:
-            _dict['location'] = self.location.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of each item in definitions (list)
+        _items = []
+        if self.definitions:
+            for _item_definitions in self.definitions:
+                if _item_definitions:
+                    _items.append(_item_definitions.to_dict())
+            _dict['definitions'] = _items
+        # set to None if raw_response (nullable) is None
+        # and model_fields_set contains the field
+        if self.raw_response is None and "raw_response" in self.model_fields_set:
+            _dict['raw_response'] = None
+
         return _dict
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of SimpleSymbol from a dict"""
+        """Create an instance of DefinitionResponse from a dict"""
         if obj is None:
             return None
 
@@ -86,9 +94,8 @@ class SimpleSymbol(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "kind": obj.get("kind"),
-            "location": SimpleLocation.from_dict(obj["location"]) if obj.get("location") is not None else None,
-            "name": obj.get("name")
+            "definitions": [FilePosition.from_dict(_item) for _item in obj["definitions"]] if obj.get("definitions") is not None else None,
+            "raw_response": obj.get("raw_response")
         })
         return _obj
 

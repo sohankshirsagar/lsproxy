@@ -4,14 +4,14 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**definition**](CrateApi.md#definition) | **GET** /definition | 
 [**file_symbols**](CrateApi.md#file_symbols) | **GET** /file-symbols | 
-[**get_definition**](CrateApi.md#get_definition) | **GET** /definition | 
-[**get_references**](CrateApi.md#get_references) | **GET** /references | 
+[**references**](CrateApi.md#references) | **GET** /references | 
 [**workspace_symbols**](CrateApi.md#workspace_symbols) | **GET** /workspace-symbols | 
 
 
-# **file_symbols**
-> SimpleSymbolResponse file_symbols(file_path)
+# **definition**
+> DefinitionResponse definition(position)
 
 
 
@@ -20,7 +20,75 @@ Method | HTTP request | Description
 
 ```python
 import lsproxy_sdk
-from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.models.definition_response import DefinitionResponse
+from lsproxy_sdk.models.file_position import FilePosition
+from lsproxy_sdk.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = lsproxy_sdk.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with lsproxy_sdk.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = lsproxy_sdk.CrateApi(api_client)
+    position = lsproxy_sdk.FilePosition() # FilePosition | 
+
+    try:
+        api_response = api_instance.definition(position)
+        print("The response of CrateApi->definition:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling CrateApi->definition: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **position** | [**FilePosition**](.md)|  | 
+
+### Return type
+
+[**DefinitionResponse**](DefinitionResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Definition retrieved successfully |  -  |
+**400** | Bad request |  -  |
+**500** | Internal server error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **file_symbols**
+> SymbolResponse file_symbols(file_path)
+
+
+
+### Example
+
+
+```python
+import lsproxy_sdk
+from lsproxy_sdk.models.symbol_response import SymbolResponse
 from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
@@ -56,7 +124,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**SimpleSymbolResponse**](SimpleSymbolResponse.md)
+[**SymbolResponse**](SymbolResponse.md)
 
 ### Authorization
 
@@ -77,8 +145,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **get_definition**
-> SimpleGotoDefinitionResponse get_definition(file_path, line, character)
+# **references**
+> ReferenceResponse references(symbol_identifier_position, include_declaration=include_declaration)
 
 
 
@@ -87,7 +155,8 @@ No authorization required
 
 ```python
 import lsproxy_sdk
-from lsproxy_sdk.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
+from lsproxy_sdk.models.file_position import FilePosition
+from lsproxy_sdk.models.reference_response import ReferenceResponse
 from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
@@ -102,88 +171,15 @@ configuration = lsproxy_sdk.Configuration(
 with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
-    file_path = 'file_path_example' # str | 
-    line = 56 # int | 
-    character = 56 # int | 
-
-    try:
-        api_response = api_instance.get_definition(file_path, line, character)
-        print("The response of CrateApi->get_definition:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling CrateApi->get_definition: %s\n" % e)
-```
-
-
-
-### Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **file_path** | **str**|  | 
- **line** | **int**|  | 
- **character** | **int**|  | 
-
-### Return type
-
-[**SimpleGotoDefinitionResponse**](SimpleGotoDefinitionResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | Definition retrieved successfully |  -  |
-**400** | Bad request |  -  |
-**500** | Internal server error |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **get_references**
-> SimpleReferenceResponse get_references(file_path, line, character, include_declaration=include_declaration)
-
-
-
-### Example
-
-
-```python
-import lsproxy_sdk
-from lsproxy_sdk.models.simple_reference_response import SimpleReferenceResponse
-from lsproxy_sdk.rest import ApiException
-from pprint import pprint
-
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = lsproxy_sdk.Configuration(
-    host = "http://localhost"
-)
-
-
-# Enter a context with an instance of the API client
-with lsproxy_sdk.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = lsproxy_sdk.CrateApi(api_client)
-    file_path = 'file_path_example' # str | 
-    line = 56 # int | 
-    character = 56 # int | 
+    symbol_identifier_position = lsproxy_sdk.FilePosition() # FilePosition | 
     include_declaration = True # bool |  (optional)
 
     try:
-        api_response = api_instance.get_references(file_path, line, character, include_declaration=include_declaration)
-        print("The response of CrateApi->get_references:\n")
+        api_response = api_instance.references(symbol_identifier_position, include_declaration=include_declaration)
+        print("The response of CrateApi->references:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling CrateApi->get_references: %s\n" % e)
+        print("Exception when calling CrateApi->references: %s\n" % e)
 ```
 
 
@@ -193,14 +189,12 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_path** | **str**|  | 
- **line** | **int**|  | 
- **character** | **int**|  | 
+ **symbol_identifier_position** | [**FilePosition**](.md)|  | 
  **include_declaration** | **bool**|  | [optional] 
 
 ### Return type
 
-[**SimpleReferenceResponse**](SimpleReferenceResponse.md)
+[**ReferenceResponse**](ReferenceResponse.md)
 
 ### Authorization
 
@@ -222,7 +216,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **workspace_symbols**
-> SimpleSymbolResponse workspace_symbols(query)
+> SymbolResponse workspace_symbols(query)
 
 
 
@@ -231,7 +225,7 @@ No authorization required
 
 ```python
 import lsproxy_sdk
-from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.models.symbol_response import SymbolResponse
 from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
@@ -267,7 +261,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**SimpleSymbolResponse**](SimpleSymbolResponse.md)
+[**SymbolResponse**](SymbolResponse.md)
 
 ### Authorization
 

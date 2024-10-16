@@ -19,16 +19,16 @@ import json
 
 from pydantic import BaseModel, ConfigDict
 from typing import Any, ClassVar, Dict, List, Optional
-from lsproxy_sdk.models.simple_location import SimpleLocation
+from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
 from typing_extensions import Self
 
-class SimpleReferenceResponse(BaseModel):
+class ReferenceResponse(BaseModel):
     """
-    SimpleReferenceResponse
+    ReferenceResponse
     """ # noqa: E501
     raw_response: Optional[Any]
-    references: List[SimpleLocation]
+    references: List[FilePosition]
     __properties: ClassVar[List[str]] = ["raw_response", "references"]
 
     model_config = ConfigDict(
@@ -49,7 +49,7 @@ class SimpleReferenceResponse(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of SimpleReferenceResponse from a JSON string"""
+        """Create an instance of ReferenceResponse from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -86,7 +86,7 @@ class SimpleReferenceResponse(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of SimpleReferenceResponse from a dict"""
+        """Create an instance of ReferenceResponse from a dict"""
         if obj is None:
             return None
 
@@ -95,7 +95,7 @@ class SimpleReferenceResponse(BaseModel):
 
         _obj = cls.model_validate({
             "raw_response": obj.get("raw_response"),
-            "references": [SimpleLocation.from_dict(_item) for _item in obj["references"]] if obj.get("references") is not None else None
+            "references": [FilePosition.from_dict(_item) for _item in obj["references"]] if obj.get("references") is not None else None
         })
         return _obj
 

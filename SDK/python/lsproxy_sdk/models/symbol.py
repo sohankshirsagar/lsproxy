@@ -17,20 +17,20 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictStr
 from typing import Any, ClassVar, Dict, List
-from typing_extensions import Annotated
+from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
 from typing_extensions import Self
 
-class SimpleLocation(BaseModel):
+class Symbol(BaseModel):
     """
-    SimpleLocation
+    Symbol
     """ # noqa: E501
-    identifier_start_character: Annotated[int, Field(strict=True, ge=0)]
-    identifier_start_line: Annotated[int, Field(strict=True, ge=0)]
-    uri: StrictStr
-    __properties: ClassVar[List[str]] = ["identifier_start_character", "identifier_start_line", "uri"]
+    identifier_start_position: FilePosition
+    kind: StrictStr
+    name: StrictStr
+    __properties: ClassVar[List[str]] = ["identifier_start_position", "kind", "name"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -50,7 +50,7 @@ class SimpleLocation(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of SimpleLocation from a JSON string"""
+        """Create an instance of Symbol from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -71,11 +71,14 @@ class SimpleLocation(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of identifier_start_position
+        if self.identifier_start_position:
+            _dict['identifier_start_position'] = self.identifier_start_position.to_dict()
         return _dict
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of SimpleLocation from a dict"""
+        """Create an instance of Symbol from a dict"""
         if obj is None:
             return None
 
@@ -83,9 +86,9 @@ class SimpleLocation(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "identifier_start_character": obj.get("identifier_start_character"),
-            "identifier_start_line": obj.get("identifier_start_line"),
-            "uri": obj.get("uri")
+            "identifier_start_position": FilePosition.from_dict(obj["identifier_start_position"]) if obj.get("identifier_start_position") is not None else None,
+            "kind": obj.get("kind"),
+            "name": obj.get("name")
         })
         return _obj
 

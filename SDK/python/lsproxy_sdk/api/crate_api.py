@@ -16,12 +16,12 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import Field, StrictBool, StrictStr
+from pydantic import StrictBool, StrictStr
 from typing import Optional
-from typing_extensions import Annotated
-from lsproxy_sdk.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
-from lsproxy_sdk.models.simple_reference_response import SimpleReferenceResponse
-from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.models.definition_response import DefinitionResponse
+from lsproxy_sdk.models.file_position import FilePosition
+from lsproxy_sdk.models.reference_response import ReferenceResponse
+from lsproxy_sdk.models.symbol_response import SymbolResponse
 
 from lsproxy_sdk.api_client import ApiClient, RequestSerialized
 from lsproxy_sdk.api_response import ApiResponse
@@ -42,6 +42,271 @@ class CrateApi:
 
 
     @validate_call
+    def definition(
+        self,
+        position: FilePosition,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> DefinitionResponse:
+        """definition
+
+
+        :param position: (required)
+        :type position: FilePosition
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._definition_serialize(
+            position=position,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "DefinitionResponse",
+            '400': None,
+            '500': None,
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data
+
+
+    @validate_call
+    def definition_with_http_info(
+        self,
+        position: FilePosition,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> ApiResponse[DefinitionResponse]:
+        """definition
+
+
+        :param position: (required)
+        :type position: FilePosition
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._definition_serialize(
+            position=position,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "DefinitionResponse",
+            '400': None,
+            '500': None,
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        )
+
+
+    @validate_call
+    def definition_without_preload_content(
+        self,
+        position: FilePosition,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> RESTResponseType:
+        """definition
+
+
+        :param position: (required)
+        :type position: FilePosition
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._definition_serialize(
+            position=position,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "DefinitionResponse",
+            '400': None,
+            '500': None,
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        return response_data.response
+
+
+    def _definition_serialize(
+        self,
+        position,
+        _request_auth,
+        _content_type,
+        _headers,
+        _host_index,
+    ) -> RequestSerialized:
+
+        _host = None
+
+        _collection_formats: Dict[str, str] = {
+        }
+
+        _path_params: Dict[str, str] = {}
+        _query_params: List[Tuple[str, str]] = []
+        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _form_params: List[Tuple[str, str]] = []
+        _files: Dict[
+            str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
+        ] = {}
+        _body_params: Optional[bytes] = None
+
+        # process the path parameters
+        # process the query parameters
+        if position is not None:
+            
+            _query_params.append(('position', position))
+            
+        # process the header parameters
+        # process the form parameters
+        # process the body parameter
+
+
+        # set the HTTP header `Accept`
+        if 'Accept' not in _header_params:
+            _header_params['Accept'] = self.api_client.select_header_accept(
+                [
+                    'application/json'
+                ]
+            )
+
+
+        # authentication setting
+        _auth_settings: List[str] = [
+        ]
+
+        return self.api_client.param_serialize(
+            method='GET',
+            resource_path='/definition',
+            path_params=_path_params,
+            query_params=_query_params,
+            header_params=_header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            auth_settings=_auth_settings,
+            collection_formats=_collection_formats,
+            _host=_host,
+            _request_auth=_request_auth
+        )
+
+
+
+
+    @validate_call
     def file_symbols(
         self,
         file_path: StrictStr,
@@ -57,7 +322,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleSymbolResponse:
+    ) -> SymbolResponse:
         """file_symbols
 
 
@@ -94,7 +359,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -125,7 +390,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleSymbolResponse]:
+    ) -> ApiResponse[SymbolResponse]:
         """file_symbols
 
 
@@ -162,7 +427,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -230,7 +495,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -307,11 +572,10 @@ class CrateApi:
 
 
     @validate_call
-    def get_definition(
+    def references(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        symbol_identifier_position: FilePosition,
+        include_declaration: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -324,16 +588,14 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleGotoDefinitionResponse:
-        """get_definition
+    ) -> ReferenceResponse:
+        """references
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param symbol_identifier_position: (required)
+        :type symbol_identifier_position: FilePosition
+        :param include_declaration:
+        :type include_declaration: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -356,10 +618,9 @@ class CrateApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_definition_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+        _param = self._references_serialize(
+            symbol_identifier_position=symbol_identifier_position,
+            include_declaration=include_declaration,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -367,7 +628,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleGotoDefinitionResponse",
+            '200': "ReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -383,234 +644,9 @@ class CrateApi:
 
 
     @validate_call
-    def get_definition_with_http_info(
+    def references_with_http_info(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleGotoDefinitionResponse]:
-        """get_definition
-
-
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_definition_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleGotoDefinitionResponse",
-            '400': None,
-            '500': None,
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        response_data.read()
-        return self.api_client.response_deserialize(
-            response_data=response_data,
-            response_types_map=_response_types_map,
-        )
-
-
-    @validate_call
-    def get_definition_without_preload_content(
-        self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> RESTResponseType:
-        """get_definition
-
-
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_definition_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleGotoDefinitionResponse",
-            '400': None,
-            '500': None,
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        return response_data.response
-
-
-    def _get_definition_serialize(
-        self,
-        file_path,
-        line,
-        character,
-        _request_auth,
-        _content_type,
-        _headers,
-        _host_index,
-    ) -> RequestSerialized:
-
-        _host = None
-
-        _collection_formats: Dict[str, str] = {
-        }
-
-        _path_params: Dict[str, str] = {}
-        _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
-        _form_params: List[Tuple[str, str]] = []
-        _files: Dict[
-            str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
-        ] = {}
-        _body_params: Optional[bytes] = None
-
-        # process the path parameters
-        # process the query parameters
-        if file_path is not None:
-            
-            _query_params.append(('file_path', file_path))
-            
-        if line is not None:
-            
-            _query_params.append(('line', line))
-            
-        if character is not None:
-            
-            _query_params.append(('character', character))
-            
-        # process the header parameters
-        # process the form parameters
-        # process the body parameter
-
-
-        # set the HTTP header `Accept`
-        if 'Accept' not in _header_params:
-            _header_params['Accept'] = self.api_client.select_header_accept(
-                [
-                    'application/json'
-                ]
-            )
-
-
-        # authentication setting
-        _auth_settings: List[str] = [
-        ]
-
-        return self.api_client.param_serialize(
-            method='GET',
-            resource_path='/definition',
-            path_params=_path_params,
-            query_params=_query_params,
-            header_params=_header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            auth_settings=_auth_settings,
-            collection_formats=_collection_formats,
-            _host=_host,
-            _request_auth=_request_auth
-        )
-
-
-
-
-    @validate_call
-    def get_references(
-        self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
@@ -624,16 +660,12 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleReferenceResponse:
-        """get_references
+    ) -> ApiResponse[ReferenceResponse]:
+        """references
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param symbol_identifier_position: (required)
+        :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
         :param _request_timeout: timeout setting for this request. If one
@@ -658,10 +690,8 @@ class CrateApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_references_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+        _param = self._references_serialize(
+            symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -670,87 +700,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleReferenceResponse",
-            '400': None,
-            '500': None,
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        response_data.read()
-        return self.api_client.response_deserialize(
-            response_data=response_data,
-            response_types_map=_response_types_map,
-        ).data
-
-
-    @validate_call
-    def get_references_with_http_info(
-        self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
-        include_declaration: Optional[StrictBool] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleReferenceResponse]:
-        """get_references
-
-
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
-        :param include_declaration:
-        :type include_declaration: bool
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_references_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
-            include_declaration=include_declaration,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleReferenceResponse",
+            '200': "ReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -766,11 +716,9 @@ class CrateApi:
 
 
     @validate_call
-    def get_references_without_preload_content(
+    def references_without_preload_content(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
@@ -785,15 +733,11 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """get_references
+        """references
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param symbol_identifier_position: (required)
+        :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
         :param _request_timeout: timeout setting for this request. If one
@@ -818,10 +762,8 @@ class CrateApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_references_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+        _param = self._references_serialize(
+            symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -830,7 +772,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleReferenceResponse",
+            '200': "ReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -841,11 +783,9 @@ class CrateApi:
         return response_data.response
 
 
-    def _get_references_serialize(
+    def _references_serialize(
         self,
-        file_path,
-        line,
-        character,
+        symbol_identifier_position,
         include_declaration,
         _request_auth,
         _content_type,
@@ -869,17 +809,9 @@ class CrateApi:
 
         # process the path parameters
         # process the query parameters
-        if file_path is not None:
+        if symbol_identifier_position is not None:
             
-            _query_params.append(('file_path', file_path))
-            
-        if line is not None:
-            
-            _query_params.append(('line', line))
-            
-        if character is not None:
-            
-            _query_params.append(('character', character))
+            _query_params.append(('symbol_identifier_position', symbol_identifier_position))
             
         if include_declaration is not None:
             
@@ -937,7 +869,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleSymbolResponse:
+    ) -> SymbolResponse:
         """workspace_symbols
 
 
@@ -974,7 +906,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -1005,7 +937,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleSymbolResponse]:
+    ) -> ApiResponse[SymbolResponse]:
         """workspace_symbols
 
 
@@ -1042,7 +974,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -1110,7 +1042,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }

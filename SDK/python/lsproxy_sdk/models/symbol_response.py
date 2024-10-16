@@ -19,16 +19,16 @@ import json
 
 from pydantic import BaseModel, ConfigDict
 from typing import Any, ClassVar, Dict, List, Optional
-from lsproxy_sdk.models.simple_symbol import SimpleSymbol
+from lsproxy_sdk.models.symbol import Symbol
 from typing import Optional, Set
 from typing_extensions import Self
 
-class SimpleSymbolResponse(BaseModel):
+class SymbolResponse(BaseModel):
     """
-    SimpleSymbolResponse
+    SymbolResponse
     """ # noqa: E501
     raw_response: Optional[Any]
-    symbols: List[SimpleSymbol]
+    symbols: List[Symbol]
     __properties: ClassVar[List[str]] = ["raw_response", "symbols"]
 
     model_config = ConfigDict(
@@ -49,7 +49,7 @@ class SimpleSymbolResponse(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of SimpleSymbolResponse from a JSON string"""
+        """Create an instance of SymbolResponse from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -86,7 +86,7 @@ class SimpleSymbolResponse(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of SimpleSymbolResponse from a dict"""
+        """Create an instance of SymbolResponse from a dict"""
         if obj is None:
             return None
 
@@ -95,7 +95,7 @@ class SimpleSymbolResponse(BaseModel):
 
         _obj = cls.model_validate({
             "raw_response": obj.get("raw_response"),
-            "symbols": [SimpleSymbol.from_dict(_item) for _item in obj["symbols"]] if obj.get("symbols") is not None else None
+            "symbols": [Symbol.from_dict(_item) for _item in obj["symbols"]] if obj.get("symbols") is not None else None
         })
         return _obj
 

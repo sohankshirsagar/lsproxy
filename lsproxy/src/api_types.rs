@@ -4,7 +4,7 @@ use lsp_types::{
     SymbolInformation, SymbolKind, Url, WorkspaceLocation, WorkspaceSymbol,
     WorkspaceSymbolResponse,
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{to_value, Value};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
@@ -39,6 +39,7 @@ pub struct Symbol {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetDefinitionRequest {
+    #[serde(deserialize_with = "deserialize_file_position")]
     pub position: FilePosition,
     #[serde(default)]
     pub include_raw_response: bool,
@@ -46,10 +47,19 @@ pub struct GetDefinitionRequest {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
+    #[serde(deserialize_with = "deserialize_file_position")]
     pub symbol_identifier_position: FilePosition,
     pub include_declaration: Option<bool>,
     #[serde(default)]
     pub include_raw_response: bool,
+}
+
+fn deserialize_file_position<'de, D>(deserializer: D) -> Result<FilePosition, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    serde_json::from_str(&s).map_err(serde::de::Error::custom)
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]

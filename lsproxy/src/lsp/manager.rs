@@ -116,7 +116,7 @@ impl LspManager {
         Ok(document_symbol_response)
     }
 
-    pub async fn get_definition(
+    pub async fn definition(
         &self,
         file_path: &str,
         position: Position,
@@ -164,7 +164,7 @@ impl LspManager {
         self.clients.get(&lsp_type).cloned()
     }
 
-    pub async fn get_references(
+    pub async fn references(
         &self,
         file_path: &str,
         position: Position,
