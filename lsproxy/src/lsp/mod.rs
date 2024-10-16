@@ -1,4 +1,3 @@
-pub(crate) mod api_types;
 pub(crate) mod client;
 pub(crate) mod json_rpc;
 pub(crate) mod languages;

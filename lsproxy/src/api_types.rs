@@ -1,7 +1,7 @@
 use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse as LspGotoDefinitionResponse,
-    Location as LspLocation, LocationLink, OneOf, SymbolInformation, SymbolKind, Url,
-    WorkspaceSymbol, WorkspaceSymbolResponse,
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location as LspLocation,
+    LocationLink, OneOf, SymbolInformation, SymbolKind, Url, WorkspaceSymbol,
+    WorkspaceSymbolResponse,
 };
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
@@ -24,7 +24,7 @@ pub const MOUNT_DIR: &str = "/mnt/repo";
     utoipa::ToSchema,
 )]
 #[strum(serialize_all = "lowercase")]
-pub enum SupportedLSP {
+pub enum SupportedLanguages {
     Python,
     TypeScriptJavaScript,
     Rust,
@@ -45,7 +45,7 @@ pub struct Symbol {
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct GotoDefinitionResponse {
+pub struct DefinitionResponse {
     raw_response: serde_json::Value,
     definitions: Vec<Location>,
 }
@@ -115,7 +115,7 @@ impl From<WorkspaceSymbol> for Symbol {
     }
 }
 
-impl From<LspGotoDefinitionResponse> for GotoDefinitionResponse {
+impl From<GotoDefinitionResponse> for DefinitionResponse {
     fn from(response: lsp_types::GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let definitions = match response {
@@ -127,7 +127,7 @@ impl From<LspGotoDefinitionResponse> for GotoDefinitionResponse {
                 links.into_iter().map(Location::from).collect()
             }
         };
-        GotoDefinitionResponse {
+        DefinitionResponse {
             raw_response,
             definitions,
         }
