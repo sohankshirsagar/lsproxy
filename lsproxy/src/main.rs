@@ -205,7 +205,13 @@ async fn references(
         info.symbol_identifier_position.character
     );
     let full_path = Path::new(&MOUNT_DIR).join(&info.symbol_identifier_position.path);
-    let full_path_str = full_path.to_str().unwrap_or("");
+    let full_path_str = match full_path.to_str() {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert path to string");
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
         .references(
