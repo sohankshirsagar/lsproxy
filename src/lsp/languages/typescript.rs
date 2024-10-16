@@ -45,7 +45,7 @@ impl LspClient for TypeScriptLanguageClient {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         /*
         The server needs to know about all the files in the workspace to provide features like go to definition.
-        This is a limitation of the TypeScript language server.
+        This is a limitation of the tsserver    .
          */
         debug!("Setting up workspace for TypeScript client");
         let text_document_items =

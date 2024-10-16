@@ -326,11 +326,9 @@ pub trait LspClient: Send {
         &mut self,
         root_path: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-
         Ok(())
     }
 
-    
     async fn find_workspace_folders(
         &mut self,
         root_path: String,
