@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use strum_macros::{Display, EnumString};
+use utoipa::{IntoParams, ToSchema};
 
 pub const MOUNT_DIR: &str = "/mnt/repo";
 
@@ -42,6 +43,31 @@ pub struct Symbol {
     pub name: String,
     pub kind: String,
     pub identifier_start_position: FilePosition,
+}
+
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct GetDefinitionRequest {
+    pub file_path: String,
+    pub line: u32,
+    pub character: u32,
+}
+
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct GetReferencesRequest {
+    pub file_path: String,
+    pub line: u32,
+    pub character: u32,
+    pub include_declaration: Option<bool>,
+}
+
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct FileSymbolsRequest {
+    pub file_path: String,
+}
+
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct WorkspaceSymbolsRequest {
+    pub query: String,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]

@@ -4,13 +4,12 @@ use clap::Parser;
 use env_logger::Env;
 use log::{debug, error, info};
 use lsp_types::Position;
-use serde::Deserialize;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use utoipa::{IntoParams, OpenApi, ToSchema};
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 mod api_types;
@@ -18,8 +17,9 @@ mod lsp;
 mod utils;
 
 use crate::api_types::{
-    DefinitionResponse, FilePosition, ReferenceResponse, SupportedLanguages, Symbol,
-    SymbolResponse, MOUNT_DIR,
+    DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
+    GetReferencesRequest, ReferenceResponse, SupportedLanguages, Symbol, SymbolResponse,
+    WorkspaceSymbolsRequest, MOUNT_DIR,
 };
 use crate::lsp::manager::LspManager;
 
@@ -44,31 +44,6 @@ fn check_mount_dir() -> std::io::Result<()> {
     )
 )]
 struct ApiDoc;
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct GetDefinitionRequest {
-    file_path: String,
-    line: u32,
-    character: u32,
-}
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct GetReferencesRequest {
-    file_path: String,
-    line: u32,
-    character: u32,
-    include_declaration: Option<bool>,
-}
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct FileSymbolsRequest {
-    file_path: String,
-}
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct WorkspaceSymbolsRequest {
-    query: String,
-}
 
 struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
