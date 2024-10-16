@@ -73,9 +73,7 @@ async fn definition(
 ) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
-        info.position.path,
-        info.position.line,
-        info.position.character
+        info.position.path, info.position.line, info.position.character
     );
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.position.path);
@@ -281,7 +279,6 @@ async fn main() -> std::io::Result<()> {
         .await
         .unwrap();
     let app_state = web::Data::new(AppState { lsp_manager });
-
 
     let server = HttpServer::new(move || {
         App::new()

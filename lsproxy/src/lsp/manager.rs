@@ -112,11 +112,7 @@ impl LspManager {
         let lsp_type = self.detect_language(&file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
-        let document_symbol_response = match locked_client.text_document_symbols(file_path).await {
-            Ok(response) => response,
-            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>),
-        };
-        Ok(document_symbol_response)
+        locked_client.text_document_symbols(file_path).await
     }
 
     pub async fn definition(
@@ -154,7 +150,10 @@ impl LspManager {
             let client_symbols = locked_client.workspace_symbols(query).await;
             match client_symbols {
                 Ok(response) => symbols.push(response),
-                Err(e) => error!("Error requesting workspace symbols for {:?}: {:?}. Continuing...", lang, e),
+                Err(e) => error!(
+                    "Error requesting workspace symbols for {:?}: {:?}. Continuing...",
+                    lang, e
+                ),
             }
         }
         Ok(symbols)
@@ -174,7 +173,9 @@ impl LspManager {
         include_declaration: bool,
     ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
         let lsp_type = self.detect_language(file_path)?;
-        let client = self.get_client(lsp_type).ok_or_else(|| format!("LSP client not found for {:?}", lsp_type))?;
+        let client = self
+            .get_client(lsp_type)
+            .ok_or_else(|| format!("LSP client not found for {:?}", lsp_type))?;
         let mut locked_client = client.lock().await;
 
         let locations = locked_client

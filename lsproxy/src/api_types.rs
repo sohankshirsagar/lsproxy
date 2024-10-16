@@ -245,12 +245,10 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
 }
 
 fn uri_to_path_str(uri: Url) -> String {
-    let path = uri
-        .to_file_path()
-        .unwrap_or_else(|e| {
-            warn!("Failed to convert URI to file path: {:?}", e);
-            PathBuf::from(uri.path())
-        });
+    let path = uri.to_file_path().unwrap_or_else(|e| {
+        warn!("Failed to convert URI to file path: {:?}", e);
+        PathBuf::from(uri.path())
+    });
 
     let mount_dir = Path::new(MOUNT_DIR);
     path.strip_prefix(mount_dir)
@@ -278,10 +276,10 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
                 recursive_flatten(child, file_path, result);
             }
         }
-        }
     }
 
     let mut flattened = Vec::new();
+
     for symbol in symbols {
         recursive_flatten(symbol, file_path, &mut flattened);
     }
