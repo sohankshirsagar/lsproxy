@@ -165,13 +165,13 @@ pub struct DefinitionResponse {
     /// e.g. for the definition of `User` on line 5 of `src/main.py` with the code:
     /// ```
     /// 0: class User:
-    /// ________^
+    /// _________^
     /// 1:     def __init__(self, name, age):
     /// 2:         self.name = name
     /// 3:         self.age = age
     /// 4:
     /// 5: user = User("John", 30)
-    /// _________^
+    /// __________^
     /// ```
     /// The definition(s) will be `[{"path": "src/main.py", "line": 0, "character": 6}]`.
     pub definitions: Vec<FilePosition>,
@@ -190,7 +190,7 @@ pub struct ReferenceResponse {
     /// e.g. for the references of `User` on line 0 character 6 of `src/main.py` with the code:
     /// ```
     /// 0: class User:
-    /// ________^
+    /// _________^
     /// 1:     def __init__(self, name, age):
     /// 2:         self.name = name
     /// 3:         self.age = age
