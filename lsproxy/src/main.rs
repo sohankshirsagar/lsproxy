@@ -33,8 +33,8 @@ fn check_mount_dir() -> std::io::Result<()> {
     paths(
         file_symbols,
         workspace_symbols,
-        get_definition,
-        get_references,
+        definition,
+        references,
     ),
     components(
         schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, FilePosition, Symbol)
@@ -67,12 +67,12 @@ struct Cli {
         (status = 500, description = "Internal server error")
     )
 )]
-async fn get_definition(
+async fn definition(
     data: web::Data<AppState>,
     info: web::Query<GetDefinitionRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_definition request for file: {}, line: {}, character: {}",
+        "Received definition request for file: {}, line: {}, character: {}",
         info.position.path,
         info.position.line,
         info.position.character
@@ -84,7 +84,7 @@ async fn get_definition(
     match data.lsp_manager.lock() {
         Ok(lsp_manager) => {
             match lsp_manager
-                .get_definition(
+                .definition(
                     full_path_str,
                     Position {
                         line: info.position.line,
@@ -185,12 +185,12 @@ async fn workspace_symbols(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn get_references(
+async fn references(
     data: web::Data<AppState>,
     info: web::Query<GetReferencesRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_references request for file: {}, line: {}, character: {}",
+        "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
         info.symbol_identifier_position.line,
         info.symbol_identifier_position.character
@@ -199,7 +199,7 @@ async fn get_references(
     let full_path_str = full_path.to_str().unwrap_or("");
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
-        .get_references(
+        .references(
             full_path_str,
             Position {
                 line: info.symbol_identifier_position.line,
@@ -273,8 +273,8 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/file-symbols").route(web::get().to(file_symbols)))
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
-            .service(web::resource("/definition").route(web::get().to(get_definition)))
-            .service(web::resource("/references").route(web::get().to(get_references)))
+            .service(web::resource("/definition").route(web::get().to(definition)))
+            .service(web::resource("/references").route(web::get().to(references)))
     })
     .bind("0.0.0.0:8080")?;
 

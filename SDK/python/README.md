@@ -67,14 +67,14 @@ configuration = lsproxy_sdk.Configuration(
 with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
-    file_path = 'file_path_example' # str | 
+    position = lsproxy_sdk.FilePosition() # FilePosition | 
 
     try:
-        api_response = api_instance.file_symbols(file_path)
-        print("The response of CrateApi->file_symbols:\n")
+        api_response = api_instance.definition(position)
+        print("The response of CrateApi->definition:\n")
         pprint(api_response)
     except ApiException as e:
-        print("Exception when calling CrateApi->file_symbols: %s\n" % e)
+        print("Exception when calling CrateApi->definition: %s\n" % e)
 
 ```
 
@@ -84,9 +84,9 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*CrateApi* | [**definition**](docs/CrateApi.md#definition) | **GET** /definition | 
 *CrateApi* | [**file_symbols**](docs/CrateApi.md#file_symbols) | **GET** /file-symbols | 
-*CrateApi* | [**get_definition**](docs/CrateApi.md#get_definition) | **GET** /definition | 
-*CrateApi* | [**get_references**](docs/CrateApi.md#get_references) | **GET** /references | 
+*CrateApi* | [**references**](docs/CrateApi.md#references) | **GET** /references | 
 *CrateApi* | [**workspace_symbols**](docs/CrateApi.md#workspace_symbols) | **GET** /workspace-symbols | 
 
 
