@@ -156,6 +156,8 @@ pub struct WorkspaceSymbolsRequest {
 pub struct DefinitionResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
+    ///
+    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition
     pub raw_response: Option<Value>,
     /// The definition(s) of the symbol.
     /// Points to the start position of the symbol's identifier.
@@ -179,6 +181,8 @@ pub struct DefinitionResponse {
 pub struct ReferenceResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
+    ///
+    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_references
     pub raw_response: Option<Value>,
     /// The references to the symbol.
     /// Points to the start position of the symbol's identifier.
@@ -206,6 +210,9 @@ pub struct ReferenceResponse {
 pub struct SymbolResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
+    ///
+    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol
+    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol
     pub raw_response: Option<Value>,
     pub symbols: Vec<Symbol>,
 }
