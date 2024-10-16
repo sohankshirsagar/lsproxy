@@ -28,7 +28,7 @@ class DefinitionResponse(BaseModel):
     DefinitionResponse
     """ # noqa: E501
     definitions: List[FilePosition]
-    raw_response: Optional[Any]
+    raw_response: Optional[Any] = None
     __properties: ClassVar[List[str]] = ["definitions", "raw_response"]
 
     model_config = ConfigDict(

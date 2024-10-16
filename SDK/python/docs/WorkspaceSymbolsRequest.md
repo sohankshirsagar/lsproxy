@@ -5,6 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**include_raw_response** | **bool** |  | [optional] 
 **query** | **str** |  | 
 
 ## Example

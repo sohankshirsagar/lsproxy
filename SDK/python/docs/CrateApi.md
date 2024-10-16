@@ -11,7 +11,7 @@ Method | HTTP request | Description
 
 
 # **definition**
-> DefinitionResponse definition(position)
+> DefinitionResponse definition(position, include_raw_response=include_raw_response)
 
 
 
@@ -37,9 +37,10 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
     position = lsproxy_sdk.FilePosition() # FilePosition | 
+    include_raw_response = True # bool |  (optional)
 
     try:
-        api_response = api_instance.definition(position)
+        api_response = api_instance.definition(position, include_raw_response=include_raw_response)
         print("The response of CrateApi->definition:\n")
         pprint(api_response)
     except Exception as e:
@@ -54,6 +55,7 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **position** | [**FilePosition**](.md)|  | 
+ **include_raw_response** | **bool**|  | [optional] 
 
 ### Return type
 
@@ -79,7 +81,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **file_symbols**
-> SymbolResponse file_symbols(file_path)
+> SymbolResponse file_symbols(file_path, include_raw_response=include_raw_response)
 
 
 
@@ -104,9 +106,10 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
     file_path = 'file_path_example' # str | 
+    include_raw_response = True # bool |  (optional)
 
     try:
-        api_response = api_instance.file_symbols(file_path)
+        api_response = api_instance.file_symbols(file_path, include_raw_response=include_raw_response)
         print("The response of CrateApi->file_symbols:\n")
         pprint(api_response)
     except Exception as e:
@@ -121,6 +124,7 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_path** | **str**|  | 
+ **include_raw_response** | **bool**|  | [optional] 
 
 ### Return type
 
@@ -146,7 +150,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **references**
-> ReferenceResponse references(symbol_identifier_position, include_declaration=include_declaration)
+> ReferenceResponse references(symbol_identifier_position, include_declaration=include_declaration, include_raw_response=include_raw_response)
 
 
 
@@ -173,9 +177,10 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
     api_instance = lsproxy_sdk.CrateApi(api_client)
     symbol_identifier_position = lsproxy_sdk.FilePosition() # FilePosition | 
     include_declaration = True # bool |  (optional)
+    include_raw_response = True # bool |  (optional)
 
     try:
-        api_response = api_instance.references(symbol_identifier_position, include_declaration=include_declaration)
+        api_response = api_instance.references(symbol_identifier_position, include_declaration=include_declaration, include_raw_response=include_raw_response)
         print("The response of CrateApi->references:\n")
         pprint(api_response)
     except Exception as e:
@@ -191,6 +196,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **symbol_identifier_position** | [**FilePosition**](.md)|  | 
  **include_declaration** | **bool**|  | [optional] 
+ **include_raw_response** | **bool**|  | [optional] 
 
 ### Return type
 
@@ -216,7 +222,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **workspace_symbols**
-> SymbolResponse workspace_symbols(query)
+> SymbolResponse workspace_symbols(query, include_raw_response=include_raw_response)
 
 
 
@@ -241,9 +247,10 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
     query = 'query_example' # str | 
+    include_raw_response = True # bool |  (optional)
 
     try:
-        api_response = api_instance.workspace_symbols(query)
+        api_response = api_instance.workspace_symbols(query, include_raw_response=include_raw_response)
         print("The response of CrateApi->workspace_symbols:\n")
         pprint(api_response)
     except Exception as e:
@@ -258,6 +265,7 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **query** | **str**|  | 
+ **include_raw_response** | **bool**|  | [optional] 
 
 ### Return type
 

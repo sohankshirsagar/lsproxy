@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictStr
-from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -26,8 +26,9 @@ class WorkspaceSymbolsRequest(BaseModel):
     """
     WorkspaceSymbolsRequest
     """ # noqa: E501
+    include_raw_response: Optional[StrictBool] = None
     query: StrictStr
-    __properties: ClassVar[List[str]] = ["query"]
+    __properties: ClassVar[List[str]] = ["include_raw_response", "query"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -80,6 +81,7 @@ class WorkspaceSymbolsRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
+            "include_raw_response": obj.get("include_raw_response"),
             "query": obj.get("query")
         })
         return _obj

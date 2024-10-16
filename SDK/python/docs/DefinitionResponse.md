@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **definitions** | [**List[FilePosition]**](FilePosition.md) |  | 
-**raw_response** | **object** |  | 
+**raw_response** | **object** |  | [optional] 
 
 ## Example
 

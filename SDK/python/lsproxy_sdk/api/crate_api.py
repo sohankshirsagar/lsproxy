@@ -45,6 +45,7 @@ class CrateApi:
     def definition(
         self,
         position: FilePosition,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -63,6 +64,8 @@ class CrateApi:
 
         :param position: (required)
         :type position: FilePosition
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -87,6 +90,7 @@ class CrateApi:
 
         _param = self._definition_serialize(
             position=position,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -113,6 +117,7 @@ class CrateApi:
     def definition_with_http_info(
         self,
         position: FilePosition,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -131,6 +136,8 @@ class CrateApi:
 
         :param position: (required)
         :type position: FilePosition
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -155,6 +162,7 @@ class CrateApi:
 
         _param = self._definition_serialize(
             position=position,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -181,6 +189,7 @@ class CrateApi:
     def definition_without_preload_content(
         self,
         position: FilePosition,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -199,6 +208,8 @@ class CrateApi:
 
         :param position: (required)
         :type position: FilePosition
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -223,6 +234,7 @@ class CrateApi:
 
         _param = self._definition_serialize(
             position=position,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -244,6 +256,7 @@ class CrateApi:
     def _definition_serialize(
         self,
         position,
+        include_raw_response,
         _request_auth,
         _content_type,
         _headers,
@@ -269,6 +282,10 @@ class CrateApi:
         if position is not None:
             
             _query_params.append(('position', position))
+            
+        if include_raw_response is not None:
+            
+            _query_params.append(('include_raw_response', include_raw_response))
             
         # process the header parameters
         # process the form parameters
@@ -310,6 +327,7 @@ class CrateApi:
     def file_symbols(
         self,
         file_path: StrictStr,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -328,6 +346,8 @@ class CrateApi:
 
         :param file_path: (required)
         :type file_path: str
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -352,6 +372,7 @@ class CrateApi:
 
         _param = self._file_symbols_serialize(
             file_path=file_path,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -378,6 +399,7 @@ class CrateApi:
     def file_symbols_with_http_info(
         self,
         file_path: StrictStr,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -396,6 +418,8 @@ class CrateApi:
 
         :param file_path: (required)
         :type file_path: str
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -420,6 +444,7 @@ class CrateApi:
 
         _param = self._file_symbols_serialize(
             file_path=file_path,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -446,6 +471,7 @@ class CrateApi:
     def file_symbols_without_preload_content(
         self,
         file_path: StrictStr,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -464,6 +490,8 @@ class CrateApi:
 
         :param file_path: (required)
         :type file_path: str
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -488,6 +516,7 @@ class CrateApi:
 
         _param = self._file_symbols_serialize(
             file_path=file_path,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -509,6 +538,7 @@ class CrateApi:
     def _file_symbols_serialize(
         self,
         file_path,
+        include_raw_response,
         _request_auth,
         _content_type,
         _headers,
@@ -534,6 +564,10 @@ class CrateApi:
         if file_path is not None:
             
             _query_params.append(('file_path', file_path))
+            
+        if include_raw_response is not None:
+            
+            _query_params.append(('include_raw_response', include_raw_response))
             
         # process the header parameters
         # process the form parameters
@@ -576,6 +610,7 @@ class CrateApi:
         self,
         symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -596,6 +631,8 @@ class CrateApi:
         :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -621,6 +658,7 @@ class CrateApi:
         _param = self._references_serialize(
             symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -648,6 +686,7 @@ class CrateApi:
         self,
         symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -668,6 +707,8 @@ class CrateApi:
         :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -693,6 +734,7 @@ class CrateApi:
         _param = self._references_serialize(
             symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -720,6 +762,7 @@ class CrateApi:
         self,
         symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -740,6 +783,8 @@ class CrateApi:
         :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -765,6 +810,7 @@ class CrateApi:
         _param = self._references_serialize(
             symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -787,6 +833,7 @@ class CrateApi:
         self,
         symbol_identifier_position,
         include_declaration,
+        include_raw_response,
         _request_auth,
         _content_type,
         _headers,
@@ -816,6 +863,10 @@ class CrateApi:
         if include_declaration is not None:
             
             _query_params.append(('include_declaration', include_declaration))
+            
+        if include_raw_response is not None:
+            
+            _query_params.append(('include_raw_response', include_raw_response))
             
         # process the header parameters
         # process the form parameters
@@ -857,6 +908,7 @@ class CrateApi:
     def workspace_symbols(
         self,
         query: StrictStr,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -875,6 +927,8 @@ class CrateApi:
 
         :param query: (required)
         :type query: str
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -899,6 +953,7 @@ class CrateApi:
 
         _param = self._workspace_symbols_serialize(
             query=query,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -925,6 +980,7 @@ class CrateApi:
     def workspace_symbols_with_http_info(
         self,
         query: StrictStr,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -943,6 +999,8 @@ class CrateApi:
 
         :param query: (required)
         :type query: str
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -967,6 +1025,7 @@ class CrateApi:
 
         _param = self._workspace_symbols_serialize(
             query=query,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -993,6 +1052,7 @@ class CrateApi:
     def workspace_symbols_without_preload_content(
         self,
         query: StrictStr,
+        include_raw_response: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -1011,6 +1071,8 @@ class CrateApi:
 
         :param query: (required)
         :type query: str
+        :param include_raw_response:
+        :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -1035,6 +1097,7 @@ class CrateApi:
 
         _param = self._workspace_symbols_serialize(
             query=query,
+            include_raw_response=include_raw_response,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -1056,6 +1119,7 @@ class CrateApi:
     def _workspace_symbols_serialize(
         self,
         query,
+        include_raw_response,
         _request_auth,
         _content_type,
         _headers,
@@ -1081,6 +1145,10 @@ class CrateApi:
         if query is not None:
             
             _query_params.append(('query', query))
+            
+        if include_raw_response is not None:
+            
+            _query_params.append(('include_raw_response', include_raw_response))
             
         # process the header parameters
         # process the form parameters

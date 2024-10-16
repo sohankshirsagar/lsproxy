@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictStr
-from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,7 +27,8 @@ class FileSymbolsRequest(BaseModel):
     FileSymbolsRequest
     """ # noqa: E501
     file_path: StrictStr
-    __properties: ClassVar[List[str]] = ["file_path"]
+    include_raw_response: Optional[StrictBool] = None
+    __properties: ClassVar[List[str]] = ["file_path", "include_raw_response"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -80,7 +81,8 @@ class FileSymbolsRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "file_path": obj.get("file_path")
+            "file_path": obj.get("file_path"),
+            "include_raw_response": obj.get("include_raw_response")
         })
         return _obj
 

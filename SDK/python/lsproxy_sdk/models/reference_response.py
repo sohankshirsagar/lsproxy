@@ -27,7 +27,7 @@ class ReferenceResponse(BaseModel):
     """
     ReferenceResponse
     """ # noqa: E501
-    raw_response: Optional[Any]
+    raw_response: Optional[Any] = None
     references: List[FilePosition]
     __properties: ClassVar[List[str]] = ["raw_response", "references"]
 

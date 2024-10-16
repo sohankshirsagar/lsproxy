@@ -27,7 +27,7 @@ class SymbolResponse(BaseModel):
     """
     SymbolResponse
     """ # noqa: E501
-    raw_response: Optional[Any]
+    raw_response: Optional[Any] = None
     symbols: List[Symbol]
     __properties: ClassVar[List[str]] = ["raw_response", "symbols"]
 

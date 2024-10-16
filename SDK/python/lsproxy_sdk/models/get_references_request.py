@@ -28,8 +28,9 @@ class GetReferencesRequest(BaseModel):
     GetReferencesRequest
     """ # noqa: E501
     include_declaration: Optional[StrictBool] = None
+    include_raw_response: Optional[StrictBool] = None
     symbol_identifier_position: FilePosition
-    __properties: ClassVar[List[str]] = ["include_declaration", "symbol_identifier_position"]
+    __properties: ClassVar[List[str]] = ["include_declaration", "include_raw_response", "symbol_identifier_position"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -73,11 +74,6 @@ class GetReferencesRequest(BaseModel):
         # override the default output from pydantic by calling `to_dict()` of symbol_identifier_position
         if self.symbol_identifier_position:
             _dict['symbol_identifier_position'] = self.symbol_identifier_position.to_dict()
-        # set to None if include_declaration (nullable) is None
-        # and model_fields_set contains the field
-        if self.include_declaration is None and "include_declaration" in self.model_fields_set:
-            _dict['include_declaration'] = None
-
         return _dict
 
     @classmethod
@@ -91,6 +87,7 @@ class GetReferencesRequest(BaseModel):
 
         _obj = cls.model_validate({
             "include_declaration": obj.get("include_declaration"),
+            "include_raw_response": obj.get("include_raw_response"),
             "symbol_identifier_position": FilePosition.from_dict(obj["symbol_identifier_position"]) if obj.get("symbol_identifier_position") is not None else None
         })
         return _obj

@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**raw_response** | **object** |  | 
+**raw_response** | **object** |  | [optional] 
 **symbols** | [**List[Symbol]**](Symbol.md) |  | 
 
 ## Example

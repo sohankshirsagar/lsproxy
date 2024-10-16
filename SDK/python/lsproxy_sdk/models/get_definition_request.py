@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict
-from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, ConfigDict, StrictBool
+from typing import Any, ClassVar, Dict, List, Optional
 from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
 from typing_extensions import Self
@@ -27,8 +27,9 @@ class GetDefinitionRequest(BaseModel):
     """
     GetDefinitionRequest
     """ # noqa: E501
+    include_raw_response: Optional[StrictBool] = None
     position: FilePosition
-    __properties: ClassVar[List[str]] = ["position"]
+    __properties: ClassVar[List[str]] = ["include_raw_response", "position"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -84,6 +85,7 @@ class GetDefinitionRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
+            "include_raw_response": obj.get("include_raw_response"),
             "position": FilePosition.from_dict(obj["position"]) if obj.get("position") is not None else None
         })
         return _obj

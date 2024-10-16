@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **include_declaration** | **bool** |  | [optional] 
+**include_raw_response** | **bool** |  | [optional] 
 **symbol_identifier_position** | [**FilePosition**](FilePosition.md) |  | 
 
 ## Example

@@ -68,9 +68,10 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
     position = lsproxy_sdk.FilePosition() # FilePosition | 
+    include_raw_response = True # bool |  (optional)
 
     try:
-        api_response = api_instance.definition(position)
+        api_response = api_instance.definition(position, include_raw_response=include_raw_response)
         print("The response of CrateApi->definition:\n")
         pprint(api_response)
     except ApiException as e:

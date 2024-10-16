@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **file_path** | **str** |  | 
+**include_raw_response** | **bool** |  | [optional] 
 
 ## Example
 
