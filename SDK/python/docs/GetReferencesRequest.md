@@ -5,10 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**character** | **int** |  | 
-**file_path** | **str** |  | 
 **include_declaration** | **bool** |  | [optional] 
-**line** | **int** |  | 
+**symbol_identifier_position** | [**FilePosition**](FilePosition.md) |  | 
 
 ## Example
 

@@ -17,9 +17,9 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from pydantic import BaseModel, ConfigDict
 from typing import Any, ClassVar, Dict, List
-from typing_extensions import Annotated
+from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,10 +27,8 @@ class GetDefinitionRequest(BaseModel):
     """
     GetDefinitionRequest
     """ # noqa: E501
-    character: Annotated[int, Field(strict=True, ge=0)]
-    file_path: StrictStr
-    line: Annotated[int, Field(strict=True, ge=0)]
-    __properties: ClassVar[List[str]] = ["character", "file_path", "line"]
+    position: FilePosition
+    __properties: ClassVar[List[str]] = ["position"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -71,6 +69,9 @@ class GetDefinitionRequest(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of position
+        if self.position:
+            _dict['position'] = self.position.to_dict()
         return _dict
 
     @classmethod
@@ -83,9 +84,7 @@ class GetDefinitionRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "character": obj.get("character"),
-            "file_path": obj.get("file_path"),
-            "line": obj.get("line")
+            "position": FilePosition.from_dict(obj["position"]) if obj.get("position") is not None else None
         })
         return _obj
 

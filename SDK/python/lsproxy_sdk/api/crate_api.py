@@ -16,12 +16,12 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import Field, StrictBool, StrictStr
+from pydantic import StrictBool, StrictStr
 from typing import Optional
-from typing_extensions import Annotated
-from lsproxy_sdk.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
-from lsproxy_sdk.models.simple_reference_response import SimpleReferenceResponse
-from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.models.definition_response import DefinitionResponse
+from lsproxy_sdk.models.file_position import FilePosition
+from lsproxy_sdk.models.reference_response import ReferenceResponse
+from lsproxy_sdk.models.symbol_response import SymbolResponse
 
 from lsproxy_sdk.api_client import ApiClient, RequestSerialized
 from lsproxy_sdk.api_response import ApiResponse
@@ -57,7 +57,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleSymbolResponse:
+    ) -> SymbolResponse:
         """file_symbols
 
 
@@ -94,7 +94,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -125,7 +125,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleSymbolResponse]:
+    ) -> ApiResponse[SymbolResponse]:
         """file_symbols
 
 
@@ -162,7 +162,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -230,7 +230,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -309,9 +309,7 @@ class CrateApi:
     @validate_call
     def get_definition(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        position: FilePosition,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -324,16 +322,12 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleGotoDefinitionResponse:
+    ) -> DefinitionResponse:
         """get_definition
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param position: (required)
+        :type position: FilePosition
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -357,9 +351,7 @@ class CrateApi:
         """ # noqa: E501
 
         _param = self._get_definition_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+            position=position,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -367,7 +359,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleGotoDefinitionResponse",
+            '200': "DefinitionResponse",
             '400': None,
             '500': None,
         }
@@ -385,9 +377,7 @@ class CrateApi:
     @validate_call
     def get_definition_with_http_info(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        position: FilePosition,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -400,16 +390,12 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleGotoDefinitionResponse]:
+    ) -> ApiResponse[DefinitionResponse]:
         """get_definition
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param position: (required)
+        :type position: FilePosition
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -433,9 +419,7 @@ class CrateApi:
         """ # noqa: E501
 
         _param = self._get_definition_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+            position=position,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -443,7 +427,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleGotoDefinitionResponse",
+            '200': "DefinitionResponse",
             '400': None,
             '500': None,
         }
@@ -461,9 +445,7 @@ class CrateApi:
     @validate_call
     def get_definition_without_preload_content(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        position: FilePosition,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -480,12 +462,8 @@ class CrateApi:
         """get_definition
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param position: (required)
+        :type position: FilePosition
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -509,9 +487,7 @@ class CrateApi:
         """ # noqa: E501
 
         _param = self._get_definition_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+            position=position,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -519,7 +495,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleGotoDefinitionResponse",
+            '200': "DefinitionResponse",
             '400': None,
             '500': None,
         }
@@ -532,9 +508,7 @@ class CrateApi:
 
     def _get_definition_serialize(
         self,
-        file_path,
-        line,
-        character,
+        position,
         _request_auth,
         _content_type,
         _headers,
@@ -557,17 +531,9 @@ class CrateApi:
 
         # process the path parameters
         # process the query parameters
-        if file_path is not None:
+        if position is not None:
             
-            _query_params.append(('file_path', file_path))
-            
-        if line is not None:
-            
-            _query_params.append(('line', line))
-            
-        if character is not None:
-            
-            _query_params.append(('character', character))
+            _query_params.append(('position', position))
             
         # process the header parameters
         # process the form parameters
@@ -608,9 +574,7 @@ class CrateApi:
     @validate_call
     def get_references(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
@@ -624,16 +588,12 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleReferenceResponse:
+    ) -> ReferenceResponse:
         """get_references
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param symbol_identifier_position: (required)
+        :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
         :param _request_timeout: timeout setting for this request. If one
@@ -659,9 +619,7 @@ class CrateApi:
         """ # noqa: E501
 
         _param = self._get_references_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+            symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -670,7 +628,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleReferenceResponse",
+            '200': "ReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -688,9 +646,7 @@ class CrateApi:
     @validate_call
     def get_references_with_http_info(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
@@ -704,16 +660,12 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleReferenceResponse]:
+    ) -> ApiResponse[ReferenceResponse]:
         """get_references
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param symbol_identifier_position: (required)
+        :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
         :param _request_timeout: timeout setting for this request. If one
@@ -739,9 +691,7 @@ class CrateApi:
         """ # noqa: E501
 
         _param = self._get_references_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+            symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -750,7 +700,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleReferenceResponse",
+            '200': "ReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -768,9 +718,7 @@ class CrateApi:
     @validate_call
     def get_references_without_preload_content(
         self,
-        file_path: StrictStr,
-        line: Annotated[int, Field(strict=True, ge=0)],
-        character: Annotated[int, Field(strict=True, ge=0)],
+        symbol_identifier_position: FilePosition,
         include_declaration: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
@@ -788,12 +736,8 @@ class CrateApi:
         """get_references
 
 
-        :param file_path: (required)
-        :type file_path: str
-        :param line: (required)
-        :type line: int
-        :param character: (required)
-        :type character: int
+        :param symbol_identifier_position: (required)
+        :type symbol_identifier_position: FilePosition
         :param include_declaration:
         :type include_declaration: bool
         :param _request_timeout: timeout setting for this request. If one
@@ -819,9 +763,7 @@ class CrateApi:
         """ # noqa: E501
 
         _param = self._get_references_serialize(
-            file_path=file_path,
-            line=line,
-            character=character,
+            symbol_identifier_position=symbol_identifier_position,
             include_declaration=include_declaration,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -830,7 +772,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleReferenceResponse",
+            '200': "ReferenceResponse",
             '400': None,
             '500': None,
         }
@@ -843,9 +785,7 @@ class CrateApi:
 
     def _get_references_serialize(
         self,
-        file_path,
-        line,
-        character,
+        symbol_identifier_position,
         include_declaration,
         _request_auth,
         _content_type,
@@ -869,17 +809,9 @@ class CrateApi:
 
         # process the path parameters
         # process the query parameters
-        if file_path is not None:
+        if symbol_identifier_position is not None:
             
-            _query_params.append(('file_path', file_path))
-            
-        if line is not None:
-            
-            _query_params.append(('line', line))
-            
-        if character is not None:
-            
-            _query_params.append(('character', character))
+            _query_params.append(('symbol_identifier_position', symbol_identifier_position))
             
         if include_declaration is not None:
             
@@ -937,7 +869,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SimpleSymbolResponse:
+    ) -> SymbolResponse:
         """workspace_symbols
 
 
@@ -974,7 +906,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -1005,7 +937,7 @@ class CrateApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SimpleSymbolResponse]:
+    ) -> ApiResponse[SymbolResponse]:
         """workspace_symbols
 
 
@@ -1042,7 +974,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }
@@ -1110,7 +1042,7 @@ class CrateApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SimpleSymbolResponse",
+            '200': "SymbolResponse",
             '400': None,
             '500': None,
         }

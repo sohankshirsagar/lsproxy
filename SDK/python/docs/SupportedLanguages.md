@@ -1,4 +1,4 @@
-# SupportedLSP
+# SupportedLanguages
 
 
 ## Enum

@@ -230,22 +230,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Logger initialized");
 
-    // Check if MOUNT_DIR exists and is mounted
-    if let Err(e) = check_mount_dir() {
-        eprintln!("Error: Your repo isn't mounted at '{}'. Please mount your repository at this location in your docker run or docker compose commands.", MOUNT_DIR);
-        return Err(e);
-    }
-
     let cli = Cli::parse();
-
-    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
-    lsp_manager
-        .lock()
-        .unwrap()
-        .start_langservers(MOUNT_DIR)
-        .await
-        .unwrap();
-    let app_state = web::Data::new(AppState { lsp_manager });
 
     let openapi = ApiDoc::openapi();
 
@@ -257,6 +242,22 @@ async fn main() -> std::io::Result<()> {
         println!("OpenAPI spec written to: {}", file_path.display());
         return Ok(());
     }
+
+    // Check if MOUNT_DIR exists and is mounted
+    if let Err(e) = check_mount_dir() {
+        eprintln!("Error: Your repo isn't mounted at '{}'. Please mount your repository at this location in your docker run or docker compose commands.", MOUNT_DIR);
+        return Err(e);
+    }
+
+    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
+    lsp_manager
+        .lock()
+        .unwrap()
+        .start_langservers(MOUNT_DIR)
+        .await
+        .unwrap();
+    let app_state = web::Data::new(AppState { lsp_manager });
+
 
     let server = HttpServer::new(move || {
         App::new()

@@ -92,15 +92,15 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [DefinitionResponse](docs/DefinitionResponse.md)
+ - [FilePosition](docs/FilePosition.md)
  - [FileSymbolsRequest](docs/FileSymbolsRequest.md)
  - [GetDefinitionRequest](docs/GetDefinitionRequest.md)
  - [GetReferencesRequest](docs/GetReferencesRequest.md)
- - [SimpleGotoDefinitionResponse](docs/SimpleGotoDefinitionResponse.md)
- - [SimpleLocation](docs/SimpleLocation.md)
- - [SimpleReferenceResponse](docs/SimpleReferenceResponse.md)
- - [SimpleSymbol](docs/SimpleSymbol.md)
- - [SimpleSymbolResponse](docs/SimpleSymbolResponse.md)
- - [SupportedLSP](docs/SupportedLSP.md)
+ - [ReferenceResponse](docs/ReferenceResponse.md)
+ - [SupportedLanguages](docs/SupportedLanguages.md)
+ - [Symbol](docs/Symbol.md)
+ - [SymbolResponse](docs/SymbolResponse.md)
  - [WorkspaceSymbolsRequest](docs/WorkspaceSymbolsRequest.md)
 
 

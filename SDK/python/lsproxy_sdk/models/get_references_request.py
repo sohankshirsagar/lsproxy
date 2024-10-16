@@ -17,9 +17,9 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictBool
 from typing import Any, ClassVar, Dict, List, Optional
-from typing_extensions import Annotated
+from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,11 +27,9 @@ class GetReferencesRequest(BaseModel):
     """
     GetReferencesRequest
     """ # noqa: E501
-    character: Annotated[int, Field(strict=True, ge=0)]
-    file_path: StrictStr
     include_declaration: Optional[StrictBool] = None
-    line: Annotated[int, Field(strict=True, ge=0)]
-    __properties: ClassVar[List[str]] = ["character", "file_path", "include_declaration", "line"]
+    symbol_identifier_position: FilePosition
+    __properties: ClassVar[List[str]] = ["include_declaration", "symbol_identifier_position"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -72,6 +70,9 @@ class GetReferencesRequest(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of symbol_identifier_position
+        if self.symbol_identifier_position:
+            _dict['symbol_identifier_position'] = self.symbol_identifier_position.to_dict()
         # set to None if include_declaration (nullable) is None
         # and model_fields_set contains the field
         if self.include_declaration is None and "include_declaration" in self.model_fields_set:
@@ -89,10 +90,8 @@ class GetReferencesRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "character": obj.get("character"),
-            "file_path": obj.get("file_path"),
             "include_declaration": obj.get("include_declaration"),
-            "line": obj.get("line")
+            "symbol_identifier_position": FilePosition.from_dict(obj["symbol_identifier_position"]) if obj.get("symbol_identifier_position") is not None else None
         })
         return _obj
 

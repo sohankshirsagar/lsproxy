@@ -24,3 +24,5 @@ Cargo.lock
 # Python ignores
 *.pyc
 **/__pycache__/
+
+**/.openapi-generator/

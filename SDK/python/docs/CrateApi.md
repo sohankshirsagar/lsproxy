@@ -11,7 +11,7 @@ Method | HTTP request | Description
 
 
 # **file_symbols**
-> SimpleSymbolResponse file_symbols(file_path)
+> SymbolResponse file_symbols(file_path)
 
 
 
@@ -20,7 +20,7 @@ Method | HTTP request | Description
 
 ```python
 import lsproxy_sdk
-from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.models.symbol_response import SymbolResponse
 from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
@@ -56,7 +56,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**SimpleSymbolResponse**](SimpleSymbolResponse.md)
+[**SymbolResponse**](SymbolResponse.md)
 
 ### Authorization
 
@@ -78,7 +78,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_definition**
-> SimpleGotoDefinitionResponse get_definition(file_path, line, character)
+> DefinitionResponse get_definition(position)
 
 
 
@@ -87,7 +87,8 @@ No authorization required
 
 ```python
 import lsproxy_sdk
-from lsproxy_sdk.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
+from lsproxy_sdk.models.definition_response import DefinitionResponse
+from lsproxy_sdk.models.file_position import FilePosition
 from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
@@ -102,12 +103,10 @@ configuration = lsproxy_sdk.Configuration(
 with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
-    file_path = 'file_path_example' # str | 
-    line = 56 # int | 
-    character = 56 # int | 
+    position = lsproxy_sdk.FilePosition() # FilePosition | 
 
     try:
-        api_response = api_instance.get_definition(file_path, line, character)
+        api_response = api_instance.get_definition(position)
         print("The response of CrateApi->get_definition:\n")
         pprint(api_response)
     except Exception as e:
@@ -121,13 +120,11 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_path** | **str**|  | 
- **line** | **int**|  | 
- **character** | **int**|  | 
+ **position** | [**FilePosition**](.md)|  | 
 
 ### Return type
 
-[**SimpleGotoDefinitionResponse**](SimpleGotoDefinitionResponse.md)
+[**DefinitionResponse**](DefinitionResponse.md)
 
 ### Authorization
 
@@ -149,7 +146,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_references**
-> SimpleReferenceResponse get_references(file_path, line, character, include_declaration=include_declaration)
+> ReferenceResponse get_references(symbol_identifier_position, include_declaration=include_declaration)
 
 
 
@@ -158,7 +155,8 @@ No authorization required
 
 ```python
 import lsproxy_sdk
-from lsproxy_sdk.models.simple_reference_response import SimpleReferenceResponse
+from lsproxy_sdk.models.file_position import FilePosition
+from lsproxy_sdk.models.reference_response import ReferenceResponse
 from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
@@ -173,13 +171,11 @@ configuration = lsproxy_sdk.Configuration(
 with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
-    file_path = 'file_path_example' # str | 
-    line = 56 # int | 
-    character = 56 # int | 
+    symbol_identifier_position = lsproxy_sdk.FilePosition() # FilePosition | 
     include_declaration = True # bool |  (optional)
 
     try:
-        api_response = api_instance.get_references(file_path, line, character, include_declaration=include_declaration)
+        api_response = api_instance.get_references(symbol_identifier_position, include_declaration=include_declaration)
         print("The response of CrateApi->get_references:\n")
         pprint(api_response)
     except Exception as e:
@@ -193,14 +189,12 @@ with lsproxy_sdk.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **file_path** | **str**|  | 
- **line** | **int**|  | 
- **character** | **int**|  | 
+ **symbol_identifier_position** | [**FilePosition**](.md)|  | 
  **include_declaration** | **bool**|  | [optional] 
 
 ### Return type
 
-[**SimpleReferenceResponse**](SimpleReferenceResponse.md)
+[**ReferenceResponse**](ReferenceResponse.md)
 
 ### Authorization
 
@@ -222,7 +216,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **workspace_symbols**
-> SimpleSymbolResponse workspace_symbols(query)
+> SymbolResponse workspace_symbols(query)
 
 
 
@@ -231,7 +225,7 @@ No authorization required
 
 ```python
 import lsproxy_sdk
-from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.models.symbol_response import SymbolResponse
 from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
@@ -267,7 +261,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**SimpleSymbolResponse**](SimpleSymbolResponse.md)
+[**SymbolResponse**](SymbolResponse.md)
 
 ### Authorization
 
