@@ -252,8 +252,17 @@ async fn main() -> std::io::Result<()> {
     if cli.write_openapi {
         let file_path = PathBuf::from("openapi.json");
         let openapi_json = serde_json::to_string_pretty(&openapi).unwrap();
-        let mut file = File::create(&file_path).unwrap();
-        file.write_all(openapi_json.as_bytes()).unwrap();
+        let mut file = match File::create(&file_path) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Failed to create file: {}", e);
+                return Err(e);
+            }
+        };
+        if let Err(e) = file.write_all(openapi_json.as_bytes()) {
+            eprintln!("Failed to write to file: {}", e);
+            return Err(e);
+        }
         println!("OpenAPI spec written to: {}", file_path.display());
         return Ok(());
     }
