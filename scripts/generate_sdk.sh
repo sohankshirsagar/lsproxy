@@ -13,11 +13,11 @@ openapi-generator generate \
     -i "openapi.json" \
     -g  "$LANGUAGE" \
     -o "SDK/$LANGUAGE" \
-    --additional-properties=packageName=lsproxy_sdk,baseUrl=http://localhost:8080
+    --additional-properties=packageName=lsproxy_sdk
 
 # Check if generation was successful
 if [ $? -eq 0 ]; then
-    echo "SDK generated successfully in ./generated-sdk"
+    echo "SDK generated successfully in SDK/$LANGUAGE"
 else
     echo "Failed to generate SDK. Please check the error messages above."
 fi
