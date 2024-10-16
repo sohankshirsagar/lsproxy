@@ -36,7 +36,6 @@ impl Process for ProcessHandler {
     }
 
     async fn receive(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        debug!("Starting to read response");
         let mut content_length: Option<usize> = None;
         let mut buffer = Vec::new();
 
@@ -55,7 +54,6 @@ impl Process for ProcessHandler {
                                 let length = content_length.unwrap();
                                 let mut content = vec![0; length];
                                 self.stdout.read_exact(&mut content).await?;
-                                debug!("Read content: {}", String::from_utf8_lossy(&content));
                                 return Ok(String::from_utf8(content)?);
                             } else if line.starts_with("Content-Length: ") {
                                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
