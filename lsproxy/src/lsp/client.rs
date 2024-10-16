@@ -44,11 +44,9 @@ pub trait LspClient: Send {
             ..Default::default()
         });
 
-        capabilities.experimental = Some(
-            serde_json::json!({
-                "serverStatusNotification": true
-            })
-        );
+        capabilities.experimental = Some(serde_json::json!({
+            "serverStatusNotification": true
+        }));
 
         let params = InitializeParams {
             capabilities: capabilities,

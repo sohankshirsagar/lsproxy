@@ -46,7 +46,7 @@ pub struct Symbol {
     #[schema(example = "class")]
     pub kind: String,
     /// The starting position of the symbol's identifier, and the file_path from workspace root
-    /// 
+    ///
     /// e.g. for the definition of `User` on line 0 of `src/main.py` with the code:
     /// ```
     /// 0: class User:
@@ -63,18 +63,17 @@ pub struct Symbol {
 #[derive(Deserialize, ToSchema, IntoParams)]
 #[schema(example = json!({"path": "src/main.py", "line": 10, "character": 5}))]
 pub struct GetDefinitionRequest {
-
     /// The position within the file to get the definition for. This should point to the identifier
     /// of the symbol you want to get the definition for.
-    /// 
+    ///
     /// e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code:
     /// ```
     /// 0: class User:
     /// 1:     def __init__(self, name, age):
     /// 2:         self.name = name
     /// 3:         self.age = age
-    /// 4: 
-    /// 5: user = User("John", 30) 
+    /// 4:
+    /// 5: user = User("John", 30)
     /// __________^^^
     /// ```
     /// The (line, char) should be anywhere in (5, 7)-(5, 11).
@@ -92,9 +91,8 @@ pub struct GetDefinitionRequest {
 #[derive(Deserialize, ToSchema, IntoParams)]
 #[schema(example = json!({"path": "src/main.py", "line": 10, "character": 5}))]
 pub struct GetReferencesRequest {
-
     /// The position within the file to get the references for. This should point to the identifier of the definition.
-    /// 
+    ///
     /// e.g. for getting the references of `User` on line 0 of `src/main.py` with the code:
     /// ```
     /// 0: class User:
@@ -102,8 +100,8 @@ pub struct GetReferencesRequest {
     /// 1:     def __init__(self, name, age):
     /// 2:         self.name = name
     /// 3:         self.age = age
-    /// 4: 
-    /// 5: user = User("John", 30) 
+    /// 4:
+    /// 5: user = User("John", 30)
     /// ```
     #[serde(deserialize_with = "deserialize_file_position")]
     pub symbol_identifier_position: FilePosition,
@@ -161,7 +159,7 @@ pub struct DefinitionResponse {
     pub raw_response: Option<Value>,
     /// The definition(s) of the symbol.
     /// Points to the start position of the symbol's identifier.
-    /// 
+    ///
     /// e.g. for the definition of `User` on line 5 of `src/main.py` with the code:
     /// ```
     /// 0: class User:
@@ -169,7 +167,7 @@ pub struct DefinitionResponse {
     /// 1:     def __init__(self, name, age):
     /// 2:         self.name = name
     /// 3:         self.age = age
-    /// 4: 
+    /// 4:
     /// 5: user = User("John", 30)
     /// _________^
     /// ```
@@ -184,7 +182,7 @@ pub struct ReferenceResponse {
     pub raw_response: Option<Value>,
     /// The references to the symbol.
     /// Points to the start position of the symbol's identifier.
-    /// 
+    ///
     /// e.g. for the references of `User` on line 0 character 6 of `src/main.py` with the code:
     /// ```
     /// 0: class User:
@@ -192,14 +190,14 @@ pub struct ReferenceResponse {
     /// 1:     def __init__(self, name, age):
     /// 2:         self.name = name
     /// 3:         self.age = age
-    /// 4: 
+    /// 4:
     /// 5: user = User("John", 30)
     /// _________^
-    /// 6: 
+    /// 6:
     /// 7: print(user.name)
     /// ```
     /// The references will be `[{"path": "src/main.py", "line": 5, "character": 7}]`.
-    /// 
+    ///
     #[schema(example = json!([{"path": "src/main.py", "line": 5, "character": 7}]))]
     pub references: Vec<FilePosition>,
 }
