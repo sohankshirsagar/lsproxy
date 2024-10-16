@@ -1,10 +1,10 @@
+use crate::api_types::{
+    DefinitionResponse, ReferenceResponse, SupportedLanguages, SymbolResponse, MOUNT_DIR,
+};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
     RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
-};
-use crate::lsp::types::{
-    SimpleGotoDefinitionResponse, SimpleReferenceResponse, SimpleSymbolResponse, SupportedLSP,
 };
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
@@ -16,10 +16,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use super::types::MOUNT_DIR;
-
 pub struct LspManager {
-    clients: HashMap<SupportedLSP, Arc<Mutex<Box<dyn LspClient>>>>,
+    clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
 }
 
 impl LspManager {
@@ -29,23 +27,23 @@ impl LspManager {
         }
     }
 
-    fn detect_languages(&self, root_path: &str) -> Vec<SupportedLSP> {
+    fn detect_languages(&self, root_path: &str) -> Vec<SupportedLanguages> {
         let mut lsps = Vec::new();
         for lsp in [
-            SupportedLSP::Python,
-            SupportedLSP::TypeScriptJavaScript,
-            SupportedLSP::Rust,
+            SupportedLanguages::Python,
+            SupportedLanguages::TypeScriptJavaScript,
+            SupportedLanguages::Rust,
         ] {
             let patterns = match lsp {
-                SupportedLSP::Python => PYRIGHT_FILE_PATTERNS
+                SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
-                SupportedLSP::TypeScriptJavaScript => TYPESCRIPT_FILE_PATTERNS
+                SupportedLanguages::TypeScriptJavaScript => TYPESCRIPT_FILE_PATTERNS
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
-                SupportedLSP::Rust => RUST_ANALYZER_FILE_PATTERNS
+                SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
@@ -78,17 +76,17 @@ impl LspManager {
             }
             debug!("Starting {:?} LSP", lsp);
             let mut client: Box<dyn LspClient> = match lsp {
-                SupportedLSP::Python => Box::new(
+                SupportedLanguages::Python => Box::new(
                     PyrightClient::new(repo_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
-                SupportedLSP::TypeScriptJavaScript => Box::new(
+                SupportedLanguages::TypeScriptJavaScript => Box::new(
                     TypeScriptLanguageClient::new(repo_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
-                SupportedLSP::Rust => Box::new(
+                SupportedLanguages::Rust => Box::new(
                     RustAnalyzerClient::new(repo_path)
                         .await
                         .map_err(|e| e.to_string())?,
@@ -110,12 +108,12 @@ impl LspManager {
     pub async fn file_symbols(
         &self,
         file_path: &str,
-    ) -> Result<SimpleSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<SymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
         let lsp_type = self.detect_language(&file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
         let document_symbol_response = locked_client.text_document_symbols(file_path).await?;
-        let custom_document_symbol_response = SimpleSymbolResponse::new(
+        let custom_document_symbol_response = SymbolResponse::new(
             document_symbol_response,
             file_path.strip_prefix(MOUNT_DIR).unwrap_or_default(),
         );
@@ -126,7 +124,7 @@ impl LspManager {
         &self,
         file_path: &str,
         position: Position,
-    ) -> Result<SimpleGotoDefinitionResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<DefinitionResponse, Box<dyn std::error::Error + Send + Sync>> {
         let lsp_type = self.detect_language(file_path)?;
         if let Some(client) = self.get_client(lsp_type) {
             let mut locked_client = client.lock().await;
@@ -135,7 +133,7 @@ impl LspManager {
                 .await?;
 
             // Convert the LSP response to our custom type
-            Ok(SimpleGotoDefinitionResponse::from(lsp_response))
+            Ok(DefinitionResponse::from(lsp_response))
         } else {
             warn!("No LSP client found for file type {:?}", lsp_type);
             Err("No LSP client found for file type".into())
@@ -145,7 +143,7 @@ impl LspManager {
     pub async fn workspace_symbols(
         &self,
         query: &str,
-    ) -> Result<SimpleSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<SymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
         /* This returns results for all langservers*/
         let mut symbols = Vec::new();
         for client in self.clients.values() {
@@ -153,10 +151,13 @@ impl LspManager {
             let client_symbols = locked_client.workspace_symbols(query).await?;
             symbols.push(client_symbols);
         }
-        Ok(SimpleSymbolResponse::from(symbols))
+        Ok(SymbolResponse::from(symbols))
     }
 
-    pub fn get_client(&self, lsp_type: SupportedLSP) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
+    pub fn get_client(
+        &self,
+        lsp_type: SupportedLanguages,
+    ) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
         self.clients.get(&lsp_type).cloned()
     }
 
@@ -165,7 +166,7 @@ impl LspManager {
         file_path: &str,
         position: Position,
         include_declaration: bool,
-    ) -> Result<SimpleReferenceResponse, Box<dyn Error + Send + Sync>> {
+    ) -> Result<ReferenceResponse, Box<dyn Error + Send + Sync>> {
         let lsp_type = self.detect_language(file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
@@ -174,20 +175,20 @@ impl LspManager {
             .text_document_reference(file_path, position, include_declaration)
             .await?;
 
-        Ok(SimpleReferenceResponse::from(locations))
+        Ok(ReferenceResponse::from(locations))
     }
 
     fn detect_language(
         &self,
         file_path: &str,
-    ) -> Result<SupportedLSP, Box<dyn Error + Send + Sync>> {
+    ) -> Result<SupportedLanguages, Box<dyn Error + Send + Sync>> {
         let path: PathBuf = PathBuf::from(file_path);
         match path.extension().and_then(|ext| ext.to_str()) {
-            Some("py") => Ok(SupportedLSP::Python),
+            Some("py") => Ok(SupportedLanguages::Python),
             Some("js") | Some("ts") | Some("jsx") | Some("tsx") => {
-                Ok(SupportedLSP::TypeScriptJavaScript)
+                Ok(SupportedLanguages::TypeScriptJavaScript)
             }
-            Some("rs") => Ok(SupportedLSP::Rust),
+            Some("rs") => Ok(SupportedLanguages::Rust),
             _ => Err("Unsupported file type".into()),
         }
     }

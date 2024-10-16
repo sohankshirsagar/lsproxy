@@ -12,14 +12,15 @@ use std::sync::{Arc, Mutex};
 use utoipa::{IntoParams, OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 
+mod api_types;
 mod lsp;
 mod utils;
 
-use crate::lsp::manager::LspManager;
-use crate::lsp::types::{
-    SimpleGotoDefinitionResponse, SimpleLocation, SimpleReferenceResponse, SimpleSymbol,
-    SimpleSymbolResponse, SupportedLSP, MOUNT_DIR,
+use crate::api_types::{
+    DefinitionResponse, FilePosition, ReferenceResponse, SupportedLanguages, Symbol,
+    SymbolResponse, MOUNT_DIR,
 };
+use crate::lsp::manager::LspManager;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -30,7 +31,7 @@ use crate::lsp::types::{
         get_references,
     ),
     components(
-        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, SimpleGotoDefinitionResponse, SimpleSymbolResponse, SimpleReferenceResponse, SimpleLocation, SimpleSymbol)
+        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, FilePosition, Symbol)
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")

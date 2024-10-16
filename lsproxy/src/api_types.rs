@@ -1,6 +1,7 @@
 use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink, OneOf,
-    SymbolInformation, SymbolKind, Url, WorkspaceSymbol, WorkspaceSymbolResponse,
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location as LspLocation,
+    LocationLink, OneOf, SymbolInformation, SymbolKind, Url, WorkspaceSymbol,
+    WorkspaceSymbolResponse,
 };
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
@@ -23,79 +24,75 @@ pub const MOUNT_DIR: &str = "/mnt/repo";
     utoipa::ToSchema,
 )]
 #[strum(serialize_all = "lowercase")]
-pub enum SupportedLSP {
+pub enum SupportedLanguages {
     Python,
     TypeScriptJavaScript,
     Rust,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimpleLocation {
+pub struct FilePosition {
     pub path: String,
-    pub identifier_start_line: u32,
-    pub identifier_start_character: u32,
+    pub line: u32,
+    pub character: u32,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimpleSymbol {
+pub struct Symbol {
     pub name: String,
     pub kind: String,
-    pub location: SimpleLocation,
+    pub identifier_start_position: FilePosition,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimpleGotoDefinitionResponse {
+pub struct DefinitionResponse {
     raw_response: serde_json::Value,
-    definitions: Vec<SimpleLocation>,
+    definitions: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimpleReferenceResponse {
+pub struct ReferenceResponse {
     raw_response: serde_json::Value,
-    references: Vec<SimpleLocation>,
+    references: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct SimpleSymbolResponse {
+pub struct SymbolResponse {
     raw_response: serde_json::Value,
-    symbols: Vec<SimpleSymbol>,
+    symbols: Vec<Symbol>,
 }
 
-impl From<Location> for SimpleLocation {
-    fn from(location: Location) -> Self {
-        SimpleLocation {
+impl From<LspLocation> for FilePosition {
+    fn from(location: LspLocation) -> Self {
+        FilePosition {
             path: uri_to_path_str(location.uri),
-            identifier_start_line: location.range.start.line,
-            identifier_start_character: location.range.start.character,
+            line: location.range.start.line,
+            character: location.range.start.character,
         }
     }
 }
 
-impl From<LocationLink> for SimpleLocation {
+impl From<LocationLink> for FilePosition {
     fn from(link: LocationLink) -> Self {
-        SimpleLocation {
+        FilePosition {
             path: uri_to_path_str(link.target_uri),
-            identifier_start_line: link.target_range.start.line,
-            identifier_start_character: link.target_range.start.character,
+            line: link.target_range.start.line,
+            character: link.target_range.start.character,
         }
     }
 }
 
-impl From<SymbolInformation> for SimpleSymbol {
+impl From<SymbolInformation> for Symbol {
     fn from(symbol: SymbolInformation) -> Self {
-        SimpleSymbol {
+        Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            location: SimpleLocation {
-                path: uri_to_path_str(symbol.location.uri),
-                identifier_start_line: symbol.location.range.start.line,
-                identifier_start_character: symbol.location.range.start.character,
-            },
+            identifier_start_position: FilePosition::from(symbol.location),
         }
     }
 }
 
-impl From<WorkspaceSymbol> for SimpleSymbol {
+impl From<WorkspaceSymbol> for Symbol {
     fn from(symbol: WorkspaceSymbol) -> Self {
         let (path, identifier_start_line, identifier_start_character) = match symbol.location {
             OneOf::Left(location) => (
@@ -103,96 +100,94 @@ impl From<WorkspaceSymbol> for SimpleSymbol {
                 location.range.start.line,
                 location.range.start.character,
             ),
-            OneOf::Right(workspace_location) => {
-                (uri_to_path_str(workspace_location.uri), 0, 0) // Default to 0 for line and character
-            }
+            OneOf::Right(workspace_location) => (uri_to_path_str(workspace_location.uri), 0, 0),
         };
 
-        SimpleSymbol {
+        Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            location: SimpleLocation {
+            identifier_start_position: FilePosition {
                 path,
-                identifier_start_line,
-                identifier_start_character,
+                line: identifier_start_line,
+                character: identifier_start_character,
             },
         }
     }
 }
 
-impl From<GotoDefinitionResponse> for SimpleGotoDefinitionResponse {
+impl From<GotoDefinitionResponse> for DefinitionResponse {
     fn from(response: GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let definitions = match response {
-            GotoDefinitionResponse::Scalar(location) => vec![SimpleLocation::from(location)],
+            GotoDefinitionResponse::Scalar(location) => {
+                vec![FilePosition::from(location)]
+            }
             GotoDefinitionResponse::Array(locations) => {
-                locations.into_iter().map(SimpleLocation::from).collect()
+                locations.into_iter().map(FilePosition::from).collect()
             }
             GotoDefinitionResponse::Link(links) => {
-                links.into_iter().map(SimpleLocation::from).collect()
+                links.into_iter().map(FilePosition::from).collect()
             }
         };
-        SimpleGotoDefinitionResponse {
+        DefinitionResponse {
             raw_response,
             definitions,
         }
     }
 }
 
-impl From<Vec<Location>> for SimpleReferenceResponse {
-    fn from(locations: Vec<Location>) -> Self {
+impl From<Vec<LspLocation>> for ReferenceResponse {
+    fn from(locations: Vec<LspLocation>) -> Self {
         let raw_response = serde_json::to_value(&locations).unwrap_or_default();
-        let references = locations.into_iter().map(SimpleLocation::from).collect();
-        SimpleReferenceResponse {
+        let references = locations.into_iter().map(FilePosition::from).collect();
+        ReferenceResponse {
             raw_response,
             references,
         }
     }
 }
 
-impl From<Vec<WorkspaceSymbolResponse>> for SimpleSymbolResponse {
+impl From<Vec<WorkspaceSymbolResponse>> for SymbolResponse {
     fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
         let raw_response = serde_json::to_value(&responses).unwrap_or_default();
-        let symbols: Vec<SimpleSymbol> = responses
+        let symbols: Vec<Symbol> = responses
             .into_iter()
             .flat_map(|response| match response {
-                WorkspaceSymbolResponse::Flat(symbols) => symbols
-                    .into_iter()
-                    .map(SimpleSymbol::from)
-                    .collect::<Vec<_>>(),
-                WorkspaceSymbolResponse::Nested(symbols) => symbols
-                    .into_iter()
-                    .map(SimpleSymbol::from)
-                    .collect::<Vec<_>>(),
+                WorkspaceSymbolResponse::Flat(symbols) => {
+                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
+                }
+                WorkspaceSymbolResponse::Nested(symbols) => {
+                    symbols.into_iter().map(Symbol::from).collect()
+                }
             })
             .collect();
 
-        SimpleSymbolResponse {
+        SymbolResponse {
             raw_response,
             symbols,
         }
     }
 }
 
-impl SimpleSymbolResponse {
+impl SymbolResponse {
     pub fn new(response: DocumentSymbolResponse, file_path: &str) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
                 .into_iter()
-                .map(|symbol| SimpleSymbol {
+                .map(|symbol| Symbol {
                     name: symbol.name,
                     kind: symbol_kind_to_string(&symbol.kind).to_string(),
-                    location: SimpleLocation {
+                    identifier_start_position: FilePosition {
                         path: file_path.to_string(),
-                        identifier_start_line: symbol.location.range.start.line,
-                        identifier_start_character: symbol.location.range.start.character,
+                        line: symbol.location.range.start.line,
+                        character: symbol.location.range.start.character,
                     },
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, file_path),
         };
-        SimpleSymbolResponse {
+        SymbolResponse {
             raw_response,
             symbols,
         }
@@ -205,21 +200,20 @@ fn uri_to_path_str(uri: Url) -> String {
         .unwrap_or_else(|_| PathBuf::from(uri.path()));
 
     let mount_dir = Path::new(MOUNT_DIR);
-    path
-        .strip_prefix(mount_dir)
+    path.strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| path.to_string_lossy().into_owned())
 }
 
-fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<SimpleSymbol> {
-    fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<SimpleSymbol>) {
-        result.push(SimpleSymbol {
+fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<Symbol> {
+    fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<Symbol>) {
+        result.push(Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            location: SimpleLocation {
+            identifier_start_position: FilePosition {
                 path: file_path.to_string(),
-                identifier_start_line: symbol.selection_range.start.line,
-                identifier_start_character: symbol.selection_range.start.character,
+                line: symbol.selection_range.start.line,
+                character: symbol.selection_range.start.character,
             },
         });
 
