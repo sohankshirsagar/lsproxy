@@ -1,6 +1,8 @@
+use log::warn;
 use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
-    SymbolInformation, SymbolKind, Url, WorkspaceSymbol, WorkspaceSymbolResponse,
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink, OneOf,
+    SymbolInformation, SymbolKind, Url, WorkspaceLocation, WorkspaceSymbol,
+    WorkspaceSymbolResponse,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -148,11 +150,18 @@ impl From<SymbolInformation> for Symbol {
         Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition {
-                path: symbol.location.uri.to_string(),
-                line: symbol.location.range.start.line,
-                character: symbol.location.range.start.character,
-            },
+            identifier_start_position: FilePosition::from(symbol.location),
+        }
+    }
+}
+
+impl From<WorkspaceLocation> for FilePosition {
+    fn from(location: WorkspaceLocation) -> Self {
+        warn!("WorkspaceLocation does not contain line and character information and will not be shown");
+        FilePosition {
+            path: uri_to_path_str(location.uri),
+            line: 0,
+            character: 0,
         }
     }
 }
@@ -162,21 +171,12 @@ impl From<WorkspaceSymbol> for Symbol {
         Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition {
-                path: match &symbol.location {
-                    lsp_types::OneOf::Left(location) => location.uri.to_string(),
-                    lsp_types::OneOf::Right(workspace_location) => {
-                        workspace_location.uri.to_string()
-                    }
-                },
-                line: match &symbol.location {
-                    lsp_types::OneOf::Left(location) => location.range.start.line,
-                    lsp_types::OneOf::Right(_) => 0, // Workspace locations don't have a range
-                },
-                character: match &symbol.location {
-                    lsp_types::OneOf::Left(location) => location.range.start.character,
-                    lsp_types::OneOf::Right(_) => 0, // Workspace locations don't have a range
-                },
+            identifier_start_position: match symbol.location {
+                OneOf::Left(location) => FilePosition::from(location),
+                OneOf::Right(workspace_location) => {
+                    warn!("WorkspaceLocation does not contain line and character information and will not be shown");
+                    FilePosition::from(workspace_location)
+                }
             },
         }
     }
@@ -195,7 +195,8 @@ impl From<(Vec<WorkspaceSymbolResponse>, bool)> for SymbolResponse {
                 WorkspaceSymbolResponse::Flat(symbols) => {
                     symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
                 }
-                WorkspaceSymbolResponse::Nested(symbols) => {
+                WorkspaceSymbolResponse::Nested(symbols) =>{
+                    warn!("Nested symbols are missing line and character information and will not be shown");
                     symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
                 }
             })
@@ -217,11 +218,7 @@ impl From<(DocumentSymbolResponse, &str, bool)> for SymbolResponse {
                 .map(|symbol| Symbol {
                     name: symbol.name,
                     kind: symbol_kind_to_string(symbol.kind).to_owned(),
-                    identifier_start_position: FilePosition {
-                        path: file_path.to_owned(),
-                        line: symbol.location.range.start.line,
-                        character: symbol.location.range.start.character,
-                    },
+                    identifier_start_position: FilePosition::from(symbol.location),
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, file_path),
