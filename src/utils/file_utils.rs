@@ -6,42 +6,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use url::Url;
 
-pub async fn get_files_for_workspace_typescript(
-    repo_path: &str,
-) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
-    let tsconfig_path = Path::new(repo_path).join("tsconfig.json");
-    let tsconfig_content = fs::read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
-    let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
-
-    let include_patterns = tsconfig["include"]
-        .as_array()
-        .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
-        .unwrap_or_else(|| vec!["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]);
-    let exclude_patterns = tsconfig["exclude"]
-        .as_array()
-        .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
-        .unwrap_or_else(|| vec!["**/node_modules/**", "**/dist/**", "**/build/**", ".git/**"]);
-
-    let files = search_files(
-        Path::new(repo_path),
-        include_patterns.into_iter().map(String::from).collect(),
-        exclude_patterns.into_iter().map(String::from).collect(),
-    )?;
-
-    files
-        .into_iter()
-        .map(|file_path| {
-            let content = fs::read_to_string(&file_path)?;
-            Ok(TextDocumentItem {
-                uri: Url::from_file_path(&file_path).map_err(|_| "Invalid file path")?,
-                language_id: "typescript".to_string(),
-                version: 1,
-                text: content,
-            })
-        })
-        .collect()
-}
-
 pub fn search_files(
     path: &std::path::Path,
     include_patterns: Vec<String>,

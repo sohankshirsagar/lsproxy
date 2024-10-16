@@ -21,6 +21,7 @@ pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     "**/.*",
     "**/dist",
     "**/target",
+    "**/build",
     ".git",
 ];
 
