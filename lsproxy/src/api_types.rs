@@ -19,38 +19,102 @@ pub const MOUNT_DIR: &str = "/mnt/repo";
 #[strum(serialize_all = "lowercase")]
 pub enum SupportedLanguages {
     Python,
+    /// TypeScript and JavaScript are handled by the same langserver
+    #[serde(rename = "typescript_javascript")]
     TypeScriptJavaScript,
     Rust,
 }
 
+/// Specific position within a file.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
+    #[schema(example = "src/main.py")]
     pub path: String,
+    #[schema(example = 10)]
     pub line: u32,
+    #[schema(example = 5)]
     pub character: u32,
 }
 
+/// Represents a symbol within the codebase.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Symbol {
+    /// The name of the symbol.
+    #[schema(example = "User")]
     pub name: String,
+    /// The kind of the symbol (e.g., function, class).
+    #[schema(example = "class")]
     pub kind: String,
+    /// The starting position of the symbol's identifier, and the file_path from workspace root
+    /// 
+    /// e.g. for the definition of `User` on line 0 of `src/main.py` with the code:
+    /// ```
+    /// 0: class User:
+    /// _________^
+    /// 1:     def __init__(self, name, age):
+    /// 2:         self.name = name
+    /// 3:         self.age = age
+    /// ```
+    #[schema(example = json!({"path": "src/main.py", "line": 0, "character": 6}))]
     pub identifier_start_position: FilePosition,
 }
 
+/// Request to get the definition of a symbol at a given position in a file.
 #[derive(Deserialize, ToSchema, IntoParams)]
+#[schema(example = json!({"path": "src/main.py", "line": 10, "character": 5}))]
 pub struct GetDefinitionRequest {
+
+    /// The position within the file to get the definition for. This should point to the identifier
+    /// of the symbol you want to get the definition for.
+    /// 
+    /// e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code:
+    /// ```
+    /// 0: class User:
+    /// 1:     def __init__(self, name, age):
+    /// 2:         self.name = name
+    /// 3:         self.age = age
+    /// 4: 
+    /// 5: user = User("John", 30) 
+    /// __________^^^
+    /// ```
+    /// The (line, char) should be anywhere in (5, 7)-(5, 11).
     #[serde(deserialize_with = "deserialize_file_position")]
+    #[schema(example = json!({"path": "src/main.py", "line": 5, "character": 7}))]
     pub position: FilePosition,
+
+    /// Whether to include the raw response from the langserver in the response.
+    /// Defaults to false.
     #[serde(default)]
     pub include_raw_response: bool,
 }
 
+/// Request to get the references of a symbol in the workspace.
 #[derive(Deserialize, ToSchema, IntoParams)]
+#[schema(example = json!({"path": "src/main.py", "line": 10, "character": 5}))]
 pub struct GetReferencesRequest {
+
+    /// The position within the file to get the references for. This should point to the identifier of the definition.
+    /// 
+    /// e.g. for getting the references of `User` on line 0 of `src/main.py` with the code:
+    /// ```
+    /// 0: class User:
+    /// _________^^^^
+    /// 1:     def __init__(self, name, age):
+    /// 2:         self.name = name
+    /// 3:         self.age = age
+    /// 4: 
+    /// 5: user = User("John", 30) 
+    /// ```
     #[serde(deserialize_with = "deserialize_file_position")]
     pub symbol_identifier_position: FilePosition,
+
+    /// Whether to include the declaration (definition) of the symbol in the response.
+    /// Defaults to false.
     #[serde(default)]
     pub include_declaration: bool,
+
+    /// Whether to include the raw response from the langserver in the response.
+    /// Defaults to false.
     #[serde(default)]
     pub include_raw_response: bool,
 }
@@ -63,37 +127,87 @@ where
     serde_json::from_str(&s).map_err(serde::de::Error::custom)
 }
 
+/// Request to get the symbols in a file.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct FileSymbolsRequest {
+    /// The path to the file to get the symbols for, relative to the root of the workspace.
+    #[schema(example = "src/main.py")]
     pub file_path: String,
+
+    /// Whether to include the raw response from the langserver in the response.
+    /// Defaults to false.
     #[serde(default)]
     pub include_raw_response: bool,
 }
 
+/// Request to get the symbols in the workspace.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct WorkspaceSymbolsRequest {
+    /// The query to search for.
+    #[schema(example = "User")]
     pub query: String,
+
+    /// Whether to include the raw response from the langserver in the response.
+    /// Defaults to false.
     #[serde(default)]
     pub include_raw_response: bool,
 }
 
+/// Response to a definition request.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DefinitionResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// The raw response from the langserver.
     pub raw_response: Option<Value>,
+    /// The definition(s) of the symbol.
+    /// Points to the start position of the symbol's identifier.
+    /// 
+    /// e.g. for the definition of `User` on line 5 of `src/main.py` with the code:
+    /// ```
+    /// 0: class User:
+    /// ________^
+    /// 1:     def __init__(self, name, age):
+    /// 2:         self.name = name
+    /// 3:         self.age = age
+    /// 4: 
+    /// 5: user = User("John", 30)
+    /// _________^
+    /// ```
+    /// The definition(s) will be `[{"path": "src/main.py", "line": 0, "character": 6}]`.
     pub definitions: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferenceResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// The raw response from the langserver.
     pub raw_response: Option<Value>,
+    /// The references to the symbol.
+    /// Points to the start position of the symbol's identifier.
+    /// 
+    /// e.g. for the references of `User` on line 0 character 6 of `src/main.py` with the code:
+    /// ```
+    /// 0: class User:
+    /// ________^
+    /// 1:     def __init__(self, name, age):
+    /// 2:         self.name = name
+    /// 3:         self.age = age
+    /// 4: 
+    /// 5: user = User("John", 30)
+    /// _________^
+    /// 6: 
+    /// 7: print(user.name)
+    /// ```
+    /// The references will be `[{"path": "src/main.py", "line": 5, "character": 7}]`.
+    /// 
+    #[schema(example = json!([{"path": "src/main.py", "line": 5, "character": 7}]))]
     pub references: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SymbolResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// The raw response from the langserver.
     pub raw_response: Option<Value>,
     pub symbols: Vec<Symbol>,
 }
