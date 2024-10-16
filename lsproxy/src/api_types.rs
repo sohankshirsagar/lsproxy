@@ -273,8 +273,11 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
             },
         });
 
-        for child in symbol.children.unwrap_or_default() {
-            recursive_flatten(child, file_path, result);
+        if let Some(children) = symbol.children {
+            for child in children {
+                recursive_flatten(child, file_path, result);
+            }
+        }
         }
     }
 
