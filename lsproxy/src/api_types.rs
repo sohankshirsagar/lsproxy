@@ -198,8 +198,7 @@ fn uri_to_path_str(uri: Url) -> String {
         .unwrap_or_else(|_| PathBuf::from(uri.path()));
 
     let mount_dir = Path::new(MOUNT_DIR);
-    path
-        .strip_prefix(mount_dir)
+    path.strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| path.to_string_lossy().into_owned())
 }
