@@ -1,30 +1,43 @@
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer};
+use clap::Parser;
 use env_logger::Env;
 use log::{debug, error, info};
 use lsp_types::Position;
-use serde::Deserialize;
-use std::path::Path;
+use std::fs;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use utoipa::{IntoParams, OpenApi, ToSchema};
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+mod api_types;
 mod lsp;
 mod utils;
 
+use crate::api_types::{
+    DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
+    GetReferencesRequest, ReferenceResponse, SupportedLanguages, Symbol, SymbolResponse,
+    WorkspaceSymbolsRequest, MOUNT_DIR,
+};
 use crate::lsp::manager::LspManager;
-use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
+
+fn check_mount_dir() -> std::io::Result<()> {
+    fs::read_dir(MOUNT_DIR)?;
+    Ok(())
+}
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
         file_symbols,
         workspace_symbols,
-        get_definition,
-        get_references,
+        definition,
+        references,
     ),
     components(
-        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP)
+        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, FilePosition, Symbol)
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
@@ -32,33 +45,16 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR};
 )]
 struct ApiDoc;
 
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct GetDefinitionRequest {
-    file_path: String,
-    line: u32,
-    character: u32,
-}
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct GetReferencesRequest {
-    file_path: String,
-    line: u32,
-    character: u32,
-    include_declaration: Option<bool>,
-}
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct FileSymbolsRequest {
-    file_path: String,
-}
-
-#[derive(Deserialize, ToSchema, IntoParams)]
-struct WorkspaceSymbolsRequest {
-    query: String,
-}
-
 struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Write OpenAPI spec to file (openapi.json)
+    #[arg(short, long)]
+    write_openapi: bool,
 }
 
 #[utoipa::path(
@@ -66,36 +62,39 @@ struct AppState {
     path = "/definition",
     params(GetDefinitionRequest),
     responses(
-        (status = 200, description = "Definition retrieved successfully", body = String),
+        (status = 200, description = "Definition retrieved successfully", body = DefinitionResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn get_definition(
+async fn definition(
     data: web::Data<AppState>,
     info: web::Query<GetDefinitionRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_definition request for file: {}, line: {}, character: {}",
-        info.file_path, info.line, info.character
+        "Received definition request for file: {}, line: {}, character: {}",
+        info.position.path, info.position.line, info.position.character
     );
 
-    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
+    let full_path = Path::new(&MOUNT_DIR).join(&info.position.path);
     let full_path_str = full_path.to_str().unwrap_or_default();
 
     match data.lsp_manager.lock() {
         Ok(lsp_manager) => {
             match lsp_manager
-                .get_definition(
+                .definition(
                     full_path_str,
                     Position {
-                        line: info.line,
-                        character: info.character,
+                        line: info.position.line,
+                        character: info.position.character,
                     },
                 )
                 .await
             {
-                Ok(definitions) => HttpResponse::Ok().json(definitions),
+                Ok(definitions) => HttpResponse::Ok().json(DefinitionResponse::from((
+                    definitions,
+                    info.include_raw_response,
+                ))),
                 Err(e) => {
                     error!("Failed to get definition: {}", e);
                     HttpResponse::InternalServerError().body(e.to_string())
@@ -114,7 +113,7 @@ async fn get_definition(
     path = "/file-symbols",
     params(FileSymbolsRequest),
     responses(
-        (status = 200, description = "Symbols retrieved successfully", body = String),
+        (status = 200, description = "Symbols retrieved successfully", body = SymbolResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -135,7 +134,11 @@ async fn file_symbols(
     };
 
     match result {
-        Ok(symbols) => HttpResponse::Ok().json(symbols),
+        Ok(symbols) => HttpResponse::Ok().json(SymbolResponse::from((
+            symbols,
+            info.file_path.to_owned(),
+            info.include_raw_response,
+        ))),
         Err(e) => {
             error!("Failed to get symbols: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get symbols: {}", e))
@@ -148,7 +151,7 @@ async fn file_symbols(
     path = "/workspace-symbols",
     params(WorkspaceSymbolsRequest),
     responses(
-        (status = 200, description = "Workspace symbols retrieved successfully", body = String),
+        (status = 200, description = "Workspace symbols retrieved successfully", body = SymbolResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -168,7 +171,9 @@ async fn workspace_symbols(
     };
 
     match result {
-        Ok(symbols) => HttpResponse::Ok().json(symbols),
+        Ok(symbols) => {
+            HttpResponse::Ok().json(SymbolResponse::from((symbols, info.include_raw_response)))
+        }
         Err(e) => {
             error!("Failed to get workspace symbols: {}", e);
             HttpResponse::InternalServerError()
@@ -182,37 +187,45 @@ async fn workspace_symbols(
     path = "/references",
     params(GetReferencesRequest),
     responses(
-        (status = 200, description = "References retrieved successfully", body = String),
+        (status = 200, description = "References retrieved successfully", body = ReferenceResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn get_references(
+async fn references(
     data: web::Data<AppState>,
     info: web::Query<GetReferencesRequest>,
 ) -> HttpResponse {
     info!(
-        "Received get_references request for file: {}, line: {}, character: {}",
-        info.file_path, info.line, info.character
+        "Received references request for file: {}, line: {}, character: {}",
+        info.symbol_identifier_position.path,
+        info.symbol_identifier_position.line,
+        info.symbol_identifier_position.character
     );
-    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
-    let full_path_str = full_path.to_str().unwrap_or("");
+    let full_path = Path::new(&MOUNT_DIR).join(&info.symbol_identifier_position.path);
+    let full_path_str = match full_path.to_str() {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert path to string");
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
-        .get_references(
+        .references(
             full_path_str,
             Position {
-                line: info.line,
-                character: info.character,
+                line: info.symbol_identifier_position.line,
+                character: info.symbol_identifier_position.character,
             },
-            info.include_declaration.unwrap_or_else(|| {
-                error!("include_declaration not provided, defaulting to true");
-                true
-            }),
+            info.include_declaration,
         )
         .await;
     match result {
-        Ok(references) => HttpResponse::Ok().json(references),
+        Ok(references) => HttpResponse::Ok().json(ReferenceResponse::from((
+            references,
+            info.include_raw_response,
+        ))),
         Err(e) => {
             error!("Failed to get references: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get references: {}", e))
@@ -229,6 +242,35 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Logger initialized");
+
+    let cli = Cli::parse();
+
+    let openapi = ApiDoc::openapi();
+
+    if cli.write_openapi {
+        let file_path = PathBuf::from("openapi.json");
+        let openapi_json = serde_json::to_string_pretty(&openapi).unwrap();
+        let mut file = match File::create(&file_path) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Failed to create file: {}", e);
+                return Err(e);
+            }
+        };
+        if let Err(e) = file.write_all(openapi_json.as_bytes()) {
+            eprintln!("Failed to write to file: {}", e);
+            return Err(e);
+        }
+        println!("OpenAPI spec written to: {}", file_path.display());
+        return Ok(());
+    }
+
+    // Check if MOUNT_DIR exists and is mounted
+    if let Err(e) = check_mount_dir() {
+        eprintln!("Error: Your repo isn't mounted at '{}'. Please mount your repository at this location in your docker run or docker compose commands.", MOUNT_DIR);
+        return Err(e);
+    }
+
     let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
     lsp_manager
         .lock()
@@ -236,11 +278,7 @@ async fn main() -> std::io::Result<()> {
         .start_langservers(MOUNT_DIR)
         .await
         .unwrap();
-    let app_state = web::Data::new(AppState {
-        lsp_manager: lsp_manager,
-    });
-
-    let openapi = ApiDoc::openapi();
+    let app_state = web::Data::new(AppState { lsp_manager });
 
     let server = HttpServer::new(move || {
         App::new()
@@ -256,8 +294,8 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/file-symbols").route(web::get().to(file_symbols)))
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
-            .service(web::resource("/definition").route(web::get().to(get_definition)))
-            .service(web::resource("/references").route(web::get().to(get_references)))
+            .service(web::resource("/definition").route(web::get().to(definition)))
+            .service(web::resource("/references").route(web::get().to(references)))
     })
     .bind("0.0.0.0:8080")?;
 
