@@ -116,16 +116,16 @@ impl From<WorkspaceSymbol> for Symbol {
 }
 
 impl From<GotoDefinitionResponse> for DefinitionResponse {
-    fn from(response: lsp_types::GotoDefinitionResponse) -> Self {
+    fn from(response: GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let definitions = match response {
-            lsp_types::GotoDefinitionResponse::Scalar(location) => {
+            GotoDefinitionResponse::Scalar(location) => {
                 vec![FilePosition::from(location)]
             }
-            lsp_types::GotoDefinitionResponse::Array(locations) => {
+            GotoDefinitionResponse::Array(locations) => {
                 locations.into_iter().map(FilePosition::from).collect()
             }
-            lsp_types::GotoDefinitionResponse::Link(links) => {
+            GotoDefinitionResponse::Link(links) => {
                 links.into_iter().map(FilePosition::from).collect()
             }
         };
