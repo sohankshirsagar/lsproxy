@@ -247,7 +247,10 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
 fn uri_to_path_str(uri: Url) -> String {
     let path = uri
         .to_file_path()
-        .unwrap_or_else(|_| PathBuf::from(uri.path()));
+        .unwrap_or_else(|e| {
+            warn!("Failed to convert URI to file path: {:?}", e);
+            PathBuf::from(uri.path())
+        });
 
     let mount_dir = Path::new(MOUNT_DIR);
     path.strip_prefix(mount_dir)
