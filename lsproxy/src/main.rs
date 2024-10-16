@@ -73,10 +73,12 @@ async fn get_definition(
 ) -> HttpResponse {
     info!(
         "Received get_definition request for file: {}, line: {}, character: {}",
-        info.file_path, info.line, info.character
+        info.identifier_start_position.path,
+        info.identifier_start_position.line,
+        info.identifier_start_position.character
     );
 
-    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
+    let full_path = Path::new(&MOUNT_DIR).join(&info.identifier_start_position.path);
     let full_path_str = full_path.to_str().unwrap_or_default();
 
     match data.lsp_manager.lock() {
@@ -85,8 +87,8 @@ async fn get_definition(
                 .get_definition(
                     full_path_str,
                     Position {
-                        line: info.line,
-                        character: info.character,
+                        line: info.identifier_start_position.line,
+                        character: info.identifier_start_position.character,
                     },
                 )
                 .await
@@ -189,17 +191,19 @@ async fn get_references(
 ) -> HttpResponse {
     info!(
         "Received get_references request for file: {}, line: {}, character: {}",
-        info.file_path, info.line, info.character
+        info.identifier_start_position.path,
+        info.identifier_start_position.line,
+        info.identifier_start_position.character
     );
-    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
+    let full_path = Path::new(&MOUNT_DIR).join(&info.identifier_start_position.path);
     let full_path_str = full_path.to_str().unwrap_or("");
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
         .get_references(
             full_path_str,
             Position {
-                line: info.line,
-                character: info.character,
+                line: info.identifier_start_position.line,
+                character: info.identifier_start_position.character,
             },
             info.include_declaration.unwrap_or_else(|| {
                 error!("include_declaration not provided, defaulting to true");

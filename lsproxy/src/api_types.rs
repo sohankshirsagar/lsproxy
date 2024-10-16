@@ -13,17 +13,7 @@ use utoipa::{IntoParams, ToSchema};
 pub const MOUNT_DIR: &str = "/mnt/repo";
 
 #[derive(
-    Debug,
-    EnumString,
-    Display,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    Serialize,
-    Deserialize,
-    utoipa::ToSchema,
+    Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema,
 )]
 #[strum(serialize_all = "lowercase")]
 pub enum SupportedLanguages {
@@ -32,14 +22,14 @@ pub enum SupportedLanguages {
     Rust,
 }
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
     pub path: String,
     pub line: u32,
     pub character: u32,
 }
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Symbol {
     pub name: String,
     pub kind: String,
@@ -48,16 +38,12 @@ pub struct Symbol {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetDefinitionRequest {
-    pub file_path: String,
-    pub line: u32,
-    pub character: u32,
+    pub identifier_start_position: FilePosition,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    pub file_path: String,
-    pub line: u32,
-    pub character: u32,
+    pub identifier_start_position: FilePosition,
     pub include_declaration: Option<bool>,
 }
 
@@ -71,19 +57,19 @@ pub struct WorkspaceSymbolsRequest {
     pub query: String,
 }
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DefinitionResponse {
     raw_response: Value,
     definitions: Vec<FilePosition>,
 }
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferenceResponse {
     raw_response: Value,
     references: Vec<FilePosition>,
 }
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SymbolResponse {
     raw_response: Value,
     symbols: Vec<Symbol>,
