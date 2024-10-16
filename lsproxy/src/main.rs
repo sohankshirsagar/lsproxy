@@ -136,7 +136,7 @@ async fn file_symbols(
     match result {
         Ok(symbols) => HttpResponse::Ok().json(SymbolResponse::from((
             symbols,
-            full_path_str,
+            info.file_path.to_owned(),
             info.include_raw_response,
         ))),
         Err(e) => {

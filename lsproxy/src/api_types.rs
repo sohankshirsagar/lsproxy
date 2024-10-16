@@ -209,8 +209,8 @@ impl From<(Vec<WorkspaceSymbolResponse>, bool)> for SymbolResponse {
     }
 }
 
-impl From<(DocumentSymbolResponse, &str, bool)> for SymbolResponse {
-    fn from((response, file_path, include_raw): (DocumentSymbolResponse, &str, bool)) -> Self {
+impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
+    fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
         let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
         let symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
@@ -221,7 +221,7 @@ impl From<(DocumentSymbolResponse, &str, bool)> for SymbolResponse {
                     identifier_start_position: FilePosition::from(symbol.location),
                 })
                 .collect(),
-            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, file_path),
+            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
         };
         SymbolResponse {
             raw_response,
