@@ -18,10 +18,12 @@ pub const MOUNT_DIR: &str = "/mnt/repo";
 )]
 #[strum(serialize_all = "lowercase")]
 pub enum SupportedLanguages {
+    #[serde(rename = "python")]
     Python,
     /// TypeScript and JavaScript are handled by the same langserver
     #[serde(rename = "typescript_javascript")]
     TypeScriptJavaScript,
+    #[serde(rename = "rust")]
     Rust,
 }
 
