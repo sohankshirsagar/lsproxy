@@ -9,7 +9,7 @@ use crate::lsp::languages::{
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
 use log::{debug, warn};
-use lsp_types::Position;
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -108,23 +108,19 @@ impl LspManager {
     pub async fn file_symbols(
         &self,
         file_path: &str,
-    ) -> Result<SymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
         let lsp_type = self.detect_language(&file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
         let document_symbol_response = locked_client.text_document_symbols(file_path).await?;
-        let custom_document_symbol_response = SymbolResponse::new(
-            document_symbol_response,
-            file_path.strip_prefix(MOUNT_DIR).unwrap_or_default(),
-        );
-        Ok(custom_document_symbol_response)
+        Ok(document_symbol_response)
     }
 
     pub async fn get_definition(
         &self,
         file_path: &str,
         position: Position,
-    ) -> Result<DefinitionResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<GotoDefinitionResponse, Box<dyn std::error::Error + Send + Sync>> {
         let lsp_type = self.detect_language(file_path)?;
         if let Some(client) = self.get_client(lsp_type) {
             let mut locked_client = client.lock().await;
@@ -133,7 +129,7 @@ impl LspManager {
                 .await?;
 
             // Convert the LSP response to our custom type
-            Ok(DefinitionResponse::from(lsp_response))
+            Ok(lsp_response)
         } else {
             warn!("No LSP client found for file type {:?}", lsp_type);
             Err("No LSP client found for file type".into())
@@ -143,7 +139,7 @@ impl LspManager {
     pub async fn workspace_symbols(
         &self,
         query: &str,
-    ) -> Result<SymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<Vec<WorkspaceSymbolResponse>, Box<dyn std::error::Error + Send + Sync>> {
         /* This returns results for all langservers*/
         let mut symbols = Vec::new();
         for (lang, client) in self.clients.iter() {
@@ -155,7 +151,7 @@ impl LspManager {
                 Err(e) => warn!("Error requesting workspace symbols for {:?}: {:?}", lang, e),
             }
         }
-        Ok(SymbolResponse::from(symbols))
+        Ok(symbols)
     }
 
     pub fn get_client(
@@ -170,7 +166,7 @@ impl LspManager {
         file_path: &str,
         position: Position,
         include_declaration: bool,
-    ) -> Result<ReferenceResponse, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
         let lsp_type = self.detect_language(file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
@@ -179,7 +175,7 @@ impl LspManager {
             .text_document_reference(file_path, position, include_declaration)
             .await?;
 
-        Ok(ReferenceResponse::from(locations))
+        Ok(locations)
     }
 
     fn detect_language(
