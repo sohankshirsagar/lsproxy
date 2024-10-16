@@ -28,7 +28,7 @@ pub enum SupportedLSP {
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct SimpleLocation {
-    pub uri: String,
+    pub path: String,
     pub identifier_start_line: u32,
     pub identifier_start_character: u32,
 }
@@ -61,7 +61,7 @@ pub struct SimpleSymbolResponse {
 impl From<Location> for SimpleLocation {
     fn from(location: Location) -> Self {
         SimpleLocation {
-            uri: simplify_uri(location.uri),
+            path: uri_to_path_str(location.uri),
             identifier_start_line: location.range.start.line,
             identifier_start_character: location.range.start.character,
         }
@@ -71,7 +71,7 @@ impl From<Location> for SimpleLocation {
 impl From<LocationLink> for SimpleLocation {
     fn from(link: LocationLink) -> Self {
         SimpleLocation {
-            uri: simplify_uri(link.target_uri),
+            path: uri_to_path_str(link.target_uri),
             identifier_start_line: link.target_range.start.line,
             identifier_start_character: link.target_range.start.character,
         }
@@ -84,7 +84,7 @@ impl From<SymbolInformation> for SimpleSymbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
             location: SimpleLocation {
-                uri: symbol.location.uri.to_string(),
+                path: uri_to_path_str(symbol.location.uri),
                 identifier_start_line: symbol.location.range.start.line,
                 identifier_start_character: symbol.location.range.start.character,
             },
@@ -94,12 +94,12 @@ impl From<SymbolInformation> for SimpleSymbol {
 
 impl From<WorkspaceSymbol> for SimpleSymbol {
     fn from(symbol: WorkspaceSymbol) -> Self {
-        let (uri, identifier_start_line, identifier_start_character) = match symbol.location {
+        let (path, identifier_start_line, identifier_start_character) = match symbol.location {
             OneOf::Left(location) => {
-                (location.uri.to_string(), location.range.start.line, location.range.start.character)
+                (uri_to_path_str(location.uri), location.range.start.line, location.range.start.character)
             },
             OneOf::Right(workspace_location) => {
-                (workspace_location.uri.to_string(), 0, 0) // Default to 0 for line and character
+                (uri_to_path_str(workspace_location.uri), 0, 0) // Default to 0 for line and character
             },
         };
 
@@ -107,7 +107,7 @@ impl From<WorkspaceSymbol> for SimpleSymbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
             location: SimpleLocation {
-                uri,
+                path,
                 identifier_start_line,
                 identifier_start_character,
             },
@@ -173,7 +173,7 @@ impl SimpleSymbolResponse {
                     name: symbol.name,
                     kind: symbol_kind_to_string(&symbol.kind).to_string(),
                     location: SimpleLocation {
-                        uri: file_path.to_string(),
+                        path: file_path.to_string(),
                         identifier_start_line: symbol.location.range.start.line,
                         identifier_start_character: symbol.location.range.start.character,
                     }
@@ -188,7 +188,7 @@ impl SimpleSymbolResponse {
     }
 }
 
-fn simplify_uri(uri: Url) -> String {
+fn uri_to_path_str(uri: Url) -> String {
     let path = uri.to_file_path().unwrap_or_else(|_| PathBuf::from(uri.path()));
     let current_dir = std::env::current_dir().unwrap_or_default();
 
@@ -210,7 +210,7 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
             location: SimpleLocation {
-                uri: file_path.to_string(),
+                path: file_path.to_string(),
                 identifier_start_line: symbol.selection_range.start.line,
                 identifier_start_character: symbol.selection_range.start.character,
             },
