@@ -1,7 +1,6 @@
 use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location,
-    LocationLink, OneOf, SymbolInformation, SymbolKind, Url, WorkspaceSymbol,
-    WorkspaceSymbolResponse,
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
+    SymbolInformation, SymbolKind, Url, WorkspaceSymbol, WorkspaceSymbolResponse,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -95,8 +94,12 @@ impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
         };
         let definitions = match response {
             GotoDefinitionResponse::Scalar(location) => vec![FilePosition::from(location)],
-            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(FilePosition::from).collect(),
-            GotoDefinitionResponse::Link(links) => links.into_iter().map(FilePosition::from).collect(),
+            GotoDefinitionResponse::Array(locations) => {
+                locations.into_iter().map(FilePosition::from).collect()
+            }
+            GotoDefinitionResponse::Link(links) => {
+                links.into_iter().map(FilePosition::from).collect()
+            }
         };
         DefinitionResponse {
             raw_response,
@@ -162,7 +165,9 @@ impl From<WorkspaceSymbol> for Symbol {
             identifier_start_position: FilePosition {
                 path: match &symbol.location {
                     lsp_types::OneOf::Left(location) => location.uri.to_string(),
-                    lsp_types::OneOf::Right(workspace_location) => workspace_location.uri.to_string(),
+                    lsp_types::OneOf::Right(workspace_location) => {
+                        workspace_location.uri.to_string()
+                    }
                 },
                 line: match &symbol.location {
                     lsp_types::OneOf::Left(location) => location.range.start.line,
@@ -172,7 +177,7 @@ impl From<WorkspaceSymbol> for Symbol {
                     lsp_types::OneOf::Left(location) => location.range.start.character,
                     lsp_types::OneOf::Right(_) => 0, // Workspace locations don't have a range
                 },
-            }
+            },
         }
     }
 }
@@ -187,8 +192,12 @@ impl From<(Vec<WorkspaceSymbolResponse>, bool)> for SymbolResponse {
         let symbols: Vec<Symbol> = responses
             .into_iter()
             .flat_map(|response| match response {
-                WorkspaceSymbolResponse::Flat(symbols) => symbols.into_iter().map(Symbol::from).collect::<Vec<_>>(),
-                WorkspaceSymbolResponse::Nested(symbols) => symbols.into_iter().map(Symbol::from).collect::<Vec<_>>(),
+                WorkspaceSymbolResponse::Flat(symbols) => {
+                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
+                }
+                WorkspaceSymbolResponse::Nested(symbols) => {
+                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
+                }
             })
             .collect();
 

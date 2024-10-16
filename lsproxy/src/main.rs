@@ -73,9 +73,7 @@ async fn get_definition(
 ) -> HttpResponse {
     info!(
         "Received get_definition request for file: {}, line: {}, character: {}",
-        info.position.path,
-        info.position.line,
-        info.position.character
+        info.position.path, info.position.line, info.position.character
     );
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.position.path);
@@ -93,7 +91,10 @@ async fn get_definition(
                 )
                 .await
             {
-                Ok(definitions) => HttpResponse::Ok().json(DefinitionResponse::from((definitions, info.include_raw_response))),
+                Ok(definitions) => HttpResponse::Ok().json(DefinitionResponse::from((
+                    definitions,
+                    info.include_raw_response,
+                ))),
                 Err(e) => {
                     error!("Failed to get definition: {}", e);
                     HttpResponse::InternalServerError().body(e.to_string())
@@ -133,7 +134,11 @@ async fn file_symbols(
     };
 
     match result {
-        Ok(symbols) => HttpResponse::Ok().json(SymbolResponse::from((symbols, full_path_str, info.include_raw_response))),
+        Ok(symbols) => HttpResponse::Ok().json(SymbolResponse::from((
+            symbols,
+            full_path_str,
+            info.include_raw_response,
+        ))),
         Err(e) => {
             error!("Failed to get symbols: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get symbols: {}", e))
@@ -166,7 +171,9 @@ async fn workspace_symbols(
     };
 
     match result {
-        Ok(symbols) => HttpResponse::Ok().json(SymbolResponse::from((symbols, info.include_raw_response))),
+        Ok(symbols) => {
+            HttpResponse::Ok().json(SymbolResponse::from((symbols, info.include_raw_response)))
+        }
         Err(e) => {
             error!("Failed to get workspace symbols: {}", e);
             HttpResponse::InternalServerError()
@@ -212,7 +219,10 @@ async fn get_references(
         )
         .await;
     match result {
-        Ok(references) => HttpResponse::Ok().json(ReferenceResponse::from((references, info.include_raw_response))),
+        Ok(references) => HttpResponse::Ok().json(ReferenceResponse::from((
+            references,
+            info.include_raw_response,
+        ))),
         Err(e) => {
             error!("Failed to get references: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get references: {}", e))

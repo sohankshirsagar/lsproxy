@@ -1,6 +1,4 @@
-use crate::api_types::{
-    DefinitionResponse, ReferenceResponse, SupportedLanguages, SymbolResponse, MOUNT_DIR,
-};
+use crate::api_types::SupportedLanguages;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
@@ -9,7 +7,9 @@ use crate::lsp::languages::{
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
 use log::{debug, warn};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse};
+use lsp_types::{
+    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
+};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -143,7 +143,10 @@ impl LspManager {
         /* This returns results for all langservers*/
         let mut symbols = Vec::new();
         for (lang, client) in self.clients.iter() {
-            debug!("Requesting workspace symbols with query: {} for {:?}", query, lang);
+            debug!(
+                "Requesting workspace symbols with query: {} for {:?}",
+                query, lang
+            );
             let mut locked_client = client.lock().await;
             let client_symbols = locked_client.workspace_symbols(query).await;
             match client_symbols {
