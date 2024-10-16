@@ -15,11 +15,11 @@ use utoipa_swagger_ui::SwaggerUi;
 mod lsp;
 mod utils;
 
-use crate::lsp::manager::LspManager;
-use crate::lsp::types::{
-    SimpleGotoDefinitionResponse, SimpleLocation, SimpleReferenceResponse, SimpleSymbol,
-    SimpleSymbolResponse, SupportedLSP, MOUNT_DIR,
+use crate::lsp::api_types::{
+    GotoDefinitionResponse, Location, ReferenceResponse, SupportedLSP, Symbol, SymbolResponse,
+    MOUNT_DIR,
 };
+use crate::lsp::manager::LspManager;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -30,7 +30,7 @@ use crate::lsp::types::{
         get_references,
     ),
     components(
-        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, SimpleGotoDefinitionResponse, SimpleSymbolResponse, SimpleReferenceResponse, SimpleLocation, SimpleSymbol)
+        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, GotoDefinitionResponse, ReferenceResponse, SymbolResponse, Location, Symbol)
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
