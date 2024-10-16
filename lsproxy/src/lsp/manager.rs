@@ -6,7 +6,7 @@ use crate::lsp::languages::{
 };
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
-use log::{debug, warn};
+use log::{debug, error, warn};
 use lsp_types::{
     DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
 };
@@ -151,7 +151,7 @@ impl LspManager {
             let client_symbols = locked_client.workspace_symbols(query).await;
             match client_symbols {
                 Ok(response) => symbols.push(response),
-                Err(e) => warn!("Error requesting workspace symbols for {:?}: {:?}", lang, e),
+                Err(e) => error!("Error requesting workspace symbols for {:?}: {:?}. Continuing...", lang, e),
             }
         }
         Ok(symbols)
