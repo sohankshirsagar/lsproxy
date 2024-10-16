@@ -7,6 +7,7 @@ use lsp_types::Position;
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Write;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use utoipa::{IntoParams, OpenApi, ToSchema};
@@ -21,6 +22,11 @@ use crate::api_types::{
     SymbolResponse, MOUNT_DIR,
 };
 use crate::lsp::manager::LspManager;
+
+fn check_mount_dir() -> std::io::Result<()> {
+    fs::read_dir(MOUNT_DIR)?;
+    Ok(())
+}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -244,6 +250,12 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     info!("Logger initialized");
+
+    // Check if MOUNT_DIR exists and is mounted
+    if let Err(e) = check_mount_dir() {
+        eprintln!("Error: Your repo isn't mounted at '{}'. Please mount your repository at this location in your docker run or docker compose commands.", MOUNT_DIR);
+        return Err(e);
+    }
 
     let cli = Cli::parse();
 
