@@ -11,6 +11,9 @@ pub struct RustAnalyzerClient {
     json_rpc: JsonRpcHandler,
 }
 
+pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
+pub const RUST_ANALYZER_FILE_PATTERNS: &[&str] = &["**/*.rs"];
+
 #[async_trait]
 impl LspClient for RustAnalyzerClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
@@ -22,7 +25,10 @@ impl LspClient for RustAnalyzerClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        vec!["Cargo.toml".to_string()]
+        RUST_ANALYZER_ROOT_FILES
+            .iter()
+            .map(|&s| s.to_owned())
+            .collect()
     }
 
     async fn setup_workspace(

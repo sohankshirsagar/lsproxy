@@ -1,4 +1,4 @@
-use std::{error::Error, process::Stdio, vec};
+use std::{error::Error, process::Stdio};
 
 use async_trait::async_trait;
 use log::debug;
@@ -14,6 +14,11 @@ pub struct TypeScriptLanguageClient {
     json_rpc: JsonRpcHandler,
 }
 
+pub const TYPESCRIPT_ROOT_FILES: &[&str] =
+    &["tsconfig.json", "jsconfig.json", "package.json", ".git"];
+
+pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
+
 #[async_trait]
 impl LspClient for TypeScriptLanguageClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
@@ -25,12 +30,10 @@ impl LspClient for TypeScriptLanguageClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        vec![
-            "tsconfig.json".to_string(),
-            "jsconfig.json".to_string(),
-            "package.json".to_string(),
-            ".git".to_string(),
-        ]
+        TYPESCRIPT_ROOT_FILES
+            .iter()
+            .map(|&s| s.to_owned())
+            .collect()
     }
 
     async fn setup_workspace(

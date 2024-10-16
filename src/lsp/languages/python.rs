@@ -5,6 +5,18 @@ use tokio::process::Command;
 
 use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
 
+pub const PYRIGHT_ROOT_FILES: &[&str] = &[
+    ".git",
+    "pyproject.toml",
+    "setup.py",
+    "setup.cfg",
+    "requirements.txt",
+    "Pipfile",
+    "pyrightconfig.json",
+];
+
+pub const PYRIGHT_FILE_PATTERNS: &[&str] = &["**/*.py"];
+
 pub struct PyrightClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
@@ -21,28 +33,8 @@ impl LspClient for PyrightClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        vec![
-            ".git".to_string(),
-            "pyproject.toml".to_string(),
-            "setup.py".to_string(),
-            "setup.cfg".to_string(),
-            "requirements.txt".to_string(),
-            "Pipfile".to_string(),
-            "pyrightconfig.json".to_string(),
-        ]
+        PYRIGHT_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
     }
-
-    // async fn workspace_symbols(
-    //     &mut self,
-    //     query: &str,
-    // ) -> Result<WorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
-    //     if query.is_empty() || query == "*" {
-    //         warn!(
-    //             "Pyright doesn't support wildcards in workspace symbols query, expect empty result"
-    //         );
-    //     }
-    //     super::LspClient::workspace_symbols(self, query).await
-    // }
 }
 
 impl PyrightClient {

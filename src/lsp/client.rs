@@ -5,14 +5,24 @@ use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
-    ClientCapabilities, Command, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
+    ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext, ReferenceParams, TextDocumentClientCapabilities,
-    TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
-    WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext,
+    ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
+    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
+    WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
 use std::path::Path;
+
+pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "**/dist",
+    "**/target",
+    ".git",
+];
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -32,6 +42,7 @@ pub trait LspClient: Send {
             }),
             ..Default::default()
         });
+
         let params = InitializeParams {
             capabilities: capabilities,
             workspace_folders: Some(workspace_folders.clone()),
@@ -289,16 +300,13 @@ pub trait LspClient: Send {
     }
 
     fn get_exclude_patterns(&mut self) -> Vec<String> {
-        vec![
-            "**/node_modules".to_string(),
-            "**/__pycache__".to_string(),
-            "**/.*".to_string(),
-            "**/dist".to_string(),
-            "**/target".to_string(),
-            ".git".to_string(),
-        ]
+        DEFAULT_EXCLUDE_PATTERNS
+            .iter()
+            .map(|&s| s.to_owned())
+            .collect()
     }
 
+    #[allow(unused)]
     async fn setup_workspace(
         &mut self,
         root_path: &str,
@@ -347,10 +355,5 @@ pub trait LspClient: Send {
         }
 
         Ok(workspace_folders.into_iter().collect())
-    }
-
-    fn list_commands(&mut self) -> Result<Vec<Command>, Box<dyn Error + Send + Sync>> {
-        /* shows which commands are available for this language server */
-        Ok(vec![])
     }
 }

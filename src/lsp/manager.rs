@@ -1,11 +1,16 @@
 use crate::lsp::client::LspClient;
-use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
 use crate::lsp::types::{CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, CustomReferenceResponse, CustomWorkspaceSymbolResponse, SupportedLSP};
-use log::{debug, warn};
 use lsp_types::Position;
+use crate::lsp::languages::{
+    PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
+    RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
+};
+use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
+use crate::utils::file_utils::search_files;
+use log::{debug, warn};
 use std::collections::HashMap;
 use std::error::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -20,12 +25,50 @@ impl LspManager {
         }
     }
 
-    pub async fn start_langservers(
-        &mut self,
-        repo_path: &str,
-        lsps: &[SupportedLSP],
-    ) -> Result<(), String> {
-        for &lsp in lsps {
+    fn detect_languages(&self, root_path: &str) -> Vec<SupportedLSP> {
+        let mut lsps = Vec::new();
+        for lsp in [
+            SupportedLSP::Python,
+            SupportedLSP::TypeScriptJavaScript,
+            SupportedLSP::Rust,
+        ] {
+            let patterns = match lsp {
+                SupportedLSP::Python => PYRIGHT_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
+                SupportedLSP::TypeScriptJavaScript => TYPESCRIPT_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
+                SupportedLSP::Rust => RUST_ANALYZER_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
+            };
+            if search_files(
+                Path::new(root_path),
+                patterns,
+                DEFAULT_EXCLUDE_PATTERNS
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            )
+            .map_err(|e| warn!("Error searching files: {}", e))
+            .unwrap_or_default()
+            .len()
+                > 0
+            {
+                lsps.push(lsp);
+            }
+        }
+        debug!("Starting LSPs: {:?}", lsps);
+        lsps
+    }
+
+    pub async fn start_langservers(&mut self, repo_path: &str) -> Result<(), String> {
+        let lsps = self.detect_languages(repo_path);
+        for lsp in lsps {
             if self.get_client(lsp).is_some() {
                 continue;
             }
@@ -126,7 +169,6 @@ impl LspManager {
 
         Ok(CustomReferenceResponse::from(locations))
     }
-
 
     fn detect_language(
         &self,

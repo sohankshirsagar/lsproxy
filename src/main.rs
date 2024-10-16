@@ -21,17 +21,16 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, C
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        start_langservers,
         file_symbols,
         workspace_symbols,
         get_definition,
         get_references,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, CustomReferenceResponse, CustomWorkspaceSymbolResponse, SimplifiedLocation, SimplifiedDocumentSymbol, SimplifiedWorkspaceSymbol)
+        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, CustomReferenceResponse, CustomWorkspaceSymbolResponse, SimplifiedLocation, SimplifiedDocumentSymbol, SimplifiedWorkspaceSymbol)
     ),
     tags(
-        (name = "lsp-proxy-api", description = "LSP Proxy API")
+        (name = "lsproxy-api", description = "LSP Proxy API")
     )
 )]
 struct ApiDoc;
@@ -49,11 +48,6 @@ struct GetReferencesRequest {
     line: u32,
     character: u32,
     include_declaration: Option<bool>,
-}
-
-#[derive(Deserialize, ToSchema)]
-struct LspInitRequest {
-    lsp_types: Vec<SupportedLSP>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -122,37 +116,6 @@ async fn get_definition(
         Err(e) => {
             error!("Failed to lock lsp_manager: {:?}", e);
             HttpResponse::InternalServerError().finish()
-        }
-    }
-}
-#[utoipa::path(
-    post,
-    path = "/start-langservers",
-    request_body = LspInitRequest,
-    responses(
-        (status = 200, description = "LSP server started successfully"),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-async fn start_langservers(
-    data: web::Data<AppState>,
-    info: web::Json<LspInitRequest>,
-) -> HttpResponse {
-    info!("Received LSP init request");
-
-    let result = {
-        let mut lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager
-            .start_langservers(MOUNT_DIR, &info.lsp_types)
-            .await
-    };
-
-    match result {
-        Ok(_) => HttpResponse::Ok().body("LSP started successfully"),
-        Err(e) => {
-            error!("Failed to start LSP: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to initialize LSP: {}", e))
         }
     }
 }
@@ -268,7 +231,6 @@ async fn get_references(
     }
 }
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting...");
@@ -281,8 +243,15 @@ async fn main() -> std::io::Result<()> {
 
     let cli = Cli::parse();
 
+    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
+    lsp_manager
+        .lock()
+        .unwrap()
+        .start_langservers(MOUNT_DIR)
+        .await
+        .unwrap();
     let app_state = web::Data::new(AppState {
-        lsp_manager: Arc::new(Mutex::new(LspManager::new())),
+        lsp_manager: lsp_manager,
     });
 
     let openapi = ApiDoc::openapi();
@@ -308,7 +277,6 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(web::resource("/start-langservers").route(web::post().to(start_langservers)))
             .service(web::resource("/file-symbols").route(web::get().to(file_symbols)))
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
             .service(web::resource("/definition").route(web::get().to(get_definition)))
