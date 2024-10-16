@@ -49,7 +49,7 @@ impl LspClient for TypeScriptLanguageClient {
          */
         debug!("Setting up workspace for TypeScript client");
         let text_document_items =
-            TypeScriptLanguageClient::get_files_for_workspace_typescript(root_path).unwrap();
+            TypeScriptLanguageClient::get_text_document_items_to_open(root_path).unwrap();
         for item in text_document_items {
             debug!("Sent 'didOpen' for file: {}", item.uri.to_string());
             self.text_document_did_open(item).await?;
@@ -81,7 +81,7 @@ impl TypeScriptLanguageClient {
         })
     }
 
-    pub fn get_files_for_workspace_typescript(
+    pub fn get_text_document_items_to_open(
         repo_path: &str,
     ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
         let tsconfig_path = Path::new(repo_path).join("tsconfig.json");
