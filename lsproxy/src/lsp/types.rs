@@ -131,6 +131,17 @@ impl From<GotoDefinitionResponse> for SimpleGotoDefinitionResponse{
     }
 }
 
+impl From<Vec<Location>> for SimpleReferenceResponse {
+    fn from(locations: Vec<Location>) -> Self {
+        let raw_response = serde_json::to_value(&locations).unwrap_or_default();
+        let references = locations.into_iter().map(SimpleLocation::from).collect();
+        SimpleReferenceResponse {
+            raw_response,
+            references,
+        }
+    }
+}
+
 impl From<Vec<WorkspaceSymbolResponse>> for SimpleSymbolResponse {
     fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
         let raw_response = serde_json::to_value(&responses).unwrap_or_default();
@@ -148,17 +159,6 @@ impl From<Vec<WorkspaceSymbolResponse>> for SimpleSymbolResponse {
         SimpleSymbolResponse {
             raw_response,
             symbols,
-        }
-    }
-}
-
-impl From<Vec<Location>> for SimpleReferenceResponse {
-    fn from(locations: Vec<Location>) -> Self {
-        let raw_response = serde_json::to_value(&locations).unwrap_or_default();
-        let references = locations.into_iter().map(SimpleLocation::from).collect();
-        SimpleReferenceResponse {
-            raw_response,
-            references,
         }
     }
 }
