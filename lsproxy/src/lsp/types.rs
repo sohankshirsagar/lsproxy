@@ -203,18 +203,12 @@ fn uri_to_path_str(uri: Url) -> String {
     let path = uri
         .to_file_path()
         .unwrap_or_else(|_| PathBuf::from(uri.path()));
-    let current_dir = std::env::current_dir().unwrap_or_default();
-
-    let simplified = path
-        .strip_prefix(&current_dir)
-        .map(|p| p.to_path_buf())
-        .unwrap_or(path);
 
     let mount_dir = Path::new(MOUNT_DIR);
-    simplified
+    path
         .strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| simplified.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| path.to_string_lossy().into_owned())
 }
 
 fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<SimpleSymbol> {
