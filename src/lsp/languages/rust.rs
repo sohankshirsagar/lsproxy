@@ -1,7 +1,6 @@
 use std::{error::Error, process::Stdio};
 
 use async_trait::async_trait;
-use lsp_types::{Url, WorkspaceFolder};
 use tokio::process::Command;
 
 use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
