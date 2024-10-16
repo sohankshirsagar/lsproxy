@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from openapi_client.models.simple_location import SimpleLocation
+from lsproxy_sdk.models.simple_location import SimpleLocation
 
 # TODO update the JSON string below
 json = "{}"

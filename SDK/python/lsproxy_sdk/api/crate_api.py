@@ -19,13 +19,13 @@ from typing_extensions import Annotated
 from pydantic import Field, StrictBool, StrictStr
 from typing import Optional
 from typing_extensions import Annotated
-from openapi_client.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
-from openapi_client.models.simple_reference_response import SimpleReferenceResponse
-from openapi_client.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
+from lsproxy_sdk.models.simple_reference_response import SimpleReferenceResponse
+from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
 
-from openapi_client.api_client import ApiClient, RequestSerialized
-from openapi_client.api_response import ApiResponse
-from openapi_client.rest import RESTResponseType
+from lsproxy_sdk.api_client import ApiClient, RequestSerialized
+from lsproxy_sdk.api_response import ApiResponse
+from lsproxy_sdk.rest import RESTResponseType
 
 
 class CrateApi:

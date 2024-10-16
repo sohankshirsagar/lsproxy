@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from openapi_client.models.file_symbols_request import FileSymbolsRequest
+from lsproxy_sdk.models.file_symbols_request import FileSymbolsRequest
 
 # TODO update the JSON string below
 json = "{}"

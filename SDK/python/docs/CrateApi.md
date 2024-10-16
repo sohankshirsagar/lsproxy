@@ -1,4 +1,4 @@
-# openapi_client.CrateApi
+# lsproxy_sdk.CrateApi
 
 All URIs are relative to *http://localhost*
 
@@ -19,22 +19,22 @@ Method | HTTP request | Description
 
 
 ```python
-import openapi_client
-from openapi_client.models.simple_symbol_response import SimpleSymbolResponse
-from openapi_client.rest import ApiException
+import lsproxy_sdk
+from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = openapi_client.Configuration(
+configuration = lsproxy_sdk.Configuration(
     host = "http://localhost"
 )
 
 
 # Enter a context with an instance of the API client
-with openapi_client.ApiClient(configuration) as api_client:
+with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = openapi_client.CrateApi(api_client)
+    api_instance = lsproxy_sdk.CrateApi(api_client)
     file_path = 'file_path_example' # str | 
 
     try:
@@ -86,22 +86,22 @@ No authorization required
 
 
 ```python
-import openapi_client
-from openapi_client.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
-from openapi_client.rest import ApiException
+import lsproxy_sdk
+from lsproxy_sdk.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
+from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = openapi_client.Configuration(
+configuration = lsproxy_sdk.Configuration(
     host = "http://localhost"
 )
 
 
 # Enter a context with an instance of the API client
-with openapi_client.ApiClient(configuration) as api_client:
+with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = openapi_client.CrateApi(api_client)
+    api_instance = lsproxy_sdk.CrateApi(api_client)
     file_path = 'file_path_example' # str | 
     line = 56 # int | 
     character = 56 # int | 
@@ -157,22 +157,22 @@ No authorization required
 
 
 ```python
-import openapi_client
-from openapi_client.models.simple_reference_response import SimpleReferenceResponse
-from openapi_client.rest import ApiException
+import lsproxy_sdk
+from lsproxy_sdk.models.simple_reference_response import SimpleReferenceResponse
+from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = openapi_client.Configuration(
+configuration = lsproxy_sdk.Configuration(
     host = "http://localhost"
 )
 
 
 # Enter a context with an instance of the API client
-with openapi_client.ApiClient(configuration) as api_client:
+with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = openapi_client.CrateApi(api_client)
+    api_instance = lsproxy_sdk.CrateApi(api_client)
     file_path = 'file_path_example' # str | 
     line = 56 # int | 
     character = 56 # int | 
@@ -230,22 +230,22 @@ No authorization required
 
 
 ```python
-import openapi_client
-from openapi_client.models.simple_symbol_response import SimpleSymbolResponse
-from openapi_client.rest import ApiException
+import lsproxy_sdk
+from lsproxy_sdk.models.simple_symbol_response import SimpleSymbolResponse
+from lsproxy_sdk.rest import ApiException
 from pprint import pprint
 
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = openapi_client.Configuration(
+configuration = lsproxy_sdk.Configuration(
     host = "http://localhost"
 )
 
 
 # Enter a context with an instance of the API client
-with openapi_client.ApiClient(configuration) as api_client:
+with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = openapi_client.CrateApi(api_client)
+    api_instance = lsproxy_sdk.CrateApi(api_client)
     query = 'query_example' # str | 
 
     try:

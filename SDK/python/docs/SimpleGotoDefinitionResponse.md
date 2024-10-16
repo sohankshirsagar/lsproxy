@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from openapi_client.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
+from lsproxy_sdk.models.simple_goto_definition_response import SimpleGotoDefinitionResponse
 
 # TODO update the JSON string below
 json = "{}"

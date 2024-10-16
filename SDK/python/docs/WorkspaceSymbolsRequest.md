@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from openapi_client.models.workspace_symbols_request import WorkspaceSymbolsRequest
+from lsproxy_sdk.models.workspace_symbols_request import WorkspaceSymbolsRequest
 
 # TODO update the JSON string below
 json = "{}"

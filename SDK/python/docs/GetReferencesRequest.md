@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```python
-from openapi_client.models.get_references_request import GetReferencesRequest
+from lsproxy_sdk.models.get_references_request import GetReferencesRequest
 
 # TODO update the JSON string below
 json = "{}"
