@@ -101,7 +101,10 @@ pub struct SymbolResponse {
 impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
     fn from((response, include_raw): (GotoDefinitionResponse, bool)) -> Self {
         let raw_response = if include_raw {
-            Some(to_value(&response).unwrap_or_default())
+            Some(to_value(&response).unwrap_or_else(|e| {
+                warn!("Serialization failed: {:?}", e);
+                Value::Null
+            }))
         } else {
             None
         };
