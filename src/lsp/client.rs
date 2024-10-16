@@ -44,6 +44,12 @@ pub trait LspClient: Send {
             ..Default::default()
         });
 
+        capabilities.experimental = Some(
+            serde_json::json!({
+                "serverStatusNotification": true
+            })
+        );
+
         let params = InitializeParams {
             capabilities: capabilities,
             workspace_folders: Some(workspace_folders.clone()),
