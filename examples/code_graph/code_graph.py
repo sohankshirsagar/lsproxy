@@ -4,45 +4,14 @@ import argparse
 import sys
 from typing import Dict, Any, Optional
 
-from util import SYMBOLKIND_TO_COL_OFFSET
+import openapi_client
+from openapi_client.rest import ApiException
 
 BASE_URL = "http://localhost:8080"  # You can change this to an environment variable if needed
 
-def send_request(endpoint: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """
-    Sends a POST request to the specified endpoint of the LSP Proxy API.
-
-    Args:
-    endpoint (str): The API endpoint (e.g., "/file-symbols", "/references")
-    payload (dict): The request payload
-
-    Returns:
-    dict: The JSON response from the server, or None if an error occurred
-    """
-    url = f"{BASE_URL}{endpoint}"
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
-        return None
-
-def get_file_symbols(file_path: str) -> Optional[Dict[str, Any]]:
-    """Calls the /file-symbols route of the LSP Proxy API."""
-    return send_request("/file-symbols", {"file_path": file_path})
-
-def get_references(file_path: str, line: int, character: int, include_declaration: bool = True) -> Optional[Dict[str, Any]]:
-    """Calls the /references route of the LSP Proxy API."""
-    payload = {
-        "file_path": file_path,
-        "line": line,
-        "character": character,
-        "include_declaration": include_declaration
-    }
-    return send_request("/references", payload)
+configuration = openapi_client.Configuration(
+    host = BASE_URL
+)
 
 def save_edge_data(data: Dict[str, set], output_file: str = 'edge_data.json'):
     graph_data = [{'from': edge[0], 'to': edge[1], 'referenced_symbols': list(referenced_symbols)} for edge, referenced_symbols in data.items()]
@@ -51,27 +20,25 @@ def save_edge_data(data: Dict[str, set], output_file: str = 'edge_data.json'):
     print(f"Dependency data saved to {output_file}")
 
 def process_file(file_path: str):
-    result = get_file_symbols(file_path)
-    edges = {}
-    
-    if result:
-        print("Processing file symbols...")
-        for el in result:
-            name = el["name"]
-            line = el["location"]["range"]["start"]["line"]
-            character = el["location"]["range"]["start"]["character"]
-            character += SYMBOLKIND_TO_COL_OFFSET[el["kind"]]
-            references = get_references(file_path, line, character)
-            if references:
+    with openapi_client.ApiClient(configuration) as api_client:
+        api_instance = openapi_client.CrateApi(api_client)
+    try:
+        edges = {}
+        document_symbols = api_instance.file_symbols(file_path).document_symbols
+
+        if document_symbols:
+            for symbol in document_symbols:
+                name, line, character = symbol.name, symbol.line, symbol.character
+                references = api_instance.get_references(file_path, line, character).references
                 for reference in references:
-                    dest = reference["uri"].replace("file:///mnt/repo/", "")
-                    if dest == file_path:
+                    dest_file = reference.uri
+                    if dest_file == file_path:
                         continue
-                    edges.setdefault((file_path, dest), set()).add(name)
+                    edges.setdefault((file_path, dest_file), set()).add(name)
         
         save_edge_data(edges)
-    else:
-        print("Failed to retrieve file symbols.")
+    except ApiException as e:
+        print("Exception when calling CrateApi->file_symbols: %s\n" % e)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process file symbols and references using LSP Proxy API.")
