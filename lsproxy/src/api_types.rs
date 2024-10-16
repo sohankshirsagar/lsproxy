@@ -1,6 +1,7 @@
+use log::warn;
 use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location as LspLocation,
-    LocationLink, OneOf, SymbolInformation, SymbolKind, Url, WorkspaceSymbol,
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink, OneOf,
+    SymbolInformation, SymbolKind, Url, WorkspaceLocation, WorkspaceSymbol,
     WorkspaceSymbolResponse,
 };
 use serde::{Deserialize, Deserializer, Serialize};
@@ -40,6 +41,8 @@ pub struct Symbol {
 pub struct GetDefinitionRequest {
     #[serde(deserialize_with = "deserialize_file_position")]
     pub position: FilePosition,
+    #[serde(default)]
+    pub include_raw_response: bool,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -47,6 +50,8 @@ pub struct GetReferencesRequest {
     #[serde(deserialize_with = "deserialize_file_position")]
     pub symbol_identifier_position: FilePosition,
     pub include_declaration: Option<bool>,
+    #[serde(default)]
+    pub include_raw_response: bool,
 }
 
 fn deserialize_file_position<'de, D>(deserializer: D) -> Result<FilePosition, D::Error>
@@ -60,33 +65,78 @@ where
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct FileSymbolsRequest {
     pub file_path: String,
+    #[serde(default)]
+    pub include_raw_response: bool,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct WorkspaceSymbolsRequest {
     pub query: String,
+    #[serde(default)]
+    pub include_raw_response: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DefinitionResponse {
-    raw_response: Value,
-    definitions: Vec<FilePosition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub raw_response: Option<Value>,
+    pub definitions: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferenceResponse {
-    raw_response: Value,
-    references: Vec<FilePosition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub raw_response: Option<Value>,
+    pub references: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SymbolResponse {
-    raw_response: Value,
-    symbols: Vec<Symbol>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub raw_response: Option<Value>,
+    pub symbols: Vec<Symbol>,
 }
 
-impl From<LspLocation> for FilePosition {
-    fn from(location: LspLocation) -> Self {
+impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
+    fn from((response, include_raw): (GotoDefinitionResponse, bool)) -> Self {
+        let raw_response = if include_raw {
+            Some(to_value(&response).unwrap_or_default())
+        } else {
+            None
+        };
+        let definitions = match response {
+            GotoDefinitionResponse::Scalar(location) => vec![FilePosition::from(location)],
+            GotoDefinitionResponse::Array(locations) => {
+                locations.into_iter().map(FilePosition::from).collect()
+            }
+            GotoDefinitionResponse::Link(links) => {
+                links.into_iter().map(FilePosition::from).collect()
+            }
+        };
+        DefinitionResponse {
+            raw_response,
+            definitions,
+        }
+    }
+}
+
+impl From<(Vec<Location>, bool)> for ReferenceResponse {
+    fn from((locations, include_raw): (Vec<Location>, bool)) -> Self {
+        let raw_response = if include_raw {
+            Some(to_value(&locations).unwrap_or_default())
+        } else {
+            None
+        };
+        let references = locations.into_iter().map(FilePosition::from).collect();
+        ReferenceResponse {
+            raw_response,
+            references,
+        }
+    }
+}
+
+impl From<Location> for FilePosition {
+    fn from(location: Location) -> Self {
         FilePosition {
             path: uri_to_path_str(location.uri),
             line: location.range.start.line,
@@ -109,78 +159,55 @@ impl From<SymbolInformation> for Symbol {
     fn from(symbol: SymbolInformation) -> Self {
         Symbol {
             name: symbol.name,
-            kind: symbol_kind_to_string(&symbol.kind).to_string(),
+            kind: symbol_kind_to_string(symbol.kind).to_owned(),
             identifier_start_position: FilePosition::from(symbol.location),
+        }
+    }
+}
+
+impl From<WorkspaceLocation> for FilePosition {
+    fn from(location: WorkspaceLocation) -> Self {
+        warn!("WorkspaceLocation does not contain line and character information and will not be shown");
+        FilePosition {
+            path: uri_to_path_str(location.uri),
+            line: 0,
+            character: 0,
         }
     }
 }
 
 impl From<WorkspaceSymbol> for Symbol {
     fn from(symbol: WorkspaceSymbol) -> Self {
-        let (path, identifier_start_line, identifier_start_character) = match symbol.location {
-            OneOf::Left(location) => (
-                uri_to_path_str(location.uri),
-                location.range.start.line,
-                location.range.start.character,
-            ),
-            OneOf::Right(workspace_location) => (uri_to_path_str(workspace_location.uri), 0, 0),
-        };
-
         Symbol {
             name: symbol.name,
-            kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            identifier_start_position: FilePosition {
-                path,
-                line: identifier_start_line,
-                character: identifier_start_character,
+            kind: symbol_kind_to_string(symbol.kind).to_owned(),
+            identifier_start_position: match symbol.location {
+                OneOf::Left(location) => FilePosition::from(location),
+                OneOf::Right(workspace_location) => {
+                    warn!("WorkspaceLocation does not contain line and character information and will not be shown");
+                    FilePosition::from(workspace_location)
+                }
             },
         }
     }
 }
 
-impl From<GotoDefinitionResponse> for DefinitionResponse {
-    fn from(response: GotoDefinitionResponse) -> Self {
-        let raw_response = to_value(&response).unwrap_or_default();
-        let definitions = match response {
-            GotoDefinitionResponse::Scalar(location) => {
-                vec![FilePosition::from(location)]
-            }
-            GotoDefinitionResponse::Array(locations) => {
-                locations.into_iter().map(FilePosition::from).collect()
-            }
-            GotoDefinitionResponse::Link(links) => {
-                links.into_iter().map(FilePosition::from).collect()
-            }
+impl From<(Vec<WorkspaceSymbolResponse>, bool)> for SymbolResponse {
+    fn from((responses, include_raw): (Vec<WorkspaceSymbolResponse>, bool)) -> Self {
+        let raw_response = if include_raw {
+            Some(to_value(&responses).unwrap_or_default())
+        } else {
+            None
         };
-        DefinitionResponse {
-            raw_response,
-            definitions,
-        }
-    }
-}
-
-impl From<Vec<LspLocation>> for ReferenceResponse {
-    fn from(locations: Vec<LspLocation>) -> Self {
-        let raw_response = to_value(&locations).unwrap_or_default();
-        let references = locations.into_iter().map(FilePosition::from).collect();
-        ReferenceResponse {
-            raw_response,
-            references,
-        }
-    }
-}
-
-impl From<Vec<WorkspaceSymbolResponse>> for SymbolResponse {
-    fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
-        let raw_response = to_value(&responses).unwrap_or_default();
         let symbols: Vec<Symbol> = responses
             .into_iter()
             .flat_map(|response| match response {
                 WorkspaceSymbolResponse::Flat(symbols) => {
                     symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
                 }
-                WorkspaceSymbolResponse::Nested(symbols) => {
-                    symbols.into_iter().map(Symbol::from).collect()
+                WorkspaceSymbolResponse::Nested(symbols) =>{
+                    warn!("Nested symbols are missing line and character information and will not be shown");
+                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
                 }
             })
             .collect();
@@ -192,23 +219,19 @@ impl From<Vec<WorkspaceSymbolResponse>> for SymbolResponse {
     }
 }
 
-impl SymbolResponse {
-    pub fn new(response: DocumentSymbolResponse, file_path: &str) -> Self {
-        let raw_response = to_value(&response).unwrap_or_default();
+impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
+    fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
+        let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
         let symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
                 .into_iter()
                 .map(|symbol| Symbol {
                     name: symbol.name,
-                    kind: symbol_kind_to_string(&symbol.kind).to_string(),
-                    identifier_start_position: FilePosition {
-                        path: file_path.to_string(),
-                        line: symbol.location.range.start.line,
-                        character: symbol.location.range.start.character,
-                    },
+                    kind: symbol_kind_to_string(symbol.kind).to_owned(),
+                    identifier_start_position: FilePosition::from(symbol.location),
                 })
                 .collect(),
-            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, file_path),
+            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
         };
         SymbolResponse {
             raw_response,
@@ -232,9 +255,9 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
     fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<Symbol>) {
         result.push(Symbol {
             name: symbol.name,
-            kind: symbol_kind_to_string(&symbol.kind).to_string(),
+            kind: symbol_kind_to_string(symbol.kind).to_owned(),
             identifier_start_position: FilePosition {
-                path: file_path.to_string(),
+                path: file_path.to_owned(),
                 line: symbol.selection_range.start.line,
                 character: symbol.selection_range.start.character,
             },
@@ -252,34 +275,34 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
     flattened
 }
 
-fn symbol_kind_to_string(kind: &SymbolKind) -> &str {
+fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
     match kind {
-        &SymbolKind::FILE => "file",
-        &SymbolKind::MODULE => "module",
-        &SymbolKind::NAMESPACE => "namespace",
-        &SymbolKind::PACKAGE => "package",
-        &SymbolKind::CLASS => "class",
-        &SymbolKind::METHOD => "method",
-        &SymbolKind::PROPERTY => "property",
-        &SymbolKind::FIELD => "field",
-        &SymbolKind::CONSTRUCTOR => "constructor",
-        &SymbolKind::ENUM => "enum",
-        &SymbolKind::INTERFACE => "interface",
-        &SymbolKind::FUNCTION => "function",
-        &SymbolKind::VARIABLE => "variable",
-        &SymbolKind::CONSTANT => "constant",
-        &SymbolKind::STRING => "string",
-        &SymbolKind::NUMBER => "number",
-        &SymbolKind::BOOLEAN => "boolean",
-        &SymbolKind::ARRAY => "array",
-        &SymbolKind::OBJECT => "object",
-        &SymbolKind::KEY => "key",
-        &SymbolKind::NULL => "null",
-        &SymbolKind::ENUM_MEMBER => "enum_member",
-        &SymbolKind::STRUCT => "struct",
-        &SymbolKind::EVENT => "event",
-        &SymbolKind::OPERATOR => "operator",
-        &SymbolKind::TYPE_PARAMETER => "type_parameter",
-        _ => "unknown", // Default case for any future additions
+        SymbolKind::FILE => "file",
+        SymbolKind::MODULE => "module",
+        SymbolKind::NAMESPACE => "namespace",
+        SymbolKind::PACKAGE => "package",
+        SymbolKind::CLASS => "class",
+        SymbolKind::METHOD => "method",
+        SymbolKind::PROPERTY => "property",
+        SymbolKind::FIELD => "field",
+        SymbolKind::CONSTRUCTOR => "constructor",
+        SymbolKind::ENUM => "enum",
+        SymbolKind::INTERFACE => "interface",
+        SymbolKind::FUNCTION => "function",
+        SymbolKind::VARIABLE => "variable",
+        SymbolKind::CONSTANT => "constant",
+        SymbolKind::STRING => "string",
+        SymbolKind::NUMBER => "number",
+        SymbolKind::BOOLEAN => "boolean",
+        SymbolKind::ARRAY => "array",
+        SymbolKind::OBJECT => "object",
+        SymbolKind::KEY => "key",
+        SymbolKind::NULL => "null",
+        SymbolKind::ENUM_MEMBER => "enum_member",
+        SymbolKind::STRUCT => "struct",
+        SymbolKind::EVENT => "event",
+        SymbolKind::OPERATOR => "operator",
+        SymbolKind::TYPE_PARAMETER => "type_parameter",
+        _ => "unknown",
     }
 }
