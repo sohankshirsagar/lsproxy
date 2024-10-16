@@ -31,7 +31,7 @@ pub enum SupportedLanguages {
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct Location {
+pub struct FilePosition {
     pub path: String,
     pub line: u32,
     pub character: u32,
@@ -41,19 +41,19 @@ pub struct Location {
 pub struct Symbol {
     pub name: String,
     pub kind: String,
-    pub identifier_start_location: Location,
+    pub identifier_start_position: FilePosition,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct DefinitionResponse {
     raw_response: serde_json::Value,
-    definitions: Vec<Location>,
+    definitions: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct ReferenceResponse {
     raw_response: serde_json::Value,
-    references: Vec<Location>,
+    references: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
@@ -62,9 +62,9 @@ pub struct SymbolResponse {
     symbols: Vec<Symbol>,
 }
 
-impl From<LspLocation> for Location {
+impl From<LspLocation> for FilePosition {
     fn from(location: LspLocation) -> Self {
-        Location {
+        FilePosition {
             path: uri_to_path_str(location.uri),
             line: location.range.start.line,
             character: location.range.start.character,
@@ -72,9 +72,9 @@ impl From<LspLocation> for Location {
     }
 }
 
-impl From<LocationLink> for Location {
+impl From<LocationLink> for FilePosition {
     fn from(link: LocationLink) -> Self {
-        Location {
+        FilePosition {
             path: uri_to_path_str(link.target_uri),
             line: link.target_range.start.line,
             character: link.target_range.start.character,
@@ -87,7 +87,7 @@ impl From<SymbolInformation> for Symbol {
         Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            identifier_start_location: Location::from(symbol.location),
+            identifier_start_position: FilePosition::from(symbol.location),
         }
     }
 }
@@ -106,7 +106,7 @@ impl From<WorkspaceSymbol> for Symbol {
         Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            identifier_start_location: Location {
+            identifier_start_position: FilePosition {
                 path,
                 line: identifier_start_line,
                 character: identifier_start_character,
@@ -119,12 +119,14 @@ impl From<GotoDefinitionResponse> for DefinitionResponse {
     fn from(response: lsp_types::GotoDefinitionResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let definitions = match response {
-            lsp_types::GotoDefinitionResponse::Scalar(location) => vec![Location::from(location)],
+            lsp_types::GotoDefinitionResponse::Scalar(location) => {
+                vec![FilePosition::from(location)]
+            }
             lsp_types::GotoDefinitionResponse::Array(locations) => {
-                locations.into_iter().map(Location::from).collect()
+                locations.into_iter().map(FilePosition::from).collect()
             }
             lsp_types::GotoDefinitionResponse::Link(links) => {
-                links.into_iter().map(Location::from).collect()
+                links.into_iter().map(FilePosition::from).collect()
             }
         };
         DefinitionResponse {
@@ -137,7 +139,7 @@ impl From<GotoDefinitionResponse> for DefinitionResponse {
 impl From<Vec<LspLocation>> for ReferenceResponse {
     fn from(locations: Vec<LspLocation>) -> Self {
         let raw_response = serde_json::to_value(&locations).unwrap_or_default();
-        let references = locations.into_iter().map(Location::from).collect();
+        let references = locations.into_iter().map(FilePosition::from).collect();
         ReferenceResponse {
             raw_response,
             references,
@@ -176,7 +178,7 @@ impl SymbolResponse {
                 .map(|symbol| Symbol {
                     name: symbol.name,
                     kind: symbol_kind_to_string(&symbol.kind).to_string(),
-                    identifier_start_location: Location {
+                    identifier_start_position: FilePosition {
                         path: file_path.to_string(),
                         line: symbol.location.range.start.line,
                         character: symbol.location.range.start.character,
@@ -208,7 +210,7 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
         result.push(Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
-            identifier_start_location: Location {
+            identifier_start_position: FilePosition {
                 path: file_path.to_string(),
                 line: symbol.selection_range.start.line,
                 character: symbol.selection_range.start.character,

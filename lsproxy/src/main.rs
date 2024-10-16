@@ -17,8 +17,8 @@ mod lsp;
 mod utils;
 
 use crate::api_types::{
-    DefinitionResponse, Location, ReferenceResponse, SupportedLanguages, Symbol, SymbolResponse,
-    MOUNT_DIR,
+    DefinitionResponse, FilePosition, ReferenceResponse, SupportedLanguages, Symbol,
+    SymbolResponse, MOUNT_DIR,
 };
 use crate::lsp::manager::LspManager;
 
@@ -31,7 +31,7 @@ use crate::lsp::manager::LspManager;
         get_references,
     ),
     components(
-        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, Location, Symbol)
+        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, FilePosition, Symbol)
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
