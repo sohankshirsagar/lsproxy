@@ -38,36 +38,23 @@ pub struct Symbol {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetDefinitionRequest {
+    #[serde(deserialize_with = "deserialize_file_position")]
     pub position: FilePosition,
 }
 
-#[derive(ToSchema, IntoParams)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
+    #[serde(deserialize_with = "deserialize_file_position")]
     pub symbol_identifier_position: FilePosition,
     pub include_declaration: Option<bool>,
 }
 
-impl<'de> Deserialize<'de> for GetReferencesRequest {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        struct Helper {
-            symbol_identifier_position: String,
-            include_declaration: Option<bool>,
-        }
-
-        let helper = Helper::deserialize(deserializer)?;
-
-        let file_position: FilePosition = serde_json::from_str(&helper.symbol_identifier_position)
-            .map_err(serde::de::Error::custom)?;
-
-        Ok(GetReferencesRequest {
-            symbol_identifier_position: file_position,
-            include_declaration: helper.include_declaration,
-        })
-    }
+fn deserialize_file_position<'de, D>(deserializer: D) -> Result<FilePosition, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    serde_json::from_str(&s).map_err(serde::de::Error::custom)
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
