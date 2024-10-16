@@ -2,7 +2,6 @@ use std::{error::Error, process::Stdio};
 
 use async_trait::async_trait;
 use tokio::process::Command;
-use uuid::Uuid;
 
 use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
 
