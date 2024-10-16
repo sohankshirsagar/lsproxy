@@ -112,12 +112,12 @@ impl LspManager {
         let lsp_type = self.detect_language(&file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
-        let document_symbol_response = locked_client.text_document_symbols(file_path).await?;
-        let custom_document_symbol_response = SymbolResponse::new(
-            document_symbol_response,
+        let full_symbol_response = locked_client.text_document_symbols(file_path).await?;
+        let symbol_response = SymbolResponse::new(
+            full_symbol_response,
             file_path.strip_prefix(MOUNT_DIR).unwrap_or_default(),
         );
-        Ok(custom_document_symbol_response)
+        Ok(symbol_response)
     }
 
     pub async fn definition(

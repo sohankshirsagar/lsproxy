@@ -3,7 +3,7 @@ use lsp_types::{
     LocationLink, OneOf, SymbolInformation, SymbolKind, Url, WorkspaceSymbol,
     WorkspaceSymbolResponse,
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{to_value, Value};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
@@ -41,10 +41,33 @@ pub struct GetDefinitionRequest {
     pub position: FilePosition,
 }
 
-#[derive(Deserialize, ToSchema, IntoParams)]
+#[derive(ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
     pub symbol_identifier_position: FilePosition,
     pub include_declaration: Option<bool>,
+}
+
+impl<'de> Deserialize<'de> for GetReferencesRequest {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Helper {
+            symbol_identifier_position: String,
+            include_declaration: Option<bool>,
+        }
+
+        let helper = Helper::deserialize(deserializer)?;
+
+        let file_position: FilePosition = serde_json::from_str(&helper.symbol_identifier_position)
+            .map_err(serde::de::Error::custom)?;
+
+        Ok(GetReferencesRequest {
+            symbol_identifier_position: file_position,
+            include_declaration: helper.include_declaration,
+        })
+    }
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]

@@ -4,7 +4,8 @@ import argparse
 import sys
 from typing import Dict, Any, Optional
 
-import lsproxy_sdk
+from lsproxy_sdk import ApiClient, CrateApi, Configuration
+from lsproxy_sdk.models import FilePosition
 from lsproxy_sdk.rest import ApiException
 
 def save_edge_data(data: Dict[str, set], output_file: str = 'edge_data.json'):
@@ -14,8 +15,8 @@ def save_edge_data(data: Dict[str, set], output_file: str = 'edge_data.json'):
     print(f"Dependency data saved to {output_file}")
 
 def process_file(file_path: str):
-    with lsproxy_sdk.ApiClient(configuration) as lsproxy_client:
-        lsproxy = lsproxy.CrateApi(lsproxy_client)
+    with ApiClient(Configuration(host="http://localhost:8080")) as lsproxy_client:
+        lsproxy = CrateApi(lsproxy_client)
     try:
         edges = {}
         symbols = lsproxy.file_symbols(file_path).symbols or [] 
@@ -24,11 +25,12 @@ def process_file(file_path: str):
             name = symbol.name
             line = symbol.identifier_start_position.line
             character = symbol.identifier_start_position.character
-            references = api_instance.get_references(file_path, line, character).references
+            references = lsproxy.references(FilePosition(path=file_path, line=line, character=character)).references
             for reference in references:
-                dest_file = reference.uri
+                dest_file = reference.path
                 if dest_file == file_path:
                     continue
+                print(f"`{dest_file}` references `{name}` from `{file_path}`")
                 edges.setdefault((file_path, dest_file), set()).add(name)
         
         save_edge_data(edges)
