@@ -16,7 +16,7 @@ mod lsp;
 mod utils;
 
 use crate::lsp::manager::LspManager;
-use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, SimplifiedSymbol, SimplifiedLocation, CustomReferenceResponse};
+use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, SimplifiedDocumentSymbol, SimplifiedWorkspaceSymbol, SimplifiedLocation, CustomReferenceResponse, CustomWorkspaceSymbolResponse};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -28,7 +28,7 @@ use crate::lsp::types::{SupportedLSP, MOUNT_DIR, CustomDocumentSymbolResponse, C
         get_references,
     ),
     components(
-        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, CustomReferenceResponse, SimplifiedLocation, SimplifiedSymbol)
+        schemas(LspInitRequest, FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLSP, CustomGotoDefinitionResponse, CustomDocumentSymbolResponse, CustomReferenceResponse, CustomWorkspaceSymbolResponse, SimplifiedLocation, SimplifiedDocumentSymbol, SimplifiedWorkspaceSymbol)
     ),
     tags(
         (name = "lsp-proxy-api", description = "LSP Proxy API")
@@ -196,7 +196,7 @@ async fn file_symbols(
     path = "/workspace-symbols",
     params(WorkspaceSymbolsRequest),
     responses(
-        (status = 200, description = "Workspace symbols retrieved successfully", body = String),
+        (status = 200, description = "Workspace symbols retrieved successfully", body = CustomWorkspaceSymbolResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )

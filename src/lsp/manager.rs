@@ -1,9 +1,8 @@
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
-use crate::lsp::types::{CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, CustomReferenceResponse, SupportedLSP};
+use crate::lsp::types::{CustomDocumentSymbolResponse, CustomGotoDefinitionResponse, CustomReferenceResponse, CustomWorkspaceSymbolResponse, SupportedLSP};
 use log::{debug, warn};
-use lsp_types::{Position, WorkspaceSymbolResponse
-};
+use lsp_types::Position;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
@@ -96,7 +95,7 @@ impl LspManager {
     pub async fn workspace_symbols(
         &self,
         query: &str,
-    ) -> Result<Vec<WorkspaceSymbolResponse>, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<CustomWorkspaceSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
         /* This returns results for all langservers*/
         let mut symbols = Vec::new();
         for client in self.clients.values() {
@@ -104,7 +103,7 @@ impl LspManager {
             let client_symbols = locked_client.workspace_symbols(query).await?;
             symbols.push(client_symbols);
         }
-        Ok(symbols)
+        Ok(CustomWorkspaceSymbolResponse::from(symbols))
     }
 
     pub fn get_client(&self, lsp_type: SupportedLSP) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {

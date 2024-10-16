@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use strum_macros::{Display, EnumString};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, SymbolKind, DocumentSymbol, LocationLink, Location};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, SymbolKind, DocumentSymbol, LocationLink, Location, WorkspaceSymbolResponse, WorkspaceSymbol, OneOf, SymbolInformation, Url};
 
 pub const MOUNT_DIR: &str = "/mnt/repo";
 
@@ -33,6 +33,47 @@ pub struct SimplifiedLocation {
     pub character: u32,
 }
 
+ #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+ pub struct SimplifiedDocumentSymbol {
+     pub name: String,
+     pub kind: String,
+     pub line: u32,
+     pub character: u32,
+ }
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct SimplifiedWorkspaceSymbol {
+    pub name: String,
+    pub kind: String,
+    pub uri: String,
+    pub line: u32,
+    pub character: u32,
+}
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct CustomGotoDefinitionResponse {
+    raw_response: serde_json::Value,
+    simplified: Vec<SimplifiedLocation>,
+}
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct CustomWorkspaceSymbolResponse {
+    raw_response: serde_json::Value,
+    simplified: Vec<SimplifiedWorkspaceSymbol>,
+}
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct CustomReferenceResponse {
+    raw_response: serde_json::Value,
+    simplified: Vec<SimplifiedLocation>,
+}
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct CustomDocumentSymbolResponse {
+    raw_response: serde_json::Value,
+    simplified: Vec<SimplifiedDocumentSymbol>,
+}
+
 impl From<Location> for SimplifiedLocation {
     fn from(location: Location) -> Self {
         SimplifiedLocation {
@@ -43,18 +84,83 @@ impl From<Location> for SimplifiedLocation {
     }
 }
 
- #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
- pub struct SimplifiedSymbol {
-     pub name: String,
-     pub kind: String,
-     pub line: u32,
-     pub character: u32,
- }
+impl From<LocationLink> for SimplifiedLocation {
+    fn from(link: LocationLink) -> Self {
+        SimplifiedLocation {
+            uri: simplify_uri(link.target_uri),
+            line: link.target_range.start.line,
+            character: link.target_range.start.character,
+        }
+    }
+}
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct CustomReferenceResponse {
-    raw_response: serde_json::Value,
-    simplified: Vec<SimplifiedLocation>,
+impl From<SymbolInformation> for SimplifiedWorkspaceSymbol {
+    fn from(symbol: SymbolInformation) -> Self {
+        SimplifiedWorkspaceSymbol {
+            name: symbol.name,
+            kind: symbol_kind_to_string(&symbol.kind).to_string(),
+            uri: symbol.location.uri.to_string(),
+            line: symbol.location.range.start.line,
+            character: symbol.location.range.start.character,
+        }
+    }
+}
+
+impl From<WorkspaceSymbol> for SimplifiedWorkspaceSymbol {
+    fn from(symbol: WorkspaceSymbol) -> Self {
+        let (uri, line, character) = match symbol.location {
+            OneOf::Left(location) => {
+                (location.uri.to_string(), location.range.start.line, location.range.start.character)
+            },
+            OneOf::Right(workspace_location) => {
+                (workspace_location.uri.to_string(), 0, 0) // Default to 0 for line and character
+            },
+        };
+
+        SimplifiedWorkspaceSymbol {
+            name: symbol.name,
+            kind: symbol_kind_to_string(&symbol.kind).to_string(),
+            uri,
+            line,
+            character,
+        }
+    }
+}
+
+impl From<GotoDefinitionResponse> for CustomGotoDefinitionResponse {
+    fn from(response: GotoDefinitionResponse) -> Self {
+        let raw_response = serde_json::to_value(&response).unwrap_or_default();
+        let simplified = match response {
+            GotoDefinitionResponse::Scalar(location) => vec![SimplifiedLocation::from(location)],
+            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(SimplifiedLocation::from).collect(),
+            GotoDefinitionResponse::Link(links) => links.into_iter().map(SimplifiedLocation::from).collect(),
+        };
+        CustomGotoDefinitionResponse {
+            raw_response,
+            simplified,
+        }
+    }
+}
+
+impl From<Vec<WorkspaceSymbolResponse>> for CustomWorkspaceSymbolResponse {
+    fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
+        let raw_response = serde_json::to_value(&responses).unwrap_or_default();
+        let simplified: Vec<SimplifiedWorkspaceSymbol> = responses.into_iter().flat_map(|response| {
+            match response {
+                WorkspaceSymbolResponse::Flat(symbols) => {
+                    symbols.into_iter().map(SimplifiedWorkspaceSymbol::from).collect::<Vec<_>>()
+                },
+                WorkspaceSymbolResponse::Nested(symbols) => {
+                    symbols.into_iter().map(SimplifiedWorkspaceSymbol::from).collect::<Vec<_>>()
+                },
+            }
+        }).collect();
+
+        CustomWorkspaceSymbolResponse {
+            raw_response,
+            simplified,
+        }
+    }
 }
 
 impl From<Vec<Location>> for CustomReferenceResponse {
@@ -68,41 +174,13 @@ impl From<Vec<Location>> for CustomReferenceResponse {
     }
 }
 
-#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct CustomGotoDefinitionResponse {
-    raw_response: serde_json::Value,
-    simplified: Vec<SimplifiedLocation>,
-}
-
-impl From<GotoDefinitionResponse> for CustomGotoDefinitionResponse {
-    fn from(response: GotoDefinitionResponse) -> Self {
-        let raw_response = serde_json::to_value(&response).unwrap_or_default();
-        let simplified = match response {
-            GotoDefinitionResponse::Scalar(location) => vec![SimplifiedLocation::from(location)],
-            GotoDefinitionResponse::Array(locations) => locations.into_iter().map(SimplifiedLocation::from).collect(),
-            GotoDefinitionResponse::Link(links) => links.into_iter().map(simplify_location_link).collect(),
-        };
-        CustomGotoDefinitionResponse {
-            raw_response,
-            simplified,
-        }
-    }
-}
-
-
- #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
-pub struct CustomDocumentSymbolResponse {
-    raw_response: serde_json::Value,
-    simplified: Vec<SimplifiedSymbol>,
-}
-
 impl From<DocumentSymbolResponse> for CustomDocumentSymbolResponse {
     fn from(response: DocumentSymbolResponse) -> Self {
         let raw_response = serde_json::to_value(&response).unwrap_or_default();
         let simplified = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
                 .into_iter()
-                .map(|symbol| SimplifiedSymbol {
+                .map(|symbol| SimplifiedDocumentSymbol {
                     name: symbol.name,
                     kind: symbol_kind_to_string(&symbol.kind).to_string(),
                     line: symbol.location.range.start.line,
@@ -118,15 +196,7 @@ impl From<DocumentSymbolResponse> for CustomDocumentSymbolResponse {
     }
 }
 
-fn simplify_location_link(link: LocationLink) -> SimplifiedLocation {
-    SimplifiedLocation {
-        uri: simplify_uri(link.target_uri),
-        line: link.target_range.start.line,
-        character: link.target_range.start.character,
-    }
-}
-
-fn simplify_uri(uri: lsp_types::Url) -> String {
+fn simplify_uri(uri: Url) -> String {
     let path = uri.to_file_path().unwrap_or_else(|_| PathBuf::from(uri.path()));
     let current_dir = std::env::current_dir().unwrap_or_default();
 
@@ -142,9 +212,9 @@ fn simplify_uri(uri: lsp_types::Url) -> String {
         .unwrap_or_else(|_| simplified.to_string_lossy().into_owned())
 }
 
-fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>) -> Vec<SimplifiedSymbol> {
-    fn recursive_flatten(symbol: DocumentSymbol, result: &mut Vec<SimplifiedSymbol>) {
-        result.push(SimplifiedSymbol {
+fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>) -> Vec<SimplifiedDocumentSymbol> {
+    fn recursive_flatten(symbol: DocumentSymbol, result: &mut Vec<SimplifiedDocumentSymbol>) {
+        result.push(SimplifiedDocumentSymbol {
             name: symbol.name,
             kind: symbol_kind_to_string(&symbol.kind).to_string(),
             line: symbol.selection_range.start.line,
@@ -194,4 +264,3 @@ fn symbol_kind_to_string(kind: &SymbolKind) -> &str {
         _ => "unknown", // Default case for any future additions
     }
 }
-
