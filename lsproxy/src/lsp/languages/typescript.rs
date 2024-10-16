@@ -1,12 +1,15 @@
-use std::{error::Error, process::Stdio};
+use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use log::debug;
+use lsp_types::TextDocumentItem;
+use serde_json::Value;
 use tokio::process::Command;
+use url::Url;
 
 use crate::{
-    lsp::{JsonRpcHandler, LspClient, ProcessHandler},
-    utils::file_utils::get_files_for_workspace_typescript,
+    lsp::{JsonRpcHandler, LspClient, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS},
+    utils::file_utils::search_files,
 };
 
 pub struct TypeScriptLanguageClient {
@@ -42,10 +45,11 @@ impl LspClient for TypeScriptLanguageClient {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         /*
         The server needs to know about all the files in the workspace to provide features like go to definition.
-        This is a limitation of the TypeScript language server.
+        This is a limitation of the tsserver    .
          */
         debug!("Setting up workspace for TypeScript client");
-        let text_document_items = get_files_for_workspace_typescript(root_path).await.unwrap();
+        let text_document_items =
+            TypeScriptLanguageClient::get_text_document_items_to_open(root_path).unwrap();
         for item in text_document_items {
             debug!("Sent 'didOpen' for file: {}", item.uri.to_string());
             self.text_document_did_open(item).await?;
@@ -75,5 +79,41 @@ impl TypeScriptLanguageClient {
             process: process_handler,
             json_rpc: json_rpc_handler,
         })
+    }
+
+    pub fn get_text_document_items_to_open(
+        repo_path: &str,
+    ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
+        let tsconfig_path = Path::new(repo_path).join("tsconfig.json");
+        let tsconfig_content = read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
+        let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
+
+        let include_patterns = tsconfig["include"]
+            .as_array()
+            .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+            .unwrap_or_else(|| TYPESCRIPT_FILE_PATTERNS.to_vec());
+        let exclude_patterns = tsconfig["exclude"]
+            .as_array()
+            .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+            .unwrap_or_else(|| DEFAULT_EXCLUDE_PATTERNS.to_vec());
+
+        let files = search_files(
+            Path::new(repo_path),
+            include_patterns.into_iter().map(String::from).collect(),
+            exclude_patterns.into_iter().map(String::from).collect(),
+        )?;
+
+        files
+            .into_iter()
+            .map(|file_path| {
+                let content = read_to_string(&file_path)?;
+                Ok(TextDocumentItem {
+                    uri: Url::from_file_path(&file_path).map_err(|_| "Invalid file path")?,
+                    language_id: "typescript".to_string(),
+                    version: 1,
+                    text: content,
+                })
+            })
+            .collect()
     }
 }
