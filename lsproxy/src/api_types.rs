@@ -4,6 +4,7 @@ use lsp_types::{
     WorkspaceSymbolResponse,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::{to_value, Value};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use strum_macros::{Display, EnumString};
@@ -72,19 +73,19 @@ pub struct WorkspaceSymbolsRequest {
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct DefinitionResponse {
-    raw_response: serde_json::Value,
+    raw_response: Value,
     definitions: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct ReferenceResponse {
-    raw_response: serde_json::Value,
+    raw_response: Value,
     references: Vec<FilePosition>,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct SymbolResponse {
-    raw_response: serde_json::Value,
+    raw_response: Value,
     symbols: Vec<Symbol>,
 }
 
@@ -143,7 +144,7 @@ impl From<WorkspaceSymbol> for Symbol {
 
 impl From<GotoDefinitionResponse> for DefinitionResponse {
     fn from(response: GotoDefinitionResponse) -> Self {
-        let raw_response = serde_json::to_value(&response).unwrap_or_default();
+        let raw_response = to_value(&response).unwrap_or_default();
         let definitions = match response {
             GotoDefinitionResponse::Scalar(location) => {
                 vec![FilePosition::from(location)]
@@ -164,7 +165,7 @@ impl From<GotoDefinitionResponse> for DefinitionResponse {
 
 impl From<Vec<LspLocation>> for ReferenceResponse {
     fn from(locations: Vec<LspLocation>) -> Self {
-        let raw_response = serde_json::to_value(&locations).unwrap_or_default();
+        let raw_response = to_value(&locations).unwrap_or_default();
         let references = locations.into_iter().map(FilePosition::from).collect();
         ReferenceResponse {
             raw_response,
@@ -175,7 +176,7 @@ impl From<Vec<LspLocation>> for ReferenceResponse {
 
 impl From<Vec<WorkspaceSymbolResponse>> for SymbolResponse {
     fn from(responses: Vec<WorkspaceSymbolResponse>) -> Self {
-        let raw_response = serde_json::to_value(&responses).unwrap_or_default();
+        let raw_response = to_value(&responses).unwrap_or_default();
         let symbols: Vec<Symbol> = responses
             .into_iter()
             .flat_map(|response| match response {
@@ -197,7 +198,7 @@ impl From<Vec<WorkspaceSymbolResponse>> for SymbolResponse {
 
 impl SymbolResponse {
     pub fn new(response: DocumentSymbolResponse, file_path: &str) -> Self {
-        let raw_response = serde_json::to_value(&response).unwrap_or_default();
+        let raw_response = to_value(&response).unwrap_or_default();
         let symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
                 .into_iter()
