@@ -38,12 +38,12 @@ pub struct Symbol {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetDefinitionRequest {
-    pub identifier_start_position: FilePosition,
+    pub position: FilePosition,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    pub identifier_start_position: FilePosition,
+    pub symbol_identifier_position: FilePosition,
     pub include_declaration: Option<bool>,
 }
 
