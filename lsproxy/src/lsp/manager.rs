@@ -112,7 +112,10 @@ impl LspManager {
         let lsp_type = self.detect_language(&file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
-        let document_symbol_response = locked_client.text_document_symbols(file_path).await?;
+        let document_symbol_response = match locked_client.text_document_symbols(file_path).await {
+            Ok(response) => response,
+            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>),
+        };
         Ok(document_symbol_response)
     }
 
