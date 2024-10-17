@@ -23,7 +23,7 @@ mod utils;
 
 use crate::api_types::{
     DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
-    GetReferencesRequest, ReferenceResponse, SupportedLanguages, Symbol, SymbolResponse,
+    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
     WorkspaceSymbolsRequest, MOUNT_DIR,
 };
 use crate::lsp::manager::LspManager;
@@ -50,7 +50,7 @@ fn check_mount_dir() -> std::io::Result<()> {
             GetReferencesRequest,
             SupportedLanguages,
             DefinitionResponse,
-            ReferenceResponse,
+            ReferencesResponse,
             SymbolResponse,
             FilePosition,
             Symbol,
@@ -81,6 +81,22 @@ struct Cli {
 /// Get the definition of a symbol at a specific position in a file
 ///
 /// Returns the location of the definition for the symbol at the given position.
+///
+/// The input position should point inside the symbol's identifier, e.g.
+///
+/// The returned position points to the identifier of the symbol, and the file_path from workspace root
+///
+/// e.g. for the definition of `User` on line 5 of `src/main.py` with the code:
+/// ```
+/// 0: class User:
+/// output___^
+/// 1:     def __init__(self, name, age):
+/// 2:         self.name = name
+/// 3:         self.age = age
+/// 4:
+/// 5: user = User("John", 30)
+/// input_____^^^^
+/// ```
 #[utoipa::path(
     post,
     path = "/definition",
@@ -148,6 +164,17 @@ async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> H
 /// Get symbols in a specific file
 ///
 /// Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.
+///
+/// The returned positions point to the start of the symbol's identifier.
+///
+/// e.g. for `User` on line 0 of `src/main.py`:
+/// ```
+/// 0: class User:
+/// _________^
+/// 1:     def __init__(self, name, age):
+/// 2:         self.name = name
+/// 3:         self.age = age
+/// ```
 #[utoipa::path(
     get,
     path = "/file-symbols",
@@ -202,6 +229,17 @@ async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> 
 /// Search for symbols across the entire workspace
 ///
 /// Returns a list of symbols matching the given query string from all files in the workspace.
+///
+/// The returned positions point to the start of the symbol's identifier.
+///
+/// e.g. for `User` on line 0 of `src/main.py`:
+/// ```
+/// 0: class User:
+/// _________^
+/// 1:     def __init__(self, name, age):
+/// 2:         self.name = name
+/// 3:         self.age = age
+/// ```
 #[utoipa::path(
     get,
     path = "/workspace-symbols",
@@ -255,13 +293,29 @@ async fn workspace_symbols(
 
 /// Find all references to a symbol
 ///
+/// The input position should point to the identifier of the symbol you want to get the references for.
+///
 /// Returns a list of locations where the symbol at the given position is referenced.
+///
+/// The returned positions point to the start of the reference identifier.
+///
+/// e.g. for `User` on line 0 of `src/main.py`:
+/// ```
+///  0: class User:
+///  input____^^^^
+///  1:     def __init__(self, name, age):
+///  2:         self.name = name
+///  3:         self.age = age
+///  4:
+///  5: user = User("John", 30)
+///  output____^
+/// ```
 #[utoipa::path(
     post,
     path = "/references",
     request_body = GetReferencesRequest,
     responses(
-        (status = 200, description = "References retrieved successfully", body = ReferenceResponse),
+        (status = 200, description = "References retrieved successfully", body = ReferencesResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -294,7 +348,7 @@ async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> H
         )
         .await;
     match result {
-        Ok(references) => HttpResponse::Ok().json(ReferenceResponse::from((
+        Ok(references) => HttpResponse::Ok().json(ReferencesResponse::from((
             references,
             info.include_raw_response,
         ))),

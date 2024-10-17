@@ -43,7 +43,6 @@ pub struct FilePosition {
     pub character: u32,
 }
 
-/// Represents a symbol within the codebase.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Symbol {
     /// The name of the symbol.
@@ -52,36 +51,13 @@ pub struct Symbol {
     /// The kind of the symbol (e.g., function, class).
     #[schema(example = "class")]
     pub kind: String,
-    /// The starting position of the symbol's identifier, and the file_path from workspace root
-    ///
-    /// e.g. for the definition of `User` on line 0 of `src/main.py` with the code:
-    /// ```
-    /// 0: class User:
-    /// _________^
-    /// 1:     def __init__(self, name, age):
-    /// 2:         self.name = name
-    /// 3:         self.age = age
-    /// ```
+
+    /// The start position of the symbol's identifier.
     pub identifier_start_position: FilePosition,
 }
 
-/// Request to get the definition of a symbol at a given position in a file.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetDefinitionRequest {
-    /// The position within the file to get the definition for. This should point to the identifier
-    /// of the symbol you want to get the definition for.
-    ///
-    /// e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code:
-    /// ```
-    /// 0: class User:
-    /// 1:     def __init__(self, name, age):
-    /// 2:         self.name = name
-    /// 3:         self.age = age
-    /// 4:
-    /// 5: user = User("John", 30)
-    /// __________^^^
-    /// ```
-    /// The (line, char) should be anywhere in (5, 7)-(5, 11).
     pub position: FilePosition,
 
     /// Whether to include the raw response from the langserver in the response.
@@ -91,21 +67,8 @@ pub struct GetDefinitionRequest {
     pub include_raw_response: bool,
 }
 
-/// Request to get the references of a symbol in the workspace.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    /// The position within the file to get the references for. This should point to the identifier of the definition.
-    ///
-    /// e.g. for getting the references of `User` on line 0 of `src/main.py` with the code:
-    /// ```
-    /// 0: class User:
-    /// _________^^^^
-    /// 1:     def __init__(self, name, age):
-    /// 2:         self.name = name
-    /// 3:         self.age = age
-    /// 4:
-    /// 5: user = User("John", 30)
-    /// ```
     pub symbol_identifier_position: FilePosition,
 
     /// Whether to include the declaration (definition) of the symbol in the response.
@@ -149,6 +112,22 @@ pub struct WorkspaceSymbolsRequest {
 }
 
 /// Response to a definition request.
+///
+/// The definition(s) of the symbol.
+/// Points to the start position of the symbol's identifier.
+///
+/// e.g. for the definition of `User` on line 5 of `src/main.py` with the code:
+/// ```
+/// 0: class User:
+/// _________^
+/// 1:     def __init__(self, name, age):
+/// 2:         self.name = name
+/// 3:         self.age = age
+/// 4:
+/// 5: user = User("John", 30)
+/// __________^
+/// ```
+/// The definition(s) will be `[{"path": "src/main.py", "line": 0, "character": 6}]`.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DefinitionResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -156,49 +135,34 @@ pub struct DefinitionResponse {
     ///
     /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition
     pub raw_response: Option<Value>,
-    /// The definition(s) of the symbol.
-    /// Points to the start position of the symbol's identifier.
-    ///
-    /// e.g. for the definition of `User` on line 5 of `src/main.py` with the code:
-    /// ```
-    /// 0: class User:
-    /// _________^
-    /// 1:     def __init__(self, name, age):
-    /// 2:         self.name = name
-    /// 3:         self.age = age
-    /// 4:
-    /// 5: user = User("John", 30)
-    /// __________^
-    /// ```
-    /// The definition(s) will be `[{"path": "src/main.py", "line": 0, "character": 6}]`.
     pub definitions: Vec<FilePosition>,
 }
 
+/// Response to a references request.
+///
+/// Points to the start position of the symbol's identifier.
+///
+/// e.g. for the references of `User` on line 0 character 6 of `src/main.py` with the code:
+/// ```
+/// 0: class User:
+/// 1:     def __init__(self, name, age):
+/// 2:         self.name = name
+/// 3:         self.age = age
+/// 4:
+/// 5: user = User("John", 30)
+/// _________^
+/// 6:
+/// 7: print(user.name)
+/// ```
+/// The references will be `[{"path": "src/main.py", "line": 5, "character": 7}]`.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ReferenceResponse {
+pub struct ReferencesResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
     ///
     /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_references
     pub raw_response: Option<Value>,
-    /// The references to the symbol.
-    /// Points to the start position of the symbol's identifier.
-    ///
-    /// e.g. for the references of `User` on line 0 character 6 of `src/main.py` with the code:
-    /// ```
-    /// 0: class User:
-    /// _________^
-    /// 1:     def __init__(self, name, age):
-    /// 2:         self.name = name
-    /// 3:         self.age = age
-    /// 4:
-    /// 5: user = User("John", 30)
-    /// _________^
-    /// 6:
-    /// 7: print(user.name)
-    /// ```
-    /// The references will be `[{"path": "src/main.py", "line": 5, "character": 7}]`.
-    ///
+
     pub references: Vec<FilePosition>,
 }
 
@@ -239,7 +203,7 @@ impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
     }
 }
 
-impl From<(Vec<Location>, bool)> for ReferenceResponse {
+impl From<(Vec<Location>, bool)> for ReferencesResponse {
     fn from((locations, include_raw): (Vec<Location>, bool)) -> Self {
         let raw_response = if include_raw {
             Some(to_value(&locations).unwrap_or_default())
@@ -247,7 +211,7 @@ impl From<(Vec<Location>, bool)> for ReferenceResponse {
             None
         };
         let references = locations.into_iter().map(FilePosition::from).collect();
-        ReferenceResponse {
+        ReferencesResponse {
             raw_response,
             references,
         }
