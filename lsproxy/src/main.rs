@@ -35,6 +35,7 @@ fn check_mount_dir() -> std::io::Result<()> {
         workspace_symbols,
         definition,
         references,
+        workspace_files
     ),
     components(
         schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, FilePosition, Symbol)
@@ -57,6 +58,9 @@ struct Cli {
     write_openapi: bool,
 }
 
+/// Get the definition of a symbol at a specific position in a file
+///
+/// Returns the location of the definition for the symbol at the given position.
 #[utoipa::path(
     get,
     path = "/definition",
@@ -108,6 +112,9 @@ async fn definition(
     }
 }
 
+/// Get symbols in a specific file
+///
+/// Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.
 #[utoipa::path(
     get,
     path = "/file-symbols",
@@ -146,6 +153,9 @@ async fn file_symbols(
     }
 }
 
+/// Search for symbols across the entire workspace
+///
+/// Returns a list of symbols matching the given query string from all files in the workspace.
 #[utoipa::path(
     get,
     path = "/workspace-symbols",
@@ -182,6 +192,9 @@ async fn workspace_symbols(
     }
 }
 
+/// Find all references to a symbol
+///
+/// Returns a list of locations where the symbol at the given position is referenced.
 #[utoipa::path(
     get,
     path = "/references",
@@ -229,6 +242,31 @@ async fn references(
         Err(e) => {
             error!("Failed to get references: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to get references: {}", e))
+        }
+    }
+}
+
+/// Get a list of all files in the workspace
+///
+/// Returns an array of file paths for all files in the current workspace.
+#[utoipa::path(
+    get,
+    path = "/workspace-files",
+    responses(
+        (status = 200, description = "Workspace files retrieved successfully", body = Vec<String>),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn workspace_files(data: web::Data<AppState>) -> HttpResponse {
+    let lsp_manager = data.lsp_manager.lock().unwrap();
+    let files = lsp_manager.workspace_files().await;
+    match files {
+        Ok(files) => HttpResponse::Ok().json(files),
+        Err(e) => {
+            error!("Failed to get workspace files: {}", e);
+            HttpResponse::InternalServerError()
+                .body(format!("Failed to get workspace files: {}", e))
         }
     }
 }
@@ -296,6 +334,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
             .service(web::resource("/definition").route(web::get().to(definition)))
             .service(web::resource("/references").route(web::get().to(references)))
+            .service(web::resource("/workspace-files").route(web::get().to(workspace_files)))
     })
     .bind("0.0.0.0:8080")?;
 
