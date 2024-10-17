@@ -1,11 +1,13 @@
-FROM debian:buster-slim
+FROM rust:1.81.0-slim-bookworm
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
 # Install runtime dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
-    libssl1.1 \
+    pkg-config \
+    libssl-dev \
+    libssl3 \
     ca-certificates \
     git \
     python3 \
@@ -13,19 +15,24 @@ RUN apt-get update && apt-get install -y \
     curl \
     && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs \
-    && pip3 install pyright
-
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Rust and rust-analyzer
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 RUN rustup component add rust-analyzer
-RUN npm install -g pyright
-RUN npm install -g typescript-language-server typescript
 
+# Install global npm packages
+RUN npm install -g pyright typescript-language-server typescript
 
-# Copy the binary from the host into the container
-COPY target/release/lsproxy .
+RUN cargo install cargo-llvm-cov
+RUN rustup component add llvm-tools-preview
+
+COPY Cargo.toml Cargo.lock .
+
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build
 
 # Document that the container listens on port 4444
 EXPOSE 4444
@@ -34,5 +41,4 @@ EXPOSE 4444
 ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
 
-# Run the server directly
-ENTRYPOINT ["./lsproxy"]
+CMD /bin/bash -c "touch Cargo.toml Cargo.lock && cargo build"

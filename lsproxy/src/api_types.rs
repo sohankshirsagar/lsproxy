@@ -432,3 +432,63 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
         _ => "unknown",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use lsp_types::{SymbolKind, Url, WorkspaceSymbol};
+
+    #[test]
+    fn test_symbol_from_workspace_symbol_with_location() {
+        let url = Url::parse("file:///mnt/workspace/src/main.rs").unwrap();
+        let workspace_symbol = WorkspaceSymbol {
+            name: "test_function".to_string(),
+            kind: SymbolKind::FUNCTION,
+            tags: None,
+            container_name: None,
+            location: OneOf::Left(Location {
+                uri: url,
+                range: lsp_types::Range {
+                    start: lsp_types::Position {
+                        line: 10,
+                        character: 4,
+                    },
+                    end: lsp_types::Position {
+                        line: 10,
+                        character: 17,
+                    },
+                },
+            }),
+            data: None,
+        };
+
+        let symbol: Symbol = workspace_symbol.into();
+
+        assert_eq!(symbol.name, "test_function");
+        assert_eq!(symbol.kind, "function");
+        assert_eq!(symbol.identifier_start_position.path, "src/main.rs");
+        assert_eq!(symbol.identifier_start_position.line, 10);
+        assert_eq!(symbol.identifier_start_position.character, 4);
+    }
+
+    #[test]
+    fn test_symbol_from_workspace_symbol_with_workspace_location() {
+        let url = Url::parse("file:///mnt/workspace/src/lib.rs").unwrap();
+        let workspace_symbol = WorkspaceSymbol {
+            name: "TestStruct".to_string(),
+            kind: SymbolKind::STRUCT,
+            tags: None,
+            container_name: None,
+            location: OneOf::Right(WorkspaceLocation { uri: url }),
+            data: None,
+        };
+
+        let symbol: Symbol = workspace_symbol.into();
+
+        assert_eq!(symbol.name, "TestStruct");
+        assert_eq!(symbol.kind, "struct");
+        assert_eq!(symbol.identifier_start_position.path, "src/lib.rs");
+        assert_eq!(symbol.identifier_start_position.line, 0);
+        assert_eq!(symbol.identifier_start_position.character, 0);
+    }
+}
