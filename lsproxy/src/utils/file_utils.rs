@@ -1,5 +1,4 @@
 use ignore::WalkBuilder;
-use log::debug;
 use std::path::{Path, PathBuf};
 
 pub fn search_files(
