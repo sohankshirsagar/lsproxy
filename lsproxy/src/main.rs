@@ -1,6 +1,6 @@
 use actix_cors::Cors;
 use actix_web::{
-    web::{get, resource, scope, Data, Query},
+    web::{get, post, resource, scope, Data, Json, Query},
     App, HttpResponse, HttpServer,
 };
 use clap::Parser;
@@ -79,16 +79,16 @@ struct Cli {
 ///
 /// Returns the location of the definition for the symbol at the given position.
 #[utoipa::path(
-    get,
+    post,
     path = "/definition",
-    params(GetDefinitionRequest),
+    request_body = GetDefinitionRequest,
     responses(
         (status = 200, description = "Definition retrieved successfully", body = DefinitionResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn definition(data: Data<AppState>, info: Query<GetDefinitionRequest>) -> HttpResponse {
+async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
         info.position.path, info.position.line, info.position.character
@@ -207,16 +207,16 @@ async fn workspace_symbols(
 ///
 /// Returns a list of locations where the symbol at the given position is referenced.
 #[utoipa::path(
-    get,
+    post,
     path = "/references",
-    params(GetReferencesRequest),
+    request_body = GetReferencesRequest,
     responses(
         (status = 200, description = "References retrieved successfully", body = ReferenceResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn references(data: Data<AppState>, info: Query<GetReferencesRequest>) -> HttpResponse {
+async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
@@ -325,7 +325,7 @@ async fn main() -> std::io::Result<()> {
         .unwrap()
         .start_langservers(MOUNT_DIR)
         .await
-        .unwrap();
+        .ok();
     let app_state = Data::new(AppState { lsp_manager });
 
     let server = HttpServer::new(move || {
@@ -339,8 +339,8 @@ async fn main() -> std::io::Result<()> {
                 scope("/v1")
                     .service(resource("/file-symbols").route(get().to(file_symbols)))
                     .service(resource("/workspace-symbols").route(get().to(workspace_symbols)))
-                    .service(resource("/definition").route(get().to(definition)))
-                    .service(resource("/references").route(get().to(references)))
+                    .service(resource("/definition").route(post().to(definition)))
+                    .service(resource("/references").route(post().to(references)))
                     .service(resource("/workspace-files").route(get().to(workspace_files))),
             )
     })

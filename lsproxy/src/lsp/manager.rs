@@ -109,7 +109,12 @@ impl LspManager {
         &self,
         file_path: &str,
     ) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let lsp_type = self.detect_language(&file_path)?;
+        // Check if the file_path is included in the workspace files
+        let workspace_files = self.workspace_files().await?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(format!("File '{}' not found in workspace", file_path).into());
+        }
+        let lsp_type = self.detect_language(file_path)?;
         let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
         let mut locked_client = client.lock().await;
         locked_client.text_document_symbols(file_path).await
@@ -120,6 +125,11 @@ impl LspManager {
         file_path: &str,
         position: Position,
     ) -> Result<GotoDefinitionResponse, Box<dyn std::error::Error + Send + Sync>> {
+        // Check if the file_path is included in the workspace files
+        let workspace_files = self.workspace_files().await?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(format!("File '{}' not found in workspace", file_path).into());
+        }
         let lsp_type = self.detect_language(file_path)?;
         if let Some(client) = self.get_client(lsp_type) {
             let mut locked_client = client.lock().await;
@@ -172,6 +182,11 @@ impl LspManager {
         position: Position,
         include_declaration: bool,
     ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
+        // Check if the file_path is included in the workspace files
+        let workspace_files = self.workspace_files().await?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(format!("File '{}' not found in workspace", file_path).into());
+        }
         let lsp_type = self.detect_language(file_path)?;
         let client = self
             .get_client(lsp_type)

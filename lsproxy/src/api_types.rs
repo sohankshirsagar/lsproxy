@@ -4,7 +4,7 @@ use lsp_types::{
     SymbolInformation, SymbolKind, Url, WorkspaceLocation, WorkspaceSymbol,
     WorkspaceSymbolResponse,
 };
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
@@ -57,13 +57,11 @@ pub struct Symbol {
     /// 2:         self.name = name
     /// 3:         self.age = age
     /// ```
-    #[schema(example = json!({"path": "src/main.py", "line": 0, "character": 6}))]
     pub identifier_start_position: FilePosition,
 }
 
 /// Request to get the definition of a symbol at a given position in a file.
 #[derive(Deserialize, ToSchema, IntoParams)]
-#[schema(example = json!({"path": "src/main.py", "line": 10, "character": 5}))]
 pub struct GetDefinitionRequest {
     /// The position within the file to get the definition for. This should point to the identifier
     /// of the symbol you want to get the definition for.
@@ -79,19 +77,17 @@ pub struct GetDefinitionRequest {
     /// __________^^^
     /// ```
     /// The (line, char) should be anywhere in (5, 7)-(5, 11).
-    #[serde(deserialize_with = "deserialize_file_position")]
-    #[schema(example = json!({"path": "src/main.py", "line": 5, "character": 7}))]
     pub position: FilePosition,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
     #[serde(default)]
+    #[schema(example = false)]
     pub include_raw_response: bool,
 }
 
 /// Request to get the references of a symbol in the workspace.
 #[derive(Deserialize, ToSchema, IntoParams)]
-#[schema(example = json!({"path": "src/main.py", "line": 10, "character": 5}))]
 pub struct GetReferencesRequest {
     /// The position within the file to get the references for. This should point to the identifier of the definition.
     ///
@@ -105,7 +101,6 @@ pub struct GetReferencesRequest {
     /// 4:
     /// 5: user = User("John", 30)
     /// ```
-    #[serde(deserialize_with = "deserialize_file_position")]
     pub symbol_identifier_position: FilePosition,
 
     /// Whether to include the declaration (definition) of the symbol in the response.
@@ -116,15 +111,8 @@ pub struct GetReferencesRequest {
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
     #[serde(default)]
+    #[schema(example = false)]
     pub include_raw_response: bool,
-}
-
-fn deserialize_file_position<'de, D>(deserializer: D) -> Result<FilePosition, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    serde_json::from_str(&s).map_err(serde::de::Error::custom)
 }
 
 /// Request to get the symbols in a file.
@@ -137,6 +125,7 @@ pub struct FileSymbolsRequest {
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
     #[serde(default)]
+    #[schema(example = false)]
     pub include_raw_response: bool,
 }
 
@@ -150,6 +139,7 @@ pub struct WorkspaceSymbolsRequest {
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
     #[serde(default)]
+    #[schema(example = false)]
     pub include_raw_response: bool,
 }
 
@@ -204,7 +194,6 @@ pub struct ReferenceResponse {
     /// ```
     /// The references will be `[{"path": "src/main.py", "line": 5, "character": 7}]`.
     ///
-    #[schema(example = json!([{"path": "src/main.py", "line": 5, "character": 7}]))]
     pub references: Vec<FilePosition>,
 }
 
