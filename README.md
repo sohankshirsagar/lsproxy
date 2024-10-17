@@ -13,7 +13,7 @@
 ## Getting Started
 
 ### Run a single container
-`docker run -p 8080:8080 -v $WORKSPACE_PATH:/mnt/workspace agenticlabs/lsproxy`
+`docker run -p 4444:4444 -v $WORKSPACE_PATH:/mnt/workspace agenticlabs/lsproxy`
 
 ### Add to compose
 ```
@@ -21,7 +21,7 @@ services:
   lsproxy:
     image: agenticlabs/lsproxy
     ports:
-      - "8080:8080"
+      - "4444:4444"
     volumes:
       - ${WORKSPACE_PATH}:/mnt/workspace
 ```

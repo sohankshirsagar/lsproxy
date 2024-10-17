@@ -344,7 +344,7 @@ async fn main() -> std::io::Result<()> {
                     .service(resource("/workspace-files").route(get().to(workspace_files))),
             )
     })
-    .bind("0.0.0.0:8080")?;
+    .bind("0.0.0.0:4444")?;
 
     info!("Starting server...");
     server.run().await
