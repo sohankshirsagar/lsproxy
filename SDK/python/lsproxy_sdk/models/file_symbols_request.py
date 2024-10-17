@@ -17,17 +17,17 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
 class FileSymbolsRequest(BaseModel):
     """
-    FileSymbolsRequest
+    Request to get the symbols in a file.
     """ # noqa: E501
-    file_path: StrictStr
-    include_raw_response: Optional[StrictBool] = None
+    file_path: StrictStr = Field(description="The path to the file to get the symbols for, relative to the root of the workspace.")
+    include_raw_response: Optional[StrictBool] = Field(default=None, description="Whether to include the raw response from the langserver in the response. Defaults to false.")
     __properties: ClassVar[List[str]] = ["file_path", "include_raw_response"]
 
     model_config = ConfigDict(

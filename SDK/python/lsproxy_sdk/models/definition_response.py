@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Any, ClassVar, Dict, List, Optional
 from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
@@ -25,10 +25,10 @@ from typing_extensions import Self
 
 class DefinitionResponse(BaseModel):
     """
-    DefinitionResponse
+    Response to a definition request.
     """ # noqa: E501
-    definitions: List[FilePosition]
-    raw_response: Optional[Any] = None
+    definitions: List[FilePosition] = Field(description="The definition(s) of the symbol. Points to the start position of the symbol's identifier.  e.g. for the definition of `User` on line 5 of `src/main.py` with the code: ``` 0: class User: _________^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^ ``` The definition(s) will be `[{\"path\": \"src/main.py\", \"line\": 0, \"character\": 6}]`.")
+    raw_response: Optional[Any] = Field(default=None, description="The raw response from the langserver.  https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition")
     __properties: ClassVar[List[str]] = ["definitions", "raw_response"]
 
     model_config = ConfigDict(

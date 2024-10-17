@@ -67,10 +67,11 @@ configuration = lsproxy_sdk.Configuration(
 with lsproxy_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy_sdk.CrateApi(api_client)
-    position = lsproxy_sdk.FilePosition() # FilePosition | 
-    include_raw_response = True # bool |  (optional)
+    position = lsproxy_sdk.FilePosition() # FilePosition | The position within the file to get the definition for. This should point to the identifier of the symbol you want to get the definition for.  e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code: ``` 0: class User: 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^^^ ``` The (line, char) should be anywhere in (5, 7)-(5, 11).
+    include_raw_response = True # bool | Whether to include the raw response from the langserver in the response. Defaults to false. (optional)
 
     try:
+        # Get the definition of a symbol at a specific position in a file
         api_response = api_instance.definition(position, include_raw_response=include_raw_response)
         print("The response of CrateApi->definition:\n")
         pprint(api_response)
@@ -85,10 +86,11 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*CrateApi* | [**definition**](docs/CrateApi.md#definition) | **GET** /definition | 
-*CrateApi* | [**file_symbols**](docs/CrateApi.md#file_symbols) | **GET** /file-symbols | 
-*CrateApi* | [**references**](docs/CrateApi.md#references) | **GET** /references | 
-*CrateApi* | [**workspace_symbols**](docs/CrateApi.md#workspace_symbols) | **GET** /workspace-symbols | 
+*CrateApi* | [**definition**](docs/CrateApi.md#definition) | **GET** /definition | Get the definition of a symbol at a specific position in a file
+*CrateApi* | [**file_symbols**](docs/CrateApi.md#file_symbols) | **GET** /file-symbols | Get symbols in a specific file
+*CrateApi* | [**references**](docs/CrateApi.md#references) | **GET** /references | Find all references to a symbol
+*CrateApi* | [**workspace_files**](docs/CrateApi.md#workspace_files) | **GET** /workspace-files | Get a list of all files in the workspace
+*CrateApi* | [**workspace_symbols**](docs/CrateApi.md#workspace_symbols) | **GET** /workspace-symbols | Search for symbols across the entire workspace
 
 
 ## Documentation For Models

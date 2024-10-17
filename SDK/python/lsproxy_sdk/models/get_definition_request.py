@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictBool
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from typing import Any, ClassVar, Dict, List, Optional
 from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
@@ -25,9 +25,9 @@ from typing_extensions import Self
 
 class GetDefinitionRequest(BaseModel):
     """
-    GetDefinitionRequest
+    Request to get the definition of a symbol at a given position in a file.
     """ # noqa: E501
-    include_raw_response: Optional[StrictBool] = None
+    include_raw_response: Optional[StrictBool] = Field(default=None, description="Whether to include the raw response from the langserver in the response. Defaults to false.")
     position: FilePosition
     __properties: ClassVar[List[str]] = ["include_raw_response", "position"]
 

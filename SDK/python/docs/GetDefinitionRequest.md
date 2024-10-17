@@ -1,11 +1,12 @@
 # GetDefinitionRequest
 
+Request to get the definition of a symbol at a given position in a file.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**include_raw_response** | **bool** |  | [optional] 
+**include_raw_response** | **bool** | Whether to include the raw response from the langserver in the response. Defaults to false. | [optional] 
 **position** | [**FilePosition**](FilePosition.md) |  | 
 
 ## Example

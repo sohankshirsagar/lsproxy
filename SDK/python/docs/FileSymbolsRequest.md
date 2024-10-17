@@ -1,12 +1,13 @@
 # FileSymbolsRequest
 
+Request to get the symbols in a file.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**file_path** | **str** |  | 
-**include_raw_response** | **bool** |  | [optional] 
+**file_path** | **str** | The path to the file to get the symbols for, relative to the root of the workspace. | 
+**include_raw_response** | **bool** | Whether to include the raw response from the langserver in the response. Defaults to false. | [optional] 
 
 ## Example
 

@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictBool
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from typing import Any, ClassVar, Dict, List, Optional
 from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
@@ -25,10 +25,10 @@ from typing_extensions import Self
 
 class GetReferencesRequest(BaseModel):
     """
-    GetReferencesRequest
+    Request to get the references of a symbol in the workspace.
     """ # noqa: E501
-    include_declaration: Optional[StrictBool] = None
-    include_raw_response: Optional[StrictBool] = None
+    include_declaration: Optional[StrictBool] = Field(default=None, description="Whether to include the declaration (definition) of the symbol in the response. Defaults to false.")
+    include_raw_response: Optional[StrictBool] = Field(default=None, description="Whether to include the raw response from the langserver in the response. Defaults to false.")
     symbol_identifier_position: FilePosition
     __properties: ClassVar[List[str]] = ["include_declaration", "include_raw_response", "symbol_identifier_position"]
 
