@@ -125,7 +125,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReferenceResponse"
+                  "$ref": "#/components/schemas/ReferencesResponse"
                 }
               }
             }
