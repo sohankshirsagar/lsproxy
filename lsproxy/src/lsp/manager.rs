@@ -11,7 +11,7 @@ use lsp_types::{
     DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
 };
 use std::collections::HashMap;
-use std::error::Error;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -108,37 +108,53 @@ impl LspManager {
     pub async fn file_symbols(
         &self,
         file_path: &str,
-    ) -> Result<DocumentSymbolResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let lsp_type = self.detect_language(&file_path)?;
-        let client = self.get_client(lsp_type).ok_or("LSP client not found")?;
+    ) -> Result<DocumentSymbolResponse, LspManagerError> {
+        // Check if the file_path is included in the workspace files
+        let workspace_files = self.workspace_files().await?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(LspManagerError::FileNotFound(file_path.to_string()));
+        }
+        let lsp_type = self.detect_language(file_path)?;
+        let client = self
+            .get_client(lsp_type)
+            .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
-        locked_client.text_document_symbols(file_path).await
+        locked_client
+            .text_document_symbols(file_path)
+            .await
+            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
 
     pub async fn definition(
         &self,
         file_path: &str,
         position: Position,
-    ) -> Result<GotoDefinitionResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let lsp_type = self.detect_language(file_path)?;
-        if let Some(client) = self.get_client(lsp_type) {
-            let mut locked_client = client.lock().await;
-            let lsp_response = locked_client
-                .text_document_definition(file_path, position)
-                .await?;
-
-            // Convert the LSP response to our custom type
-            Ok(lsp_response)
-        } else {
-            warn!("No LSP client found for file type {:?}", lsp_type);
-            Err("No LSP client found for file type".into())
+    ) -> Result<GotoDefinitionResponse, LspManagerError> {
+        let workspace_files = self.workspace_files().await.map_err(|e| {
+            LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
+        })?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(LspManagerError::FileNotFound(file_path.to_string()).into());
         }
+        let lsp_type = self.detect_language(file_path).map_err(|e| {
+            LspManagerError::InternalError(format!("Language detection failed: {}", e))
+        })?;
+        let client = self
+            .get_client(lsp_type)
+            .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
+        let mut locked_client = client.lock().await;
+        locked_client
+            .text_document_definition(file_path, position)
+            .await
+            .map_err(|e| {
+                LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
+            })
     }
 
     pub async fn workspace_symbols(
         &self,
         query: &str,
-    ) -> Result<Vec<WorkspaceSymbolResponse>, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<Vec<WorkspaceSymbolResponse>, LspManagerError> {
         /* This returns results for all langservers*/
         let mut symbols = Vec::new();
         for (lang, client) in self.clients.iter() {
@@ -171,21 +187,30 @@ impl LspManager {
         file_path: &str,
         position: Position,
         include_declaration: bool,
-    ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
-        let lsp_type = self.detect_language(file_path)?;
+    ) -> Result<Vec<Location>, LspManagerError> {
+        let workspace_files = self.workspace_files().await.map_err(|e| {
+            LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
+        })?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(LspManagerError::FileNotFound(file_path.to_string()));
+        }
+        let lsp_type = self.detect_language(file_path).map_err(|e| {
+            LspManagerError::InternalError(format!("Language detection failed: {}", e))
+        })?;
         let client = self
             .get_client(lsp_type)
-            .ok_or_else(|| format!("LSP client not found for {:?}", lsp_type))?;
+            .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
 
-        let locations = locked_client
+        locked_client
             .text_document_reference(file_path, position, include_declaration)
-            .await?;
-
-        Ok(locations)
+            .await
+            .map_err(|e| {
+                LspManagerError::InternalError(format!("Reference retrieval failed: {}", e))
+            })
     }
 
-    pub async fn workspace_files(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+    pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
         for lang in self.clients.keys() {
             let patterns = match lang {
@@ -221,10 +246,13 @@ impl LspManager {
                             .unwrap()
                             .to_owned()
                     })
-                    .collect(),
+                    .collect::<Vec<String>>(),
                 Err(e) => {
                     error!("Error searching files for {:?}: {}", lang, e);
-                    Vec::new()
+                    return Err(LspManagerError::InternalError(format!(
+                        "Error searching files for {:?}: {}",
+                        lang, e
+                    )));
                 }
             };
             files.extend(language_files);
@@ -233,10 +261,7 @@ impl LspManager {
         Ok(files)
     }
 
-    fn detect_language(
-        &self,
-        file_path: &str,
-    ) -> Result<SupportedLanguages, Box<dyn Error + Send + Sync>> {
+    fn detect_language(&self, file_path: &str) -> Result<SupportedLanguages, LspManagerError> {
         let path: PathBuf = PathBuf::from(file_path);
         match path.extension().and_then(|ext| ext.to_str()) {
             Some("py") => Ok(SupportedLanguages::Python),
@@ -244,7 +269,34 @@ impl LspManager {
                 Ok(SupportedLanguages::TypeScriptJavaScript)
             }
             Some("rs") => Ok(SupportedLanguages::Rust),
-            _ => Err("Unsupported file type".into()),
+            _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
         }
     }
 }
+
+#[derive(Debug)]
+pub enum LspManagerError {
+    FileNotFound(String),
+    LspClientNotFound(SupportedLanguages),
+    InternalError(String),
+    UnsupportedFileType(String),
+}
+
+impl fmt::Display for LspManagerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LspManagerError::FileNotFound(path) => {
+                write!(f, "File '{}' not found in workspace", path)
+            }
+            LspManagerError::LspClientNotFound(lang) => {
+                write!(f, "LSP client not found for {:?}", lang)
+            }
+            LspManagerError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+            LspManagerError::UnsupportedFileType(path) => {
+                write!(f, "Unsupported file type: {}", path)
+            }
+        }
+    }
+}
+
+impl std::error::Error for LspManagerError {}

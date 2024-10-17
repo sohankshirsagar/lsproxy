@@ -1,11 +1,13 @@
 use actix_cors::Cors;
 use actix_web::{
-    web::{get, resource, scope, Data, Query},
+    web::{get, post, resource, scope, Data, Json, Query},
     App, HttpResponse, HttpServer,
 };
+use api_types::ErrorResponse;
 use clap::Parser;
 use env_logger::Env;
 use log::{debug, error, info};
+use lsp::manager::LspManagerError;
 use lsp_types::Position;
 use std::fs;
 use std::fs::File;
@@ -51,7 +53,8 @@ fn check_mount_dir() -> std::io::Result<()> {
             ReferenceResponse,
             SymbolResponse,
             FilePosition,
-            Symbol
+            Symbol,
+            ErrorResponse
         )
     ),
     tags(
@@ -79,16 +82,16 @@ struct Cli {
 ///
 /// Returns the location of the definition for the symbol at the given position.
 #[utoipa::path(
-    get,
+    post,
     path = "/definition",
-    params(GetDefinitionRequest),
+    request_body = GetDefinitionRequest,
     responses(
         (status = 200, description = "Definition retrieved successfully", body = DefinitionResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn definition(data: Data<AppState>, info: Query<GetDefinitionRequest>) -> HttpResponse {
+async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
         info.position.path, info.position.line, info.position.character
@@ -113,15 +116,31 @@ async fn definition(data: Data<AppState>, info: Query<GetDefinitionRequest>) -> 
                     definitions,
                     info.include_raw_response,
                 ))),
-                Err(e) => {
-                    error!("Failed to get definition: {}", e);
-                    HttpResponse::InternalServerError().body(e.to_string())
-                }
+                Err(e) => match e {
+                    LspManagerError::FileNotFound(path) => {
+                        HttpResponse::BadRequest().json(format!("File not found: {}", path))
+                    }
+                    LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
+                        .json(ErrorResponse {
+                            error: format!("LSP client not found for {:?}", lang),
+                        }),
+                    LspManagerError::InternalError(msg) => HttpResponse::InternalServerError()
+                        .json(ErrorResponse {
+                            error: format!("Internal error: {}", msg),
+                        }),
+                    LspManagerError::UnsupportedFileType(path) => {
+                        HttpResponse::BadRequest().json(ErrorResponse {
+                            error: format!("Unsupported file type: {}", path),
+                        })
+                    }
+                },
             }
         }
         Err(e) => {
             error!("Failed to lock lsp_manager: {:?}", e);
-            HttpResponse::InternalServerError().finish()
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "Failed to lock lsp_manager".to_string(),
+            })
         }
     }
 }
@@ -157,10 +176,26 @@ async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> 
             info.file_path.to_owned(),
             info.include_raw_response,
         ))),
-        Err(e) => {
-            error!("Failed to get symbols: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to get symbols: {}", e))
-        }
+        Err(e) => match e {
+            LspManagerError::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
+                error: format!("File not found: {}", path),
+            }),
+            LspManagerError::LspClientNotFound(lang) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("LSP client not found for {:?}", lang),
+                })
+            }
+            LspManagerError::InternalError(msg) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("Internal error: {}", msg),
+                })
+            }
+            LspManagerError::UnsupportedFileType(path) => {
+                HttpResponse::BadRequest().json(ErrorResponse {
+                    error: format!("Unsupported file type: {}", path),
+                })
+            }
+        },
     }
 }
 
@@ -195,11 +230,26 @@ async fn workspace_symbols(
         Ok(symbols) => {
             HttpResponse::Ok().json(SymbolResponse::from((symbols, info.include_raw_response)))
         }
-        Err(e) => {
-            error!("Failed to get workspace symbols: {}", e);
-            HttpResponse::InternalServerError()
-                .body(format!("Failed to get workspace symbols: {}", e))
-        }
+        Err(e) => match e {
+            LspManagerError::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
+                error: format!("File not found: {}", path),
+            }),
+            LspManagerError::LspClientNotFound(lang) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("LSP client not found for {:?}", lang),
+                })
+            }
+            LspManagerError::InternalError(msg) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("Internal error: {}", msg),
+                })
+            }
+            LspManagerError::UnsupportedFileType(path) => {
+                HttpResponse::BadRequest().json(ErrorResponse {
+                    error: format!("Unsupported file type: {}", path),
+                })
+            }
+        },
     }
 }
 
@@ -207,16 +257,16 @@ async fn workspace_symbols(
 ///
 /// Returns a list of locations where the symbol at the given position is referenced.
 #[utoipa::path(
-    get,
+    post,
     path = "/references",
-    params(GetReferencesRequest),
+    request_body = GetReferencesRequest,
     responses(
         (status = 200, description = "References retrieved successfully", body = ReferenceResponse),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
 )]
-async fn references(data: Data<AppState>, info: Query<GetReferencesRequest>) -> HttpResponse {
+async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
@@ -227,8 +277,9 @@ async fn references(data: Data<AppState>, info: Query<GetReferencesRequest>) -> 
     let full_path_str = match full_path.to_str() {
         Some(s) => s,
         None => {
-            error!("Failed to convert path to string");
-            return HttpResponse::InternalServerError().finish();
+            return HttpResponse::BadRequest().json(ErrorResponse {
+                error: "Failed to convert path".to_string(),
+            });
         }
     };
     let lsp_manager = data.lsp_manager.lock().unwrap();
@@ -249,7 +300,25 @@ async fn references(data: Data<AppState>, info: Query<GetReferencesRequest>) -> 
         ))),
         Err(e) => {
             error!("Failed to get references: {}", e);
-            HttpResponse::InternalServerError().body(format!("Failed to get references: {}", e))
+            match e {
+                LspManagerError::FileNotFound(path) => {
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("File not found: {}", path),
+                    })
+                }
+                LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
+                    .body(format!("LSP client not found for {:?}", lang)),
+                LspManagerError::InternalError(msg) => {
+                    HttpResponse::InternalServerError().json(ErrorResponse {
+                        error: format!("Internal error: {}", msg),
+                    })
+                }
+                LspManagerError::UnsupportedFileType(path) => {
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("Unsupported file type: {}", path),
+                    })
+                }
+            }
         }
     }
 }
@@ -275,8 +344,27 @@ async fn workspace_files(data: Data<AppState>) -> HttpResponse {
         Ok(files) => HttpResponse::Ok().json(files),
         Err(e) => {
             error!("Failed to get workspace files: {}", e);
-            HttpResponse::InternalServerError()
-                .body(format!("Failed to get workspace files: {}", e))
+            match e {
+                LspManagerError::FileNotFound(path) => {
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("File not found: {}", path),
+                    })
+                }
+                LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
+                    .json(ErrorResponse {
+                        error: format!("LSP client not found for {:?}", lang),
+                    }),
+                LspManagerError::InternalError(msg) => {
+                    HttpResponse::InternalServerError().json(ErrorResponse {
+                        error: format!("Internal error: {}", msg),
+                    })
+                }
+                LspManagerError::UnsupportedFileType(path) => {
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("Unsupported file type: {}", path),
+                    })
+                }
+            }
         }
     }
 }
@@ -325,7 +413,7 @@ async fn main() -> std::io::Result<()> {
         .unwrap()
         .start_langservers(MOUNT_DIR)
         .await
-        .unwrap();
+        .ok();
     let app_state = Data::new(AppState { lsp_manager });
 
     let server = HttpServer::new(move || {
@@ -339,8 +427,8 @@ async fn main() -> std::io::Result<()> {
                 scope("/v1")
                     .service(resource("/file-symbols").route(get().to(file_symbols)))
                     .service(resource("/workspace-symbols").route(get().to(workspace_symbols)))
-                    .service(resource("/definition").route(get().to(definition)))
-                    .service(resource("/references").route(get().to(references)))
+                    .service(resource("/definition").route(post().to(definition)))
+                    .service(resource("/references").route(post().to(references)))
                     .service(resource("/workspace-files").route(get().to(workspace_files))),
             )
     })
