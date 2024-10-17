@@ -16,7 +16,8 @@
 2. [Getting started](#getting-started)
 3. [Examples](#examples)
 4. [Contributing](#contributing)
-5. [Supported languages](#supported-languages)
+5. [Community](#community)
+6. [Supported languages](#supported-languages)
 
    
 # <a name="what-is-lsproxy">What is lsproxy?</a>
@@ -87,7 +88,7 @@ started.
 
 > Questions? Reach out to us [on Discord](https://discord.gg/WafeS3jN).
 
-## Community
+# <a name="community">Community</a>
 
 We're building a community. Come hang out with us!
 
