@@ -33,6 +33,11 @@ RUN cp ~/go/bin/gopls /usr/local/bin/gopls
 
 WORKDIR /usr/src/app
 
+#Install Clangd
+RUN apt-get install -y lsb-release gnupg2
+#Install compiledb
+RUN python3 -m pip install compiledb
+
 # Copy the binary from the host into the container
 COPY target/release/lsproxy .
 

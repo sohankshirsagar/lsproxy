@@ -26,6 +26,7 @@ pub enum SupportedLanguages {
     #[serde(rename = "rust")]
     Rust,
     Golang,
+    CPP
 }
 
 /// Specific position within a file.

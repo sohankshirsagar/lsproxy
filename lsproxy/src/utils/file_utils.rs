@@ -1,6 +1,7 @@
 use ignore::WalkBuilder;
 use log::debug;
 use std::path::{Path, PathBuf};
+use std::fs;
 
 pub fn search_files(
     path: &std::path::Path,
@@ -82,4 +83,49 @@ fn build_walk(path: &Path, exclude_patterns: Vec<String>) -> ignore::Walk {
         })
         .build();
     walk
+}
+
+pub fn search_directory_for_string(
+    path: &Path,
+    include_patterns: Vec<String>,
+    exclude_patterns: Vec<String>,
+    to_search: String,
+) -> std::io::Result<Vec<PathBuf>> {
+    let mut dirs = Vec::new();
+    let walk = build_walk(path, exclude_patterns);
+    for result in walk {
+        match result {
+            Ok(entry) => {
+                let path = entry.path().to_path_buf();
+                if !include_patterns.iter().any(|pattern| {
+                    glob::Pattern::new(pattern)
+                        .map(|p| p.matches_path(&path))
+                        .unwrap_or(false)
+                }) {
+                    continue;
+                }
+                if path.is_dir() {
+                    dirs.push(path);
+                } else {
+                    dirs.push(path.parent().unwrap().to_path_buf());
+                }
+            }
+            Err(err) => eprintln!("Error: {}", err),
+        }
+    }
+    debug!("dirs to search: {:?}", dirs);
+    let mut files_with_str = Vec::new();
+    for result in dirs {
+        match fs::read_to_string(result) {
+            Ok(file_string)=>{
+                if file_string.contains(&to_search){
+                    files_with_str.push(file_string.into());
+                }
+            }
+            Err(err)=>{
+                debug!("Error reading file in search: {:?}\n{:?}", err, path);
+            }
+        };
+    }
+    Ok(files_with_str)
 }
