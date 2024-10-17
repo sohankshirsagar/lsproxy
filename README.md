@@ -92,7 +92,7 @@ started.
 
 We're building a community. Come hang out with us!
 
-- 🌟 [Star us on GitHub](https://github.com/marimo-team/marimo)
+- 🌟 [Star us on GitHub](https://github.com/agentic-labs/lsproxy)
 - 💬 [Chat with us on Discord](https://discord.gg/WafeS3jN)
 - ✏️ [Start a GitHub Discussion](https://github.com/agentic-labs/lsproxy/discussions)
 - 🐦 [Follow us on Twitter](https://twitter.com/agentic_labs)
