@@ -249,6 +249,8 @@ async fn references(
 /// Get a list of all files in the workspace
 ///
 /// Returns an array of file paths for all files in the current workspace.
+/// 
+/// This is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.
 #[utoipa::path(
     get,
     path = "/workspace-files",
