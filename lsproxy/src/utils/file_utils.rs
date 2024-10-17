@@ -1,5 +1,4 @@
 use ignore::WalkBuilder;
-use log::debug;
 use std::path::{Path, PathBuf};
 
 pub fn search_files(
@@ -59,7 +58,6 @@ pub fn search_directories(
             Err(err) => eprintln!("Error: {}", err),
         }
     }
-    debug!("dirs: {:?}", dirs);
     Ok(dirs)
 }
 
@@ -67,15 +65,10 @@ fn build_walk(path: &Path, exclude_patterns: Vec<String>) -> ignore::Walk {
     let walk = WalkBuilder::new(path)
         .filter_entry(move |entry| {
             let path = entry.path();
-            debug!("Checking path: {:?}", path);
-
             let is_excluded = exclude_patterns.iter().any(|pattern| {
                 let matches = glob::Pattern::new(pattern)
                     .map(|p| p.matches_path(path))
                     .unwrap_or(false);
-                if matches {
-                    debug!("Excluded: {:?} matches pattern {:?}", path, pattern);
-                }
                 matches
             });
             !is_excluded

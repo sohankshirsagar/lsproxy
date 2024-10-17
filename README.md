@@ -47,7 +47,7 @@ pip install lsproxy-sdk
 ### Run a container or add to compose
 Make sure your `WORKSPACE_PATH` is an absolute path, otherwise docker will complain.
 ```bash
-docker run -p 5000:5000 -v $WORKSPACE_PATH:/mnt/workspace agenticlabs/lsproxy
+docker run -p 4444:4444 -v $WORKSPACE_PATH:/mnt/workspace agenticlabs/lsproxy
 ```
 
 ```dockerfile
@@ -55,7 +55,7 @@ services:
   lsproxy:
     image: agenticlabs/lsproxy
     ports:
-      - "5000:5000"
+      - "4444:4444"
     volumes:
       - ${WORKSPACE_PATH}:/mnt/workspace
 ```
