@@ -178,7 +178,9 @@ async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> 
         ))),
         Err(e) => match e {
             LspManagerError::FileNotFound(path) => {
-                HttpResponse::BadRequest().body(format!("File not found: {}", path))
+                HttpResponse::BadRequest().json(ErrorResponse {
+                    error: format!("File not found: {}", path),
+                })
             }
             LspManagerError::LspClientNotFound(lang) => {
                 HttpResponse::InternalServerError().json(ErrorResponse {
