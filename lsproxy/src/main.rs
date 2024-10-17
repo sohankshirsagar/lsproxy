@@ -53,7 +53,8 @@ fn check_mount_dir() -> std::io::Result<()> {
             ReferenceResponse,
             SymbolResponse,
             FilePosition,
-            Symbol
+            Symbol,
+            ErrorResponse
         )
     ),
     tags(

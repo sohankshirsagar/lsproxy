@@ -13,7 +13,7 @@ use utoipa::{IntoParams, ToSchema};
 
 pub const MOUNT_DIR: &str = "/mnt/workspace";
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ErrorResponse {
     pub error: String,
 }
