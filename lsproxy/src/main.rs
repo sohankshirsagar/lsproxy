@@ -233,6 +233,28 @@ async fn references(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/workspace-files",
+    responses(
+        (status = 200, description = "Workspace files retrieved successfully", body = Vec<String>),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn workspace_files(data: web::Data<AppState>) -> HttpResponse {
+    let lsp_manager = data.lsp_manager.lock().unwrap();
+    let files = lsp_manager.workspace_files().await;
+    match files {
+        Ok(files) => HttpResponse::Ok().json(files),
+        Err(e) => {
+            error!("Failed to get workspace files: {}", e);
+            HttpResponse::InternalServerError()
+                .body(format!("Failed to get workspace files: {}", e))
+        }
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting...");
@@ -296,6 +318,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
             .service(web::resource("/definition").route(web::get().to(definition)))
             .service(web::resource("/references").route(web::get().to(references)))
+            .service(web::resource("/workspace-files").route(web::get().to(workspace_files)))
     })
     .bind("0.0.0.0:8080")?;
 

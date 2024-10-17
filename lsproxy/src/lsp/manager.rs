@@ -187,7 +187,7 @@ impl LspManager {
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let mut files = Vec::new();
-        for (lang) in self.clients.keys() {
+        for lang in self.clients.keys() {
             let patterns = match lang {
                 SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS
                     .iter()
@@ -223,7 +223,7 @@ impl LspManager {
                     })
                     .collect(),
                 Err(e) => {
-                    error!("Error searching files: {}", e);
+                    error!("Error searching files for {:?}: {}", lang, e);
                     Vec::new()
                 }
             };
