@@ -3,6 +3,7 @@ use actix_web::{
     web::{get, post, resource, scope, Data, Json, Query},
     App, HttpResponse, HttpServer,
 };
+use api_types::ErrorResponse;
 use clap::Parser;
 use env_logger::Env;
 use log::{debug, error, info};
@@ -114,15 +115,31 @@ async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> H
                     definitions,
                     info.include_raw_response,
                 ))),
-                Err(e) => {
-                    error!("Failed to get definition: {}", e);
-                    HttpResponse::InternalServerError().body(e.to_string())
-                }
+                Err(e) => match e {
+                    LspManagerError::FileNotFound(path) => {
+                        HttpResponse::BadRequest().json(format!("File not found: {}", path))
+                    }
+                    LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
+                        .json(ErrorResponse {
+                            error: format!("LSP client not found for {:?}", lang),
+                        }),
+                    LspManagerError::InternalError(msg) => HttpResponse::InternalServerError()
+                        .json(ErrorResponse {
+                            error: format!("Internal error: {}", msg),
+                        }),
+                    LspManagerError::UnsupportedFileType(path) => {
+                        HttpResponse::BadRequest().json(ErrorResponse {
+                            error: format!("Unsupported file type: {}", path),
+                        })
+                    }
+                },
             }
         }
         Err(e) => {
             error!("Failed to lock lsp_manager: {:?}", e);
-            HttpResponse::InternalServerError().finish()
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "Failed to lock lsp_manager".to_string(),
+            })
         }
     }
 }
@@ -162,13 +179,20 @@ async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> 
             LspManagerError::FileNotFound(path) => {
                 HttpResponse::BadRequest().body(format!("File not found: {}", path))
             }
-            LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
-                .body(format!("LSP client not found for {:?}", lang)),
+            LspManagerError::LspClientNotFound(lang) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("LSP client not found for {:?}", lang),
+                })
+            }
             LspManagerError::InternalError(msg) => {
-                HttpResponse::InternalServerError().body(format!("Internal error: {}", msg))
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("Internal error: {}", msg),
+                })
             }
             LspManagerError::UnsupportedFileType(path) => {
-                HttpResponse::BadRequest().body(format!("Unsupported file type: {}", path))
+                HttpResponse::BadRequest().json(ErrorResponse {
+                    error: format!("Unsupported file type: {}", path),
+                })
             }
         },
     }
@@ -206,16 +230,23 @@ async fn workspace_symbols(
             HttpResponse::Ok().json(SymbolResponse::from((symbols, info.include_raw_response)))
         }
         Err(e) => match e {
-            LspManagerError::FileNotFound(path) => {
-                HttpResponse::BadRequest().body(format!("File not found: {}", path))
+            LspManagerError::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
+                error: format!("File not found: {}", path),
+            }),
+            LspManagerError::LspClientNotFound(lang) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("LSP client not found for {:?}", lang),
+                })
             }
-            LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
-                .body(format!("LSP client not found for {:?}", lang)),
             LspManagerError::InternalError(msg) => {
-                HttpResponse::InternalServerError().body(format!("Internal error: {}", msg))
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("Internal error: {}", msg),
+                })
             }
             LspManagerError::UnsupportedFileType(path) => {
-                HttpResponse::BadRequest().body(format!("Unsupported file type: {}", path))
+                HttpResponse::BadRequest().json(ErrorResponse {
+                    error: format!("Unsupported file type: {}", path),
+                })
             }
         },
     }
@@ -245,7 +276,9 @@ async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> H
     let full_path_str = match full_path.to_str() {
         Some(s) => s,
         None => {
-            return HttpResponse::BadRequest().body("Failed to convert path");
+            return HttpResponse::BadRequest().json(ErrorResponse {
+                error: "Failed to convert path".to_string(),
+            });
         }
     };
     let lsp_manager = data.lsp_manager.lock().unwrap();
@@ -268,15 +301,21 @@ async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> H
             error!("Failed to get references: {}", e);
             match e {
                 LspManagerError::FileNotFound(path) => {
-                    HttpResponse::BadRequest().body(format!("File not found: {}", path))
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("File not found: {}", path),
+                    })
                 }
                 LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
                     .body(format!("LSP client not found for {:?}", lang)),
                 LspManagerError::InternalError(msg) => {
-                    HttpResponse::InternalServerError().body(format!("Internal error: {}", msg))
+                    HttpResponse::InternalServerError().json(ErrorResponse {
+                        error: format!("Internal error: {}", msg),
+                    })
                 }
                 LspManagerError::UnsupportedFileType(path) => {
-                    HttpResponse::BadRequest().body(format!("Unsupported file type: {}", path))
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("Unsupported file type: {}", path),
+                    })
                 }
             }
         }
@@ -306,15 +345,23 @@ async fn workspace_files(data: Data<AppState>) -> HttpResponse {
             error!("Failed to get workspace files: {}", e);
             match e {
                 LspManagerError::FileNotFound(path) => {
-                    HttpResponse::BadRequest().body(format!("File not found: {}", path))
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("File not found: {}", path),
+                    })
                 }
                 LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
-                    .body(format!("LSP client not found for {:?}", lang)),
+                    .json(ErrorResponse {
+                        error: format!("LSP client not found for {:?}", lang),
+                    }),
                 LspManagerError::InternalError(msg) => {
-                    HttpResponse::InternalServerError().body(format!("Internal error: {}", msg))
+                    HttpResponse::InternalServerError().json(ErrorResponse {
+                        error: format!("Internal error: {}", msg),
+                    })
                 }
                 LspManagerError::UnsupportedFileType(path) => {
-                    HttpResponse::BadRequest().body(format!("Unsupported file type: {}", path))
+                    HttpResponse::BadRequest().json(ErrorResponse {
+                        error: format!("Unsupported file type: {}", path),
+                    })
                 }
             }
         }
