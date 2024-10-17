@@ -37,15 +37,18 @@ RUN apt-get update && apt-get install -y \
 # Install Pyright globally
 RUN npm install -g pyright
 
+# Install language servers
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN rustup component add rust-analyzer
+RUN npm install -g pyright
+RUN npm install -g typescript-language-server typescript
+
 # Copy the binary from the builder stage and the openapi.yaml file
 COPY --from=builder /usr/src/app/target/release/lsproxy .
 
 # Document that the container listens on port 8080
 EXPOSE 8080
-
-# Set environment variables for logging and backtrace
-ENV RUST_LOG=debug
-ENV RUST_BACKTRACE=1
 
 # Run the server directly
 CMD ["./lsproxy"]
