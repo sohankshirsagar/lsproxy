@@ -1,4 +1,4 @@
-use crate::api_types::SupportedLanguages;
+use crate::api_types::{SupportedLanguages, MOUNT_DIR};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
@@ -183,6 +183,54 @@ impl LspManager {
             .await?;
 
         Ok(locations)
+    }
+
+    pub async fn workspace_files(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        let mut files = Vec::new();
+        for (lang) in self.clients.keys() {
+            let patterns = match lang {
+                SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
+                SupportedLanguages::TypeScriptJavaScript => TYPESCRIPT_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
+                SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
+            };
+            let language_files_result = search_files(
+                Path::new(MOUNT_DIR),
+                patterns,
+                DEFAULT_EXCLUDE_PATTERNS
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            );
+            let language_files = match language_files_result {
+                Ok(files) => files
+                    .iter()
+                    .map(|f| {
+                        f.as_path()
+                            .strip_prefix(MOUNT_DIR)
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .to_owned()
+                    })
+                    .collect(),
+                Err(e) => {
+                    error!("Error searching files: {}", e);
+                    Vec::new()
+                }
+            };
+            files.extend(language_files);
+        }
+
+        Ok(files)
     }
 
     fn detect_language(
