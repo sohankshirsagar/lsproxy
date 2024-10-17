@@ -68,8 +68,8 @@ impl LspManager {
         lsps
     }
 
-    pub async fn start_langservers(&mut self, repo_path: &str) -> Result<(), String> {
-        let lsps = self.detect_languages(repo_path);
+    pub async fn start_langservers(&mut self, workspace_path: &str) -> Result<(), String> {
+        let lsps = self.detect_languages(workspace_path);
         for lsp in lsps {
             if self.get_client(lsp).is_some() {
                 continue;
@@ -77,27 +77,27 @@ impl LspManager {
             debug!("Starting {:?} LSP", lsp);
             let mut client: Box<dyn LspClient> = match lsp {
                 SupportedLanguages::Python => Box::new(
-                    PyrightClient::new(repo_path)
+                    PyrightClient::new(workspace_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
                 SupportedLanguages::TypeScriptJavaScript => Box::new(
-                    TypeScriptLanguageClient::new(repo_path)
+                    TypeScriptLanguageClient::new(workspace_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
                 SupportedLanguages::Rust => Box::new(
-                    RustAnalyzerClient::new(repo_path)
+                    RustAnalyzerClient::new(workspace_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
             };
             client
-                .initialize(repo_path.to_string())
+                .initialize(workspace_path.to_string())
                 .await
                 .map_err(|e| e.to_string())?;
             client
-                .setup_workspace(repo_path)
+                .setup_workspace(workspace_path)
                 .await
                 .map_err(|e| e.to_string())?;
             self.clients.insert(lsp, Arc::new(Mutex::new(client)));

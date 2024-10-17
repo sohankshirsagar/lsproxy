@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
-pub const MOUNT_DIR: &str = "/mnt/repo";
+pub const MOUNT_DIR: &str = "/mnt/workspace";
 
 #[derive(
     Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema,

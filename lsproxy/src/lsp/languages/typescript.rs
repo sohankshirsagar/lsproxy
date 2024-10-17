@@ -82,9 +82,9 @@ impl TypeScriptLanguageClient {
     }
 
     pub fn get_text_document_items_to_open(
-        repo_path: &str,
+        workspace_path: &str,
     ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
-        let tsconfig_path = Path::new(repo_path).join("tsconfig.json");
+        let tsconfig_path = Path::new(workspace_path).join("tsconfig.json");
         let tsconfig_content = read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
         let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
 
@@ -98,7 +98,7 @@ impl TypeScriptLanguageClient {
             .unwrap_or_else(|| DEFAULT_EXCLUDE_PATTERNS.to_vec());
 
         let files = search_files(
-            Path::new(repo_path),
+            Path::new(workspace_path),
             include_patterns.into_iter().map(String::from).collect(),
             exclude_patterns.into_iter().map(String::from).collect(),
         )?;

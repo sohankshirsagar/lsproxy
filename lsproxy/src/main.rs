@@ -307,7 +307,7 @@ async fn main() -> std::io::Result<()> {
 
     // Check if MOUNT_DIR exists and is mounted
     if let Err(e) = check_mount_dir() {
-        eprintln!("Error: Your repo isn't mounted at '{}'. Please mount your repository at this location in your docker run or docker compose commands.", MOUNT_DIR);
+        eprintln!("Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location in your docker run or docker compose commands.", MOUNT_DIR);
         return Err(e);
     }
 
