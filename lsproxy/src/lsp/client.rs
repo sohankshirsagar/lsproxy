@@ -14,6 +14,7 @@ use lsp_types::{
 };
 use std::error::Error;
 use std::path::Path;
+use std::str::FromStr;
 
 pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     "**/node_modules",
@@ -48,12 +49,29 @@ pub trait LspClient: Send {
             "serverStatusNotification": true
         }));
 
-        let params = InitializeParams {
-            capabilities: capabilities,
-            workspace_folders: Some(workspace_folders.clone()),
-            root_uri: Some(workspace_folders[0].uri.clone()),
-            ..Default::default()
+        let params = match workspace_folders.len() {
+            d if d >= 1 => {
+                InitializeParams {
+                    capabilities: capabilities,
+                    workspace_folders: Some(workspace_folders.clone()),
+                    root_uri: Some(workspace_folders[0].uri.clone()),
+                    ..Default::default()
+                }
+            }
+            d if d < 1 => {
+                // println!("using root directory, as workspace folder not found.\n{}\n{:?}",root_path,Url::from_file_path(&root_path));
+                InitializeParams {
+                    capabilities,
+                    workspace_folders: Some(workspace_folders.clone()),
+                    root_uri: Some(Url::from_file_path(&root_path).unwrap()),
+                    ..Default::default()
+                }
+            }
+            _ => {
+                panic!("Error initializing parameters")
+            }
         };
+        
         let request = self
             .get_json_rpc()
             .create_request("initialize", serde_json::to_value(params)?);

@@ -38,10 +38,11 @@ impl LspManager {
     fn detect_languages(&self, root_path: &str) -> Vec<SupportedLanguages> {
         let mut lsps = Vec::new();
         for lsp in [
-            SupportedLanguages::Python,
-            SupportedLanguages::TypeScriptJavaScript,
-            SupportedLanguages::Rust,
-            SupportedLanguages::Golang,
+            // SupportedLanguages::Python,
+            // SupportedLanguages::TypeScriptJavaScript,
+            // SupportedLanguages::Rust,
+            // SupportedLanguages::Golang,
+            SupportedLanguages::CPP
         ] {
             let patterns = match lsp {
                 SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS

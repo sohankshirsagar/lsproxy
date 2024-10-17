@@ -58,6 +58,7 @@ impl ClangdClient {
                         println!("Found files for clangd: {:?}, just using the first one for main compilation",files);
                         match files[0].file_stem() {
                             Some(stem) => {
+                                println!("Using {:?}",stem.to_str());
                                 Command::new("compiledb")
                                     .arg("-n")
                                     .arg("make")
@@ -77,7 +78,6 @@ impl ClangdClient {
         }
 
         let process = Command::new("clangd")
-            .arg("--stdio")
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

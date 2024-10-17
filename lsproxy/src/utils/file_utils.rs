@@ -9,7 +9,7 @@ pub fn search_files(
 ) -> std::io::Result<Vec<std::path::PathBuf>> {
     let mut files = Vec::new();
     let walk = build_walk(path, exclude_patterns);
-
+    // println!("Searching for {:?}",include_patterns);
     for result in walk {
         match result {
             Ok(entry) => {
@@ -84,11 +84,12 @@ pub fn search_directory_for_string(
     exclude_patterns: Vec<String>,
     to_search: String,
 ) -> std::io::Result<Vec<PathBuf>> {
-    let mut dirs = Vec::new();
+    let mut files = Vec::new();
     let walk = build_walk(path, exclude_patterns);
     for result in walk {
-        match result {
+        match result.clone() {            
             Ok(entry) => {
+                // println!("result: {:?}",result);
                 let path = entry.path().to_path_buf();
                 if !include_patterns.iter().any(|pattern| {
                     glob::Pattern::new(pattern)
@@ -98,25 +99,26 @@ pub fn search_directory_for_string(
                     continue;
                 }
                 if path.is_dir() {
-                    dirs.push(path);
+                    continue
                 } else {
-                    dirs.push(path.parent().unwrap().to_path_buf());
+                    files.push(path)
                 }
             }
             Err(err) => eprintln!("Error: {}", err),
         }
     }
-    debug!("dirs to search: {:?}", dirs);
+    // println!("files to search: {:?}", files);
     let mut files_with_str = Vec::new();
-    for result in dirs {
-        match fs::read_to_string(result) {
+    for result in files {
+        match fs::read_to_string(result.clone()) {
             Ok(file_string)=>{
+                println!("Reading: {:?}",result.to_str());
                 if file_string.contains(&to_search){
-                    files_with_str.push(file_string.into());
+                    files_with_str.push(result.into());
                 }
             }
             Err(err)=>{
-                debug!("Error reading file in search: {:?}\n{:?}", err, path);
+                println!("Error reading file in search: {:?}\n{:?}", err, path);
             }
         };
     }
