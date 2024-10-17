@@ -1,12 +1,13 @@
 # GetReferencesRequest
 
+Request to get the references of a symbol in the workspace.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**include_declaration** | **bool** |  | [optional] 
-**include_raw_response** | **bool** |  | [optional] 
+**include_declaration** | **bool** | Whether to include the declaration (definition) of the symbol in the response. Defaults to false. | [optional] 
+**include_raw_response** | **bool** | Whether to include the raw response from the langserver in the response. Defaults to false. | [optional] 
 **symbol_identifier_position** | [**FilePosition**](FilePosition.md) |  | 
 
 ## Example

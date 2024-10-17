@@ -26,9 +26,9 @@ class SupportedLanguages(str, Enum):
     """
     allowed enum values
     """
-    PYTHON = 'Python'
-    TYPESCRIPTJAVASCRIPT = 'TypeScriptJavaScript'
-    RUST = 'Rust'
+    PYTHON = 'python'
+    TYPESCRIPT_JAVASCRIPT = 'typescript_javascript'
+    RUST = 'rust'
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:

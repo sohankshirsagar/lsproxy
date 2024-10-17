@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Any, ClassVar, Dict, List, Optional
 from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
@@ -27,8 +27,8 @@ class ReferenceResponse(BaseModel):
     """
     ReferenceResponse
     """ # noqa: E501
-    raw_response: Optional[Any] = None
-    references: List[FilePosition]
+    raw_response: Optional[Any] = Field(default=None, description="The raw response from the langserver.  https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_references")
+    references: List[FilePosition] = Field(description="The references to the symbol. Points to the start position of the symbol's identifier.  e.g. for the references of `User` on line 0 character 6 of `src/main.py` with the code: ``` 0: class User: _________^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) _________^ 6: 7: print(user.name) ``` The references will be `[{\"path\": \"src/main.py\", \"line\": 5, \"character\": 7}]`. ")
     __properties: ClassVar[List[str]] = ["raw_response", "references"]
 
     model_config = ConfigDict(

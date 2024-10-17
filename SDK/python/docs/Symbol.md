@@ -1,13 +1,14 @@
 # Symbol
 
+Represents a symbol within the codebase.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **identifier_start_position** | [**FilePosition**](FilePosition.md) |  | 
-**kind** | **str** |  | 
-**name** | **str** |  | 
+**kind** | **str** | The kind of the symbol (e.g., function, class). | 
+**name** | **str** | The name of the symbol. | 
 
 ## Example
 

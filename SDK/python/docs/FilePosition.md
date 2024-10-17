@@ -1,5 +1,6 @@
 # FilePosition
 
+Specific position within a file.
 
 ## Properties
 

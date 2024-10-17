@@ -1,12 +1,13 @@
 # WorkspaceSymbolsRequest
 
+Request to get the symbols in the workspace.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**include_raw_response** | **bool** |  | [optional] 
-**query** | **str** |  | 
+**include_raw_response** | **bool** | Whether to include the raw response from the langserver in the response. Defaults to false. | [optional] 
+**query** | **str** | The query to search for. | 
 
 ## Example
 

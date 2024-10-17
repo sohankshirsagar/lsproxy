@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
 from typing import Any, ClassVar, Dict, List
 from lsproxy_sdk.models.file_position import FilePosition
 from typing import Optional, Set
@@ -25,11 +25,11 @@ from typing_extensions import Self
 
 class Symbol(BaseModel):
     """
-    Symbol
+    Represents a symbol within the codebase.
     """ # noqa: E501
     identifier_start_position: FilePosition
-    kind: StrictStr
-    name: StrictStr
+    kind: StrictStr = Field(description="The kind of the symbol (e.g., function, class).")
+    name: StrictStr = Field(description="The name of the symbol.")
     __properties: ClassVar[List[str]] = ["identifier_start_position", "kind", "name"]
 
     model_config = ConfigDict(

@@ -16,8 +16,9 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import StrictBool, StrictStr
-from typing import Optional
+from pydantic import Field, StrictBool, StrictStr
+from typing import List, Optional
+from typing_extensions import Annotated
 from lsproxy_sdk.models.definition_response import DefinitionResponse
 from lsproxy_sdk.models.file_position import FilePosition
 from lsproxy_sdk.models.reference_response import ReferenceResponse
@@ -44,8 +45,8 @@ class CrateApi:
     @validate_call
     def definition(
         self,
-        position: FilePosition,
-        include_raw_response: Optional[StrictBool] = None,
+        position: Annotated[FilePosition, Field(description="The position within the file to get the definition for. This should point to the identifier of the symbol you want to get the definition for.  e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code: ``` 0: class User: 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^^^ ``` The (line, char) should be anywhere in (5, 7)-(5, 11).")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -59,12 +60,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> DefinitionResponse:
-        """definition
+        """Get the definition of a symbol at a specific position in a file
 
+        Get the definition of a symbol at a specific position in a file  Returns the location of the definition for the symbol at the given position.
 
-        :param position: (required)
+        :param position: The position within the file to get the definition for. This should point to the identifier of the symbol you want to get the definition for.  e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code: ``` 0: class User: 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^^^ ``` The (line, char) should be anywhere in (5, 7)-(5, 11). (required)
         :type position: FilePosition
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -116,8 +118,8 @@ class CrateApi:
     @validate_call
     def definition_with_http_info(
         self,
-        position: FilePosition,
-        include_raw_response: Optional[StrictBool] = None,
+        position: Annotated[FilePosition, Field(description="The position within the file to get the definition for. This should point to the identifier of the symbol you want to get the definition for.  e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code: ``` 0: class User: 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^^^ ``` The (line, char) should be anywhere in (5, 7)-(5, 11).")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -131,12 +133,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ApiResponse[DefinitionResponse]:
-        """definition
+        """Get the definition of a symbol at a specific position in a file
 
+        Get the definition of a symbol at a specific position in a file  Returns the location of the definition for the symbol at the given position.
 
-        :param position: (required)
+        :param position: The position within the file to get the definition for. This should point to the identifier of the symbol you want to get the definition for.  e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code: ``` 0: class User: 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^^^ ``` The (line, char) should be anywhere in (5, 7)-(5, 11). (required)
         :type position: FilePosition
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -188,8 +191,8 @@ class CrateApi:
     @validate_call
     def definition_without_preload_content(
         self,
-        position: FilePosition,
-        include_raw_response: Optional[StrictBool] = None,
+        position: Annotated[FilePosition, Field(description="The position within the file to get the definition for. This should point to the identifier of the symbol you want to get the definition for.  e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code: ``` 0: class User: 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^^^ ``` The (line, char) should be anywhere in (5, 7)-(5, 11).")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -203,12 +206,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """definition
+        """Get the definition of a symbol at a specific position in a file
 
+        Get the definition of a symbol at a specific position in a file  Returns the location of the definition for the symbol at the given position.
 
-        :param position: (required)
+        :param position: The position within the file to get the definition for. This should point to the identifier of the symbol you want to get the definition for.  e.g. for getting the definition of `User` on line 10 of `src/main.py` with the code: ``` 0: class User: 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) __________^^^ ``` The (line, char) should be anywhere in (5, 7)-(5, 11). (required)
         :type position: FilePosition
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -326,8 +330,8 @@ class CrateApi:
     @validate_call
     def file_symbols(
         self,
-        file_path: StrictStr,
-        include_raw_response: Optional[StrictBool] = None,
+        file_path: Annotated[StrictStr, Field(description="The path to the file to get the symbols for, relative to the root of the workspace.")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -341,12 +345,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> SymbolResponse:
-        """file_symbols
+        """Get symbols in a specific file
 
+        Get symbols in a specific file  Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.
 
-        :param file_path: (required)
+        :param file_path: The path to the file to get the symbols for, relative to the root of the workspace. (required)
         :type file_path: str
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -398,8 +403,8 @@ class CrateApi:
     @validate_call
     def file_symbols_with_http_info(
         self,
-        file_path: StrictStr,
-        include_raw_response: Optional[StrictBool] = None,
+        file_path: Annotated[StrictStr, Field(description="The path to the file to get the symbols for, relative to the root of the workspace.")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -413,12 +418,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ApiResponse[SymbolResponse]:
-        """file_symbols
+        """Get symbols in a specific file
 
+        Get symbols in a specific file  Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.
 
-        :param file_path: (required)
+        :param file_path: The path to the file to get the symbols for, relative to the root of the workspace. (required)
         :type file_path: str
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -470,8 +476,8 @@ class CrateApi:
     @validate_call
     def file_symbols_without_preload_content(
         self,
-        file_path: StrictStr,
-        include_raw_response: Optional[StrictBool] = None,
+        file_path: Annotated[StrictStr, Field(description="The path to the file to get the symbols for, relative to the root of the workspace.")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -485,12 +491,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """file_symbols
+        """Get symbols in a specific file
 
+        Get symbols in a specific file  Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.
 
-        :param file_path: (required)
+        :param file_path: The path to the file to get the symbols for, relative to the root of the workspace. (required)
         :type file_path: str
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -608,9 +615,9 @@ class CrateApi:
     @validate_call
     def references(
         self,
-        symbol_identifier_position: FilePosition,
-        include_declaration: Optional[StrictBool] = None,
-        include_raw_response: Optional[StrictBool] = None,
+        symbol_identifier_position: Annotated[FilePosition, Field(description="The position within the file to get the references for. This should point to the identifier of the definition.  e.g. for getting the references of `User` on line 0 of `src/main.py` with the code: ``` 0: class User: _________^^^^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) ```")],
+        include_declaration: Annotated[Optional[StrictBool], Field(description="Whether to include the declaration (definition) of the symbol in the response. Defaults to false.")] = None,
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -624,14 +631,15 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ReferenceResponse:
-        """references
+        """Find all references to a symbol
 
+        Find all references to a symbol  Returns a list of locations where the symbol at the given position is referenced.
 
-        :param symbol_identifier_position: (required)
+        :param symbol_identifier_position: The position within the file to get the references for. This should point to the identifier of the definition.  e.g. for getting the references of `User` on line 0 of `src/main.py` with the code: ``` 0: class User: _________^^^^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) ``` (required)
         :type symbol_identifier_position: FilePosition
-        :param include_declaration:
+        :param include_declaration: Whether to include the declaration (definition) of the symbol in the response. Defaults to false.
         :type include_declaration: bool
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -684,9 +692,9 @@ class CrateApi:
     @validate_call
     def references_with_http_info(
         self,
-        symbol_identifier_position: FilePosition,
-        include_declaration: Optional[StrictBool] = None,
-        include_raw_response: Optional[StrictBool] = None,
+        symbol_identifier_position: Annotated[FilePosition, Field(description="The position within the file to get the references for. This should point to the identifier of the definition.  e.g. for getting the references of `User` on line 0 of `src/main.py` with the code: ``` 0: class User: _________^^^^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) ```")],
+        include_declaration: Annotated[Optional[StrictBool], Field(description="Whether to include the declaration (definition) of the symbol in the response. Defaults to false.")] = None,
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -700,14 +708,15 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ApiResponse[ReferenceResponse]:
-        """references
+        """Find all references to a symbol
 
+        Find all references to a symbol  Returns a list of locations where the symbol at the given position is referenced.
 
-        :param symbol_identifier_position: (required)
+        :param symbol_identifier_position: The position within the file to get the references for. This should point to the identifier of the definition.  e.g. for getting the references of `User` on line 0 of `src/main.py` with the code: ``` 0: class User: _________^^^^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) ``` (required)
         :type symbol_identifier_position: FilePosition
-        :param include_declaration:
+        :param include_declaration: Whether to include the declaration (definition) of the symbol in the response. Defaults to false.
         :type include_declaration: bool
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -760,9 +769,9 @@ class CrateApi:
     @validate_call
     def references_without_preload_content(
         self,
-        symbol_identifier_position: FilePosition,
-        include_declaration: Optional[StrictBool] = None,
-        include_raw_response: Optional[StrictBool] = None,
+        symbol_identifier_position: Annotated[FilePosition, Field(description="The position within the file to get the references for. This should point to the identifier of the definition.  e.g. for getting the references of `User` on line 0 of `src/main.py` with the code: ``` 0: class User: _________^^^^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) ```")],
+        include_declaration: Annotated[Optional[StrictBool], Field(description="Whether to include the declaration (definition) of the symbol in the response. Defaults to false.")] = None,
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -776,14 +785,15 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """references
+        """Find all references to a symbol
 
+        Find all references to a symbol  Returns a list of locations where the symbol at the given position is referenced.
 
-        :param symbol_identifier_position: (required)
+        :param symbol_identifier_position: The position within the file to get the references for. This should point to the identifier of the definition.  e.g. for getting the references of `User` on line 0 of `src/main.py` with the code: ``` 0: class User: _________^^^^ 1:     def __init__(self, name, age): 2:         self.name = name 3:         self.age = age 4: 5: user = User(\"John\", 30) ``` (required)
         :type symbol_identifier_position: FilePosition
-        :param include_declaration:
+        :param include_declaration: Whether to include the declaration (definition) of the symbol in the response. Defaults to false.
         :type include_declaration: bool
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -905,10 +915,261 @@ class CrateApi:
 
 
     @validate_call
+    def workspace_files(
+        self,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> List[str]:
+        """Get a list of all files in the workspace
+
+        Get a list of all files in the workspace  Returns an array of file paths for all files in the current workspace.  This is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.
+
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._workspace_files_serialize(
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "List[str]",
+            '400': None,
+            '500': None,
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data
+
+
+    @validate_call
+    def workspace_files_with_http_info(
+        self,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> ApiResponse[List[str]]:
+        """Get a list of all files in the workspace
+
+        Get a list of all files in the workspace  Returns an array of file paths for all files in the current workspace.  This is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.
+
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._workspace_files_serialize(
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "List[str]",
+            '400': None,
+            '500': None,
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        )
+
+
+    @validate_call
+    def workspace_files_without_preload_content(
+        self,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> RESTResponseType:
+        """Get a list of all files in the workspace
+
+        Get a list of all files in the workspace  Returns an array of file paths for all files in the current workspace.  This is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.
+
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._workspace_files_serialize(
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "List[str]",
+            '400': None,
+            '500': None,
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        return response_data.response
+
+
+    def _workspace_files_serialize(
+        self,
+        _request_auth,
+        _content_type,
+        _headers,
+        _host_index,
+    ) -> RequestSerialized:
+
+        _host = None
+
+        _collection_formats: Dict[str, str] = {
+        }
+
+        _path_params: Dict[str, str] = {}
+        _query_params: List[Tuple[str, str]] = []
+        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _form_params: List[Tuple[str, str]] = []
+        _files: Dict[
+            str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
+        ] = {}
+        _body_params: Optional[bytes] = None
+
+        # process the path parameters
+        # process the query parameters
+        # process the header parameters
+        # process the form parameters
+        # process the body parameter
+
+
+        # set the HTTP header `Accept`
+        if 'Accept' not in _header_params:
+            _header_params['Accept'] = self.api_client.select_header_accept(
+                [
+                    'application/json'
+                ]
+            )
+
+
+        # authentication setting
+        _auth_settings: List[str] = [
+        ]
+
+        return self.api_client.param_serialize(
+            method='GET',
+            resource_path='/workspace-files',
+            path_params=_path_params,
+            query_params=_query_params,
+            header_params=_header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            auth_settings=_auth_settings,
+            collection_formats=_collection_formats,
+            _host=_host,
+            _request_auth=_request_auth
+        )
+
+
+
+
+    @validate_call
     def workspace_symbols(
         self,
-        query: StrictStr,
-        include_raw_response: Optional[StrictBool] = None,
+        query: Annotated[StrictStr, Field(description="The query to search for.")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -922,12 +1183,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> SymbolResponse:
-        """workspace_symbols
+        """Search for symbols across the entire workspace
 
+        Search for symbols across the entire workspace  Returns a list of symbols matching the given query string from all files in the workspace.
 
-        :param query: (required)
+        :param query: The query to search for. (required)
         :type query: str
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -979,8 +1241,8 @@ class CrateApi:
     @validate_call
     def workspace_symbols_with_http_info(
         self,
-        query: StrictStr,
-        include_raw_response: Optional[StrictBool] = None,
+        query: Annotated[StrictStr, Field(description="The query to search for.")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -994,12 +1256,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ApiResponse[SymbolResponse]:
-        """workspace_symbols
+        """Search for symbols across the entire workspace
 
+        Search for symbols across the entire workspace  Returns a list of symbols matching the given query string from all files in the workspace.
 
-        :param query: (required)
+        :param query: The query to search for. (required)
         :type query: str
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -1051,8 +1314,8 @@ class CrateApi:
     @validate_call
     def workspace_symbols_without_preload_content(
         self,
-        query: StrictStr,
-        include_raw_response: Optional[StrictBool] = None,
+        query: Annotated[StrictStr, Field(description="The query to search for.")],
+        include_raw_response: Annotated[Optional[StrictBool], Field(description="Whether to include the raw response from the langserver in the response. Defaults to false.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -1066,12 +1329,13 @@ class CrateApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """workspace_symbols
+        """Search for symbols across the entire workspace
 
+        Search for symbols across the entire workspace  Returns a list of symbols matching the given query string from all files in the workspace.
 
-        :param query: (required)
+        :param query: The query to search for. (required)
         :type query: str
-        :param include_raw_response:
+        :param include_raw_response: Whether to include the raw response from the langserver in the response. Defaults to false.
         :type include_raw_response: bool
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request

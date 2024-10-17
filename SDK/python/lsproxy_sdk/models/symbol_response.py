@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Any, ClassVar, Dict, List, Optional
 from lsproxy_sdk.models.symbol import Symbol
 from typing import Optional, Set
@@ -27,7 +27,7 @@ class SymbolResponse(BaseModel):
     """
     SymbolResponse
     """ # noqa: E501
-    raw_response: Optional[Any] = None
+    raw_response: Optional[Any] = Field(default=None, description="The raw response from the langserver.  https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol")
     symbols: List[Symbol]
     __properties: ClassVar[List[str]] = ["raw_response", "symbols"]
 

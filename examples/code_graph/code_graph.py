@@ -15,7 +15,7 @@ def save_edge_data(data: Dict[str, set], output_file: str = 'edge_data.json'):
     print(f"Dependency data saved to {output_file}")
 
 def process_file(file_path: str):
-    with ApiClient(Configuration(host="http://localhost:8080")) as lsproxy_client:
+    with ApiClient(Configuration(host="http://localhost:4444")) as lsproxy_client:
         lsproxy = CrateApi(lsproxy_client)
     try:
         edges = {}

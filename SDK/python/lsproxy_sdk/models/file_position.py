@@ -25,7 +25,7 @@ from typing_extensions import Self
 
 class FilePosition(BaseModel):
     """
-    FilePosition
+    Specific position within a file.
     """ # noqa: E501
     character: Annotated[int, Field(strict=True, ge=0)]
     line: Annotated[int, Field(strict=True, ge=0)]
