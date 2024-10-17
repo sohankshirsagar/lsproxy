@@ -1,8 +1,8 @@
 use crate::api_types::{SupportedLanguages, MOUNT_DIR};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
-    PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
-    RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
+    PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, GoplsClient, PYRIGHT_FILE_PATTERNS,
+    RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS, GOLANG_FILE_PATTERNS
 };
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
@@ -33,6 +33,7 @@ impl LspManager {
             SupportedLanguages::Python,
             SupportedLanguages::TypeScriptJavaScript,
             SupportedLanguages::Rust,
+            SupportedLanguages::Golang
         ] {
             let patterns = match lsp {
                 SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS
@@ -44,6 +45,10 @@ impl LspManager {
                     .map(|&s| s.to_string())
                     .collect(),
                 SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
+                SupportedLanguages::Golang => GOLANG_FILE_PATTERNS
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
@@ -88,6 +93,11 @@ impl LspManager {
                 ),
                 SupportedLanguages::Rust => Box::new(
                     RustAnalyzerClient::new(workspace_path)
+                        .await
+                        .map_err(|e| e.to_string())?,
+                ),
+                SupportedLanguages::Golang => Box::new(
+                    GoplsClient::new(workspace_path)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
@@ -201,6 +211,10 @@ impl LspManager {
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
+                SupportedLanguages::Golang => GOLANG_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
             };
             let language_files_result = search_files(
                 Path::new(MOUNT_DIR),
@@ -244,6 +258,7 @@ impl LspManager {
                 Ok(SupportedLanguages::TypeScriptJavaScript)
             }
             Some("rs") => Ok(SupportedLanguages::Rust),
+            Some("go") => Ok(SupportedLanguages::Golang),
             _ => Err("Unsupported file type".into()),
         }
     }

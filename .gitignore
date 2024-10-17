@@ -26,3 +26,7 @@ Cargo.lock
 **/__pycache__/
 
 **/.openapi-generator/
+
+.vscode
+
+.vscode
