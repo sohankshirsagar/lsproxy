@@ -1,5 +1,8 @@
 use actix_cors::Cors;
-use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::{
+    web::{get, resource, scope, Data, Query},
+    App, HttpResponse, HttpServer,
+};
 use clap::Parser;
 use env_logger::Env;
 use log::{debug, error, info};
@@ -38,10 +41,24 @@ fn check_mount_dir() -> std::io::Result<()> {
         workspace_files
     ),
     components(
-        schemas(FileSymbolsRequest, WorkspaceSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, SupportedLanguages, DefinitionResponse, ReferenceResponse, SymbolResponse, FilePosition, Symbol)
+        schemas(
+            FileSymbolsRequest,
+            WorkspaceSymbolsRequest,
+            GetDefinitionRequest,
+            GetReferencesRequest,
+            SupportedLanguages,
+            DefinitionResponse,
+            ReferenceResponse,
+            SymbolResponse,
+            FilePosition,
+            Symbol
+        )
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
+    ),
+    servers(
+        (url = "/v1", description = "API v1")
     )
 )]
 struct ApiDoc;
@@ -71,10 +88,7 @@ struct Cli {
         (status = 500, description = "Internal server error")
     )
 )]
-async fn definition(
-    data: web::Data<AppState>,
-    info: web::Query<GetDefinitionRequest>,
-) -> HttpResponse {
+async fn definition(data: Data<AppState>, info: Query<GetDefinitionRequest>) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
         info.position.path, info.position.line, info.position.character
@@ -125,10 +139,7 @@ async fn definition(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn file_symbols(
-    data: web::Data<AppState>,
-    info: web::Query<FileSymbolsRequest>,
-) -> HttpResponse {
+async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
 
     let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
@@ -167,8 +178,8 @@ async fn file_symbols(
     )
 )]
 async fn workspace_symbols(
-    data: web::Data<AppState>,
-    info: web::Query<WorkspaceSymbolsRequest>,
+    data: Data<AppState>,
+    info: Query<WorkspaceSymbolsRequest>,
 ) -> HttpResponse {
     info!(
         "Received workspace_symbols request for query: {}",
@@ -205,10 +216,7 @@ async fn workspace_symbols(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn references(
-    data: web::Data<AppState>,
-    info: web::Query<GetReferencesRequest>,
-) -> HttpResponse {
+async fn references(data: Data<AppState>, info: Query<GetReferencesRequest>) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
@@ -249,7 +257,7 @@ async fn references(
 /// Get a list of all files in the workspace
 ///
 /// Returns an array of file paths for all files in the current workspace.
-/// 
+///
 /// This is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.
 #[utoipa::path(
     get,
@@ -260,7 +268,7 @@ async fn references(
         (status = 500, description = "Internal server error")
     )
 )]
-async fn workspace_files(data: web::Data<AppState>) -> HttpResponse {
+async fn workspace_files(data: Data<AppState>) -> HttpResponse {
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let files = lsp_manager.workspace_files().await;
     match files {
@@ -318,25 +326,23 @@ async fn main() -> std::io::Result<()> {
         .start_langservers(MOUNT_DIR)
         .await
         .unwrap();
-    let app_state = web::Data::new(AppState { lsp_manager });
+    let app_state = Data::new(AppState { lsp_manager });
 
     let server = HttpServer::new(move || {
         App::new()
-            .wrap(
-                Cors::default()
-                    .allow_any_origin()
-                    .allow_any_method()
-                    .allow_any_header(),
-            )
+            .wrap(Cors::permissive())
             .app_data(app_state.clone())
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .service(web::resource("/file-symbols").route(web::get().to(file_symbols)))
-            .service(web::resource("/workspace-symbols").route(web::get().to(workspace_symbols)))
-            .service(web::resource("/definition").route(web::get().to(definition)))
-            .service(web::resource("/references").route(web::get().to(references)))
-            .service(web::resource("/workspace-files").route(web::get().to(workspace_files)))
+            .service(
+                scope("/v1")
+                    .service(resource("/file-symbols").route(get().to(file_symbols)))
+                    .service(resource("/workspace-symbols").route(get().to(workspace_symbols)))
+                    .service(resource("/definition").route(get().to(definition)))
+                    .service(resource("/references").route(get().to(references)))
+                    .service(resource("/workspace-files").route(get().to(workspace_files))),
+            )
     })
     .bind("0.0.0.0:8080")?;
 
