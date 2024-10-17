@@ -124,6 +124,7 @@ impl LspManager {
                 .initialize(workspace_path.to_string())
                 .await
                 .map_err(|e| e.to_string())?;
+            debug!("Setting up workspace");
             client
                 .setup_workspace(workspace_path)
                 .await

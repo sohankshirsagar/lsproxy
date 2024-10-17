@@ -29,7 +29,8 @@ impl ProcessHandler {
 #[async_trait::async_trait]
 impl Process for ProcessHandler {
     async fn send(&mut self, data: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        debug!("Sending data to process: {}", data);
+        debug!("Sending data to process:\n{}", data);
+        println!("Trying to figure out why this has weird spacing in it:\n{}",data);
         self.stdin.write_all(data.as_bytes()).await?;
         self.stdin.flush().await?;
         Ok(())

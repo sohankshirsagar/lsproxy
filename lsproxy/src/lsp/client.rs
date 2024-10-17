@@ -14,7 +14,6 @@ use lsp_types::{
 };
 use std::error::Error;
 use std::path::Path;
-use std::str::FromStr;
 
 pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     "**/node_modules",
@@ -61,7 +60,7 @@ pub trait LspClient: Send {
             d if d < 1 => {
                 // println!("using root directory, as workspace folder not found.\n{}\n{:?}",root_path,Url::from_file_path(&root_path));
                 InitializeParams {
-                    capabilities,
+                    capabilities: capabilities,
                     workspace_folders: Some(workspace_folders.clone()),
                     root_uri: Some(Url::from_file_path(&root_path).unwrap()),
                     ..Default::default()
