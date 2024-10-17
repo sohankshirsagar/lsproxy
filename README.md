@@ -4,5 +4,10 @@
 
 <a name="readme-top"></a>
 
-# We dream of all language servers being equal and available to all
+# lsproxy
+Remember when languge servers were hard?
+<p align="center">
+  <img alt="discord" src="https://img.shields.io/discord/1296271531994775552">
+</p>
 </div>
+
