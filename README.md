@@ -23,7 +23,7 @@
 - 🛠️ **Auto-Configuration**: Automatically detect and configure language servers based on your project files.
 - 📊 **Diagnostics**: (Coming Soon) Get project linter output from an endpoint.
 - 🌳 **Call & Type Hierarchies**: (Coming Soon) Query multi-hop code relationships.
-- 🔄 **Procedural Refactoring**: (Coming Soon) Perform code refactoring operations through the API.
+- 🔄 **Procedural Refactoring**: (Coming Soon) Perform symbol operations like `rename`, `extract`, `auto import` through the API.
 - 🧩 **SDKs**: Libraries to get started calling `lsproxy` in popular languages.
     
 
