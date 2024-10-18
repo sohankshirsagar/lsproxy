@@ -6,13 +6,13 @@ use actix_web::{
 use api_types::ErrorResponse;
 use clap::Parser;
 use env_logger::Env;
-use log::{debug, error, info};
+use log::{error, info};
 use lsp::manager::LspManagerError;
 use lsp_types::Position;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
