@@ -98,6 +98,7 @@ pub struct FileSymbolsRequest {
 }
 
 /// Request to get the symbols in the workspace.
+#[allow(unused)] // TODO re-implement using textDocument/symbol
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct WorkspaceSymbolsRequest {
     /// The query to search for.

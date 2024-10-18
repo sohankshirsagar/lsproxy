@@ -44,7 +44,6 @@ fn check_mount_dir() -> std::io::Result<()> {
     components(
         schemas(
             FileSymbolsRequest,
-            WorkspaceSymbolsRequest,
             GetDefinitionRequest,
             GetReferencesRequest,
             SupportedLanguages,
