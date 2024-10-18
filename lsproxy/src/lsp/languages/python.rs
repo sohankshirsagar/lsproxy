@@ -73,7 +73,6 @@ impl PyrightClient {
             Ok(handler) => handler,
             Err(e) => return Err(format!("Failed to initialize workspace documents: {}", e)),
         };
-        );
 
         let json_rpc_handler = JsonRpcHandler::new();
 
