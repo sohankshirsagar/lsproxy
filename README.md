@@ -10,36 +10,21 @@
 </p>
 </div>
 
-# Table of Contents
-
-1. [What is lsproxy?](#what-is-lsproxy)
-2. [Getting started](#getting-started)
-3. [Examples](#examples)
-4. [Contributing](#contributing)
-5. [Community](#community)
-6. [Supported languages](#supported-languages)
 
    
 ## <a name="what-is-lsproxy">What is lsproxy?</a>
 
-`lsproxy` offers a simple containerized REST API for project-wide code analysis and navigation using Language Servers:
-  - find sybmol definitions across files
-  - find symbol references across files
-  - code diagnostics/lints (coming soon)
-  - call and type hierarchies (coming soon)
-  - procedural refactors (coming soon)
+`lsproxy` offers a simple containerized REST API for project-wide code analysis and navigation using Language Servers. It simplifies the integration of powerful language server capabilities into AI coding assistants, developer tools, and other non-IDE/editor applications.
 
-Language servers are powerful, but tricky to use outside of IDEs.
-- Each programming language has its own server implementations that need to be installed and started up separately.
-- These servers have bespoke configuration and undocumented behaviors.
-- Different server implementations support different features of the protocol.
-- The protocol is designed around cursors and raw text.
+## Key Features
 
-`lsproxy` aims to solve this by:
-- Pre-installing servers for popular languages and running them automatically based on your project files.
-- Automatically detecting configuration and providing sensible defaults.
-- Offering a streamlined API to use with AI coding assistants and other clients.
-- Providing a consistent experience across different languages.
+- 🚀 **Unified API**: Access multiple language servers through a single, consistent REST API.
+- 🔍 **Cross-File Analysis**: Find symbol definitions and references across your entire project.
+- 🛠️ **Auto-Configuration**: Automatically detect and configure language servers based on your project files.
+- 🌐 **Language Agnostic**: Support for multiple programming languages out of the box.
+- 📊 **Diagnostics**: (Coming Soon) Get project linter output information from an endpoint.
+- 🌳 **Call & Type Hierarchies**: (Coming Soon) Query multi-hop code relationships.
+- 🔄 **Procedural Refactoring**: (Coming Soon) Perform code refactoring operations through the API.
     
 
 ## <a name="getting-started">Getting started</a>
