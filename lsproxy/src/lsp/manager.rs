@@ -155,30 +155,6 @@ impl LspManager {
             })
     }
 
-    pub async fn workspace_symbols(
-        &self,
-        query: &str,
-    ) -> Result<Vec<WorkspaceSymbolResponse>, LspManagerError> {
-        /* This returns results for all langservers*/
-        let mut symbols = Vec::new();
-        for (lang, client) in self.clients.iter() {
-            debug!(
-                "Requesting workspace symbols with query: {} for {:?}",
-                query, lang
-            );
-            let mut locked_client = client.lock().await;
-            let client_symbols = locked_client.workspace_symbols(query).await;
-            match client_symbols {
-                Ok(response) => symbols.push(response),
-                Err(e) => error!(
-                    "Error requesting workspace symbols for {:?}: {:?}. Continuing...",
-                    lang, e
-                ),
-            }
-        }
-        Ok(symbols)
-    }
-
     pub fn get_client(
         &self,
         lsp_type: SupportedLanguages,
