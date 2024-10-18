@@ -69,7 +69,7 @@ impl PyrightClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
-        )
+        );
 
         let json_rpc_handler = JsonRpcHandler::new();
 
