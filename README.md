@@ -41,7 +41,7 @@ The easiest way to get started is to run it yourself! We keep the latest version
 
 You can find the documentation for the SDK [here](sdk.agenticlabs.com)
 ```bash
-pip install lsproxy-sdk
+pip install lsproxy
 ```
 
 ### Run a container or add to compose
