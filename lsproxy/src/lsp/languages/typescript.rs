@@ -1,4 +1,11 @@
-use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fs::read_to_string,
+    path::Path,
+    process::Stdio,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use log::debug;
@@ -15,6 +22,7 @@ use crate::{
 pub struct TypeScriptLanguageClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
+    workspace_files_cache: Arc<Mutex<Option<HashMap<String, Option<String>>>>>,
 }
 
 pub const TYPESCRIPT_ROOT_FILES: &[&str] =
@@ -39,6 +47,21 @@ impl LspClient for TypeScriptLanguageClient {
             .collect()
     }
 
+    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>> {
+        self.workspace_files_cache.clone()
+    }
+
+    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>) {
+        self.workspace_files_cache = Arc::new(Mutex::new(Some(cache)));
+    }
+
+    fn get_include_patterns(&mut self) -> Vec<String> {
+        TYPESCRIPT_FILE_PATTERNS
+            .iter()
+            .map(|&s| s.to_string())
+            .collect()
+    }
+
     async fn setup_workspace(
         &mut self,
         root_path: &str,
@@ -48,12 +71,25 @@ impl LspClient for TypeScriptLanguageClient {
         This is a limitation of the tsserver    .
          */
         debug!("Setting up workspace for TypeScript client");
-        let text_document_items =
-            TypeScriptLanguageClient::get_text_document_items_to_open(root_path).unwrap();
+
+        let mut cache: HashMap<String, Option<String>> = HashMap::new();
+
+        let text_document_items = self
+            .get_text_document_items_to_open_with_config(root_path)
+            .await?;
         for item in text_document_items {
-            debug!("Sent 'didOpen' for file: {}", item.uri.to_string());
+            cache.insert(
+                item.uri
+                    .to_file_path()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                Some(item.text.to_owned()),
+            );
             self.text_document_did_open(item).await?;
         }
+        self.set_workspace_files_cache(cache);
         debug!("Workspace setup completed for TypeScript client");
         Ok(())
     }
@@ -78,12 +114,14 @@ impl TypeScriptLanguageClient {
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
+            workspace_files_cache: Arc::new(Mutex::new(None)),
         })
     }
 
-    pub fn get_text_document_items_to_open(
+    pub async fn get_text_document_items_to_open_with_config(
+        &mut self,
         workspace_path: &str,
-    ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<TextDocumentItem>, Box<dyn Error + Send + Sync>> {
         let tsconfig_path = Path::new(workspace_path).join("tsconfig.json");
         let tsconfig_content = read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
         let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
@@ -103,17 +141,20 @@ impl TypeScriptLanguageClient {
             exclude_patterns.into_iter().map(String::from).collect(),
         )?;
 
-        files
-            .into_iter()
-            .map(|file_path| {
-                let content = read_to_string(&file_path)?;
-                Ok(TextDocumentItem {
-                    uri: Url::from_file_path(&file_path).map_err(|_| "Invalid file path")?,
-                    language_id: "typescript".to_string(),
-                    version: 1,
-                    text: content,
-                })
-            })
-            .collect()
+        let mut items = Vec::with_capacity(files.len());
+        for file_path in files {
+            let content = self
+                .read_text_document(file_path.to_str().ok_or("Invalid file path")?, None)
+                .await
+                .unwrap();
+            let item = TextDocumentItem {
+                uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
+                language_id: "typescript".to_string(),
+                version: 1,
+                text: content,
+            };
+            items.push(item);
+        }
+        Ok(items)
     }
 }

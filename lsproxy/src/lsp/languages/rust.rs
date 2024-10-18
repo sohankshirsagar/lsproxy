@@ -1,4 +1,9 @@
-use std::{error::Error, process::Stdio};
+use std::{
+    collections::HashMap,
+    error::Error,
+    process::Stdio,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use tokio::process::Command;
@@ -8,6 +13,7 @@ use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
 pub struct RustAnalyzerClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
+    workspace_files_cache: Arc<Mutex<Option<HashMap<String, Option<String>>>>>,
 }
 
 pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
@@ -27,6 +33,21 @@ impl LspClient for RustAnalyzerClient {
         RUST_ANALYZER_ROOT_FILES
             .iter()
             .map(|&s| s.to_owned())
+            .collect()
+    }
+
+    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>> {
+        self.workspace_files_cache.clone()
+    }
+
+    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>) {
+        self.workspace_files_cache = Arc::new(Mutex::new(Some(cache)));
+    }
+
+    fn get_include_patterns(&mut self) -> Vec<String> {
+        RUST_ANALYZER_FILE_PATTERNS
+            .iter()
+            .map(|&s| s.to_string())
             .collect()
     }
 
@@ -59,6 +80,7 @@ impl RustAnalyzerClient {
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
+            workspace_files_cache: Arc::new(Mutex::new(None)),
         })
     }
 }

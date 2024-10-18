@@ -1,8 +1,7 @@
 use log::warn;
 use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink, OneOf,
-    SymbolInformation, SymbolKind, Url, WorkspaceLocation, WorkspaceSymbol,
-    WorkspaceSymbolResponse,
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
+    SymbolInformation, SymbolKind, Url,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -32,15 +31,39 @@ pub enum SupportedLanguages {
     Rust,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Position {
+    /// 0-indexed line number.
+    #[schema(example = 10)]
+    pub line: u32,
+    /// 0-indexed character index.
+    #[schema(example = 5)]
+    pub character: u32,
+}
+
 /// Specific position within a file.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
     #[schema(example = "src/main.py")]
     pub path: String,
-    #[schema(example = 10)]
-    pub line: u32,
-    #[schema(example = 5)]
-    pub character: u32,
+    pub position: Position,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct FileRange {
+    /// The path to the file.
+    #[schema(example = "src/main.py")]
+    pub path: String,
+    /// The start position of the range.
+    pub start: Position,
+    /// The end position of the range.
+    pub end: Position,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct CodeContext {
+    pub range: FileRange,
+    pub source_code: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -54,11 +77,20 @@ pub struct Symbol {
 
     /// The start position of the symbol's identifier.
     pub identifier_start_position: FilePosition,
+
+    /// The code context of the symbol.
+    pub source_code: Option<CodeContext>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetDefinitionRequest {
     pub position: FilePosition,
+
+    /// Whether to include the source code of the symbol in the response.
+    /// Defaults to false.
+    #[serde(default)]
+    #[schema(example = false)]
+    pub include_source_code: bool,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
@@ -98,6 +130,7 @@ pub struct FileSymbolsRequest {
 }
 
 /// Request to get the symbols in the workspace.
+#[allow(unused)] // TODO re-implement using textDocument/symbol
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct WorkspaceSymbolsRequest {
     /// The query to search for.
@@ -222,8 +255,10 @@ impl From<Location> for FilePosition {
     fn from(location: Location) -> Self {
         FilePosition {
             path: uri_to_path_str(location.uri),
-            line: location.range.start.line,
-            character: location.range.start.character,
+            position: Position {
+                line: location.range.start.line,
+                character: location.range.start.character,
+            },
         }
     }
 }
@@ -232,8 +267,10 @@ impl From<LocationLink> for FilePosition {
     fn from(link: LocationLink) -> Self {
         FilePosition {
             path: uri_to_path_str(link.target_uri),
-            line: link.target_range.start.line,
-            character: link.target_range.start.character,
+            position: Position {
+                line: link.target_range.start.line,
+                character: link.target_range.start.character,
+            },
         }
     }
 }
@@ -244,60 +281,7 @@ impl From<SymbolInformation> for Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
             identifier_start_position: FilePosition::from(symbol.location),
-        }
-    }
-}
-
-impl From<WorkspaceLocation> for FilePosition {
-    fn from(location: WorkspaceLocation) -> Self {
-        warn!("WorkspaceLocation does not contain line and character information and will not be shown");
-        FilePosition {
-            path: uri_to_path_str(location.uri),
-            line: 0,
-            character: 0,
-        }
-    }
-}
-
-impl From<WorkspaceSymbol> for Symbol {
-    fn from(symbol: WorkspaceSymbol) -> Self {
-        Symbol {
-            name: symbol.name,
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: match symbol.location {
-                OneOf::Left(location) => FilePosition::from(location),
-                OneOf::Right(workspace_location) => {
-                    warn!("WorkspaceLocation does not contain line and character information and will not be shown");
-                    FilePosition::from(workspace_location)
-                }
-            },
-        }
-    }
-}
-
-impl From<(Vec<WorkspaceSymbolResponse>, bool)> for SymbolResponse {
-    fn from((responses, include_raw): (Vec<WorkspaceSymbolResponse>, bool)) -> Self {
-        let raw_response = if include_raw {
-            Some(to_value(&responses).unwrap_or_default())
-        } else {
-            None
-        };
-        let symbols: Vec<Symbol> = responses
-            .into_iter()
-            .flat_map(|response| match response {
-                WorkspaceSymbolResponse::Flat(symbols) => {
-                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
-                }
-                WorkspaceSymbolResponse::Nested(symbols) =>{
-                    warn!("Nested symbols are missing line and character information and will not be shown");
-                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
-                }
-            })
-            .collect();
-
-        SymbolResponse {
-            raw_response,
-            symbols,
+            source_code: None,
         }
     }
 }
@@ -312,6 +296,7 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
                     name: symbol.name,
                     kind: symbol_kind_to_string(symbol.kind).to_owned(),
                     identifier_start_position: FilePosition::from(symbol.location),
+                    source_code: None,
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
@@ -345,9 +330,12 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
             identifier_start_position: FilePosition {
                 path: file_path.to_owned(),
-                line: symbol.selection_range.start.line,
-                character: symbol.selection_range.start.character,
+                position: Position {
+                    line: symbol.selection_range.start.line,
+                    character: symbol.selection_range.start.character,
+                },
             },
+            source_code: None,
         });
 
         if let Some(children) = symbol.children {

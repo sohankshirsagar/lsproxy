@@ -24,7 +24,7 @@ mod utils;
 use crate::api_types::{
     DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
     GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
-    WorkspaceSymbolsRequest, MOUNT_DIR,
+    MOUNT_DIR,
 };
 use crate::lsp::manager::LspManager;
 
@@ -37,7 +37,6 @@ fn check_mount_dir() -> std::io::Result<()> {
 #[openapi(
     paths(
         file_symbols,
-        workspace_symbols,
         definition,
         references,
         workspace_files
@@ -45,7 +44,6 @@ fn check_mount_dir() -> std::io::Result<()> {
     components(
         schemas(
             FileSymbolsRequest,
-            WorkspaceSymbolsRequest,
             GetDefinitionRequest,
             GetReferencesRequest,
             SupportedLanguages,
@@ -110,7 +108,7 @@ struct Cli {
 async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
-        info.position.path, info.position.line, info.position.character
+        info.position.path, info.position.position.line, info.position.position.character
     );
 
     match data.lsp_manager.lock() {
@@ -119,8 +117,8 @@ async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> H
                 .definition(
                     &info.position.path,
                     Position {
-                        line: info.position.line,
-                        character: info.position.character,
+                        line: info.position.position.line,
+                        character: info.position.position.character,
                     },
                 )
                 .await
@@ -219,71 +217,6 @@ async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> 
     }
 }
 
-/// Search for symbols across the entire workspace
-///
-/// Returns a list of symbols matching the given query string from all files in the workspace.
-///
-/// The returned positions point to the start of the symbol's identifier.
-///
-/// e.g. for `User` on line 0 of `src/main.py`:
-/// ```
-/// 0: class User:
-/// _________^
-/// 1:     def __init__(self, name, age):
-/// 2:         self.name = name
-/// 3:         self.age = age
-/// ```
-#[utoipa::path(
-    get,
-    path = "/workspace-symbols",
-    params(WorkspaceSymbolsRequest),
-    responses(
-        (status = 200, description = "Workspace symbols retrieved successfully", body = SymbolResponse),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-async fn workspace_symbols(
-    data: Data<AppState>,
-    info: Query<WorkspaceSymbolsRequest>,
-) -> HttpResponse {
-    info!(
-        "Received workspace_symbols request for query: {}",
-        info.query
-    );
-
-    let result = {
-        let lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.workspace_symbols(&info.query).await
-    };
-
-    match result {
-        Ok(symbols) => {
-            HttpResponse::Ok().json(SymbolResponse::from((symbols, info.include_raw_response)))
-        }
-        Err(e) => match e {
-            LspManagerError::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
-                error: format!("File not found: {}", path),
-            }),
-            LspManagerError::LspClientNotFound(lang) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: format!("LSP client not found for {:?}", lang),
-                })
-            }
-            LspManagerError::InternalError(msg) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: format!("Internal error: {}", msg),
-                })
-            }
-            LspManagerError::UnsupportedFileType(path) => {
-                HttpResponse::BadRequest().json(ErrorResponse {
-                    error: format!("Unsupported file type: {}", path),
-                })
-            }
-        },
-    }
-}
-
 /// Find all references to a symbol
 ///
 /// The input position should point to the identifier of the symbol you want to get the references for.
@@ -317,16 +250,16 @@ async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> H
     info!(
         "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
-        info.symbol_identifier_position.line,
-        info.symbol_identifier_position.character
+        info.symbol_identifier_position.position.line,
+        info.symbol_identifier_position.position.character
     );
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
         .references(
             &info.symbol_identifier_position.path,
             Position {
-                line: info.symbol_identifier_position.line,
-                character: info.symbol_identifier_position.character,
+                line: info.symbol_identifier_position.position.line,
+                character: info.symbol_identifier_position.position.character,
             },
             info.include_declaration,
         )
@@ -464,7 +397,6 @@ async fn main() -> std::io::Result<()> {
             .service(
                 scope("/v1")
                     .service(resource("/file-symbols").route(get().to(file_symbols)))
-                    .service(resource("/workspace-symbols").route(get().to(workspace_symbols)))
                     .service(resource("/definition").route(post().to(definition)))
                     .service(resource("/references").route(post().to(references)))
                     .service(resource("/workspace-files").route(get().to(workspace_files))),

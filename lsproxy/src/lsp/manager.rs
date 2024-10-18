@@ -6,10 +6,8 @@ use crate::lsp::languages::{
 };
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
-use log::{debug, error, warn};
-use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
-};
+use log::{debug, warn};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -155,30 +153,6 @@ impl LspManager {
             })
     }
 
-    pub async fn workspace_symbols(
-        &self,
-        query: &str,
-    ) -> Result<Vec<WorkspaceSymbolResponse>, LspManagerError> {
-        /* This returns results for all langservers*/
-        let mut symbols = Vec::new();
-        for (lang, client) in self.clients.iter() {
-            debug!(
-                "Requesting workspace symbols with query: {} for {:?}",
-                query, lang
-            );
-            let mut locked_client = client.lock().await;
-            let client_symbols = locked_client.workspace_symbols(query).await;
-            match client_symbols {
-                Ok(response) => symbols.push(response),
-                Err(e) => error!(
-                    "Error requesting workspace symbols for {:?}: {:?}. Continuing...",
-                    lang, e
-                ),
-            }
-        }
-        Ok(symbols)
-    }
-
     pub fn get_client(
         &self,
         lsp_type: SupportedLanguages,
@@ -218,52 +192,16 @@ impl LspManager {
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
-        for lang in self.clients.keys() {
-            let patterns = match lang {
-                SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS
+        for client in self.clients.values() {
+            let mut locked_client = client.lock().await;
+            files.extend(
+                locked_client
+                    .get_workspace_files(MOUNT_DIR)
                     .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
-                SupportedLanguages::TypeScriptJavaScript => TYPESCRIPT_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
-                SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
-            };
-            let language_files_result = search_files(
-                Path::new(MOUNT_DIR),
-                patterns,
-                DEFAULT_EXCLUDE_PATTERNS
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-            );
-            let language_files = match language_files_result {
-                Ok(files) => files
-                    .iter()
-                    .map(|f| {
-                        f.as_path()
-                            .strip_prefix(MOUNT_DIR)
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_owned()
-                    })
+                    .map(|f| f.strip_prefix(MOUNT_DIR).unwrap().to_string())
                     .collect::<Vec<String>>(),
-                Err(e) => {
-                    error!("Error searching files for {:?}: {}", lang, e);
-                    return Err(LspManagerError::InternalError(format!(
-                        "Error searching files for {:?}: {}",
-                        lang, e
-                    )));
-                }
-            };
-            files.extend(language_files);
+            );
         }
-
         Ok(files)
     }
 
