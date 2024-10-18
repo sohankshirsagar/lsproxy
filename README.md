@@ -10,29 +10,22 @@
 </p>
 </div>
 
-# Table of Contents
-
-1. [What is lsproxy?](#what-is-lsproxy)
-2. [Getting started](#getting-started)
-3. [Examples](#examples)
-4. [Contributing](#contributing)
-5. [Community](#community)
-6. [Supported languages](#supported-languages)
 
    
 ## <a name="what-is-lsproxy">What is lsproxy?</a>
 
-lsproxy is a service that makes communicating with language servers outside of code editors much easier. This is a significant use case when building LLM coding agents. The major issues with language servers are:
-- Each language has its own server that needs to be installed and run.
-- Each server has different, poorly documented configuration settings, and it’s hard to test whether it’s working correctly.
-- The interface with the language server is built to communicate with visual IDEs and mouse cursors, not text-based LLM agents.
+`lsproxy` offers a simple containerized REST API for project-wide code analysis and navigation using Language Servers. It simplifies the integration of powerful language server capabilities into AI coding assistants, developer tools, and other non-IDE/editor applications.
 
-lsproxy addresses these issues in the following ways:
-- Language servers for popular languages pre-installed and automatically run depending on the files in your workspace.
-- Each server is configured from project files like `tsconfig.json`, `pyproject.toml`, or `vscode/settings.json` or provides sensible defaults.
-- Provides a simple API for AI agents (or humans!)
+## Key Features
 
-We have a good set of initial languages we support (see [Supported languages](#supported-languages)) and a simple set of API endpoints ([API spec here](https://docs.agenticlabs.com)), but we're continually adding more! If there's something you'd like to see, let us know in discord, open an issue, or make a contribution!
+- 🔍 **Cross-File Code Resolution**: Find symbol definitions and references across your entire project.
+- 🌐 **Unified API**: Access multiple language servers through a single, consistent REST API.
+- 🛠️ **Auto-Configuration**: Automatically detect and configure language servers based on your project files.
+- 📊 **Diagnostics**: (Coming Soon) Get project linter output from an endpoint.
+- 🌳 **Call & Type Hierarchies**: (Coming Soon) Query multi-hop code relationships.
+- 🔄 **Procedural Refactoring**: (Coming Soon) Perform code refactoring operations through the API.
+- 🧩 **SDKs**: Libraries to get started calling `lsproxy` in popular languages.
+    
 
 ## <a name="getting-started">Getting started</a>
 The easiest way to get started is to run it yourself! We keep the latest version up to date on docker hub, and we have a python SDK available via `pip`. If you need additional inspiration for how this can be helpful to you, check out the [Examples](#examples) section.
