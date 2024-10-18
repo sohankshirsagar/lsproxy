@@ -130,7 +130,10 @@ impl TypeScriptLanguageClient {
         let file_paths = workspace_documents.list_files().await;
         let mut items = Vec::with_capacity(file_paths.len());
         for file_path in file_paths {
-            let content = match workspace_documents.read_text_document(&file_path, None).await {
+            let content = match workspace_documents
+                .read_text_document(&file_path, None)
+                .await
+            {
                 Ok(content) => content,
                 Err(e) => {
                     debug!("Failed to read document {}: {}", file_path, e);
