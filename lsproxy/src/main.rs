@@ -108,7 +108,7 @@ struct Cli {
 async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
-        info.position.path, info.position.line, info.position.character
+        info.position.path, info.position.position.line, info.position.position.character
     );
 
     match data.lsp_manager.lock() {
@@ -117,8 +117,8 @@ async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> H
                 .definition(
                     &info.position.path,
                     Position {
-                        line: info.position.line,
-                        character: info.position.character,
+                        line: info.position.position.line,
+                        character: info.position.position.character,
                     },
                 )
                 .await
