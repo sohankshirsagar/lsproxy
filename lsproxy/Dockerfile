@@ -33,7 +33,7 @@ COPY Cargo.toml Cargo.lock .
 
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN touch src/lib.rs
-RUN cargo build
+RUN cargo build --release
 
 # Document that the container listens on port 4444
 EXPOSE 4444
@@ -42,4 +42,4 @@ EXPOSE 4444
 ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
 
-CMD /bin/bash -c "touch Cargo.toml Cargo.lock && cargo build"
+CMD /bin/bash -c "touch Cargo.toml Cargo.lock && cargo build --release"
