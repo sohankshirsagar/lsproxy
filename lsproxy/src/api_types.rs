@@ -1,7 +1,7 @@
 use log::warn;
 use lsp_types::{
     DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
-    SymbolInformation, SymbolKind, Url, WorkspaceLocation,
+    SymbolInformation, SymbolKind, Url,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -247,8 +247,6 @@ impl From<SymbolInformation> for Symbol {
         }
     }
 }
-
-
 
 impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
     fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
