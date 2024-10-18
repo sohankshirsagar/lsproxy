@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
 use actix_cors::Cors;
 use actix_web::{
     web::{get, post, resource, scope, Data},
@@ -8,22 +5,25 @@ use actix_web::{
 };
 use api_types::ErrorResponse;
 use std::fs;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 mod api_types;
+mod handlers;
 mod lsp;
 mod utils;
-mod handlers;
 
 use crate::api_types::{
     DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
     GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
     MOUNT_DIR,
 };
+use crate::handlers::{definition, file_symbols, references, workspace_files};
 use crate::lsp::manager::LspManager;
-use crate::handlers::{workspace_files, references, definition, file_symbols};
 
 pub fn check_mount_dir() -> std::io::Result<()> {
     fs::read_dir(MOUNT_DIR)?;
@@ -104,10 +104,6 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
     .await
 }
 
-
-
-
-
 pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
     let openapi = ApiDoc::openapi();
     let openapi_json = serde_json::to_string_pretty(&openapi).unwrap();
@@ -133,13 +129,13 @@ mod test {
 
         // Read the content of the generated file
         let generated_content = fs::read_to_string(&temp_openapi_path)
-                .map_err(|e| format!("Failed to load generate openapi spec: {}", e))?;
+            .map_err(|e| format!("Failed to load generate openapi spec: {}", e))?;
 
         // Read the content of the existing file
         // Assume you have a known good file to compare against
         let existing_path = PathBuf::from("/mnt/lsproxy_root/openapi.json");
         let existing_content = fs::read_to_string(existing_path)
-                .map_err(|e| format!("Failed to load existing openapi spec: {}", e))?;
+            .map_err(|e| format!("Failed to load existing openapi spec: {}", e))?;
 
         // Compare the contents
         if generated_content != existing_content {
@@ -163,14 +159,19 @@ mod test {
         for (i, (l1, l2)) in lines1.iter().zip(lines2.iter()).enumerate() {
             if l1 != l2 {
                 diff_count += 1;
-                if diff_count <= 3 {  // Show up to 3 differences
-                    diff.push_str(&format!("Line {}: '{}' vs '{}'\n", i+1, l1, l2));
+                if diff_count <= 3 {
+                    // Show up to 3 differences
+                    diff.push_str(&format!("Line {}: '{}' vs '{}'\n", i + 1, l1, l2));
                 }
             }
         }
 
         if lines1.len() != lines2.len() {
-            diff.push_str(&format!("Files have different number of lines: {} vs {}\n", lines1.len(), lines2.len()));
+            diff.push_str(&format!(
+                "Files have different number of lines: {} vs {}\n",
+                lines1.len(),
+                lines2.len()
+            ));
         }
 
         if diff_count > 3 {

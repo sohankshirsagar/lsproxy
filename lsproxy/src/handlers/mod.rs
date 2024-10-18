@@ -1,6 +1,6 @@
-mod workspace_files;
-mod references;
 mod definition;
 mod file_symbols;
+mod references;
+mod workspace_files;
 
-pub use self::{workspace_files::*, references::*, definition::*, file_symbols::*};
+pub use self::{definition::*, file_symbols::*, references::*, workspace_files::*};

@@ -1,7 +1,7 @@
 use log::warn;
 use lsp_types::{
     DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
-    SymbolInformation, SymbolKind, Url
+    SymbolInformation, SymbolKind, Url,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -388,7 +388,7 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lsp_types::{SymbolKind, Url, WorkspaceSymbol, WorkspaceLocation, OneOf};
+    use lsp_types::{OneOf, SymbolKind, Url, WorkspaceLocation, WorkspaceSymbol};
 
     #[test]
     fn test_symbol_from_workspace_symbol_with_location() {

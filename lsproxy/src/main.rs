@@ -1,8 +1,8 @@
-use std::path::PathBuf;
+use clap::Parser;
 use env_logger::Env;
 use log::info;
-use clap::Parser;
 use lsproxy::{initialize_app_state, run_server, write_openapi_to_file};
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -23,7 +23,6 @@ async fn main() -> std::io::Result<()> {
     info!("Logger initialized");
 
     let cli = Cli::parse();
-
 
     if cli.write_openapi {
         if let Err(e) = write_openapi_to_file(&PathBuf::from("openapi.json")) {
