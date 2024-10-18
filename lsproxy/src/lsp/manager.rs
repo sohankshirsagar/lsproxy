@@ -218,52 +218,10 @@ impl LspManager {
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
-        for lang in self.clients.keys() {
-            let patterns = match lang {
-                SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
-                SupportedLanguages::TypeScriptJavaScript => TYPESCRIPT_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
-                SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
-            };
-            let language_files_result = search_files(
-                Path::new(MOUNT_DIR),
-                patterns,
-                DEFAULT_EXCLUDE_PATTERNS
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-            );
-            let language_files = match language_files_result {
-                Ok(files) => files
-                    .iter()
-                    .map(|f| {
-                        f.as_path()
-                            .strip_prefix(MOUNT_DIR)
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_owned()
-                    })
-                    .collect::<Vec<String>>(),
-                Err(e) => {
-                    error!("Error searching files for {:?}: {}", lang, e);
-                    return Err(LspManagerError::InternalError(format!(
-                        "Error searching files for {:?}: {}",
-                        lang, e
-                    )));
-                }
-            };
-            files.extend(language_files);
+        for client in self.clients.values() {
+            let mut locked_client = client.lock().await;
+            files.extend(locked_client.get_workspace_files(MOUNT_DIR));
         }
-
         Ok(files)
     }
 
