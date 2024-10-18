@@ -1,9 +1,4 @@
-use std::{
-    error::Error,
-    fs::read_to_string,
-    path::Path,
-    process::Stdio,
-};
+use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use log::debug;
@@ -121,7 +116,16 @@ impl TypeScriptLanguageClient {
             .unwrap_or_else(|| DEFAULT_EXCLUDE_PATTERNS.to_vec());
         let workspace_documents = self.get_workspace_documents();
         workspace_documents
-            .update_patterns(include_patterns.into_iter().map(|s| s.to_string()).collect(), exclude_patterns.into_iter().map(|s| s.to_string()).collect())
+            .update_patterns(
+                include_patterns
+                    .into_iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                exclude_patterns
+                    .into_iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            )
             .await;
         let file_paths = workspace_documents.list_files().await;
         let mut items = Vec::with_capacity(file_paths.len());

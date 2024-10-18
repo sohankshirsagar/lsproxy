@@ -7,8 +7,8 @@ use log::{debug, error, warn};
 use lsp_types::{
     ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position,
-    ReferenceContext, ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext,
+    ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
     WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
