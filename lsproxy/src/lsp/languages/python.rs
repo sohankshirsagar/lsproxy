@@ -59,7 +59,7 @@ impl PyrightClient {
             .await
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
 
-        let workspace_documents = match WorkspaceDocumentsHandler::new(
+        let workspace_documents = WorkspaceDocumentsHandler::new(
             root_path,
             PYRIGHT_FILE_PATTERNS
                 .iter()
@@ -69,10 +69,7 @@ impl PyrightClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
-        ) {
-            Ok(handler) => handler,
-            Err(e) => return Err(format!("Failed to initialize workspace documents: {}", e)),
-        };
+        )
 
         let json_rpc_handler = JsonRpcHandler::new();
 
