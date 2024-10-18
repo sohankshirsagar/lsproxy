@@ -250,16 +250,16 @@ async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> H
     info!(
         "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
-        info.symbol_identifier_position.line,
-        info.symbol_identifier_position.character
+        info.symbol_identifier_position.position.line,
+        info.symbol_identifier_position.position.character
     );
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
         .references(
             &info.symbol_identifier_position.path,
             Position {
-                line: info.symbol_identifier_position.line,
-                character: info.symbol_identifier_position.character,
+                line: info.symbol_identifier_position.position.line,
+                character: info.symbol_identifier_position.position.character,
             },
             info.include_declaration,
         )
