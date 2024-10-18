@@ -18,12 +18,14 @@ use tokio::sync::Mutex;
 
 pub struct LspManager {
     clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
+    workspace_files_cache: Arc<Mutex<Option<Vec<String>>>>, // New cache field
 }
 
 impl LspManager {
     pub fn new() -> Self {
         Self {
             clients: HashMap::new(),
+            workspace_files_cache: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -217,52 +219,65 @@ impl LspManager {
     }
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
+        // Attempt to retrieve cached workspace files
+        {
+            let cache = self.workspace_files_cache.lock().await;
+            if let Some(ref files) = *cache {
+                debug!("Returning cached workspace files");
+                return Ok(files.clone());
+            }
+        }
+
+        // Cache miss: compute workspace files
+        debug!("Cache miss: computing workspace files");
         let mut files = Vec::new();
         for lang in self.clients.keys() {
             let patterns = match lang {
                 SupportedLanguages::Python => PYRIGHT_FILE_PATTERNS
                     .iter()
-                    .map(|&s| s.to_string())
+                    .map(|s| s.to_string())
                     .collect(),
                 SupportedLanguages::TypeScriptJavaScript => TYPESCRIPT_FILE_PATTERNS
                     .iter()
-                    .map(|&s| s.to_string())
+                    .map(|s| s.to_string())
                     .collect(),
                 SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
                     .iter()
-                    .map(|&s| s.to_string())
+                    .map(|s| s.to_string())
                     .collect(),
             };
-            let language_files_result = search_files(
+            let language_files = search_files(
                 Path::new(MOUNT_DIR),
                 patterns,
                 DEFAULT_EXCLUDE_PATTERNS
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-            );
-            let language_files = match language_files_result {
-                Ok(files) => files
-                    .iter()
-                    .map(|f| {
-                        f.as_path()
-                            .strip_prefix(MOUNT_DIR)
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_owned()
-                    })
-                    .collect::<Vec<String>>(),
-                Err(e) => {
-                    error!("Error searching files for {:?}: {}", lang, e);
-                    return Err(LspManagerError::InternalError(format!(
-                        "Error searching files for {:?}: {}",
-                        lang, e
-                    )));
-                }
-            };
+            )
+            .map_err(|e| {
+                error!("Error searching files for {:?}: {}", lang, e);
+                LspManagerError::InternalError(format!(
+                    "Error searching files for {:?}: {}",
+                    lang, e
+                ))
+            })?
+            .iter()
+            .map(|f| {
+                f.as_path()
+                    .strip_prefix(MOUNT_DIR)
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_owned()
+            })
+            .collect::<Vec<String>>();
             files.extend(language_files);
         }
+
+        // Update the cache with the computed workspace files
+        let mut cache = self.workspace_files_cache.lock().await;
+        *cache = Some(files.clone());
+        debug!("Workspace files cached");
 
         Ok(files)
     }
