@@ -390,4 +390,3 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
         _ => "unknown",
     }
 }
-
