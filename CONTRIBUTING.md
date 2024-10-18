@@ -45,4 +45,4 @@ Running is also pretty simple.
 
 The run script also builds as well, so you can just use this single script if you're iterating in development.
 
-> :warning: Like above you *can* run outside the docker container, but there are runtime dependencies and specific paths lsproxy is expecting. We do not officially support running lsproxy on your local machine.
+> :warning: Like above you *can* run outside the docker container, but there are runtime dependencies and specific paths lsproxy is expecting. We do not officially support running lsproxy outside of docker.
