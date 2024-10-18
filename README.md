@@ -18,10 +18,9 @@
 
 ## Key Features
 
-- 🚀 **Unified API**: Access multiple language servers through a single, consistent REST API.
+- 🌐 **Unified API**: Access multiple language servers through a single, consistent REST API.
 - 🔍 **Cross-File Analysis**: Find symbol definitions and references across your entire project.
 - 🛠️ **Auto-Configuration**: Automatically detect and configure language servers based on your project files.
-- 🌐 **Language Agnostic**: Support for multiple programming languages out of the box.
 - 📊 **Diagnostics**: (Coming Soon) Get project linter output information from an endpoint.
 - 🌳 **Call & Type Hierarchies**: (Coming Soon) Query multi-hop code relationships.
 - 🔄 **Procedural Refactoring**: (Coming Soon) Perform code refactoring operations through the API.
