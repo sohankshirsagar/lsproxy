@@ -1,10 +1,8 @@
 use std::{
-    collections::HashMap,
     error::Error,
     fs::read_to_string,
     path::Path,
     process::Stdio,
-    sync::{Arc, Mutex},
 };
 
 use async_trait::async_trait;
@@ -121,7 +119,7 @@ impl TypeScriptLanguageClient {
             .as_array()
             .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
             .unwrap_or_else(|| DEFAULT_EXCLUDE_PATTERNS.to_vec());
-        let mut workspace_documents = self.get_workspace_documents();
+        let workspace_documents = self.get_workspace_documents();
         workspace_documents
             .update_patterns(include_patterns.into_iter().map(|s| s.to_string()).collect(), exclude_patterns.into_iter().map(|s| s.to_string()).collect())
             .await;

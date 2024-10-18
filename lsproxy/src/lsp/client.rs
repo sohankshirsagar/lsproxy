@@ -1,22 +1,19 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
 use crate::lsp::{JsonRpcHandler, ProcessHandler};
-use crate::utils::file_utils::{search_directories, search_files};
+use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
     ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position, Range,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position,
     ReferenceContext, ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
     WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
-use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
-use tokio::fs::read_to_string;
 
 use super::workspace_documents::WorkspaceDocumentsHandler;
 

@@ -14,6 +14,7 @@ pub trait WorkspaceDocuments: Send + Sync {
         range: Option<Range>,
     ) -> Result<String, Box<dyn Error + Send + Sync>>;
 
+    #[allow(unused_variables)] // TODO handle syncronization
     async fn invalidate_cache(&self, full_file_path: &str);
 
     async fn list_files(&mut self) -> Vec<String>;
