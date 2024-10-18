@@ -22,7 +22,7 @@
    
 ## <a name="what-is-lsproxy">What is lsproxy?</a>
 
-`lsproxy` offers a simple REST API for project-wide code analysis and navigation using Language Servers:
+`lsproxy` offers a simple containerized REST API for project-wide code analysis and navigation using Language Servers:
   - find sybmol definitions across files
   - find symbol references across files
   - code diagnostics/lints (coming soon)
