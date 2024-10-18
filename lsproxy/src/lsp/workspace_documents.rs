@@ -1,4 +1,5 @@
 use std::{collections::HashMap, error::Error, path::Path, sync::Arc};
+use log::error;
 use tokio::sync::Mutex; // Use Tokio's async Mutex
 
 use lsp_types::Range;
@@ -71,31 +72,59 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
                 content
             }
         };
+        drop(cache); // Release the lock early
+
         match range {
             Some(range) => {
+                let lines: Vec<&str> = file_content.split('\n').collect();
+                let total_lines = lines.len();
+
                 let start_line = range.start.line as usize;
                 let end_line = range.end.line as usize;
+
+                if start_line >= total_lines || end_line >= total_lines {
+                    error!(
+                        "Range out of bounds: start_line={}, end_line={}, total_lines={}",
+                        start_line, end_line, total_lines
+                    );
+                    return Err("Specified range is out of bounds".into());
+                }
+
                 let start_character = range.start.character as usize;
                 let end_character = range.end.character as usize;
-                let lines: Vec<&str> = file_content.split('\n').collect();
-                Ok(lines[start_line..=end_line]
-                    .iter()
-                    .enumerate()
-                    .map(|(i, &line)| {
-                        if i == 0 && i == end_line - start_line {
-                            &line[start_character..end_character]
-                        } else if i == 0 {
-                            &line[start_character..]
-                        } else if i == end_line - start_line {
-                            &line[..end_character]
-                        } else {
-                            line
-                        }
-                    })
-                    .collect::<Vec<&str>>()
-                    .join("\n"))
+
+                let selected_lines = &lines[start_line..=end_line];
+                let mut extracted = Vec::with_capacity(selected_lines.len());
+
+                for (i, line) in selected_lines.iter().enumerate() {
+                    let current_line_number = start_line + i;
+                    let line_length = line.len();
+
+                    let extracted_line = if i == 0 && start_character < line_length {
+                        &line[start_character..]
+                    } else if i == selected_lines.len() - 1 && end_character <= line_length {
+                        &line[..end_character]
+                    } else {
+                        line
+                    };
+
+                    if extracted_line.len() < end_character {
+                        error!(
+                            "Character range out of bounds: line={}, end_character={}, line_length={}",
+                            current_line_number, end_character, line_length
+                        );
+                        return Err("Specified character range is out of bounds".into());
+                    }
+
+                    extracted.push(extracted_line);
+                }
+
+                let result = extracted.join("\n");
+                Ok(result)
             }
-            None => Ok(file_content.clone()),
+            None => {
+                Ok(file_content)
+            }
         }
     }
 
