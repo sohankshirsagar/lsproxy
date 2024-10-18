@@ -64,7 +64,7 @@ impl RustAnalyzerClient {
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
         let json_rpc_handler = JsonRpcHandler::new();
 
-        let workspace_documents = match WorkspaceDocumentsHandler::new(
+        let workspace_documents = WorkspaceDocumentsHandler::new(
             root_path,
             RUST_ANALYZER_FILE_PATTERNS
                 .iter()
@@ -74,15 +74,12 @@ impl RustAnalyzerClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
-        ) {
-            Ok(handler) => handler,
-            Err(e) => return Err(format!("Failed to initialize workspace documents: {}", e)),
-        };
+        );
 
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
-            workspace_documents: workspace_documents,
+            workspace_documents,
         })
     }
 }
