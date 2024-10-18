@@ -32,6 +32,7 @@ RUN rustup component add llvm-tools-preview
 COPY Cargo.toml Cargo.lock .
 
 RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN touch src/lib.rs
 RUN cargo build
 
 # Document that the container listens on port 4444
