@@ -31,15 +31,39 @@ pub enum SupportedLanguages {
     Rust,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Position {
+    /// 0-indexed line number.
+    #[schema(example = 10)]
+    pub line: u32,
+    /// 0-indexed character index.
+    #[schema(example = 5)]
+    pub character: u32,
+}
+
 /// Specific position within a file.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
     #[schema(example = "src/main.py")]
     pub path: String,
-    #[schema(example = 10)]
-    pub line: u32,
-    #[schema(example = 5)]
-    pub character: u32,
+    pub position: Position,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct FileRange {
+    /// The path to the file.
+    #[schema(example = "src/main.py")]
+    pub path: String,
+    /// The start position of the range.
+    pub start: Position,
+    /// The end position of the range.
+    pub end: Position,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct CodeContext {
+    pub range: FileRange,
+    pub source_code: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -53,6 +77,9 @@ pub struct Symbol {
 
     /// The start position of the symbol's identifier.
     pub identifier_start_position: FilePosition,
+
+    /// The code context of the symbol.
+    pub cource_code: Option<CodeContext>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
