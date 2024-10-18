@@ -115,7 +115,7 @@ impl LspManager {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
         let full_path = Path::new(&MOUNT_DIR).join(&file_path);
-        let full_path_str = full_path.to_str().unwrap_or_default(); 
+        let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str)?;
         let client = self
             .get_client(lsp_type)
