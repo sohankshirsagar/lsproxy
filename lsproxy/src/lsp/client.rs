@@ -12,11 +12,11 @@ use lsp_types::{
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
     WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
-use tokio::fs::read_to_string;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use tokio::fs::read_to_string;
 
 pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     "**/node_modules",

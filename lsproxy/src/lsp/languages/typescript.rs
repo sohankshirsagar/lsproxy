@@ -74,8 +74,7 @@ impl LspClient for TypeScriptLanguageClient {
 
         let mut cache: HashMap<String, Option<String>> = HashMap::new();
 
-        let text_document_items =
-            TypeScriptLanguageClient::get_text_document_items_to_open(root_path).unwrap();
+        let text_document_items = self.get_text_document_items_to_open(root_path).await?;
         for item in text_document_items {
             cache.insert(
                 item.uri
@@ -120,7 +119,7 @@ impl TypeScriptLanguageClient {
     pub async fn get_text_document_items_to_open(
         &mut self,
         workspace_path: &str,
-    ) -> Result<Vec<TextDocumentItem>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<TextDocumentItem>, Box<dyn Error + Send + Sync>> {
         let tsconfig_path = Path::new(workspace_path).join("tsconfig.json");
         let tsconfig_content = read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
         let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
@@ -141,7 +140,10 @@ impl TypeScriptLanguageClient {
         )?;
 
         futures::future::try_join_all(files.into_iter().map(|file_path| async move {
-            let content = self.read_text_document(file_path.to_str().ok_or("Invalid file path")?, None).await.unwrap();
+            let content = self
+                .read_text_document(file_path.to_str().ok_or("Invalid file path")?, None)
+                .await
+                .unwrap();
             Ok(TextDocumentItem {
                 uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
                 language_id: "typescript".to_string(),
