@@ -203,7 +203,7 @@ impl LspManager {
                     .list_files()
                     .await
                     .iter()
-                    .map(|f| f.strip_prefix(MOUNT_DIR).unwrap().to_string())
+                    .map(|f| f.strip_prefix(MOUNT_DIR).unwrap().strip_prefix('/').unwrap_or(f.strip_prefix(MOUNT_DIR).unwrap()).to_string())
                     .collect::<Vec<String>>(),
             );
         }
