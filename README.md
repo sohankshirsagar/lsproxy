@@ -18,7 +18,7 @@
 
 ## Key Features
 
-- 🔍 **Precise Cross-File Code Navigation**: Find symbol definitions and references across your entire project.
+- 🎯 **Precise Cross-File Code Navigation**: Find symbol definitions and references across your entire project.
 - 🌐 **Unified API**: Access multiple language servers through a single, consistent REST API.
 - 🛠️ **Auto-Configuration**: Automatically detect and configure language servers based on your project files.
 - 📊 **Diagnostics**: (Coming Soon) Get project linter output from an endpoint.
