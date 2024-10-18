@@ -435,7 +435,6 @@ async fn main() -> std::io::Result<()> {
             eprintln!("Error: Failed to write the openapi.json to a file. Please see error for more details.");
             return Err(e);
         }
-        println!("OpenAPI spec written to: {}", file_path.display());
         return Ok(());
     }
 
