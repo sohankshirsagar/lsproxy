@@ -114,13 +114,15 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let lsp_type = self.detect_language(file_path)?;
+        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default(); 
+        let lsp_type = self.detect_language(full_path_str)?;
         let client = self
             .get_client(lsp_type)
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
         locked_client
-            .text_document_symbols(file_path)
+            .text_document_symbols(full_path_str)
             .await
             .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
@@ -136,7 +138,9 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()).into());
         }
-        let lsp_type = self.detect_language(file_path).map_err(|e| {
+        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default();
+        let lsp_type = self.detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
         })?;
         let client = self
@@ -144,7 +148,7 @@ impl LspManager {
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
         locked_client
-            .text_document_definition(file_path, position)
+            .text_document_definition(full_path_str, position)
             .await
             .map_err(|e| {
                 LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
@@ -194,7 +198,9 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let lsp_type = self.detect_language(file_path).map_err(|e| {
+        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default();
+        let lsp_type = self.detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
         })?;
         let client = self
@@ -203,7 +209,7 @@ impl LspManager {
         let mut locked_client = client.lock().await;
 
         locked_client
-            .text_document_reference(file_path, position, include_declaration)
+            .text_document_reference(full_path_str, position, include_declaration)
             .await
             .map_err(|e| {
                 LspManagerError::InternalError(format!("Reference retrieval failed: {}", e))

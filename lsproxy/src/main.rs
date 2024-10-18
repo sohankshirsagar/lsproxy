@@ -113,14 +113,11 @@ async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> H
         info.position.path, info.position.line, info.position.character
     );
 
-    let full_path = Path::new(&MOUNT_DIR).join(&info.position.path);
-    let full_path_str = full_path.to_str().unwrap_or_default();
-
     match data.lsp_manager.lock() {
         Ok(lsp_manager) => {
             match lsp_manager
                 .definition(
-                    full_path_str,
+                    &info.position.path,
                     Position {
                         line: info.position.line,
                         character: info.position.character,
@@ -188,13 +185,9 @@ async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> H
 async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
 
-    let full_path = Path::new(&MOUNT_DIR).join(&info.file_path);
-    let full_path_str = full_path.to_str().unwrap_or("");
-    debug!("Full path: {}", full_path_str);
-
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.file_symbols(full_path_str).await
+        lsp_manager.file_symbols(&info.file_path).await
     };
 
     match result {
@@ -327,19 +320,10 @@ async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> H
         info.symbol_identifier_position.line,
         info.symbol_identifier_position.character
     );
-    let full_path = Path::new(&MOUNT_DIR).join(&info.symbol_identifier_position.path);
-    let full_path_str = match full_path.to_str() {
-        Some(s) => s,
-        None => {
-            return HttpResponse::BadRequest().json(ErrorResponse {
-                error: "Failed to convert path".to_string(),
-            });
-        }
-    };
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let result = lsp_manager
         .references(
-            full_path_str,
+            &info.symbol_identifier_position.path,
             Position {
                 line: info.symbol_identifier_position.line,
                 character: info.symbol_identifier_position.character,
