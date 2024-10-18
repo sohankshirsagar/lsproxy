@@ -1,4 +1,8 @@
-use std::process::Stdio;
+use std::{
+    collections::HashMap,
+    process::Stdio,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use tokio::process::Command;
@@ -20,6 +24,7 @@ pub const PYRIGHT_FILE_PATTERNS: &[&str] = &["**/*.py"];
 pub struct PyrightClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
+    workspace_files_cache: Arc<Mutex<Option<HashMap<String, Option<String>>>>>,
 }
 
 #[async_trait]
@@ -34,6 +39,21 @@ impl LspClient for PyrightClient {
 
     fn get_root_files(&mut self) -> Vec<String> {
         PYRIGHT_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
+    }
+
+    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>> {
+        self.workspace_files_cache.clone()
+    }
+
+    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>) {
+        self.workspace_files_cache = Arc::new(Mutex::new(Some(cache)));
+    }
+
+    fn get_include_patterns(&mut self) -> Vec<String> {
+        PYRIGHT_FILE_PATTERNS
+            .iter()
+            .map(|&s| s.to_string())
+            .collect()
     }
 }
 
@@ -56,6 +76,7 @@ impl PyrightClient {
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
+            workspace_files_cache: None,
         })
     }
 }

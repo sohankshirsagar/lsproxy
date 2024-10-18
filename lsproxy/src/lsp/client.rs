@@ -1,7 +1,7 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
 use crate::lsp::{JsonRpcHandler, ProcessHandler};
-use crate::utils::file_utils::search_directories;
+use crate::utils::file_utils::{search_directories, search_files};
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
@@ -12,8 +12,10 @@ use lsp_types::{
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
     WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
+use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     "**/node_modules",
@@ -310,6 +312,38 @@ pub trait LspClient: Send {
             .map(|&s| s.to_owned())
             .collect()
     }
+
+    fn get_include_patterns(&mut self) -> Vec<String>;
+
+    fn get_workspace_files(&mut self, root_path: &str) -> Vec<String> {
+        let current_cache = self.get_workspace_files_cache();
+        let locked_cache = current_cache.lock().unwrap();
+        if let Some(cache) = locked_cache.as_ref() {
+            cache.keys().cloned().collect()
+        } else {
+            let include_patterns = self.get_include_patterns();
+            let exclude_patterns = self.get_exclude_patterns();
+            let files = search_files(Path::new(root_path), include_patterns, exclude_patterns);
+            let Ok(files) = files else {
+                error!("Error searching files: {}", files.err().unwrap());
+                return vec![];
+            };
+            let file_strings: Vec<String> = files
+                .iter()
+                .map(|f| f.to_str().unwrap().to_string())
+                .collect();
+            let mut cache = HashMap::new();
+            for file in file_strings.clone() {
+                cache.insert(file, None);
+            }
+            self.set_workspace_files_cache(cache);
+            file_strings
+        }
+    }
+
+    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>>;
+
+    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>);
 
     /// Sets up the workspace for the language server.
     ///
