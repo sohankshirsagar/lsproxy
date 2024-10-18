@@ -78,7 +78,6 @@ impl RustAnalyzerClient {
             Ok(handler) => handler,
             Err(e) => return Err(format!("Failed to initialize workspace documents: {}", e)),
         };
-        );
 
         Ok(Self {
             process: process_handler,
