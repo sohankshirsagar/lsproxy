@@ -1,4 +1,9 @@
-use std::{collections::HashMap, error::Error, process::Stdio, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap,
+    error::Error,
+    process::Stdio,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use tokio::process::Command;
@@ -75,6 +80,7 @@ impl RustAnalyzerClient {
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
+            workspace_files_cache: Arc::new(Mutex::new(None)),
         })
     }
 }
