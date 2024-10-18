@@ -113,6 +113,7 @@ impl TypeScriptLanguageClient {
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
+            workspace_files_cache: Arc::new(Mutex::new(None)),
         })
     }
 
