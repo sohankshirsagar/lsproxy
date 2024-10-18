@@ -27,7 +27,8 @@ impl LspManager {
         }
     }
 
-    fn detect_languages(&self, root_path: &str) -> Vec<SupportedLanguages> {
+    /// Detects the languages in the workspace by searching for files that match the language server's file patterns, before LSPs are started.
+    fn detect_languages_in_workspace(&self, root_path: &str) -> Vec<SupportedLanguages> {
         let mut lsps = Vec::new();
         for lsp in [
             SupportedLanguages::Python,
@@ -69,7 +70,7 @@ impl LspManager {
     }
 
     pub async fn start_langservers(&mut self, workspace_path: &str) -> Result<(), String> {
-        let lsps = self.detect_languages(workspace_path);
+        let lsps = self.detect_languages_in_workspace(workspace_path);
         for lsp in lsps {
             if self.get_client(lsp).is_some() {
                 continue;
