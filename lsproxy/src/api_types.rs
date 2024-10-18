@@ -1,8 +1,7 @@
 use log::warn;
 use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink, OneOf,
-    SymbolInformation, SymbolKind, Url, WorkspaceLocation, WorkspaceSymbol,
-    WorkspaceSymbolResponse,
+    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
+    SymbolInformation, SymbolKind, Url, WorkspaceLocation,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -249,16 +248,6 @@ impl From<SymbolInformation> for Symbol {
     }
 }
 
-impl From<WorkspaceLocation> for FilePosition {
-    fn from(location: WorkspaceLocation) -> Self {
-        warn!("WorkspaceLocation does not contain line and character information and will not be shown");
-        FilePosition {
-            path: uri_to_path_str(location.uri),
-            line: 0,
-            character: 0,
-        }
-    }
-}
 
 
 impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
