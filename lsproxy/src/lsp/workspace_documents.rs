@@ -139,7 +139,10 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
                 self.include_patterns.clone(),
                 self.exclude_patterns.clone(),
             )
-            .unwrap();
+            .unwrap_or_else(|err| {
+                error!("Error searching files: {}", err);
+                Vec::new()
+            });
             for file_path in file_paths {
                 cache.insert(file_path.to_string_lossy().into_owned(), None);
             }
