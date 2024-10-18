@@ -7,11 +7,12 @@ use log::{debug, error, warn};
 use lsp_types::{
     ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext,
-    ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position, Range,
+    ReferenceContext, ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
     WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
+use tokio::fs::read_to_string;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
@@ -112,6 +113,40 @@ pub trait LspClient: Send {
             notification
         );
         self.get_process().send(&message).await
+    }
+
+    async fn read_text_document(
+        &mut self,
+        full_file_path: &str,
+        range: Option<Range>,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let file_content = read_to_string(full_file_path).await?;
+        match range {
+            Some(range) => {
+                let start_line = range.start.line as usize;
+                let end_line = range.end.line as usize;
+                let start_character = range.start.character as usize;
+                let end_character = range.end.character as usize;
+                let lines: Vec<&str> = file_content.split('\n').collect();
+                Ok(lines[start_line..=end_line]
+                    .iter()
+                    .enumerate()
+                    .map(|(i, &line)| {
+                        if i == 0 && i == end_line - start_line {
+                            &line[start_character..end_character]
+                        } else if i == 0 {
+                            &line[start_character..]
+                        } else if i == end_line - start_line {
+                            &line[..end_character]
+                        } else {
+                            line
+                        }
+                    })
+                    .collect::<Vec<&str>>()
+                    .join("\n"))
+            }
+            None => Ok(file_content),
+        }
     }
 
     async fn text_document_did_open(

@@ -86,6 +86,12 @@ pub struct Symbol {
 pub struct GetDefinitionRequest {
     pub position: FilePosition,
 
+    /// Whether to include the source code of the symbol in the response.
+    /// Defaults to false.
+    #[serde(default)]
+    #[schema(example = false)]
+    pub include_source_code: bool,
+
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
     #[serde(default)]
