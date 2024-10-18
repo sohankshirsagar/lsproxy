@@ -139,18 +139,20 @@ impl TypeScriptLanguageClient {
             exclude_patterns.into_iter().map(String::from).collect(),
         )?;
 
-        futures::future::try_join_all(files.into_iter().map(|file_path| async move {
+        let mut items = Vec::with_capacity(files.len());
+        for file_path in files {
             let content = self
                 .read_text_document(file_path.to_str().ok_or("Invalid file path")?, None)
                 .await
                 .unwrap();
-            Ok(TextDocumentItem {
+            let item = TextDocumentItem {
                 uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
                 language_id: "typescript".to_string(),
                 version: 1,
                 text: content,
-            })
-        }))
-        .await
+            };
+            items.push(item);
+        }
+        Ok(items)
     }
 }
