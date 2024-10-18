@@ -220,7 +220,13 @@ impl LspManager {
         let mut files = Vec::new();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
-            files.extend(locked_client.get_workspace_files(MOUNT_DIR));
+            files.extend(
+                locked_client
+                    .get_workspace_files(MOUNT_DIR)
+                    .iter()
+                    .map(|f| f.strip_prefix(MOUNT_DIR).unwrap().to_string())
+                    .collect::<Vec<String>>(),
+            );
         }
         Ok(files)
     }
