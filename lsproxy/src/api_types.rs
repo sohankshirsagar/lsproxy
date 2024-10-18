@@ -79,7 +79,7 @@ pub struct Symbol {
     pub identifier_start_position: FilePosition,
 
     /// The code context of the symbol.
-    pub cource_code: Option<CodeContext>,
+    pub source_code: Option<CodeContext>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -249,8 +249,10 @@ impl From<Location> for FilePosition {
     fn from(location: Location) -> Self {
         FilePosition {
             path: uri_to_path_str(location.uri),
-            line: location.range.start.line,
-            character: location.range.start.character,
+            position: Position {
+                line: location.range.start.line,
+                character: location.range.start.character,
+            },
         }
     }
 }
@@ -259,8 +261,10 @@ impl From<LocationLink> for FilePosition {
     fn from(link: LocationLink) -> Self {
         FilePosition {
             path: uri_to_path_str(link.target_uri),
-            line: link.target_range.start.line,
-            character: link.target_range.start.character,
+            position: Position {
+                line: link.target_range.start.line,
+                character: link.target_range.start.character,
+            },
         }
     }
 }
@@ -271,6 +275,7 @@ impl From<SymbolInformation> for Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
             identifier_start_position: FilePosition::from(symbol.location),
+            source_code: None,
         }
     }
 }
@@ -285,6 +290,7 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
                     name: symbol.name,
                     kind: symbol_kind_to_string(symbol.kind).to_owned(),
                     identifier_start_position: FilePosition::from(symbol.location),
+                    source_code: None,
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
@@ -318,9 +324,12 @@ fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
             identifier_start_position: FilePosition {
                 path: file_path.to_owned(),
-                line: symbol.selection_range.start.line,
-                character: symbol.selection_range.start.character,
+                position: Position {
+                    line: symbol.selection_range.start.line,
+                    character: symbol.selection_range.start.character,
+                },
             },
+            source_code: None,
         });
 
         if let Some(children) = symbol.children {
