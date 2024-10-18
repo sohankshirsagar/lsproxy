@@ -1,28 +1,21 @@
-use std::{
-    collections::HashMap,
-    error::Error,
-    fs::read_to_string,
-    path::Path,
-    process::Stdio,
-    sync::{Arc, Mutex},
-};
+use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use log::debug;
 use lsp_types::TextDocumentItem;
-use serde_json::Value;
+use serde_json::{from_str, Value};
 use tokio::process::Command;
 use url::Url;
 
-use crate::{
-    lsp::{JsonRpcHandler, LspClient, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS},
-    utils::file_utils::search_files,
+use crate::lsp::{
+    workspace_documents::{WorkspaceDocuments, WorkspaceDocumentsHandler},
+    JsonRpcHandler, LspClient, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
 };
 
 pub struct TypeScriptLanguageClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
-    workspace_files_cache: Arc<Mutex<Option<HashMap<String, Option<String>>>>>,
+    workspace_documents: WorkspaceDocumentsHandler,
 }
 
 pub const TYPESCRIPT_ROOT_FILES: &[&str] =
@@ -47,19 +40,8 @@ impl LspClient for TypeScriptLanguageClient {
             .collect()
     }
 
-    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>> {
-        self.workspace_files_cache.clone()
-    }
-
-    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>) {
-        self.workspace_files_cache = Arc::new(Mutex::new(Some(cache)));
-    }
-
-    fn get_include_patterns(&mut self) -> Vec<String> {
-        TYPESCRIPT_FILE_PATTERNS
-            .iter()
-            .map(|&s| s.to_string())
-            .collect()
+    fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
+        &mut self.workspace_documents
     }
 
     async fn setup_workspace(
@@ -72,24 +54,12 @@ impl LspClient for TypeScriptLanguageClient {
          */
         debug!("Setting up workspace for TypeScript client");
 
-        let mut cache: HashMap<String, Option<String>> = HashMap::new();
-
         let text_document_items = self
             .get_text_document_items_to_open_with_config(root_path)
             .await?;
         for item in text_document_items {
-            cache.insert(
-                item.uri
-                    .to_file_path()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-                Some(item.text.to_owned()),
-            );
             self.text_document_did_open(item).await?;
         }
-        self.set_workspace_files_cache(cache);
         debug!("Workspace setup completed for TypeScript client");
         Ok(())
     }
@@ -110,11 +80,21 @@ impl TypeScriptLanguageClient {
             .await
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
         let json_rpc_handler = JsonRpcHandler::new();
-
+        let workspace_documents = WorkspaceDocumentsHandler::new(
+            root_path,
+            TYPESCRIPT_FILE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+            DEFAULT_EXCLUDE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+        );
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
-            workspace_files_cache: Arc::new(Mutex::new(None)),
+            workspace_documents: workspace_documents,
         })
     }
 
@@ -124,7 +104,7 @@ impl TypeScriptLanguageClient {
     ) -> Result<Vec<TextDocumentItem>, Box<dyn Error + Send + Sync>> {
         let tsconfig_path = Path::new(workspace_path).join("tsconfig.json");
         let tsconfig_content = read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
-        let tsconfig: Value = serde_json::from_str(&tsconfig_content)?;
+        let tsconfig: Value = from_str(&tsconfig_content)?;
 
         let include_patterns = tsconfig["include"]
             .as_array()
@@ -134,19 +114,32 @@ impl TypeScriptLanguageClient {
             .as_array()
             .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
             .unwrap_or_else(|| DEFAULT_EXCLUDE_PATTERNS.to_vec());
-
-        let files = search_files(
-            Path::new(workspace_path),
-            include_patterns.into_iter().map(String::from).collect(),
-            exclude_patterns.into_iter().map(String::from).collect(),
-        )?;
-
-        let mut items = Vec::with_capacity(files.len());
-        for file_path in files {
-            let content = self
-                .read_text_document(file_path.to_str().ok_or("Invalid file path")?, None)
+        let workspace_documents = self.get_workspace_documents();
+        workspace_documents
+            .update_patterns(
+                include_patterns
+                    .into_iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                exclude_patterns
+                    .into_iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            )
+            .await;
+        let file_paths = workspace_documents.list_files().await;
+        let mut items = Vec::with_capacity(file_paths.len());
+        for file_path in file_paths {
+            let content = match workspace_documents
+                .read_text_document(&file_path, None)
                 .await
-                .unwrap();
+            {
+                Ok(content) => content,
+                Err(e) => {
+                    debug!("Failed to read document {}: {}", file_path, e);
+                    return Err(e);
+                }
+            };
             let item = TextDocumentItem {
                 uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
                 language_id: "typescript".to_string(),

@@ -1,13 +1,11 @@
-use std::{
-    collections::HashMap,
-    process::Stdio,
-    sync::{Arc, Mutex},
-};
+use std::process::Stdio;
 
 use async_trait::async_trait;
 use tokio::process::Command;
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
+use crate::lsp::{
+    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, ProcessHandler,
+};
 
 pub const PYRIGHT_ROOT_FILES: &[&str] = &[
     ".git",
@@ -24,7 +22,7 @@ pub const PYRIGHT_FILE_PATTERNS: &[&str] = &["**/*.py"];
 pub struct PyrightClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
-    workspace_files_cache: Arc<Mutex<Option<HashMap<String, Option<String>>>>>,
+    workspace_documents: WorkspaceDocumentsHandler,
 }
 
 #[async_trait]
@@ -41,19 +39,8 @@ impl LspClient for PyrightClient {
         PYRIGHT_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
     }
 
-    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>> {
-        self.workspace_files_cache.clone()
-    }
-
-    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>) {
-        self.workspace_files_cache = Arc::new(Mutex::new(Some(cache)));
-    }
-
-    fn get_include_patterns(&mut self) -> Vec<String> {
-        PYRIGHT_FILE_PATTERNS
-            .iter()
-            .map(|&s| s.to_string())
-            .collect()
+    fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
+        &mut self.workspace_documents
     }
 }
 
@@ -71,12 +58,25 @@ impl PyrightClient {
         let process_handler = ProcessHandler::new(process)
             .await
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
+
+        let workspace_documents = WorkspaceDocumentsHandler::new(
+            root_path,
+            PYRIGHT_FILE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+            crate::lsp::client::DEFAULT_EXCLUDE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+        );
+
         let json_rpc_handler = JsonRpcHandler::new();
 
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
-            workspace_files_cache: Arc::new(Mutex::new(None)),
+            workspace_documents: workspace_documents,
         })
     }
 }
