@@ -22,17 +22,25 @@
    
 ## <a name="what-is-lsproxy">What is lsproxy?</a>
 
-lsproxy is a service that makes communicating with language servers outside of code editors much easier. This is a significant use case when building LLM coding agents. The major issues with language servers are:
-- Each language has its own server that needs to be installed and run.
-- Each server has different, poorly documented configuration settings, and it’s hard to test whether it’s working correctly.
-- The interface with the language server is built to communicate with visual IDEs and mouse cursors, not text-based LLM agents.
+`lsproxy` offers a simple REST API for project-wide code analysis and navigation using Language Servers:
+  - find sybmol definitions across files
+  - find symbol references across files
+  - code diagnostics/lints (coming soon)
+  - call and type hierarchies (coming soon)
+  - procedural refactors (coming soon)
 
-lsproxy addresses these issues in the following ways:
-- Language servers for popular languages pre-installed and automatically run depending on the files in your workspace.
-- Each server is configured from project files like `tsconfig.json`, `pyproject.toml`, or `vscode/settings.json` or provides sensible defaults.
-- Provides a simple API for AI agents (or humans!)
+Language servers are powerful, but tricky to use outside of IDEs.
+- Each programming language has its own language server implementations that need to be installed and started up separately.
+- These servers have bespoke configuration and undocumented behaviors.
+- Different server implementations support different features of the protocol.
+- The protocol is designed around cursors and text.
 
-We have a good set of initial languages we support (see [Supported languages](#supported-languages)) and a simple set of API endpoints ([API spec here](https://docs.agenticlabs.com)), but we're continually adding more! If there's something you'd like to see, let us know in discord, open an issue, or make a contribution!
+`lsproxy` aims to solve this by:
+- Pre-installing servers for popular languages and running them automatically based on your project files.
+- Automatically detecting configuration and providing sensible defaults.
+- Offering a streamlined API to use with AI coding assistants and other clients.
+- Providing a consistent experience across different languages.
+    
 
 ## <a name="getting-started">Getting started</a>
 The easiest way to get started is to run it yourself! We keep the latest version up to date on docker hub, and we have a python SDK available via `pip`. If you need additional inspiration for how this can be helpful to you, check out the [Examples](#examples) section.
