@@ -30,10 +30,10 @@
   - procedural refactors (coming soon)
 
 Language servers are powerful, but tricky to use outside of IDEs.
-- Each programming language has its own language server implementations that need to be installed and started up separately.
+- Each programming language has its own server implementations that need to be installed and started up separately.
 - These servers have bespoke configuration and undocumented behaviors.
 - Different server implementations support different features of the protocol.
-- The protocol is designed around cursors and text.
+- The protocol is designed around cursors and raw text.
 
 `lsproxy` aims to solve this by:
 - Pre-installing servers for popular languages and running them automatically based on your project files.
