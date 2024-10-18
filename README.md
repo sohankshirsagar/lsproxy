@@ -21,7 +21,7 @@
 - 🌐 **Unified API**: Access multiple language servers through a single, consistent REST API.
 - 🔍 **Cross-File Analysis**: Find symbol definitions and references across your entire project.
 - 🛠️ **Auto-Configuration**: Automatically detect and configure language servers based on your project files.
-- 📊 **Diagnostics**: (Coming Soon) Get project linter output information from an endpoint.
+- 📊 **Diagnostics**: (Coming Soon) Get project linter output from an endpoint.
 - 🌳 **Call & Type Hierarchies**: (Coming Soon) Query multi-hop code relationships.
 - 🔄 **Procedural Refactoring**: (Coming Soon) Perform code refactoring operations through the API.
     
