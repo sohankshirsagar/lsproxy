@@ -22,3 +22,7 @@ Cargo.lock
 .aider*
 
 .vscode*
+
+# Python ignores
+*.pyc
+**/__pycache__/

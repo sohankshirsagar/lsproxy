@@ -21,6 +21,7 @@ pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     "**/.*",
     "**/dist",
     "**/target",
+    "**/build",
     ".git",
 ];
 
@@ -42,6 +43,10 @@ pub trait LspClient: Send {
             }),
             ..Default::default()
         });
+
+        capabilities.experimental = Some(serde_json::json!({
+            "serverStatusNotification": true
+        }));
 
         let params = InitializeParams {
             capabilities: capabilities,
@@ -306,6 +311,20 @@ pub trait LspClient: Send {
             .collect()
     }
 
+    /// Sets up the workspace for the language server.
+    ///
+    /// Some language servers require specific commands to be run before
+    /// workspace-wide features are available. For example:
+    /// - TypeScript Language Server needs an explicit didOpen notification for each file
+    /// - Rust Analyzer needs a reloadWorkspace command
+    ///
+    /// # Arguments
+    ///
+    /// * `root_path` - The root path of the workspace
+    ///
+    /// # Returns
+    ///
+    /// A Result containing () if successful, or a boxed Error if an error occurred
     #[allow(unused)]
     async fn setup_workspace(
         &mut self,

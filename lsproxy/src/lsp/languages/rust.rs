@@ -1,7 +1,6 @@
 use std::{error::Error, process::Stdio};
 
 use async_trait::async_trait;
-use lsp_types::{Url, WorkspaceFolder};
 use tokio::process::Command;
 
 use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
@@ -39,17 +38,6 @@ impl LspClient for RustAnalyzerClient {
         self.send_lsp_request("rust-analyzer/reloadWorkspace", None)
             .await?;
         Ok(())
-    }
-
-    async fn find_workspace_folders(
-        &mut self,
-        root_path: String,
-    ) -> Result<Vec<WorkspaceFolder>, Box<dyn Error + Send + Sync>> {
-        // TODO: find folders containing Cargo.toml from root_path
-        Ok(vec![WorkspaceFolder {
-            uri: Url::from_file_path(root_path.clone()).unwrap(),
-            name: root_path,
-        }])
     }
 }
 
