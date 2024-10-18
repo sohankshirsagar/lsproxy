@@ -24,7 +24,7 @@ mod utils;
 use crate::api_types::{
     DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
     GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
-    WorkspaceSymbolsRequest, MOUNT_DIR,
+    MOUNT_DIR,
 };
 use crate::lsp::manager::LspManager;
 
