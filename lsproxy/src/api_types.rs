@@ -90,7 +90,7 @@ pub struct GetDefinitionRequest {
     /// Defaults to false.
     #[serde(default)]
     #[schema(example = false)]
-    pub include_source_code: bool,
+    pub include_code_context: bool,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.

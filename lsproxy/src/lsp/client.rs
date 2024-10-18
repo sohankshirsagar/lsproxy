@@ -18,6 +18,8 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tokio::fs::read_to_string;
 
+use super::workspace_documents::WorkspaceDocumentsHandler;
+
 pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     "**/node_modules",
     "**/__pycache__",
@@ -113,40 +115,6 @@ pub trait LspClient: Send {
             notification
         );
         self.get_process().send(&message).await
-    }
-
-    async fn read_text_document(
-        &mut self,
-        full_file_path: &str,
-        range: Option<Range>,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let file_content = read_to_string(full_file_path).await?;
-        match range {
-            Some(range) => {
-                let start_line = range.start.line as usize;
-                let end_line = range.end.line as usize;
-                let start_character = range.start.character as usize;
-                let end_character = range.end.character as usize;
-                let lines: Vec<&str> = file_content.split('\n').collect();
-                Ok(lines[start_line..=end_line]
-                    .iter()
-                    .enumerate()
-                    .map(|(i, &line)| {
-                        if i == 0 && i == end_line - start_line {
-                            &line[start_character..end_character]
-                        } else if i == 0 {
-                            &line[start_character..]
-                        } else if i == end_line - start_line {
-                            &line[..end_character]
-                        } else {
-                            line
-                        }
-                    })
-                    .collect::<Vec<&str>>()
-                    .join("\n"))
-            }
-            None => Ok(file_content),
-        }
     }
 
     async fn text_document_did_open(
@@ -343,45 +311,7 @@ pub trait LspClient: Send {
         vec![".git".to_string()]
     }
 
-    fn get_exclude_patterns(&mut self) -> Vec<String> {
-        DEFAULT_EXCLUDE_PATTERNS
-            .iter()
-            .map(|&s| s.to_owned())
-            .collect()
-    }
-
-    fn get_include_patterns(&mut self) -> Vec<String>;
-
-    fn get_workspace_files(&mut self, root_path: &str) -> Vec<String> {
-        let current_cache = self.get_workspace_files_cache();
-        let locked_cache = current_cache.lock().unwrap();
-        if let Some(cache) = locked_cache.as_ref() {
-            cache.keys().cloned().collect()
-        } else {
-            let include_patterns = self.get_include_patterns();
-            let exclude_patterns = self.get_exclude_patterns();
-            let files = search_files(Path::new(root_path), include_patterns, exclude_patterns);
-            let Ok(files) = files else {
-                error!("Error searching files: {}", files.err().unwrap());
-                return vec![];
-            };
-            let file_strings: Vec<String> = files
-                .iter()
-                .map(|f| f.to_str().unwrap().to_string())
-                .collect();
-            let mut cache = HashMap::new();
-            for file in file_strings.clone() {
-                cache.insert(file, None);
-            }
-            self.set_workspace_files_cache(cache);
-            file_strings
-        }
-    }
-
-    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>>;
-
-    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>);
-
+    fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler;
     /// Sets up the workspace for the language server.
     ///
     /// Some language servers require specific commands to be run before
@@ -415,7 +345,10 @@ pub trait LspClient: Send {
             .map(|f| format!("**/{f}"))
             .collect();
         debug!("include_patterns: {:?}", include_patterns);
-        let exclude_patterns = self.get_exclude_patterns();
+        let exclude_patterns = DEFAULT_EXCLUDE_PATTERNS
+            .iter()
+            .map(|&s| s.to_string())
+            .collect();
 
         match search_directories(&Path::new(&root_path), include_patterns, exclude_patterns) {
             Ok(dirs) => {

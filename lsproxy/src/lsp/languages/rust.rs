@@ -1,19 +1,17 @@
-use std::{
-    collections::HashMap,
-    error::Error,
-    process::Stdio,
-    sync::{Arc, Mutex},
-};
+use std::{error::Error, process::Stdio};
 
 use async_trait::async_trait;
 use tokio::process::Command;
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
+use crate::lsp::{
+    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, ProcessHandler,
+    DEFAULT_EXCLUDE_PATTERNS,
+};
 
 pub struct RustAnalyzerClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
-    workspace_files_cache: Arc<Mutex<Option<HashMap<String, Option<String>>>>>,
+    workspace_documents: WorkspaceDocumentsHandler,
 }
 
 pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
@@ -36,19 +34,8 @@ impl LspClient for RustAnalyzerClient {
             .collect()
     }
 
-    fn get_workspace_files_cache(&mut self) -> Arc<Mutex<Option<HashMap<String, Option<String>>>>> {
-        self.workspace_files_cache.clone()
-    }
-
-    fn set_workspace_files_cache(&mut self, cache: HashMap<String, Option<String>>) {
-        self.workspace_files_cache = Arc::new(Mutex::new(Some(cache)));
-    }
-
-    fn get_include_patterns(&mut self) -> Vec<String> {
-        RUST_ANALYZER_FILE_PATTERNS
-            .iter()
-            .map(|&s| s.to_string())
-            .collect()
+    fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
+        &mut self.workspace_documents
     }
 
     async fn setup_workspace(
@@ -77,10 +64,22 @@ impl RustAnalyzerClient {
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
         let json_rpc_handler = JsonRpcHandler::new();
 
+        let workspace_documents = WorkspaceDocumentsHandler::new(
+            root_path,
+            RUST_ANALYZER_FILE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+            DEFAULT_EXCLUDE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+        );
+
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
-            workspace_files_cache: Arc::new(Mutex::new(None)),
+            workspace_documents: workspace_documents,
         })
     }
 }
