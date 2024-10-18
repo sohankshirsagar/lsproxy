@@ -74,7 +74,9 @@ impl LspClient for TypeScriptLanguageClient {
 
         let mut cache: HashMap<String, Option<String>> = HashMap::new();
 
-        let text_document_items = self.get_text_document_items_to_open(root_path).await?;
+        let text_document_items = self
+            .get_text_document_items_to_open_with_config(root_path)
+            .await?;
         for item in text_document_items {
             cache.insert(
                 item.uri
@@ -116,7 +118,7 @@ impl TypeScriptLanguageClient {
         })
     }
 
-    pub async fn get_text_document_items_to_open(
+    pub async fn get_text_document_items_to_open_with_config(
         &mut self,
         workspace_path: &str,
     ) -> Result<Vec<TextDocumentItem>, Box<dyn Error + Send + Sync>> {
