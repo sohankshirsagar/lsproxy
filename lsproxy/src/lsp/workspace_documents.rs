@@ -1,5 +1,5 @@
-use std::{collections::HashMap, error::Error, path::Path, sync::Arc};
 use log::error;
+use std::{collections::HashMap, error::Error, path::Path, sync::Arc};
 use tokio::sync::Mutex; // Use Tokio's async Mutex
 
 use lsp_types::Range;
@@ -122,9 +122,7 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
                 let result = extracted.join("\n");
                 Ok(result)
             }
-            None => {
-                Ok(file_content)
-            }
+            None => Ok(file_content),
         }
     }
 
