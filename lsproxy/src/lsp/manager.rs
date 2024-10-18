@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use super::workspace_documents::WorkspaceDocuments;
+
 pub struct LspManager {
     clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
 }
@@ -196,7 +198,9 @@ impl LspManager {
             let mut locked_client = client.lock().await;
             files.extend(
                 locked_client
-                    .get_workspace_files(MOUNT_DIR)
+                    .get_workspace_documents()
+                    .list_files()
+                    .await
                     .iter()
                     .map(|f| f.strip_prefix(MOUNT_DIR).unwrap().to_string())
                     .collect::<Vec<String>>(),
