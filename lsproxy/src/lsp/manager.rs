@@ -6,10 +6,8 @@ use crate::lsp::languages::{
 };
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
-use log::{debug, error, warn};
-use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, WorkspaceSymbolResponse,
-};
+use log::{debug, warn};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};

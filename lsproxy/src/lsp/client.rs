@@ -171,6 +171,8 @@ pub trait LspClient: Send {
         }
     }
 
+    // TODO re-implement using textDocument/symbol
+    #[allow(unused)]
     async fn workspace_symbols(
         &mut self,
         query: &str,
