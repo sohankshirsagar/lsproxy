@@ -260,48 +260,6 @@ impl From<WorkspaceLocation> for FilePosition {
     }
 }
 
-impl From<WorkspaceSymbol> for Symbol {
-    fn from(symbol: WorkspaceSymbol) -> Self {
-        Symbol {
-            name: symbol.name,
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: match symbol.location {
-                OneOf::Left(location) => FilePosition::from(location),
-                OneOf::Right(workspace_location) => {
-                    warn!("WorkspaceLocation does not contain line and character information and will not be shown");
-                    FilePosition::from(workspace_location)
-                }
-            },
-        }
-    }
-}
-
-impl From<(Vec<WorkspaceSymbolResponse>, bool)> for SymbolResponse {
-    fn from((responses, include_raw): (Vec<WorkspaceSymbolResponse>, bool)) -> Self {
-        let raw_response = if include_raw {
-            Some(to_value(&responses).unwrap_or_default())
-        } else {
-            None
-        };
-        let symbols: Vec<Symbol> = responses
-            .into_iter()
-            .flat_map(|response| match response {
-                WorkspaceSymbolResponse::Flat(symbols) => {
-                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
-                }
-                WorkspaceSymbolResponse::Nested(symbols) =>{
-                    warn!("Nested symbols are missing line and character information and will not be shown");
-                    symbols.into_iter().map(Symbol::from).collect::<Vec<_>>()
-                }
-            })
-            .collect();
-
-        SymbolResponse {
-            raw_response,
-            symbols,
-        }
-    }
-}
 
 impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
     fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
