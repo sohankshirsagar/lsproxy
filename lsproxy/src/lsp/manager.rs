@@ -207,7 +207,7 @@ impl LspManager {
                         f.strip_prefix(MOUNT_DIR)
                             .unwrap()
                             .strip_prefix('/')
-                            .unwrap_or(f.strip_prefix(MOUNT_DIR).unwrap())
+                            .unwrap()
                             .to_string()
                     })
                     .collect::<Vec<String>>(),
