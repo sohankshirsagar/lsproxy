@@ -1,4 +1,4 @@
-use crate::api_types::{SupportedLanguages, MOUNT_DIR};
+use crate::api_types::{get_mount_dir, SupportedLanguages};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
@@ -115,7 +115,7 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str)?;
         let client = self
@@ -139,7 +139,7 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()).into());
         }
-        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
@@ -175,7 +175,7 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
@@ -195,6 +195,7 @@ impl LspManager {
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
+        let mount_dir = get_mount_dir().to_string_lossy().into_owned();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
             files.extend(
@@ -204,7 +205,7 @@ impl LspManager {
                     .await
                     .iter()
                     .filter_map(|f| {
-                        f.strip_prefix(MOUNT_DIR)
+                        f.strip_prefix(&mount_dir)
                             .map(|p| p.strip_prefix('/').unwrap_or(p))
                             .map(|p| p.to_string())
                     })
@@ -256,38 +257,24 @@ impl std::error::Error for LspManagerError {}
 
 #[cfg(test)]
 mod tests {
+    use crate::api_types::test_utils::set_mount_dir;
+
     use super::*;
     use std::fs;
-    use tempfile::TempDir;
 
-    fn write_dummy_python_file(path: &PathBuf, filename: &str) {
-        // Create a dummy Python file
-        let dummy_file_path = path.join(filename);
-        fs::write(&dummy_file_path, r#"
-    def greet(name: str) -> str:
-        return f"Hello, {name}!"
-
-    if __name__ == "__main__":
-        print(greet("World"))
-    "#).expect("Failed to write dummy Python file");
+    fn python_sample_path() -> String {
+        "/mnt/lsproxy_root/sample_project/python".to_string()
     }
 
-    fn write_python_config_file(path: &PathBuf) {
-        let pyproject_path = path.join("pyproject.toml");
-        fs::write(&pyproject_path, r#"
-    [tool.pyright]
-    include = ["**/*.py"]
-    exclude = ["**/node_modules", "**/__pycache__"]
+    async fn start_python_manager() -> Result<LspManager, Box<dyn std::error::Error>> {
+        let python_path = python_sample_path();
+        set_mount_dir(&python_path);
 
-    [tool.poetry]
-    name = "sample-project"
-    version = "0.1.0"
-    description = "A sample Python project for testing"
-    authors = ["Your Name <you@example.com>"]
+        start_manager(&python_path).await
+    }
 
-    [tool.poetry.dependencies]
-    python = "^3.7"
-    "#).expect("Failed to write pyproject.toml");
+    fn reset_mount_dir() {
+        set_mount_dir("/mnt/workspace");
     }
 
     async fn start_manager(file_path: &str) -> Result<LspManager, Box<dyn std::error::Error>> {
@@ -301,64 +288,44 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_manager_python() {
-        // Create a temporary directory
-        let temp_dir = TempDir::new().expect("Failed to create temp directory");
-        let python_path: PathBuf = temp_dir.path().to_path_buf();
-        let python_path_str = python_path.to_str().unwrap();
-
-        write_dummy_python_file(&python_path, "dummy.py");
-        write_python_config_file(&python_path);
-
-        let result = start_manager(python_path_str).await;
-        
+        let result = start_python_manager().await;
         assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+
+        reset_mount_dir();
     }
 
     #[tokio::test]
     async fn test_start_manager_python_no_config() {
-        // Create a temporary directory
-        let temp_dir = TempDir::new().expect("Failed to create temp directory");
-        let python_path: PathBuf = temp_dir.path().to_path_buf();
-        let python_path_str = python_path.to_str().unwrap();
-
-        write_dummy_python_file(&python_path, "dummy.py");
-        
-        let result = start_manager(python_path_str).await;
-        
+        let result = start_python_manager().await;
         assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+        reset_mount_dir();
     }
 
     #[tokio::test]
     async fn test_workspace_files() {
-        // Create a temporary directory
-        let temp_dir = TempDir::new().expect("Failed to create temp directory");
-        let python_path: PathBuf = temp_dir.path().to_path_buf();
-        let python_path_str = python_path.to_str().unwrap();
-
-        write_dummy_python_file(&python_path, "dummy.py");
-        
-        let result = start_manager(python_path_str).await;
+        let result = start_python_manager().await;
         assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
 
-        // Clean up: remove the fixed directory after the test
-        fs::remove_dir_all(&python_path).expect("Failed to remove fixed directory");
+        let manager = result.unwrap();
+        let result = manager.workspace_files().await;
+
+        let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
+
+        assert!(result.is_ok(), "Failed to get workspace files: {:?}", result.err());
+        assert_eq!(result.unwrap().sort(), expected.sort());
+
+        reset_mount_dir();
     }
 
     #[tokio::test]
-    async fn test_basic_symbols() {
-        let temp_dir = TempDir::new().expect("Failed to create temp directory");
-        let python_path: PathBuf = temp_dir.path().to_path_buf();
-        let python_path_str = python_path.to_str().unwrap();
-        let filename = "dummy.py";
-        write_dummy_python_file(&python_path, filename);
-        
-        let result = start_manager(python_path_str).await;
+    async fn test_file_symbols() {
+        let result = start_python_manager().await;
         assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
         let manager = result.unwrap();
-        let result = manager.file_symbols(filename).await;
+
+        let result = manager.file_symbols("graph.py").await;
         assert!(result.is_ok(), "Failed to find symbols: {:?}", result.err());
 
-        // Clean up: remove the fixed directory after the test
-        fs::remove_dir_all(&python_path).expect("Failed to remove fixed directory");
+        reset_mount_dir();
     }
 }

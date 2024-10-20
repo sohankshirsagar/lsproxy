@@ -19,14 +19,13 @@ mod utils;
 
 use crate::api_types::{
     DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
-    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
-    MOUNT_DIR,
+    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse, get_mount_dir
 };
 use crate::handlers::{definition, file_symbols, references, workspace_files};
 use crate::lsp::manager::LspManager;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
-    fs::read_dir(MOUNT_DIR)?;
+    fs::read_dir(get_mount_dir())?;
     Ok(())
 }
 
@@ -71,16 +70,16 @@ pub async fn initialize_app_state() -> Data<AppState> {
     lsp_manager
         .lock()
         .unwrap()
-        .start_langservers(MOUNT_DIR)
+        .start_langservers(get_mount_dir().to_str().unwrap())
         .await
         .ok();
     Data::new(AppState { lsp_manager })
 }
 
 pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
-    // Check if MOUNT_DIR exists and is mounted
+    // Check if mount dir exists and is mounted
     if let Err(e) = check_mount_dir() {
-        eprintln!("Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location in your docker run or docker compose commands.", MOUNT_DIR);
+        eprintln!("Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location in your docker run or docker compose commands.", get_mount_dir().to_string_lossy());
         return Err(e);
     }
 

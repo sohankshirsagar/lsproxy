@@ -6,11 +6,19 @@ use lsp_types::{
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use std::hash::Hash;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::cell::RefCell;
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
-pub const MOUNT_DIR: &str = "/mnt/workspace";
+thread_local! {
+    static MOUNT_DIR: RefCell<PathBuf> = RefCell::new(PathBuf::from("/mnt/workspace"));
+}
+
+
+pub fn get_mount_dir() -> PathBuf {
+    MOUNT_DIR.with(|dir| dir.borrow().clone())
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ErrorResponse {
@@ -336,8 +344,7 @@ fn uri_to_path_str(uri: Url) -> String {
         PathBuf::from(uri.path())
     });
 
-    let mount_dir = Path::new(MOUNT_DIR);
-    path.strip_prefix(mount_dir)
+    path.strip_prefix(get_mount_dir().as_path())
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|e| {
             warn!("Failed to strip prefix: {:?}", e);
@@ -394,6 +401,19 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
         SymbolKind::TYPE_PARAMETER => "type_parameter",
         _ => "unknown",
     }
+}
+
+#[cfg(test)]
+pub mod test_utils {
+    use super::*;
+    use std::path::Path;
+
+    pub fn set_mount_dir(path: impl AsRef<Path>) {
+        MOUNT_DIR.with(|dir| {
+            *dir.borrow_mut() = path.as_ref().to_path_buf();
+        });
+    }
+
 }
 
 #[cfg(test)]
