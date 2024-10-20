@@ -1,12 +1,12 @@
-use actix_web::HttpResponse;
 use actix_web::web::{Data, Json};
-use log::{info, error};
+use actix_web::HttpResponse;
+use log::{error, info};
 use lsp_types::Position;
 
-use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::AppState;
 use crate::api_types::ErrorResponse;
+use crate::api_types::{GetReferencesRequest, ReferencesResponse};
 use crate::lsp::manager::LspManagerError;
+use crate::AppState;
 
 /// Find all references to a symbol
 ///

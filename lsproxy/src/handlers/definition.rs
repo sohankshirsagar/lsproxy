@@ -1,12 +1,12 @@
-use actix_web::HttpResponse;
-use actix_web::web::{Json, Data};
 use crate::api_types::ErrorResponse;
-use log::{error, info};
 use crate::lsp::manager::LspManagerError;
+use actix_web::web::{Data, Json};
+use actix_web::HttpResponse;
+use log::{error, info};
 
-use lsp_types::Position;
-use crate::AppState;
 use crate::api_types::{DefinitionResponse, GetDefinitionRequest};
+use crate::AppState;
+use lsp_types::Position;
 /// Get the definition of a symbol at a specific position in a file
 ///
 /// Returns the location of the definition for the symbol at the given position.

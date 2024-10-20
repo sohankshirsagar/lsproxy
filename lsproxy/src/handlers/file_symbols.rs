@@ -1,11 +1,11 @@
-use actix_web::HttpResponse;
 use actix_web::web::{Data, Query};
+use actix_web::HttpResponse;
 use log::info;
 
-use crate::api_types::{FileSymbolsRequest, SymbolResponse};
-use crate::AppState;
 use crate::api_types::ErrorResponse;
+use crate::api_types::{FileSymbolsRequest, SymbolResponse};
 use crate::lsp::manager::LspManagerError;
+use crate::AppState;
 /// Get symbols in a specific file
 ///
 /// Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.

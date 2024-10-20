@@ -1,10 +1,10 @@
-use actix_web::HttpResponse;
 use actix_web::web::Data;
+use actix_web::HttpResponse;
 use log::error;
 
-use crate::AppState;
 use crate::api_types::ErrorResponse;
 use crate::lsp::manager::LspManagerError;
+use crate::AppState;
 
 /// Get a list of all files in the workspace
 ///

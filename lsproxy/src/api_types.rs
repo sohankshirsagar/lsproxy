@@ -1,7 +1,7 @@
 use log::warn;
 use lsp_types::{
     DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
-    SymbolInformation, SymbolKind, Url
+    SymbolInformation, SymbolKind, Url,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -86,11 +86,11 @@ pub struct Symbol {
 pub struct GetDefinitionRequest {
     pub position: FilePosition,
 
-    /// Whether to include the source code of the symbol in the response.
+    /// Whether to include the source code around the symbol's identifier in the response.
     /// Defaults to false.
     #[serde(default)]
-    #[schema(example = false)]
-    pub include_code_context: bool,
+    #[schema(example = 5)]
+    pub include_code_context_lines: Option<u32>,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
@@ -107,6 +107,12 @@ pub struct GetReferencesRequest {
     /// Defaults to false.
     #[serde(default)]
     pub include_declaration: bool,
+
+    /// Whether to include the source code of the symbol in the response.
+    /// Defaults to false.
+    #[serde(default)]
+    #[schema(example = 5)]
+    pub include_code_context_context_lines: Option<u32>,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
