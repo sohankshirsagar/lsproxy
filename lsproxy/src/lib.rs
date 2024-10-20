@@ -107,7 +107,7 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
 
 pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
     let openapi = ApiDoc::openapi();
-    let openapi_json = serde_json::to_string_pretty(&openapi).unwrap();
+    let openapi_json = serde_json::to_string_pretty(&openapi).expect("Failed to serialize OpenAPI to JSON");
     let mut file = File::create(file_path)?;
     file.write_all(openapi_json.as_bytes())?;
     println!("OpenAPI spec written to: {}", file_path.display());
