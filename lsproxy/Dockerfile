@@ -29,7 +29,7 @@ RUN npm install -g pyright typescript-language-server typescript
 RUN cargo install cargo-llvm-cov
 RUN rustup component add llvm-tools-preview
 
-COPY Cargo.toml Cargo.lock .
+COPY Cargo.toml .
 
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN touch src/lib.rs
@@ -42,4 +42,4 @@ EXPOSE 4444
 ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
 
-CMD /bin/bash -c "touch Cargo.toml Cargo.lock && cargo build --release"
+CMD /bin/bash -c "touch Cargo.toml && cargo build --release"

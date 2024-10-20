@@ -286,6 +286,22 @@ impl From<SymbolInformation> for Symbol {
     }
 }
 
+impl Symbol {
+    fn new(symbol: &DocumentSymbol, file_path: &str) -> Self {
+        Symbol {
+            name: symbol.name.to_string(),
+            kind: symbol_kind_to_string(symbol.kind).to_owned(),
+            identifier_start_position: FilePosition {
+                path: file_path.to_owned(),
+                position: Position {
+                    line: symbol.selection_range.start.line,
+                    character: symbol.selection_range.start.character,
+                },
+            },
+            source_code: None,
+        }
+    }
+}
 impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
     fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
         let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
@@ -325,18 +341,7 @@ fn uri_to_path_str(uri: Url) -> String {
 
 fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<Symbol> {
     fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<Symbol>) {
-        result.push(Symbol {
-            name: symbol.name,
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition {
-                path: file_path.to_owned(),
-                position: Position {
-                    line: symbol.selection_range.start.line,
-                    character: symbol.selection_range.start.character,
-                },
-            },
-            source_code: None,
-        });
+        result.push(Symbol::new(&symbol, file_path));
 
         if let Some(children) = symbol.children {
             for child in children {
@@ -388,59 +393,46 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lsp_types::{SymbolKind, Url, WorkspaceSymbol, WorkspaceLocation, OneOf};
+    use lsp_types::{Range, SymbolKind};
 
     #[test]
-    fn test_symbol_from_workspace_symbol_with_location() {
-        let url = Url::parse("file:///mnt/workspace/src/main.rs").unwrap();
-        let workspace_symbol = WorkspaceSymbol {
+    fn test_symbol_new_from_document_symbol() {
+        let document_symbol = DocumentSymbol {
             name: "test_function".to_string(),
+            detail: None,
             kind: SymbolKind::FUNCTION,
             tags: None,
-            container_name: None,
-            location: OneOf::Left(Location {
-                uri: url,
-                range: lsp_types::Range {
-                    start: lsp_types::Position {
-                        line: 10,
-                        character: 4,
-                    },
-                    end: lsp_types::Position {
-                        line: 10,
-                        character: 17,
-                    },
+            deprecated: None,
+            range: Range {
+                start: lsp_types::Position {
+                    line: 10,
+                    character: 0,
                 },
-            }),
-            data: None,
+                end: lsp_types::Position {
+                    line: 15,
+                    character: 1,
+                },
+            },
+            selection_range: Range {
+                start: lsp_types::Position {
+                    line: 10,
+                    character: 4,
+                },
+                end: lsp_types::Position {
+                    line: 10,
+                    character: 17,
+                },
+            },
+            children: None,
         };
 
-        let symbol: Symbol = workspace_symbol.into();
+        let file_path = "src/main.rs";
+        let symbol = Symbol::new(&document_symbol, file_path);
 
         assert_eq!(symbol.name, "test_function");
         assert_eq!(symbol.kind, "function");
-        assert_eq!(symbol.identifier_start_position.path, "src/main.rs");
-        assert_eq!(symbol.identifier_start_position.line, 10);
-        assert_eq!(symbol.identifier_start_position.character, 4);
-    }
-
-    #[test]
-    fn test_symbol_from_workspace_symbol_with_workspace_location() {
-        let url = Url::parse("file:///mnt/workspace/src/lib.rs").unwrap();
-        let workspace_symbol = WorkspaceSymbol {
-            name: "TestStruct".to_string(),
-            kind: SymbolKind::STRUCT,
-            tags: None,
-            container_name: None,
-            location: OneOf::Right(WorkspaceLocation { uri: url }),
-            data: None,
-        };
-
-        let symbol: Symbol = workspace_symbol.into();
-
-        assert_eq!(symbol.name, "TestStruct");
-        assert_eq!(symbol.kind, "struct");
-        assert_eq!(symbol.identifier_start_position.path, "src/lib.rs");
-        assert_eq!(symbol.identifier_start_position.line, 0);
-        assert_eq!(symbol.identifier_start_position.character, 0);
+        assert_eq!(symbol.identifier_start_position.path, file_path);
+        assert_eq!(symbol.identifier_start_position.position.line, 10);
+        assert_eq!(symbol.identifier_start_position.position.character, 4);
     }
 }
