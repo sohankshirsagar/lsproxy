@@ -71,7 +71,7 @@ impl WorkspaceDocumentsHandler {
             .enumerate()
             .map(|(i, &line)| {
                 if i == 0 {
-                    &line[start_char.min(line.len())..]
+                    &line[start_char.min(line.len())..end_char.min(line.len())]
                 } else if i == end_line - start_line {
                     &line[..end_char.min(line.len())]
                 } else {
