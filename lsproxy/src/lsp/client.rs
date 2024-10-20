@@ -374,6 +374,20 @@ pub trait LspClient: Send {
             Err(e) => return Err(Box::new(e)),
         }
 
+        if workspace_folders.is_empty() {
+            // Fallback: use the root_path itself as a workspace folder
+            if let Ok(uri) = Url::from_file_path(&root_path) {
+                workspace_folders.push(WorkspaceFolder {
+                    uri,
+                    name: Path::new(&root_path)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("")
+                        .to_string(),
+                });
+            }
+        }
+
         Ok(workspace_folders.into_iter().collect())
     }
 }

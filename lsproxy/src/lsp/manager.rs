@@ -253,3 +253,112 @@ impl fmt::Display for LspManagerError {
 }
 
 impl std::error::Error for LspManagerError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn write_dummy_python_file(path: &PathBuf, filename: &str) {
+        // Create a dummy Python file
+        let dummy_file_path = path.join(filename);
+        fs::write(&dummy_file_path, r#"
+    def greet(name: str) -> str:
+        return f"Hello, {name}!"
+
+    if __name__ == "__main__":
+        print(greet("World"))
+    "#).expect("Failed to write dummy Python file");
+    }
+
+    fn write_python_config_file(path: &PathBuf) {
+        let pyproject_path = path.join("pyproject.toml");
+        fs::write(&pyproject_path, r#"
+    [tool.pyright]
+    include = ["**/*.py"]
+    exclude = ["**/node_modules", "**/__pycache__"]
+
+    [tool.poetry]
+    name = "sample-project"
+    version = "0.1.0"
+    description = "A sample Python project for testing"
+    authors = ["Your Name <you@example.com>"]
+
+    [tool.poetry.dependencies]
+    python = "^3.7"
+    "#).expect("Failed to write pyproject.toml");
+    }
+
+    async fn start_manager(file_path: &str) -> Result<LspManager, Box<dyn std::error::Error>> {
+        let mut lsp_manager = LspManager::new();
+        lsp_manager
+            .start_langservers(file_path)
+            .await?;
+        
+        Ok(lsp_manager)
+    }
+
+    #[tokio::test]
+    async fn test_start_manager_python() {
+        // Create a temporary directory
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let python_path: PathBuf = temp_dir.path().to_path_buf();
+        let python_path_str = python_path.to_str().unwrap();
+
+        write_dummy_python_file(&python_path, "dummy.py");
+        write_python_config_file(&python_path);
+
+        let result = start_manager(python_path_str).await;
+        
+        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+    }
+
+    #[tokio::test]
+    async fn test_start_manager_python_no_config() {
+        // Create a temporary directory
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let python_path: PathBuf = temp_dir.path().to_path_buf();
+        let python_path_str = python_path.to_str().unwrap();
+
+        write_dummy_python_file(&python_path, "dummy.py");
+        
+        let result = start_manager(python_path_str).await;
+        
+        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+    }
+
+    #[tokio::test]
+    async fn test_workspace_files() {
+        // Create a temporary directory
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let python_path: PathBuf = temp_dir.path().to_path_buf();
+        let python_path_str = python_path.to_str().unwrap();
+
+        write_dummy_python_file(&python_path, "dummy.py");
+        
+        let result = start_manager(python_path_str).await;
+        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+
+        // Clean up: remove the fixed directory after the test
+        fs::remove_dir_all(&python_path).expect("Failed to remove fixed directory");
+    }
+
+    #[tokio::test]
+    async fn test_basic_symbols() {
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let python_path: PathBuf = temp_dir.path().to_path_buf();
+        let python_path_str = python_path.to_str().unwrap();
+        let filename = "dummy.py";
+        write_dummy_python_file(&python_path, filename);
+        
+        let result = start_manager(python_path_str).await;
+        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+        let manager = result.unwrap();
+        let result = manager.file_symbols(filename).await;
+        assert!(result.is_ok(), "Failed to find symbols: {:?}", result.err());
+
+        // Clean up: remove the fixed directory after the test
+        fs::remove_dir_all(&python_path).expect("Failed to remove fixed directory");
+    }
+}
