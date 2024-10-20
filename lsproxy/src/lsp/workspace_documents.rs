@@ -1,5 +1,5 @@
 use crate::utils::file_utils::search_files;
-use log::{debug, error};
+use log::{debug, error, warn};
 use lsp_types::Range;
 use std::{collections::HashMap, error::Error, path::Path, sync::Arc};
 use tokio::fs::read_to_string;
@@ -55,11 +55,30 @@ impl WorkspaceDocumentsHandler {
     fn extract_range(content: &str, range: Range) -> Result<String, Box<dyn Error + Send + Sync>> {
         let lines: Vec<&str> = content.split('\n').collect();
         let total_lines = lines.len();
-        let (start_line, end_line) = (
-            range.start.line as usize,
-            (range.end.line as usize).min(total_lines - 1),
-        );
-        let (start_char, end_char) = (range.start.character as usize, range.end.character as usize);
+
+        // Validate start and end lines
+        if range.start.line as usize >= total_lines {
+            warn!(
+                "Start line out of bounds: {}  ({} total lines)",
+                range.start.line, total_lines
+            );
+            return Ok(String::new());
+        }
+
+        let start_line = range.start.line as usize;
+        let end_line = (range.end.line as usize).min(total_lines - 1);
+
+        // Ensure start_line is not greater than end_line
+        if start_line > end_line {
+            warn!(
+                "Start line is greater than end line: {} > {}",
+                start_line, end_line
+            );
+            return Ok(String::new());
+        }
+
+        let start_char = range.start.character as usize;
+        let end_char = range.end.character as usize;
 
         let extracted: Vec<&str> = lines[start_line..=end_line]
             .iter()
