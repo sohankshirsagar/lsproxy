@@ -205,8 +205,7 @@ impl LspManager {
                     .iter()
                     .filter_map(|f| {
                         f.strip_prefix(MOUNT_DIR)
-                            .ok()
-                            .and_then(|p| p.strip_prefix('/').ok())
+                            .map(|p| p.strip_prefix('/').unwrap_or(p))
                             .map(|p| p.to_string())
                     })
                     .collect::<Vec<String>>(),
