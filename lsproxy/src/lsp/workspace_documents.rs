@@ -55,16 +55,11 @@ impl WorkspaceDocumentsHandler {
     fn extract_range(content: &str, range: Range) -> Result<String, Box<dyn Error + Send + Sync>> {
         let lines: Vec<&str> = content.split('\n').collect();
         let total_lines = lines.len();
-        let (start_line, end_line) = (range.start.line as usize, range.end.line as usize);
+        let (start_line, end_line) = (
+            range.start.line as usize,
+            (range.end.line as usize).min(total_lines - 1),
+        );
         let (start_char, end_char) = (range.start.character as usize, range.end.character as usize);
-
-        if start_line >= total_lines || end_line >= total_lines {
-            return Err(format!(
-                "Range out of bounds: start_line={}, end_line={}, total_lines={}",
-                start_line, end_line, total_lines
-            )
-            .into());
-        }
 
         let extracted: Vec<&str> = lines[start_line..=end_line]
             .iter()
