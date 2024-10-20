@@ -5,7 +5,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 ./scripts/build.sh
 
 # Run the application to generate the OpenAPI spec
-docker run --name temp_lsp_box -v "$(pwd)/lsproxy/target/debug":/usr/src/app lsproxy-dev ./lsproxy -w
+docker run --name temp_lsp_box -v "$(pwd)/lsproxy/target/release":/usr/src/app lsproxy-dev ./lsproxy -w
 
 # Copy the generated OpenAPI spec from the container to the host
 docker cp temp_lsp_box:/usr/src/app/openapi.json ./openapi.json

@@ -18,7 +18,7 @@
     "/definition": {
       "post": {
         "tags": [
-          "crate"
+          "crate::handlers"
         ],
         "summary": "Get the definition of a symbol at a specific position in a file",
         "description": "Get the definition of a symbol at a specific position in a file\n\nReturns the location of the definition for the symbol at the given position.\n\nThe input position should point inside the symbol's identifier, e.g.\n\nThe returned position points to the identifier of the symbol, and the file_path from workspace root\n\ne.g. for the definition of `User` on line 5 of `src/main.py` with the code:\n```\n0: class User:\noutput___^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\ninput_____^^^^\n```",
@@ -56,7 +56,7 @@
     "/file-symbols": {
       "get": {
         "tags": [
-          "crate"
+          "crate::handlers"
         ],
         "summary": "Get symbols in a specific file",
         "description": "Get symbols in a specific file\n\nReturns a list of symbols (functions, classes, variables, etc.) defined in the specified file.\n\nThe returned positions point to the start of the symbol's identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\n_________^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n```",
@@ -104,7 +104,7 @@
     "/references": {
       "post": {
         "tags": [
-          "crate"
+          "crate::handlers"
         ],
         "summary": "Find all references to a symbol",
         "description": "Find all references to a symbol\n\nThe input position should point to the identifier of the symbol you want to get the references for.\n\nReturns a list of locations where the symbol at the given position is referenced.\n\nThe returned positions point to the start of the reference identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\ninput____^^^^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\noutput____^\n```",
@@ -142,7 +142,7 @@
     "/workspace-files": {
       "get": {
         "tags": [
-          "crate"
+          "crate::handlers"
         ],
         "summary": "Get a list of all files in the workspace",
         "description": "Get a list of all files in the workspace\n\nReturns an array of file paths for all files in the current workspace.\n\nThis is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.",
@@ -157,54 +157,6 @@
                   "items": {
                     "type": "string"
                   }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/workspace-symbols": {
-      "get": {
-        "tags": [
-          "crate"
-        ],
-        "summary": "Search for symbols across the entire workspace",
-        "description": "Search for symbols across the entire workspace\n\nReturns a list of symbols matching the given query string from all files in the workspace.\n\nThe returned positions point to the start of the symbol's identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\n_________^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n```",
-        "operationId": "workspace_symbols",
-        "parameters": [
-          {
-            "name": "query",
-            "in": "query",
-            "description": "The query to search for.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "include_raw_response",
-            "in": "query",
-            "description": "Whether to include the raw response from the langserver in the response.\nDefaults to false.",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Workspace symbols retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SymbolResponse"
                 }
               }
             }
@@ -256,25 +208,15 @@
         "description": "Specific position within a file.",
         "required": [
           "path",
-          "line",
-          "character"
+          "position"
         ],
         "properties": {
-          "character": {
-            "type": "integer",
-            "format": "int32",
-            "example": 5,
-            "minimum": 0
-          },
-          "line": {
-            "type": "integer",
-            "format": "int32",
-            "example": 10,
-            "minimum": 0
-          },
           "path": {
             "type": "string",
             "example": "src/main.py"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Position"
           }
         }
       },
@@ -303,6 +245,11 @@
           "position"
         ],
         "properties": {
+          "include_code_context": {
+            "type": "boolean",
+            "description": "Whether to include the source code of the symbol in the response.\nDefaults to false.",
+            "example": false
+          },
           "include_raw_response": {
             "type": "boolean",
             "description": "Whether to include the raw response from the langserver in the response.\nDefaults to false.",
@@ -380,6 +327,14 @@
             "type": "string",
             "description": "The name of the symbol.",
             "example": "User"
+          },
+          "source_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CodeContext"
+              }
+            ],
+            "nullable": true
           }
         }
       },
@@ -398,25 +353,6 @@
             "items": {
               "$ref": "#/components/schemas/Symbol"
             }
-          }
-        }
-      },
-      "WorkspaceSymbolsRequest": {
-        "type": "object",
-        "description": "Request to get the symbols in the workspace.",
-        "required": [
-          "query"
-        ],
-        "properties": {
-          "include_raw_response": {
-            "type": "boolean",
-            "description": "Whether to include the raw response from the langserver in the response.\nDefaults to false.",
-            "example": false
-          },
-          "query": {
-            "type": "string",
-            "description": "The query to search for.",
-            "example": "User"
           }
         }
       }

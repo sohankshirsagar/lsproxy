@@ -292,6 +292,22 @@ impl From<SymbolInformation> for Symbol {
     }
 }
 
+impl Symbol {
+    fn new(symbol: &DocumentSymbol, file_path: &str) -> Self {
+        Symbol {
+            name: symbol.name.to_string(),
+            kind: symbol_kind_to_string(symbol.kind).to_owned(),
+            identifier_start_position: FilePosition {
+                path: file_path.to_owned(),
+                position: Position {
+                    line: symbol.selection_range.start.line,
+                    character: symbol.selection_range.start.character,
+                },
+            },
+            source_code: None,
+        }
+    }
+}
 impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
     fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
         let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
@@ -331,18 +347,7 @@ fn uri_to_path_str(uri: Url) -> String {
 
 fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<Symbol> {
     fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<Symbol>) {
-        result.push(Symbol {
-            name: symbol.name,
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition {
-                path: file_path.to_owned(),
-                position: Position {
-                    line: symbol.selection_range.start.line,
-                    character: symbol.selection_range.start.character,
-                },
-            },
-            source_code: None,
-        });
+        result.push(Symbol::new(&symbol, file_path));
 
         if let Some(children) = symbol.children {
             for child in children {
@@ -388,5 +393,52 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
         SymbolKind::OPERATOR => "operator",
         SymbolKind::TYPE_PARAMETER => "type_parameter",
         _ => "unknown",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use lsp_types::{Range, SymbolKind};
+
+    #[test]
+    fn test_symbol_new_from_document_symbol() {
+        let document_symbol = DocumentSymbol {
+            name: "test_function".to_string(),
+            detail: None,
+            kind: SymbolKind::FUNCTION,
+            tags: None,
+            deprecated: None,
+            range: Range {
+                start: lsp_types::Position {
+                    line: 10,
+                    character: 0,
+                },
+                end: lsp_types::Position {
+                    line: 15,
+                    character: 1,
+                },
+            },
+            selection_range: Range {
+                start: lsp_types::Position {
+                    line: 10,
+                    character: 4,
+                },
+                end: lsp_types::Position {
+                    line: 10,
+                    character: 17,
+                },
+            },
+            children: None,
+        };
+
+        let file_path = "src/main.rs";
+        let symbol = Symbol::new(&document_symbol, file_path);
+
+        assert_eq!(symbol.name, "test_function");
+        assert_eq!(symbol.kind, "function");
+        assert_eq!(symbol.identifier_start_position.path, file_path);
+        assert_eq!(symbol.identifier_start_position.position.line, 10);
+        assert_eq!(symbol.identifier_start_position.position.character, 4);
     }
 }
