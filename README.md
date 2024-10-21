@@ -100,3 +100,4 @@ We're constantly looking to add new language support or better language servers 
 |Python|`pyright`|https://github.com/microsoft/pyright|
 |Rust|`rust-analyzer`|https://github.com/rust-lang/rust-analyzer|
 |Typescript|`typescript-language-server`|https://github.com/typescript-language-server/typescript-language-server|
+|Your Favorite Language | Awesome Language Server | https://github.com/agentic-labs/lsproxy/issues/new |
