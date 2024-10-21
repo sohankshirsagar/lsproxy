@@ -76,7 +76,7 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
         .unwrap();
 
     let source_code_context = if info.include_source_code {
-        match fetch_definition_source_code(&lsp_manager, definitions.clone()).await {
+        match fetch_definition_source_code(&lsp_manager, &definitions).await {
             Ok(context) => Some(context),
             Err(e) => {
                 error!("Failed to fetch definition source code: {:?}", e);
@@ -96,20 +96,20 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
 
 async fn fetch_definition_source_code(
     lsp_manager: &LspManager,
-    definitions_response: GotoDefinitionResponse,
+    definitions_response: &GotoDefinitionResponse,
 ) -> Result<Vec<CodeContext>, LspManagerError> {
     let mut code_contexts = Vec::new();
-    let definitions = match definitions_response {
-        GotoDefinitionResponse::Scalar(definition) => vec![definition],
+    let definitions: &Vec<Location> = match definitions_response {
+        GotoDefinitionResponse::Scalar(definition) => &vec![definition.clone()],
         GotoDefinitionResponse::Array(definitions) => definitions,
-        GotoDefinitionResponse::Link(links) => links
-            .into_iter()
-            .map(|link| Location::new(link.target_uri, link.target_range))
-            .collect(),
+        GotoDefinitionResponse::Link(links) => &links
+            .iter()
+            .map(|link| Location::new(link.target_uri.clone(), link.target_range))
+            .collect::<Vec<Location>>(),
     };
 
     for definition in definitions {
-        let relative_path = uri_to_relative_path_string(definition.uri.clone());
+        let relative_path = uri_to_relative_path_string(&definition.uri);
         let file_symbols = match lsp_manager.file_symbols(&relative_path).await? {
             DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
             DocumentSymbolResponse::Flat(_) => {

@@ -131,7 +131,7 @@ async fn fetch_code_context(
         };
         match lsp_manager
             .read_source_code(
-                &uri_to_relative_path_string(reference.uri.clone()),
+                &uri_to_relative_path_string(&reference.uri),
                 Some(range),
             )
             .await
@@ -140,7 +140,7 @@ async fn fetch_code_context(
                 code_contexts.push(CodeContext {
                     source_code,
                     range: FileRange {
-                        path: uri_to_relative_path_string(reference.uri.clone()),
+                        path: uri_to_relative_path_string(&reference.uri),
                         start: Position {
                             line: range.start.line,
                             character: 0,

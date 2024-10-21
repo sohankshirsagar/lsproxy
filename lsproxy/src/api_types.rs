@@ -289,7 +289,7 @@ impl From<(Vec<Location>, Option<Vec<CodeContext>>, bool)> for ReferencesRespons
 impl From<Location> for FilePosition {
     fn from(location: Location) -> Self {
         FilePosition {
-            path: uri_to_relative_path_string(location.uri),
+            path: uri_to_relative_path_string(&location.uri),
             position: Position {
                 line: location.range.start.line,
                 character: location.range.start.character,
@@ -301,7 +301,7 @@ impl From<Location> for FilePosition {
 impl From<LocationLink> for FilePosition {
     fn from(link: LocationLink) -> Self {
         FilePosition {
-            path: uri_to_relative_path_string(link.target_uri),
+            path: uri_to_relative_path_string(&link.target_uri),
             position: Position {
                 line: link.target_range.start.line,
                 character: link.target_range.start.character,
@@ -359,7 +359,7 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
     }
 }
 
-pub fn uri_to_relative_path_string(uri: Url) -> String {
+pub fn uri_to_relative_path_string(uri: &Url) -> String {
     let path = uri.to_file_path().unwrap_or_else(|e| {
         warn!("Failed to convert URI to file path: {:?}", e);
         PathBuf::from(uri.path())

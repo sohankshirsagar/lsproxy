@@ -41,7 +41,7 @@ impl WorkspaceDocumentsHandler {
         }
     }
 
-    async fn get_or_insert_content(
+    async fn get_content(
         &self,
         full_file_path: &PathBuf,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -106,7 +106,7 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
         full_file_path: &PathBuf,
         range: Option<Range>,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let content = self.get_or_insert_content(full_file_path).await?;
+        let content = self.get_content(full_file_path).await?;
         match range {
             Some(range) => Self::extract_range(&content, range),
             None => Ok(content),

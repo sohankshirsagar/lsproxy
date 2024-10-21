@@ -198,7 +198,6 @@ impl LspManager {
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
-        let mount_dir = get_mount_dir().to_string_lossy().into_owned();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
             files.extend(
