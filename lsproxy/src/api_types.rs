@@ -5,7 +5,7 @@ use lsp_types::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
-use std::{cell::RefCell, path::Path};
+use std::cell::RefCell;
 use std::hash::Hash;
 use std::path::PathBuf;
 use std::rc::Rc;

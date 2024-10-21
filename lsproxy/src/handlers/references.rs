@@ -4,7 +4,7 @@ use log::{error, info};
 use lsp_types::{Location, Position as LspPosition, Range};
 
 use crate::api_types::{
-    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position, get_mount_dir,
+    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
 };
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
 use crate::lsp::manager::{LspManager, LspManagerError};
