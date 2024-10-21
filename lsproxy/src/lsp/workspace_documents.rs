@@ -1,14 +1,17 @@
 use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
+use notify::{Config, Event, RecommendedWatcher, Watcher};
 use std::{
     collections::HashMap,
     error::Error,
     path::{Path, PathBuf},
     sync::Arc,
 };
-use tokio::fs::read_to_string;
-use tokio::sync::RwLock;
+use tokio::{
+    fs::read_to_string,
+    sync::{broadcast::{channel, Receiver, Sender}, RwLock},
+};
 
 #[async_trait::async_trait]
 pub trait WorkspaceDocuments: Send + Sync {
@@ -17,13 +20,13 @@ pub trait WorkspaceDocuments: Send + Sync {
         full_file_path: &PathBuf,
         range: Option<Range>,
     ) -> Result<String, Box<dyn Error + Send + Sync>>;
-    async fn invalidate_cache(&self, full_file_path: &PathBuf);
     async fn list_files(&self) -> Vec<PathBuf>;
     async fn update_patterns(&self, include_patterns: Vec<String>, exclude_patterns: Vec<String>);
 }
 
 pub struct WorkspaceDocumentsHandler {
     cache: Arc<RwLock<HashMap<PathBuf, Option<String>>>>,
+    event_sender: Sender<Event>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
 }
@@ -34,11 +37,58 @@ impl WorkspaceDocumentsHandler {
         include_patterns: Vec<String>,
         exclude_patterns: Vec<String>,
     ) -> Self {
+        let (tx, mut rx) = channel(100);
+        let event_sender = tx.clone();
+        let cache = Arc::new(RwLock::new(HashMap::new()));
+        let patterns = Arc::new(RwLock::new((include_patterns, exclude_patterns)));
+        let root_path = root_path.to_path_buf();
+
+        let watcher = RecommendedWatcher::new(
+            move |res: notify::Result<Event>| {
+                if let Ok(event) = res {
+                    let _ = tx.send(event);
+                }
+            },
+            Config::default(),
+        )
+        .unwrap();
+
+        let cache_clone = Arc::clone(&cache);
+        let patterns_clone = Arc::clone(&patterns);
+
+        tokio::spawn(async move {
+            while let Ok(event) = rx.recv().await {
+                for path in event.paths {
+                    if WorkspaceDocumentsHandler::matches_patterns(&path, &patterns_clone).await {
+                        cache_clone.write().await.remove(&path);
+                        debug!("Cache cleared for {:?}", path);
+                    }
+                }
+            }
+        });
+
         Self {
-            cache: Arc::new(RwLock::new(HashMap::new())),
-            patterns: Arc::new(RwLock::new((include_patterns, exclude_patterns))),
-            root_path: root_path.to_path_buf(),
+            cache,
+            patterns,
+            root_path,
+            event_sender,
         }
+    }
+
+    async fn matches_patterns(
+        path: &PathBuf,
+        patterns: &Arc<RwLock<(Vec<String>, Vec<String>)>>,
+    ) -> bool {
+        let patterns_guard = patterns.read().await;
+        let (include, exclude) = &*patterns_guard;
+        let path_str = path.to_string_lossy();
+
+        include
+            .iter()
+            .any(|pat| glob::Pattern::new(pat).unwrap().matches(&path_str))
+            && !exclude
+                .iter()
+                .any(|pat| glob::Pattern::new(pat).unwrap().matches(&path_str))
     }
 
     async fn get_content(
@@ -55,6 +105,10 @@ impl WorkspaceDocumentsHandler {
                 Ok(content)
             }
         }
+    }
+
+    pub fn subscribe_to_file_changes(&self) -> Receiver<Event> {
+        self.event_sender.subscribe()
     }
 
     fn extract_range(content: &str, range: Range) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -97,7 +151,7 @@ impl WorkspaceDocumentsHandler {
                         );
                     }
                     &line[line_start..line_end]
-                },
+                }
                 (0, false) => {
                     let line_start = start_char.min(line.len());
                     if line_start != start_char {
@@ -107,7 +161,7 @@ impl WorkspaceDocumentsHandler {
                         );
                     }
                     &line[line_start..]
-                },
+                }
                 (n, _) if n == end_line - start_line => {
                     let line_end = end_char.min(line.len());
                     if line_end != end_char {
@@ -117,7 +171,7 @@ impl WorkspaceDocumentsHandler {
                         );
                     }
                     &line[..line_end]
-                },
+                }
                 _ => line,
             })
             .collect();
@@ -139,10 +193,6 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
             Some(range) => Self::extract_range(&content, range),
             None => Ok(content),
         }
-    }
-
-    async fn invalidate_cache(&self, full_file_path: &PathBuf) {
-        self.cache.write().await.remove(full_file_path);
     }
 
     async fn list_files(&self) -> Vec<PathBuf> {
