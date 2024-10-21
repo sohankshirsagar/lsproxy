@@ -9,12 +9,12 @@ use std::cell::RefCell;
 use std::hash::Hash;
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::rc::Rc;
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
 thread_local! {
-    static MOUNT_DIR: Arc<RefCell<PathBuf>> = Arc::new(RefCell::new(PathBuf::from("/mnt/workspace")));
+    static MOUNT_DIR: Rc<RefCell<PathBuf>> = Rc::new(RefCell::new(PathBuf::from("/mnt/workspace")));
 }
 
 pub fn get_mount_dir() -> PathBuf {
