@@ -58,8 +58,8 @@ impl WorkspaceDocumentsHandler {
         .unwrap();
 
         watcher
-        .watch(&root_path, RecursiveMode::Recursive)
-        .unwrap_or_else(|e| error!("Failed to watch {:?}: {:?}", root_path, e));
+            .watch(&root_path, RecursiveMode::Recursive)
+            .unwrap_or_else(|e| error!("Failed to watch {:?}: {:?}", root_path, e));
 
         let cache_clone = Arc::clone(&cache);
         let patterns_clone = Arc::clone(&patterns);
