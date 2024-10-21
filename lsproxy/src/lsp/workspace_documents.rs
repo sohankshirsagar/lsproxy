@@ -328,4 +328,116 @@ mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_read_text_document_out_of_bounds() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory and file
+        let dir = tempdir()?;
+        let file_path = dir.path().join("test_out_of_bounds.txt");
+        fs::write(&file_path, "Line 1\nLine 2")?;
+
+        // Initialize WorkspaceDocumentsHandler
+        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+
+        // Test reading with a range beyond the number of lines
+        let range = Range {
+            start: lsp_types::Position { line: 5, character: 0 },
+            end: lsp_types::Position { line: 6, character: 10 },
+        };
+        let extracted = handler.read_text_document(&file_path, Some(range)).await?;
+        assert_eq!(extracted, "");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_read_text_document_invalid_characters() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory and file
+        let dir = tempdir()?;
+        let file_path = dir.path().join("test_invalid_chars.txt");
+        fs::write(&file_path, "Short line")?;
+
+        // Initialize WorkspaceDocumentsHandler
+        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+
+        // Test reading with character positions exceeding line length
+        let range = Range {
+            start: lsp_types::Position { line: 0, character: 100 },
+            end: lsp_types::Position { line: 0, character: 200 },
+        };
+        let extracted = handler.read_text_document(&file_path, Some(range)).await?;
+        assert_eq!(extracted, "");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_read_text_document_empty_file() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory and empty file
+        let dir = tempdir()?;
+        let file_path = dir.path().join("empty.txt");
+        fs::write(&file_path, "")?;
+
+        // Initialize WorkspaceDocumentsHandler
+        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+
+        // Test reading the entire empty document
+        let content = handler.read_text_document(&file_path, None).await?;
+        assert_eq!(content, "");
+
+        // Test reading with any range on empty file
+        let range = Range {
+            start: lsp_types::Position { line: 0, character: 0 },
+            end: lsp_types::Position { line: 0, character: 10 },
+        };
+        let extracted = handler.read_text_document(&file_path, Some(range)).await?;
+        assert_eq!(extracted, "");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_list_files_no_matching_files() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory without matching files
+        let dir = tempdir()?;
+        fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
+
+        // Initialize WorkspaceDocumentsHandler with patterns that do not match
+        let handler = WorkspaceDocumentsHandler::new(
+            dir.path(),
+            vec!["*.txt".to_string()],
+            vec!["*.md".to_string()],
+        );
+
+        // Test listing files with no matches
+        let files = handler.list_files().await;
+        assert!(files.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_update_patterns_empty_include_exclude() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory and files
+        let dir = tempdir()?;
+        fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
+        fs::write(dir.path().join("file2.txt"), "Hello")?;
+
+        // Initialize WorkspaceDocumentsHandler with initial patterns
+        let handler = WorkspaceDocumentsHandler::new(
+            dir.path(),
+            vec!["*.rs".to_string()],
+            vec!["file2.txt".to_string()],
+        );
+
+        // Update patterns with empty include and exclude
+        handler.update_patterns(vec![], vec![]).await;
+
+        // Test listing files after updating patterns
+        let files = handler.list_files().await;
+        // Assuming empty include patterns match nothing
+        assert!(files.is_empty());
+
+        Ok(())
+    }
 }
