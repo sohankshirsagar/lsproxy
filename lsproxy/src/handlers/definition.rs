@@ -32,7 +32,7 @@ use lsp_types::{
 /// ```
 #[utoipa::path(
     post,
-    path = "/definition",
+    path = "/symbol/find-definition",
     tag = "symbol",
     request_body = GetDefinitionRequest,
     responses(

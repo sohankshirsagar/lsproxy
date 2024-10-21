@@ -31,7 +31,7 @@ use crate::AppState;
 /// ```
 #[utoipa::path(
     post,
-    path = "/references",
+    path = "/symbol/find-references",
     tag = "symbol",
     request_body = GetReferencesRequest,
     responses(

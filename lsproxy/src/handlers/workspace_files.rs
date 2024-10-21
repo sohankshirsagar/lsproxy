@@ -13,7 +13,7 @@ use crate::AppState;
 /// This is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.
 #[utoipa::path(
     get,
-    path = "/workspace-files",
+    path = "/workspace/list-files",
     tag = "workspace",
     responses(
         (status = 200, description = "Workspace files retrieved successfully", body = Vec<String>),
