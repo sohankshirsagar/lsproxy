@@ -179,7 +179,7 @@ mod test {
                     character: 18,
                 },
             },
-            include_code_context_lines: Some(5),
+            include_source_code: false,
             include_raw_response: false,
         });
 
@@ -204,6 +204,7 @@ mod test {
                     character: 6,
                 },
             }],
+            source_code_context: None,
         };
 
         assert_eq!(expected_response, definition_response);
