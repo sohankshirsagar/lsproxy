@@ -39,21 +39,22 @@ use lsp_types::{
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn definition(
-    data: Data<AppState>,
-    info: Json<GetDefinitionRequest>,
-) -> Result<HttpResponse, ErrorResponse> {
+pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
         info.position.path, info.position.position.line, info.position.position.character
     );
 
-    let lsp_manager = data.lsp_manager.lock().map_err(|e| {
-        error!("Failed to lock lsp_manager: {:?}", e);
-        ErrorResponse {
-            error: "Failed to lock lsp_manager".to_string(),
-        }
-    })?;
+    let lsp_manager = data
+        .lsp_manager
+        .lock()
+        .map_err(|e| {
+            error!("Failed to lock lsp_manager: {:?}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: format!("Failed to lock lsp_manager: {}", e),
+            })
+        })
+        .unwrap();
 
     let definitions = lsp_manager
         .definition(
@@ -66,10 +67,11 @@ pub async fn definition(
         .await
         .map_err(|e| {
             error!("Definition error: {:?}", e);
-            ErrorResponse {
-                error: "Definition retrieval failed".to_string(),
-            }
-        })?;
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: format!("Definition retrieval failed: {}", e),
+            })
+        })
+        .unwrap();
 
     let source_code_context = if info.include_source_code {
         fetch_definition_source_code(&lsp_manager, definitions.clone())
@@ -83,11 +85,11 @@ pub async fn definition(
         None
     };
 
-    Ok(HttpResponse::Ok().json(DefinitionResponse::from((
+    HttpResponse::Ok().json(DefinitionResponse::from((
         definitions,
         source_code_context,
         info.include_raw_response,
-    ))))
+    )))
 }
 
 async fn fetch_definition_source_code(
