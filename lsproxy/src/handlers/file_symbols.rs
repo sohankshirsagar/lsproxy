@@ -114,7 +114,6 @@ mod test {
                             character: 0,
                         },
                     },
-                    source_code: None,
                 },
                 Symbol {
                     name: String::from("result"),
@@ -126,7 +125,6 @@ mod test {
                             character: 0,
                         },
                     },
-                    source_code: None,
                 },
                 Symbol {
                     name: String::from("cost"),
@@ -138,7 +136,6 @@ mod test {
                             character: 8,
                         },
                     },
-                    source_code: None,
                 },
                 Symbol {
                     name: String::from("barrier"),
@@ -150,7 +147,6 @@ mod test {
                             character: 4,
                         },
                     },
-                    source_code: None,
                 },
             ],
         };
