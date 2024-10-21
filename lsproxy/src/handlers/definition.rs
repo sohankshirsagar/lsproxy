@@ -3,12 +3,11 @@ use crate::lsp::manager::{LspManager, LspManagerError};
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info, warn};
-use serde_json::to_value;
 
 use crate::api_types::{DefinitionResponse, GetDefinitionRequest};
 use crate::AppState;
 use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position as LspPosition, Range,
+    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position as LspPosition,
 };
 /// Get the definition of a symbol at a specific position in a file
 ///
