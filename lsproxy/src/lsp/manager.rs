@@ -260,6 +260,8 @@ mod tests {
     use crate::api_types::test_utils::set_mount_dir;
     use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
 
+    use lsp_types::{Range, Url};
+
     use super::*;
 
     fn python_sample_path() -> String {
@@ -605,5 +607,61 @@ mod tests {
         assert_eq!(symbol_response.symbols, expected);
 
         reset_mount_dir();
+    }
+
+    #[tokio::test]
+    async fn test_references() {
+        let result = start_python_manager().await;
+        assert!(
+            result.is_ok(),
+            "Failed to start manager: {:?}",
+            result.err()
+        );
+        let manager = result.unwrap();
+
+        let file_path = "graph.py";
+
+        let result = manager
+            .references(
+                file_path,
+                lsp_types::Position {
+                    line: 0,
+                    character: 6,
+                },
+                false,
+            )
+            .await;
+        assert!(result.is_ok(), "Failed to find symbols: {:?}", result.err());
+
+        let references = result.unwrap();
+        let expected = vec![
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 1,
+                        character: 18,
+                    },
+                    end: lsp_types::Position {
+                        line: 1,
+                        character: 28,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 5,
+                        character: 8,
+                    },
+                    end: lsp_types::Position {
+                        line: 5,
+                        character: 18,
+                    },
+                },
+            },
+        ];
+        assert_eq!(references, expected);
     }
 }
