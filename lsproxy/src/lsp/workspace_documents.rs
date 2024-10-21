@@ -87,9 +87,37 @@ impl WorkspaceDocumentsHandler {
             .iter()
             .enumerate()
             .map(|(i, &line)| match (i, start_line == end_line) {
-                (0, true) => &line[start_char.min(line.len())..end_char.min(line.len())],
-                (0, false) => &line[start_char.min(line.len())..],
-                (n, _) if n == end_line - start_line => &line[..end_char.min(line.len())],
+                (0, true) => {
+                    let line_start = start_char.min(line.len());
+                    let line_end = end_char.min(line.len());
+                    if line_start != start_char || line_end != end_char {
+                        warn!(
+                            "Adjusted range for single-line extraction: {}..{} to {}..{} on line {}",
+                            start_char, end_char, line_start, line_end, i + start_line
+                        );
+                    }
+                    &line[line_start..line_end]
+                },
+                (0, false) => {
+                    let line_start = start_char.min(line.len());
+                    if line_start != start_char {
+                        warn!(
+                            "Adjusted start character: {} to {} on line {}",
+                            start_char, line_start, i + start_line
+                        );
+                    }
+                    &line[line_start..]
+                },
+                (n, _) if n == end_line - start_line => {
+                    let line_end = end_char.min(line.len());
+                    if line_end != end_char {
+                        warn!(
+                            "Adjusted end character: {} to {} on line {}",
+                            end_char, line_end, i + start_line
+                        );
+                    }
+                    &line[..line_end]
+                },
                 _ => line,
             })
             .collect();
