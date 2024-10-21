@@ -268,11 +268,8 @@ mod tests {
         "/mnt/lsproxy_root/sample_project/python".to_string()
     }
 
-    async fn start_python_manager() -> Result<LspManager, Box<dyn std::error::Error>> {
-        let python_path = python_sample_path();
-        set_mount_dir(&python_path);
-
-        start_manager(&python_path).await
+    fn typescript_sample_path() -> String {
+        "/mnt/lsproxy_root/sample_project/python".to_string()
     }
 
     fn reset_mount_dir() {
@@ -280,6 +277,7 @@ mod tests {
     }
 
     async fn start_manager(file_path: &str) -> Result<LspManager, Box<dyn std::error::Error>> {
+        set_mount_dir(file_path);
         let mut lsp_manager = LspManager::new();
         lsp_manager.start_langservers(file_path).await?;
 
@@ -288,7 +286,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_manager_python() {
-        let result = start_python_manager().await;
+        let result = start_manager(&python_sample_path()).await;
         assert!(
             result.is_ok(),
             "Failed to start manager: {:?}",
@@ -299,19 +297,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_start_manager_python_no_config() {
-        let result = start_python_manager().await;
-        assert!(
-            result.is_ok(),
-            "Failed to start manager: {:?}",
-            result.err()
-        );
-        reset_mount_dir();
-    }
-
-    #[tokio::test]
-    async fn test_workspace_files() {
-        let result = start_python_manager().await;
+    async fn test_workspace_files_python() {
+        let result = start_manager(&python_sample_path()).await;
         assert!(
             result.is_ok(),
             "Failed to start manager: {:?}",
@@ -334,8 +321,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_file_symbols() {
-        let result = start_python_manager().await;
+    async fn test_file_symbols_python() {
+        let result = start_manager(&python_sample_path()).await;
         assert!(
             result.is_ok(),
             "Failed to start manager: {:?}",
@@ -406,8 +393,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_references() {
-        let result = start_python_manager().await;
+    async fn test_references_python() {
+        let result = start_manager(&python_sample_path()).await;
         assert!(
             result.is_ok(),
             "Failed to start manager: {:?}",
@@ -462,8 +449,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_definition() {
-        let result = start_python_manager().await;
+    async fn test_definition_python() {
+        let result = start_manager(&python_sample_path()).await;
         assert!(
             result.is_ok(),
             "Failed to start manager: {:?}",
