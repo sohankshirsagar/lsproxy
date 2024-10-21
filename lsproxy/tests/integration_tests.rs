@@ -3,7 +3,6 @@ use std::time::Duration;
 use std::thread;
 use reqwest;
 use serde_json::Value;
-use tempfile::TempDir;
 
 fn start_server(mount_dir: &str) -> Child {
     Command::new("cargo")
@@ -25,16 +24,8 @@ fn wait_for_server(url: &str) {
 
 #[test]
 fn test_server_integration() {
-    // Create a temporary directory for the test
-    let temp_dir = TempDir::new().expect("Failed to create temp dir");
-    let mount_dir = temp_dir.path().to_str().unwrap();
-
-    // Copy the sample project to the temporary directory
-    let sample_project = "/mnt/lsproxy_root/sample_project/python";
-    std::process::Command::new("cp")
-        .args(&["-r", sample_project, mount_dir])
-        .output()
-        .expect("Failed to copy sample project");
+    // Use the sample project directory directly as the mount directory
+    let mount_dir = "/mnt/lsproxy_root/sample_project/python";
 
     let mut server = start_server(mount_dir);
     
