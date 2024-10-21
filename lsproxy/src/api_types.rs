@@ -212,7 +212,7 @@ pub struct ReferencesResponse {
     pub references: Vec<FilePosition>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SymbolResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.

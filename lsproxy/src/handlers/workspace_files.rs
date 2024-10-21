@@ -63,7 +63,7 @@ mod test {
     use crate::test_utils::{python_sample_path, TestContext};
 
     #[tokio::test]
-    async fn test_python_references() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_python_workspace_files() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup(&python_sample_path(), false).await?;
         let state = initialize_app_state().await?;
 

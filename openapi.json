@@ -56,7 +56,7 @@
     "/file-symbols": {
       "get": {
         "tags": [
-          "crate::handlers"
+          "symbol"
         ],
         "summary": "Get symbols in a specific file",
         "description": "Get symbols in a specific file\n\nReturns a list of symbols (functions, classes, variables, etc.) defined in the specified file.\n\nThe returned positions point to the start of the symbol's identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\n_________^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n```",
