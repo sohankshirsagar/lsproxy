@@ -341,8 +341,14 @@ mod tests {
 
         // Test reading with a range beyond the number of lines
         let range = Range {
-            start: lsp_types::Position { line: 5, character: 0 },
-            end: lsp_types::Position { line: 6, character: 10 },
+            start: lsp_types::Position {
+                line: 5,
+                character: 0,
+            },
+            end: lsp_types::Position {
+                line: 6,
+                character: 10,
+            },
         };
         let extracted = handler.read_text_document(&file_path, Some(range)).await?;
         assert_eq!(extracted, "");
@@ -351,7 +357,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_read_text_document_invalid_characters() -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn test_read_text_document_invalid_characters() -> Result<(), Box<dyn Error + Send + Sync>>
+    {
         // Setup temporary directory and file
         let dir = tempdir()?;
         let file_path = dir.path().join("test_invalid_chars.txt");
@@ -362,8 +369,14 @@ mod tests {
 
         // Test reading with character positions exceeding line length
         let range = Range {
-            start: lsp_types::Position { line: 0, character: 100 },
-            end: lsp_types::Position { line: 0, character: 200 },
+            start: lsp_types::Position {
+                line: 0,
+                character: 100,
+            },
+            end: lsp_types::Position {
+                line: 0,
+                character: 200,
+            },
         };
         let extracted = handler.read_text_document(&file_path, Some(range)).await?;
         assert_eq!(extracted, "");
@@ -387,8 +400,14 @@ mod tests {
 
         // Test reading with any range on empty file
         let range = Range {
-            start: lsp_types::Position { line: 0, character: 0 },
-            end: lsp_types::Position { line: 0, character: 10 },
+            start: lsp_types::Position {
+                line: 0,
+                character: 0,
+            },
+            end: lsp_types::Position {
+                line: 0,
+                character: 10,
+            },
         };
         let extracted = handler.read_text_document(&file_path, Some(range)).await?;
         assert_eq!(extracted, "");
@@ -417,7 +436,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_update_patterns_empty_include_exclude() -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn test_update_patterns_empty_include_exclude() -> Result<(), Box<dyn Error + Send + Sync>>
+    {
         // Setup temporary directory and files
         let dir = tempdir()?;
         fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
