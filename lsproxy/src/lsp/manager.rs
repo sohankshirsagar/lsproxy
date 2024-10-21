@@ -664,4 +664,47 @@ mod tests {
         ];
         assert_eq!(references, expected);
     }
+
+    #[tokio::test]
+    async fn test_definition() {
+        let result = start_python_manager().await;
+        assert!(
+            result.is_ok(),
+            "Failed to start manager: {:?}",
+            result.err()
+        );
+        let manager = result.unwrap();
+        let result = manager
+            .definition(
+                "main.py",
+                lsp_types::Position {
+                    line: 1,
+                    character: 18,
+                },
+            )
+            .await;
+
+        let definitions = match result.unwrap() {
+            GotoDefinitionResponse::Scalar(location) => vec![location],
+            GotoDefinitionResponse::Array(locations) => locations,
+            GotoDefinitionResponse::Link(_links) => Vec::new(),
+        };
+
+        assert_eq!(
+            definitions,
+            vec![Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/graph.py").unwrap(),
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 0,
+                        character: 6,
+                    },
+                    end: lsp_types::Position {
+                        line: 0,
+                        character: 16,
+                    },
+                },
+            }]
+        );
+    }
 }
