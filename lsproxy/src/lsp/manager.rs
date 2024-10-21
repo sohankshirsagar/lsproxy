@@ -1,4 +1,4 @@
-use crate::api_types::{get_mount_dir, SupportedLanguages};
+use crate::api_types::{absolute_path_to_relative_path_string, get_mount_dir, SupportedLanguages};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
@@ -7,7 +7,7 @@ use crate::lsp::languages::{
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
 use log::{debug, warn};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -198,7 +198,6 @@ impl LspManager {
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
-        let mount_dir = get_mount_dir().to_string_lossy().into_owned();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
             files.extend(
@@ -207,11 +206,7 @@ impl LspManager {
                     .list_files()
                     .await
                     .iter()
-                    .filter_map(|f| {
-                        f.strip_prefix(&mount_dir)
-                            .map(|p| p.strip_prefix('/').unwrap_or(p))
-                            .map(|p| p.to_string())
-                    })
+                    .filter_map(|f| Some(absolute_path_to_relative_path_string(f)))
                     .collect::<Vec<String>>(),
             );
         }
@@ -228,6 +223,25 @@ impl LspManager {
             Some("rs") => Ok(SupportedLanguages::Rust),
             _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
         }
+    }
+
+    pub async fn read_source_code(
+        &self,
+        file_path: &str,
+        range: Option<Range>,
+    ) -> Result<String, LspManagerError> {
+        let client = self.get_client(self.detect_language(file_path)?).ok_or(
+            LspManagerError::LspClientNotFound(self.detect_language(file_path)?),
+        )?;
+        let full_path = get_mount_dir().join(&file_path);
+        let mut locked_client = client.lock().await;
+        locked_client
+            .get_workspace_documents()
+            .read_text_document(&full_path, range)
+            .await
+            .map_err(|e| {
+                LspManagerError::InternalError(format!("Source code retrieval failed: {}", e))
+            })
     }
 }
 

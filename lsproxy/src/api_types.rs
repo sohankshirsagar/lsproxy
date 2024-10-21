@@ -97,8 +97,8 @@ pub struct GetDefinitionRequest {
     /// Whether to include the source code around the symbol's identifier in the response.
     /// Defaults to false.
     #[serde(default)]
-    #[schema(example = 5)]
-    pub include_code_context_lines: Option<u32>,
+    #[schema(example = false)]
+    pub include_source_code: bool,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
@@ -117,10 +117,10 @@ pub struct GetReferencesRequest {
     pub include_declaration: bool,
 
     /// Whether to include the source code of the symbol in the response.
-    /// Defaults to false.
+    /// Defaults to none.
     #[serde(default)]
     #[schema(example = 5)]
-    pub include_code_context_context_lines: Option<u32>,
+    pub include_code_context_lines: Option<u32>,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
@@ -183,6 +183,9 @@ pub struct DefinitionResponse {
     /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition
     pub raw_response: Option<Value>,
     pub definitions: Vec<FilePosition>,
+    /// The source code of symbol definitions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_code_context: Option<Vec<CodeContext>>,
 }
 
 /// Response to a references request.
@@ -211,6 +214,10 @@ pub struct ReferencesResponse {
     pub raw_response: Option<Value>,
 
     pub references: Vec<FilePosition>,
+
+    /// The source code around the references.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context: Option<Vec<CodeContext>>,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
@@ -224,8 +231,14 @@ pub struct SymbolResponse {
     pub symbols: Vec<Symbol>,
 }
 
-impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
-    fn from((response, include_raw): (GotoDefinitionResponse, bool)) -> Self {
+impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
+    fn from(
+        (response, source_code_context, include_raw): (
+            GotoDefinitionResponse,
+            Option<Vec<CodeContext>>,
+            bool,
+        ),
+    ) -> Self {
         let raw_response = if include_raw {
             Some(to_value(&response).unwrap_or_else(|e| {
                 warn!("Serialization failed: {:?}", e);
@@ -246,12 +259,19 @@ impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
         DefinitionResponse {
             raw_response,
             definitions,
+            source_code_context,
         }
     }
 }
 
-impl From<(Vec<Location>, bool)> for ReferencesResponse {
-    fn from((locations, include_raw): (Vec<Location>, bool)) -> Self {
+impl From<(Vec<Location>, Option<Vec<CodeContext>>, bool)> for ReferencesResponse {
+    fn from(
+        (locations, source_code_context, include_raw): (
+            Vec<Location>,
+            Option<Vec<CodeContext>>,
+            bool,
+        ),
+    ) -> Self {
         let raw_response = if include_raw {
             Some(to_value(&locations).unwrap_or_default())
         } else {
@@ -261,6 +281,7 @@ impl From<(Vec<Location>, bool)> for ReferencesResponse {
         ReferencesResponse {
             raw_response,
             references,
+            context: source_code_context,
         }
     }
 }
@@ -268,7 +289,7 @@ impl From<(Vec<Location>, bool)> for ReferencesResponse {
 impl From<Location> for FilePosition {
     fn from(location: Location) -> Self {
         FilePosition {
-            path: uri_to_path_str(location.uri),
+            path: uri_to_relative_path_string(&location.uri),
             position: Position {
                 line: location.range.start.line,
                 character: location.range.start.character,
@@ -280,7 +301,7 @@ impl From<Location> for FilePosition {
 impl From<LocationLink> for FilePosition {
     fn from(link: LocationLink) -> Self {
         FilePosition {
-            path: uri_to_path_str(link.target_uri),
+            path: uri_to_relative_path_string(&link.target_uri),
             position: Position {
                 line: link.target_range.start.line,
                 character: link.target_range.start.character,
@@ -338,13 +359,18 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
     }
 }
 
-fn uri_to_path_str(uri: Url) -> String {
+pub fn uri_to_relative_path_string(uri: &Url) -> String {
     let path = uri.to_file_path().unwrap_or_else(|e| {
         warn!("Failed to convert URI to file path: {:?}", e);
         PathBuf::from(uri.path())
     });
 
-    path.strip_prefix(get_mount_dir().as_path())
+    absolute_path_to_relative_path_string(&path)
+}
+
+pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
+    let mount_dir = get_mount_dir();
+    path.strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|e| {
             warn!("Failed to strip prefix: {:?}", e);

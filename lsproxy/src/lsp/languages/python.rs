@@ -1,4 +1,4 @@
-use std::process::Stdio;
+use std::{path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use tokio::process::Command;
@@ -60,7 +60,7 @@ impl PyrightClient {
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
-            root_path,
+            Path::new(root_path),
             PYRIGHT_FILE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())

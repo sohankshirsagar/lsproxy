@@ -81,7 +81,7 @@ impl TypeScriptLanguageClient {
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
         let json_rpc_handler = JsonRpcHandler::new();
         let workspace_documents = WorkspaceDocumentsHandler::new(
-            root_path,
+            Path::new(root_path),
             TYPESCRIPT_FILE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
@@ -136,7 +136,7 @@ impl TypeScriptLanguageClient {
             {
                 Ok(content) => content,
                 Err(e) => {
-                    debug!("Failed to read document {}: {}", file_path, e);
+                    debug!("Failed to read document {}: {}", file_path.display(), e);
                     return Err(e);
                 }
             };

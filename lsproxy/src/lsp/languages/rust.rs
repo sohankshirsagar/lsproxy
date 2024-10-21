@@ -1,4 +1,4 @@
-use std::{error::Error, process::Stdio};
+use std::{error::Error, path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use tokio::process::Command;
@@ -65,7 +65,7 @@ impl RustAnalyzerClient {
         let json_rpc_handler = JsonRpcHandler::new();
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
-            root_path,
+            Path::new(root_path),
             RUST_ANALYZER_FILE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())

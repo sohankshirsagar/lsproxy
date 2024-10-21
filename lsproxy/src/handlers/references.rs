@@ -1,11 +1,13 @@
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info};
-use lsp_types::Position;
+use lsp_types::{Location, Position as LspPosition, Range};
 
-use crate::api_types::ErrorResponse;
+use crate::api_types::{
+    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
+};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::lsp::manager::LspManagerError;
+use crate::lsp::manager::{LspManager, LspManagerError};
 use crate::AppState;
 
 /// Find all references to a symbol
@@ -46,22 +48,40 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
         info.symbol_identifier_position.position.character
     );
     let lsp_manager = data.lsp_manager.lock().unwrap();
-    let result = lsp_manager
+    let references_result = lsp_manager
         .references(
             &info.symbol_identifier_position.path,
-            Position {
+            LspPosition {
                 line: info.symbol_identifier_position.position.line,
                 character: info.symbol_identifier_position.position.character,
             },
             info.include_declaration,
         )
         .await;
-    match result {
-        Ok(references) => HttpResponse::Ok().json(ReferencesResponse::from((
+
+    let code_contexts_result = if let Some(lines) = info.include_code_context_lines {
+        match &references_result {
+            Ok(refs) => fetch_code_context(&lsp_manager, refs.clone(), lines)
+                .await
+                .map(Some)
+                .map_err(|e| {
+                    error!("Failed to fetch code context: {}", e);
+                    e
+                }),
+            Err(_) => Err(LspManagerError::InternalError(
+                "Failed to get references".to_string(),
+            )),
+        }
+    } else {
+        Ok(None)
+    };
+    match (references_result, code_contexts_result) {
+        (Ok(references), Ok(code_contexts)) => HttpResponse::Ok().json(ReferencesResponse::from((
             references,
+            code_contexts,
             info.include_raw_response,
         ))),
-        Err(e) => {
+        (Err(e), _) => {
             error!("Failed to get references: {}", e);
             match e {
                 LspManagerError::FileNotFound(path) => {
@@ -83,7 +103,56 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
                 }
             }
         }
+        (_, Err(e)) => {
+            error!("Failed to fetch code context: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: format!("Failed to fetch code context: {}", e),
+            })
+        }
     }
+}
+
+async fn fetch_code_context(
+    lsp_manager: &LspManager,
+    references: Vec<Location>,
+    context_lines: u32,
+) -> Result<Vec<CodeContext>, LspManagerError> {
+    let mut code_contexts = Vec::new();
+    for reference in references {
+        let range = Range {
+            start: LspPosition {
+                line: reference.range.start.line.saturating_sub(context_lines),
+                character: 0,
+            },
+            end: LspPosition {
+                line: reference.range.end.line.saturating_add(context_lines),
+                character: 0,
+            },
+        };
+        match lsp_manager
+            .read_source_code(&uri_to_relative_path_string(&reference.uri), Some(range))
+            .await
+        {
+            Ok(source_code) => {
+                code_contexts.push(CodeContext {
+                    source_code,
+                    range: FileRange {
+                        path: uri_to_relative_path_string(&reference.uri),
+                        start: Position {
+                            line: range.start.line,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: range.end.line,
+                            character: 0,
+                        },
+                    },
+                });
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(code_contexts)
 }
 
 #[cfg(test)]
@@ -110,7 +179,7 @@ mod test {
                 },
             },
             include_declaration: false,
-            include_code_context_context_lines: None,
+            include_code_context_lines: None,
             include_raw_response: false,
         });
 
@@ -145,6 +214,7 @@ mod test {
                     },
                 },
             ],
+            context: None,
         };
 
         assert_eq!(expected_response, reference_response);
