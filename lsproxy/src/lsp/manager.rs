@@ -69,7 +69,10 @@ impl LspManager {
         lsps
     }
 
-    pub async fn start_langservers(&mut self, workspace_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start_langservers(
+        &mut self,
+        workspace_path: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let lsps = self.detect_languages_in_workspace(workspace_path);
         for lsp in lsps {
             if self.get_client(lsp).is_some() {
@@ -271,7 +274,7 @@ mod tests {
     }
 
     struct TestContext {
-        manager: LspManager
+        manager: LspManager,
     }
 
     impl TestContext {
@@ -282,9 +285,7 @@ mod tests {
                 set_mount_dir("/mnt/workspace");
                 return Err(e);
             }
-            Ok(Self {
-                manager
-            })
+            Ok(Self { manager })
         }
     }
 
@@ -566,7 +567,32 @@ mod tests {
             .await?;
 
         let expected = vec![
-Location { uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?, range: Range { start: lsp_types::Position { line: 10, character: 21 }, end: lsp_types::Position { line: 10, character: 30 } } }, Location { uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?, range: Range { start: lsp_types::Position { line: 40, character: 25 }, end: lsp_types::Position { line: 40, character: 34 } } }
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 10,
+                        character: 21,
+                    },
+                    end: lsp_types::Position {
+                        line: 10,
+                        character: 30,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 40,
+                        character: 25,
+                    },
+                    end: lsp_types::Position {
+                        line: 40,
+                        character: 34,
+                    },
+                },
+            },
         ];
         assert_eq!(references, expected);
         Ok(())
@@ -594,7 +620,19 @@ Location { uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_sea
 
         assert_eq!(
             definitions,
-            vec![Location { uri: Url::parse("file:///usr/lib/node_modules/typescript/lib/lib.es5.d.ts")?, range: Range { start: lsp_types::Position { line: 681, character: 4 }, end: lsp_types::Position { line: 681, character: 7 } } }]
+            vec![Location {
+                uri: Url::parse("file:///usr/lib/node_modules/typescript/lib/lib.es5.d.ts")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 681,
+                        character: 4
+                    },
+                    end: lsp_types::Position {
+                        line: 681,
+                        character: 7
+                    }
+                }
+            }]
         );
         Ok(())
     }
