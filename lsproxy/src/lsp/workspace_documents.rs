@@ -10,7 +10,10 @@ use std::{
 };
 use tokio::{
     fs::read_to_string,
-    sync::{broadcast::{channel, Receiver, Sender}, RwLock},
+    sync::{
+        broadcast::{channel, Receiver, Sender},
+        RwLock,
+    },
 };
 
 #[async_trait::async_trait]
