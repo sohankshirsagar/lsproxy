@@ -69,7 +69,7 @@ impl LspManager {
         lsps
     }
 
-    pub async fn start_langservers(&mut self, workspace_path: &str) -> Result<(), String> {
+    pub async fn start_langservers(&mut self, workspace_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let lsps = self.detect_languages_in_workspace(workspace_path);
         for lsp in lsps {
             if self.get_client(lsp).is_some() {
@@ -257,84 +257,69 @@ impl std::error::Error for LspManagerError {}
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::api_types::test_utils::set_mount_dir;
     use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
-
     use lsp_types::{Range, Url};
-
-    use super::*;
 
     fn python_sample_path() -> String {
         "/mnt/lsproxy_root/sample_project/python".to_string()
     }
 
-    fn typescript_sample_path() -> String {
-        "/mnt/lsproxy_root/sample_project/python".to_string()
+    fn js_sample_path() -> String {
+        "/mnt/lsproxy_root/sample_project/js".to_string()
     }
 
-    fn reset_mount_dir() {
-        set_mount_dir("/mnt/workspace");
+    struct TestContext {
+        manager: LspManager
     }
 
-    async fn start_manager(file_path: &str) -> Result<LspManager, Box<dyn std::error::Error>> {
-        set_mount_dir(file_path);
-        let mut lsp_manager = LspManager::new();
-        lsp_manager.start_langservers(file_path).await?;
+    impl TestContext {
+        async fn setup(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+            set_mount_dir(file_path);
+            let mut manager = LspManager::new();
+            if let Err(e) = manager.start_langservers(file_path).await {
+                set_mount_dir("/mnt/workspace");
+                return Err(e);
+            }
+            Ok(Self {
+                manager
+            })
+        }
+    }
 
-        Ok(lsp_manager)
+    impl Drop for TestContext {
+        fn drop(&mut self) {
+            set_mount_dir("/mnt/workspace");
+        }
     }
 
     #[tokio::test]
-    async fn test_start_manager_python() {
-        let result = start_manager(&python_sample_path()).await;
-        assert!(
-            result.is_ok(),
-            "Failed to start manager: {:?}",
-            result.err()
-        );
-
-        reset_mount_dir();
+    async fn test_start_manager_python() -> Result<(), Box<dyn std::error::Error>> {
+        TestContext::setup(&python_sample_path()).await?;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_workspace_files_python() {
-        let result = start_manager(&python_sample_path()).await;
-        assert!(
-            result.is_ok(),
-            "Failed to start manager: {:?}",
-            result.err()
-        );
+    async fn test_workspace_files_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path()).await?;
+        let manager = &context.manager;
 
-        let manager = result.unwrap();
-        let result = manager.workspace_files().await;
-
+        let mut result = manager.workspace_files().await?;
         let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
 
-        assert!(
-            result.is_ok(),
-            "Failed to get workspace files: {:?}",
-            result.err()
-        );
-        assert_eq!(result.unwrap().sort(), expected.sort());
-
-        reset_mount_dir();
+        assert_eq!(result.sort(), expected.sort());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_file_symbols_python() {
-        let result = start_manager(&python_sample_path()).await;
-        assert!(
-            result.is_ok(),
-            "Failed to start manager: {:?}",
-            result.err()
-        );
-        let manager = result.unwrap();
+    async fn test_file_symbols_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path()).await?;
+        let manager = &context.manager;
 
         let file_path = "main.py";
-        let result = manager.file_symbols(file_path).await;
-        assert!(result.is_ok(), "Failed to find symbols: {:?}", result.err());
+        let file_symbols = manager.file_symbols(file_path).await?;
 
-        let file_symbols = result.unwrap();
         let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
 
         let expected = vec![
@@ -388,23 +373,16 @@ mod tests {
             },
         ];
         assert_eq!(symbol_response.symbols, expected);
-
-        reset_mount_dir();
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_references_python() {
-        let result = start_manager(&python_sample_path()).await;
-        assert!(
-            result.is_ok(),
-            "Failed to start manager: {:?}",
-            result.err()
-        );
-        let manager = result.unwrap();
-
+    async fn test_references_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path()).await?;
+        let manager = &context.manager;
         let file_path = "graph.py";
 
-        let result = manager
+        let references = manager
             .references(
                 file_path,
                 lsp_types::Position {
@@ -413,10 +391,8 @@ mod tests {
                 },
                 false,
             )
-            .await;
-        assert!(result.is_ok(), "Failed to find symbols: {:?}", result.err());
+            .await?;
 
-        let references = result.unwrap();
         let expected = vec![
             Location {
                 uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
@@ -446,18 +422,15 @@ mod tests {
             },
         ];
         assert_eq!(references, expected);
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_definition_python() {
-        let result = start_manager(&python_sample_path()).await;
-        assert!(
-            result.is_ok(),
-            "Failed to start manager: {:?}",
-            result.err()
-        );
-        let manager = result.unwrap();
-        let result = manager
+    async fn test_definition_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path()).await?;
+        let manager = &context.manager;
+        let def_response = manager
             .definition(
                 "main.py",
                 lsp_types::Position {
@@ -465,9 +438,9 @@ mod tests {
                     character: 18,
                 },
             )
-            .await;
+            .await?;
 
-        let definitions = match result.unwrap() {
+        let definitions = match def_response {
             GotoDefinitionResponse::Scalar(location) => vec![location],
             GotoDefinitionResponse::Array(locations) => locations,
             GotoDefinitionResponse::Link(_links) => Vec::new(),
@@ -489,5 +462,140 @@ mod tests {
                 },
             }]
         );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_start_manager_js() -> Result<(), Box<dyn std::error::Error>> {
+        TestContext::setup(&js_sample_path()).await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_workspace_files_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path()).await?;
+
+        let manager = &context.manager;
+        let files = manager.workspace_files().await?;
+
+        assert_eq!(files, vec!["astar_search.js"]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path()).await?;
+        let manager = &context.manager;
+
+        let file_path = "astar_search.js";
+        let file_symbols = manager.file_symbols(file_path).await?;
+
+        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+
+        let expected = vec![
+            Symbol {
+                name: String::from("graph"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("result"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("cost"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("barrier"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 10,
+                        character: 4,
+                    },
+                },
+                source_code: None,
+            },
+        ];
+        assert_eq!(symbol_response.symbols, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_references_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path()).await?;
+        let manager = &context.manager;
+
+        let file_path = "astar_search.js";
+
+        let references = manager
+            .references(
+                file_path,
+                lsp_types::Position {
+                    line: 0,
+                    character: 6,
+                },
+                false,
+            )
+            .await?;
+
+        let expected = vec![
+Location { uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?, range: Range { start: lsp_types::Position { line: 10, character: 21 }, end: lsp_types::Position { line: 10, character: 30 } } }, Location { uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?, range: Range { start: lsp_types::Position { line: 40, character: 25 }, end: lsp_types::Position { line: 40, character: 34 } } }
+        ];
+        assert_eq!(references, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_definition_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path()).await?;
+        let manager = &context.manager;
+        let def_response = manager
+            .definition(
+                "astar_search.js",
+                lsp_types::Position {
+                    line: 1,
+                    character: 18,
+                },
+            )
+            .await?;
+
+        let definitions = match def_response {
+            GotoDefinitionResponse::Scalar(location) => vec![location],
+            GotoDefinitionResponse::Array(locations) => locations,
+            GotoDefinitionResponse::Link(_links) => Vec::new(),
+        };
+
+        assert_eq!(
+            definitions,
+            vec![Location { uri: Url::parse("file:///usr/lib/node_modules/typescript/lib/lib.es5.d.ts")?, range: Range { start: lsp_types::Position { line: 681, character: 4 }, end: lsp_types::Position { line: 681, character: 7 } } }]
+        );
+        Ok(())
     }
 }
