@@ -5,16 +5,15 @@ use lsp_types::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
+use std::cell::RefCell;
 use std::hash::Hash;
 use std::path::PathBuf;
-use std::cell::RefCell;
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
 thread_local! {
     static MOUNT_DIR: RefCell<PathBuf> = RefCell::new(PathBuf::from("/mnt/workspace"));
 }
-
 
 pub fn get_mount_dir() -> PathBuf {
     MOUNT_DIR.with(|dir| dir.borrow().clone())
@@ -39,7 +38,7 @@ pub enum SupportedLanguages {
     Rust,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Position {
     /// 0-indexed line number.
     #[schema(example = 10)]
@@ -50,14 +49,14 @@ pub struct Position {
 }
 
 /// Specific position within a file.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
     #[schema(example = "src/main.py")]
     pub path: String,
     pub position: Position,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FileRange {
     /// The path to the file.
     #[schema(example = "src/main.py")]
@@ -68,13 +67,13 @@ pub struct FileRange {
     pub end: Position,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CodeContext {
     pub range: FileRange,
     pub source_code: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Symbol {
     /// The name of the symbol.
     #[schema(example = "User")]
@@ -413,7 +412,6 @@ pub mod test_utils {
             *dir.borrow_mut() = path.as_ref().to_path_buf();
         });
     }
-
 }
 
 #[cfg(test)]

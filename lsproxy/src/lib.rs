@@ -18,8 +18,8 @@ mod lsp;
 mod utils;
 
 use crate::api_types::{
-    DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
-    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse, get_mount_dir
+    get_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
+    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
 };
 use crate::handlers::{definition, file_symbols, references, workspace_files};
 use crate::lsp::manager::LspManager;

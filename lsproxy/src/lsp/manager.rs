@@ -258,9 +258,9 @@ impl std::error::Error for LspManagerError {}
 #[cfg(test)]
 mod tests {
     use crate::api_types::test_utils::set_mount_dir;
+    use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
 
     use super::*;
-    use std::fs;
 
     fn python_sample_path() -> String {
         "/mnt/lsproxy_root/sample_project/python".to_string()
@@ -279,17 +279,19 @@ mod tests {
 
     async fn start_manager(file_path: &str) -> Result<LspManager, Box<dyn std::error::Error>> {
         let mut lsp_manager = LspManager::new();
-        lsp_manager
-            .start_langservers(file_path)
-            .await?;
-        
+        lsp_manager.start_langservers(file_path).await?;
+
         Ok(lsp_manager)
     }
 
     #[tokio::test]
     async fn test_start_manager_python() {
         let result = start_python_manager().await;
-        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to start manager: {:?}",
+            result.err()
+        );
 
         reset_mount_dir();
     }
@@ -297,21 +299,33 @@ mod tests {
     #[tokio::test]
     async fn test_start_manager_python_no_config() {
         let result = start_python_manager().await;
-        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to start manager: {:?}",
+            result.err()
+        );
         reset_mount_dir();
     }
 
     #[tokio::test]
     async fn test_workspace_files() {
         let result = start_python_manager().await;
-        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to start manager: {:?}",
+            result.err()
+        );
 
         let manager = result.unwrap();
         let result = manager.workspace_files().await;
 
         let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
 
-        assert!(result.is_ok(), "Failed to get workspace files: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to get workspace files: {:?}",
+            result.err()
+        );
         assert_eq!(result.unwrap().sort(), expected.sort());
 
         reset_mount_dir();
@@ -320,11 +334,275 @@ mod tests {
     #[tokio::test]
     async fn test_file_symbols() {
         let result = start_python_manager().await;
-        assert!(result.is_ok(), "Failed to start manager: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to start manager: {:?}",
+            result.err()
+        );
         let manager = result.unwrap();
 
-        let result = manager.file_symbols("graph.py").await;
+        let file_path = "graph.py";
+        let result = manager.file_symbols(file_path).await;
         assert!(result.is_ok(), "Failed to find symbols: {:?}", result.err());
+
+        let file_symbols = result.unwrap();
+        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+
+        let expected = vec![
+            Symbol {
+                name: String::from("AStarGraph"),
+                kind: String::from("class"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 0,
+                        character: 6,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("__init__"),
+                kind: String::from("method"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 3,
+                        character: 5,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("heuristic"),
+                kind: String::from("method"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 7,
+                        character: 5,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("start"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 7,
+                        character: 21,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("goal"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 7,
+                        character: 28,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("D"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 10,
+                        character: 2,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("D2"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 11,
+                        character: 2,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("dx"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 12,
+                        character: 2,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("dy"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 13,
+                        character: 2,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("get_vertex_neighbours"),
+                kind: String::from("method"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 16,
+                        character: 5,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("pos"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 16,
+                        character: 33,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("n"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 17,
+                        character: 2,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("dx"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 19,
+                        character: 6,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("dy"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 19,
+                        character: 10,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("x2"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 20,
+                        character: 3,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("y2"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 21,
+                        character: 3,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("move_cost"),
+                kind: String::from("method"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 27,
+                        character: 5,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("a"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 27,
+                        character: 21,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("b"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 27,
+                        character: 24,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("barrier"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 28,
+                        character: 6,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("barriers"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 4,
+                        character: 7,
+                    },
+                },
+                source_code: None,
+            },
+        ];
+        assert_eq!(symbol_response.symbols, expected);
 
         reset_mount_dir();
     }
