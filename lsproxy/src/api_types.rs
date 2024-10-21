@@ -12,7 +12,7 @@ use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
 thread_local! {
-    static MOUNT_DIR: RefCell<PathBuf> = RefCell::new(PathBuf::from("/mnt/workspace"));
+    static MOUNT_DIR: Rc<RefCell<PathBuf>> = Rc::new(RefCell::new(PathBuf::from("/mnt/workspace")));
 }
 
 pub fn get_mount_dir() -> PathBuf {
