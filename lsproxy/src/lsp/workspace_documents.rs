@@ -58,7 +58,7 @@ impl WorkspaceDocumentsHandler {
     }
 
     fn extract_range(content: &str, range: Range) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let lines: Vec<&str> = content.split('\n').collect();
+        let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
         if range.start.line as usize >= total_lines {
