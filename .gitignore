@@ -26,3 +26,5 @@ Cargo.lock
 # Python ignores
 *.pyc
 **/__pycache__/
+
+tags
