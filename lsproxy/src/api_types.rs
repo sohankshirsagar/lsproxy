@@ -89,8 +89,8 @@ pub struct GetDefinitionRequest {
     /// Whether to include the source code around the symbol's identifier in the response.
     /// Defaults to false.
     #[serde(default)]
-    #[schema(example = 5)]
-    pub include_code_context_lines: Option<u32>,
+    #[schema(example = false)]
+    pub include_source_code: bool,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
@@ -112,7 +112,7 @@ pub struct GetReferencesRequest {
     /// Defaults to false.
     #[serde(default)]
     #[schema(example = 5)]
-    pub include_code_context_context_lines: Option<u32>,
+    pub include_code_context_lines: Option<u32>,
 
     /// Whether to include the raw response from the langserver in the response.
     /// Defaults to false.
@@ -203,6 +203,10 @@ pub struct ReferencesResponse {
     pub raw_response: Option<Value>,
 
     pub references: Vec<FilePosition>,
+
+    /// The source code around the references.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_code_context: Option<Vec<CodeContext>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -242,8 +246,14 @@ impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
     }
 }
 
-impl From<(Vec<Location>, bool)> for ReferencesResponse {
-    fn from((locations, include_raw): (Vec<Location>, bool)) -> Self {
+impl From<(Vec<Location>, Option<Vec<CodeContext>>, bool)> for ReferencesResponse {
+    fn from(
+        (locations, source_code_context, include_raw): (
+            Vec<Location>,
+            Option<Vec<CodeContext>>,
+            bool,
+        ),
+    ) -> Self {
         let raw_response = if include_raw {
             Some(to_value(&locations).unwrap_or_default())
         } else {
@@ -253,6 +263,7 @@ impl From<(Vec<Location>, bool)> for ReferencesResponse {
         ReferencesResponse {
             raw_response,
             references,
+            source_code_context,
         }
     }
 }

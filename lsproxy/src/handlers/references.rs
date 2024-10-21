@@ -1,11 +1,11 @@
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info};
-use lsp_types::Position;
+use lsp_types::{Location, Position as LspPosition, Range};
 
-use crate::api_types::ErrorResponse;
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position, MOUNT_DIR};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::lsp::manager::LspManagerError;
+use crate::lsp::manager::{LspManager, LspManagerError};
 use crate::AppState;
 
 /// Find all references to a symbol
@@ -48,17 +48,25 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
     let result = lsp_manager
         .references(
             &info.symbol_identifier_position.path,
-            Position {
+            LspPosition {
                 line: info.symbol_identifier_position.position.line,
                 character: info.symbol_identifier_position.position.character,
             },
             info.include_declaration,
         )
         .await;
+
+    let code_contexts = if let Some(include_code_context_lines) = info.include_code_context_lines {
+        Some(fetch_code_context(&lsp_manager, result.unwrap(), include_code_context_lines).await)
+    } else {
+        None
+    };
+
     match result {
         Ok(references) => HttpResponse::Ok().json(ReferencesResponse::from((
             references,
             info.include_raw_response,
+            code_contexts,
         ))),
         Err(e) => {
             error!("Failed to get references: {}", e);
@@ -83,4 +91,54 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
             }
         }
     }
+}
+
+async fn fetch_code_context(
+    lsp_manager: &LspManager,
+    references: Vec<Location>,
+    context_lines: u32,
+) -> Vec<CodeContext> {
+    let mut code_contexts = Vec::new();
+    for reference in references {
+        let range = Range {
+            start: LspPosition {
+                line: reference.range.start.line.saturating_sub(context_lines),
+                character: reference.range.start.character,
+            },
+            end: LspPosition {
+                line: reference.range.end.line.saturating_add(context_lines),
+                character: reference.range.end.character,
+            },
+        };
+        if let Ok(source_code) = lsp_manager
+            .read_source_code(
+                reference.uri.to_file_path().unwrap().to_str().unwrap(),
+                Some(range),
+            )
+            .await
+        {
+            code_contexts.push(CodeContext {
+                source_code,
+                range: FileRange {
+                    path: reference
+                        .uri
+                        .to_file_path()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .trim_start_matches(&format!("{}/", MOUNT_DIR))
+                        .to_string(),
+                    start: Position {
+                        line: reference.range.start.line,
+                        character: reference.range.start.character,
+                    },
+                    end: Position {
+                        line: reference.range.end.line,
+                        character: reference.range.end.character,
+                    },
+                },
+            });
+        }
+    }
+    code_contexts
 }

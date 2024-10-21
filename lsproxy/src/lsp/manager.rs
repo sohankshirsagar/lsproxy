@@ -7,7 +7,7 @@ use crate::lsp::languages::{
 use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
 use crate::utils::file_utils::search_files;
 use log::{debug, warn};
-use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position};
+use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -224,6 +224,24 @@ impl LspManager {
             Some("rs") => Ok(SupportedLanguages::Rust),
             _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
         }
+    }
+
+    pub async fn read_source_code(
+        &self,
+        file_path: &str,
+        range: Option<Range>,
+    ) -> Result<String, LspManagerError> {
+        let client = self.get_client(self.detect_language(file_path)?).ok_or(
+            LspManagerError::LspClientNotFound(self.detect_language(file_path)?),
+        )?;
+        let mut locked_client = client.lock().await;
+        locked_client
+            .get_workspace_documents()
+            .read_text_document(file_path, range)
+            .await
+            .map_err(|e| {
+                LspManagerError::InternalError(format!("Source code retrieval failed: {}", e))
+            })
     }
 }
 
