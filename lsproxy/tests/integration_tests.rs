@@ -43,7 +43,7 @@ fn test_server_integration() {
     
     assert_eq!(response.status(), 200);
     
-    let workspace_files: Vec<String> = response.json().expect("Failed to parse JSON");
+    let mut workspace_files: Vec<String> = response.json().expect("Failed to parse JSON");
     
     // Check if the expected files are present
     let mut expected_files = vec!["graph.py", "main.py", "search.py", "__init__.py"];
