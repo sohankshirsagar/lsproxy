@@ -15,45 +15,7 @@
     }
   ],
   "paths": {
-    "/definition": {
-      "post": {
-        "tags": [
-          "symbol"
-        ],
-        "summary": "Get the definition of a symbol at a specific position in a file",
-        "description": "Get the definition of a symbol at a specific position in a file\n\nReturns the location of the definition for the symbol at the given position.\n\nThe input position should point inside the symbol's identifier, e.g.\n\nThe returned position points to the identifier of the symbol, and the file_path from workspace root\n\ne.g. for the definition of `User` on line 5 of `src/main.py` with the code:\n```\n0: class User:\noutput___^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\ninput_____^^^^\n```",
-        "operationId": "definition",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetDefinitionRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Definition retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DefinitionResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/file-symbols": {
+    "/symbol/definitions-in-file": {
       "get": {
         "tags": [
           "symbol"
@@ -101,7 +63,45 @@
         }
       }
     },
-    "/references": {
+    "/symbol/find-definition": {
+      "post": {
+        "tags": [
+          "symbol"
+        ],
+        "summary": "Get the definition of a symbol at a specific position in a file",
+        "description": "Get the definition of a symbol at a specific position in a file\n\nReturns the location of the definition for the symbol at the given position.\n\nThe input position should point inside the symbol's identifier, e.g.\n\nThe returned position points to the identifier of the symbol, and the file_path from workspace root\n\ne.g. for the definition of `User` on line 5 of `src/main.py` with the code:\n```\n0: class User:\noutput___^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\ninput_____^^^^\n```",
+        "operationId": "definition",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetDefinitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Definition retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/symbol/find-references": {
       "post": {
         "tags": [
           "symbol"
@@ -139,7 +139,7 @@
         }
       }
     },
-    "/workspace-files": {
+    "/workspace/list-files": {
       "get": {
         "tags": [
           "workspace"

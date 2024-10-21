@@ -22,7 +22,7 @@ use crate::AppState;
 /// ```
 #[utoipa::path(
     get,
-    path = "/file-symbols",
+    path = "/symbol/definitions-in-file",
     tag = "symbol",
     params(FileSymbolsRequest),
     responses(

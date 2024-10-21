@@ -94,10 +94,16 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
             )
             .service(
                 scope("/v1")
-                    .service(resource("/file-symbols").route(get().to(file_symbols)))
-                    .service(resource("/definition").route(post().to(definition)))
-                    .service(resource("/references").route(post().to(references)))
-                    .service(resource("/workspace-files").route(get().to(workspace_files))),
+                    .service(
+                        scope("/symbol")
+                            .service(resource("/definitions-in-file").route(get().to(file_symbols)))
+                            .service(resource("/find-definition").route(post().to(definition)))
+                            .service(resource("/find-references").route(post().to(references)))
+                    )
+                    .service(
+                        scope("/workspace")
+                            .service(resource("/list-files").route(get().to(workspace_files)))
+                    ),
             )
     })
     .bind("0.0.0.0:4444")?
