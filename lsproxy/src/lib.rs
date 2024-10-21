@@ -3,7 +3,7 @@ use actix_web::{
     web::{get, post, resource, scope, Data},
     App, HttpServer,
 };
-use api_types::{ErrorResponse, Position};
+use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -51,6 +51,8 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             Position,
             Symbol,
             ErrorResponse,
+            CodeContext,
+            FileRange,
         )
     ),
     tags(

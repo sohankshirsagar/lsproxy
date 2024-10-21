@@ -109,7 +109,7 @@ pub struct GetReferencesRequest {
     pub include_declaration: bool,
 
     /// Whether to include the source code of the symbol in the response.
-    /// Defaults to false.
+    /// Defaults to none.
     #[serde(default)]
     #[schema(example = 5)]
     pub include_code_context_lines: Option<u32>,
@@ -206,7 +206,7 @@ pub struct ReferencesResponse {
 
     /// The source code around the references.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_code_context: Option<Vec<CodeContext>>,
+    pub context: Option<Vec<CodeContext>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -263,7 +263,7 @@ impl From<(Vec<Location>, Option<Vec<CodeContext>>, bool)> for ReferencesRespons
         ReferencesResponse {
             raw_response,
             references,
-            source_code_context,
+            context: source_code_context,
         }
     }
 }
