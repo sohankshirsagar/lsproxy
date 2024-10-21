@@ -231,13 +231,12 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lsp_types::Range;
     use std::fs;
     use tempfile::tempdir;
-    use lsp_types::Range;
 
     #[tokio::test]
     async fn test_read_text_document() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -247,11 +246,7 @@ mod tests {
         fs::write(&file_path, "Hello, world!\nThis is a test.")?;
 
         // Initialize WorkspaceDocumentsHandler
-        let handler = WorkspaceDocumentsHandler::new(
-            dir.path(),
-            vec!["*.txt".to_string()],
-            vec![],
-        );
+        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
 
         // Test reading the entire document
         let content = handler.read_text_document(&file_path, None).await?;
@@ -259,8 +254,14 @@ mod tests {
 
         // Test reading a specific range
         let range = Range {
-            start: lsp_types::Position { line: 0, character: 7 },
-            end: lsp_types::Position { line: 0, character: 12 },
+            start: lsp_types::Position {
+                line: 0,
+                character: 7,
+            },
+            end: lsp_types::Position {
+                line: 0,
+                character: 12,
+            },
         };
         let extracted = handler.read_text_document(&file_path, Some(range)).await?;
         assert_eq!(extracted, "world");
@@ -308,11 +309,7 @@ mod tests {
         fs::write(dir.path().join("file2.txt"), "Hello")?;
 
         // Initialize WorkspaceDocumentsHandler with initial patterns
-        let handler = WorkspaceDocumentsHandler::new(
-            dir.path(),
-            vec!["*.txt".to_string()],
-            vec![],
-        );
+        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
 
         // Verify initial file listing
         let initial_files = handler.list_files().await;
@@ -320,10 +317,9 @@ mod tests {
         assert!(initial_files.contains(&dir.path().join("file2.txt")));
 
         // Update patterns to include Rust files
-        handler.update_patterns(
-            vec!["*.rs".to_string()],
-            vec![],
-        ).await;
+        handler
+            .update_patterns(vec!["*.rs".to_string()], vec![])
+            .await;
 
         // Verify updated file listing
         let updated_files = handler.list_files().await;
