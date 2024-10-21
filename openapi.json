@@ -142,7 +142,7 @@
     "/workspace-files": {
       "get": {
         "tags": [
-          "crate::handlers"
+          "workspace"
         ],
         "summary": "Get a list of all files in the workspace",
         "description": "Get a list of all files in the workspace\n\nReturns an array of file paths for all files in the current workspace.\n\nThis is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.",
