@@ -94,7 +94,7 @@ mod test {
 
     use actix_web::http::StatusCode;
 
-    use crate::api_types::{Position, FilePosition};
+    use crate::api_types::{FilePosition, Position};
     use crate::initialize_app_state;
     use crate::test_utils::{python_sample_path, TestContext};
 
@@ -109,7 +109,7 @@ mod test {
                 position: Position {
                     line: 1,
                     character: 18,
-                }
+                },
             },
             include_code_context_lines: Some(5),
             include_raw_response: false,
@@ -129,7 +129,13 @@ mod test {
 
         let expected_response = DefinitionResponse {
             raw_response: None,
-            definitions: vec![FilePosition {path: String::from("graph.py"), position: Position {line:0, character: 6 }}],
+            definitions: vec![FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 0,
+                    character: 6,
+                },
+            }],
         };
 
         assert_eq!(expected_response, definition_response);
