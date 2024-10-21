@@ -186,8 +186,15 @@ mod test {
     }
 
     #[tokio::test]
-    async fn test_initialize_app() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_initialize_app_python() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup(&python_sample_path(), false).await?;
+        initialize_app_state().await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_initialize_app_js() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&js_sample_path(), false).await?;
         initialize_app_state().await?;
         Ok(())
     }

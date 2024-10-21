@@ -174,7 +174,7 @@ pub struct WorkspaceSymbolsRequest {
 /// __________^
 /// ```
 /// The definition(s) will be `[{"path": "src/main.py", "line": 0, "character": 6}]`.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DefinitionResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
@@ -201,7 +201,7 @@ pub struct DefinitionResponse {
 /// 7: print(user.name)
 /// ```
 /// The references will be `[{"path": "src/main.py", "line": 5, "character": 7}]`.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencesResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.

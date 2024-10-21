@@ -29,6 +29,7 @@ use lsp_types::Position;
 #[utoipa::path(
     post,
     path = "/definition",
+    tag = "symbol",
     request_body = GetDefinitionRequest,
     responses(
         (status = 200, description = "Definition retrieved successfully", body = DefinitionResponse),
@@ -84,5 +85,54 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
                 error: "Failed to lock lsp_manager".to_string(),
             })
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use actix_web::http::StatusCode;
+
+    use crate::api_types::{Position, FilePosition};
+    use crate::initialize_app_state;
+    use crate::test_utils::{python_sample_path, TestContext};
+
+    #[tokio::test]
+    async fn test_python_definition() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetDefinitionRequest {
+            position: FilePosition {
+                path: String::from("main.py"),
+                position: Position {
+                    line: 1,
+                    character: 18,
+                }
+            },
+            include_code_context_lines: Some(5),
+            include_raw_response: false,
+        });
+
+        let response = definition(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json"
+        );
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let definition_response: DefinitionResponse = serde_json::from_slice(&bytes).unwrap();
+
+        let expected_response = DefinitionResponse {
+            raw_response: None,
+            definitions: vec![FilePosition {path: String::from("graph.py"), position: Position {line:0, character: 6 }}],
+        };
+
+        assert_eq!(expected_response, definition_response);
+        Ok(())
     }
 }
