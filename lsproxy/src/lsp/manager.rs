@@ -486,6 +486,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
+        // TODO: Properties return with the extra double quotes, is this intended behavior?
         let context = TestContext::setup(&js_sample_path()).await?;
         let manager = &context.manager;
 
@@ -496,49 +497,229 @@ mod tests {
 
         let expected = vec![
             Symbol {
-                name: String::from("graph"),
-                kind: String::from("variable"),
+                name: String::from("aStar"),
+                kind: String::from("function"),
                 identifier_start_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("astar_search.js"),
                     position: Position {
-                        line: 5,
-                        character: 0,
+                        line: 4,
+                        character: 9,
                     },
                 },
                 source_code: None,
             },
             Symbol {
-                name: String::from("result"),
-                kind: String::from("variable"),
+                name: String::from("filter() callback"),
+                kind: String::from("function"),
                 identifier_start_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("astar_search.js"),
                     position: Position {
-                        line: 6,
-                        character: 0,
+                        line: 33,
+                        character: 13,
                     },
                 },
                 source_code: None,
             },
             Symbol {
-                name: String::from("cost"),
+                name: String::from("forEach() callback"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 36,
+                        character: 14,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"coord\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 38,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"distance\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 39,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"heuristic\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 40,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"previous\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 41,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("lambda"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 17,
+                        character: 25,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("px"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 21,
+                        character: 19,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("py"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 21,
+                        character: 23,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newClosed"),
                 kind: String::from("variable"),
                 identifier_start_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("astar_search.js"),
                     position: Position {
-                        line: 6,
+                        line: 45,
                         character: 8,
                     },
                 },
                 source_code: None,
             },
             Symbol {
-                name: String::from("barrier"),
+                name: String::from("newCurrent"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 48,
+                        character: 11,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newOpen"),
                 kind: String::from("variable"),
                 identifier_start_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("astar_search.js"),
                     position: Position {
-                        line: 10,
-                        character: 4,
+                        line: 29,
+                        character: 8,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newx"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 53,
+                        character: 11,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newy"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 53,
+                        character: 17,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("x"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 13,
+                        character: 11,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("y"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 13,
+                        character: 14,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("board"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 60,
+                        character: 6,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("manhattan"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 0,
+                        character: 9,
                     },
                 },
                 source_code: None,
