@@ -39,49 +39,55 @@ use lsp_types::{
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
+pub async fn definition(
+    data: Data<AppState>,
+    info: Json<GetDefinitionRequest>,
+) -> Result<HttpResponse, ErrorResponse> {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
         info.position.path, info.position.position.line, info.position.position.character
     );
 
-    match data.lsp_manager.lock() {
-        Ok(lsp_manager) => {
-            let definitions = lsp_manager
-                .definition(
-                    &info.position.path,
-                    LspPosition {
-                        line: info.position.position.line,
-                        character: info.position.position.character,
-                    },
-                )
-                .await?;
+    let lsp_manager = data.lsp_manager.lock().map_err(|e| {
+        error!("Failed to lock lsp_manager: {:?}", e);
+        ErrorResponse {
+            error: "Failed to lock lsp_manager".to_string(),
+        }
+    })?;
 
-            let source_code_context = if info.include_source_code {
-                match fetch_definition_source_code(&lsp_manager, definitions.clone()).await {
-                    Ok(context) => Some(context),
-                    Err(e) => {
-                        warn!("Failed to fetch definition source code: {:?}", e);
-                        None
-                    }
-                }
-            } else {
+    let definitions = lsp_manager
+        .definition(
+            &info.position.path,
+            LspPosition {
+                line: info.position.position.line,
+                character: info.position.position.character,
+            },
+        )
+        .await
+        .map_err(|e| {
+            error!("Definition error: {:?}", e);
+            ErrorResponse {
+                error: "Definition retrieval failed".to_string(),
+            }
+        })?;
+
+    let source_code_context = if info.include_source_code {
+        fetch_definition_source_code(&lsp_manager, definitions.clone())
+            .await
+            .map(Some)
+            .unwrap_or_else(|e| {
+                warn!("Failed to fetch definition source code: {:?}", e);
                 None
-            };
-
-            HttpResponse::Ok().json(DefinitionResponse::from((
-                definitions,
-                source_code_context,
-                info.include_raw_response,
-            )))
-        }
-        Err(e) => {
-            error!("Failed to lock lsp_manager: {:?}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "Failed to lock lsp_manager".to_string(),
             })
-        }
-    }
+    } else {
+        None
+    };
+
+    Ok(HttpResponse::Ok().json(DefinitionResponse::from((
+        definitions,
+        source_code_context,
+        info.include_raw_response,
+    ))))
 }
 
 async fn fetch_definition_source_code(
