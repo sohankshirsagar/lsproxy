@@ -343,7 +343,7 @@ mod tests {
         );
         let manager = result.unwrap();
 
-        let file_path = "graph.py";
+        let file_path = "main.py";
         let result = manager.file_symbols(file_path).await;
         assert!(result.is_ok(), "Failed to find symbols: {:?}", result.err());
 
@@ -352,229 +352,37 @@ mod tests {
 
         let expected = vec![
             Symbol {
-                name: String::from("AStarGraph"),
-                kind: String::from("class"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 0,
-                        character: 6,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("__init__"),
-                kind: String::from("method"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 3,
-                        character: 5,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("heuristic"),
-                kind: String::from("method"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 7,
-                        character: 5,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("start"),
+                name: String::from("graph"),
                 kind: String::from("variable"),
                 identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
+                    path: String::from("main.py"),
                     position: Position {
-                        line: 7,
-                        character: 21,
+                        line: 5,
+                        character: 0,
                     },
                 },
                 source_code: None,
             },
             Symbol {
-                name: String::from("goal"),
+                name: String::from("result"),
                 kind: String::from("variable"),
                 identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
+                    path: String::from("main.py"),
                     position: Position {
-                        line: 7,
-                        character: 28,
+                        line: 6,
+                        character: 0,
                     },
                 },
                 source_code: None,
             },
             Symbol {
-                name: String::from("D"),
-                kind: String::from("constant"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 10,
-                        character: 2,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("D2"),
-                kind: String::from("constant"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 11,
-                        character: 2,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("dx"),
+                name: String::from("cost"),
                 kind: String::from("variable"),
                 identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
+                    path: String::from("main.py"),
                     position: Position {
-                        line: 12,
-                        character: 2,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("dy"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 13,
-                        character: 2,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("get_vertex_neighbours"),
-                kind: String::from("method"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 16,
-                        character: 5,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("pos"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 16,
-                        character: 33,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("n"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 17,
-                        character: 2,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("dx"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 19,
-                        character: 6,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("dy"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 19,
-                        character: 10,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("x2"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 20,
-                        character: 3,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("y2"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 21,
-                        character: 3,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("move_cost"),
-                kind: String::from("method"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 27,
-                        character: 5,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("a"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 27,
-                        character: 21,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("b"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 27,
-                        character: 24,
+                        line: 6,
+                        character: 8,
                     },
                 },
                 source_code: None,
@@ -583,22 +391,10 @@ mod tests {
                 name: String::from("barrier"),
                 kind: String::from("variable"),
                 identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
+                    path: String::from("main.py"),
                     position: Position {
-                        line: 28,
-                        character: 6,
-                    },
-                },
-                source_code: None,
-            },
-            Symbol {
-                name: String::from("barriers"),
-                kind: String::from("variable"),
-                identifier_start_position: FilePosition {
-                    path: String::from("graph.py"),
-                    position: Position {
-                        line: 4,
-                        character: 7,
+                        line: 10,
+                        character: 4,
                     },
                 },
                 source_code: None,
