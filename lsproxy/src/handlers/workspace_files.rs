@@ -14,6 +14,7 @@ use crate::AppState;
 #[utoipa::path(
     get,
     path = "/workspace-files",
+    tag = "workspace",
     responses(
         (status = 200, description = "Workspace files retrieved successfully", body = Vec<String>),
         (status = 400, description = "Bad request"),
@@ -49,5 +50,39 @@ pub async fn workspace_files(data: Data<AppState>) -> HttpResponse {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use actix_web::http::StatusCode;
+
+    use crate::initialize_app_state;
+    use crate::test_utils::{python_sample_path, TestContext};
+
+    #[tokio::test]
+    async fn test_python_workspace_files() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let response = workspace_files(state).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json"
+        );
+
+        // Check the body
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let mut workspace_files_response: Vec<String> = serde_json::from_slice(&bytes).unwrap();
+
+        let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
+
+        assert_eq!(expected.sort(), workspace_files_response.sort());
+        Ok(())
     }
 }
