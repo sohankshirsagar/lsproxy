@@ -120,26 +120,11 @@ async fn fetch_definition_source_code(
         let symbol = file_symbols
             .iter()
             .find(|s| s.selection_range == definition.range);
-
-        let source_code = lsp_manager
-            .read_source_code(&relative_path, Some(definition.range))
-            .await?;
-        match symbol {
+        let source_code = match symbol {
             Some(symbol) => {
-                code_contexts.push(CodeContext {
-                    range: FileRange {
-                        path: relative_path,
-                        start: Position {
-                            line: symbol.range.start.line,
-                            character: symbol.range.start.character,
-                        },
-                        end: Position {
-                            line: symbol.range.end.line,
-                            character: symbol.range.end.character,
-                        },
-                    },
-                    source_code,
-                });
+                lsp_manager
+                    .read_source_code(&relative_path, Some(symbol.range))
+                    .await?
             }
             None => {
                 warn!("Symbol not found for definition: {:?}", definition);
@@ -148,6 +133,23 @@ async fn fetch_definition_source_code(
                     definition
                 )));
             }
+        };
+
+        if let Some(symbol) = symbol {
+            code_contexts.push(CodeContext {
+                range: FileRange {
+                    path: relative_path,
+                    start: Position {
+                        line: symbol.range.start.line,
+                        character: symbol.range.start.character,
+                    },
+                    end: Position {
+                        line: symbol.range.end.line,
+                        character: symbol.range.end.character,
+                    },
+                },
+                source_code,
+            });
         }
     }
     Ok(code_contexts)
