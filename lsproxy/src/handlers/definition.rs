@@ -76,13 +76,13 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
         .unwrap();
 
     let source_code_context = if info.include_source_code {
-        fetch_definition_source_code(&lsp_manager, definitions.clone())
-            .await
-            .map(Some)
-            .unwrap_or_else(|e| {
+        match fetch_definition_source_code(&lsp_manager, definitions.clone()).await {
+            Ok(context) => Some(context),
+            Err(e) => {
                 error!("Failed to fetch definition source code: {:?}", e);
                 None
-            })
+            }
+        }
     } else {
         None
     };
