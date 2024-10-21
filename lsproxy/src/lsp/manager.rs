@@ -234,7 +234,7 @@ impl LspManager {
         let client = self.get_client(self.detect_language(file_path)?).ok_or(
             LspManagerError::LspClientNotFound(self.detect_language(file_path)?),
         )?;
-        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path = get_mount_dir().join(&file_path);
         let mut locked_client = client.lock().await;
         locked_client
             .get_workspace_documents()

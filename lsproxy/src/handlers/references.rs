@@ -102,7 +102,7 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
                     })
                 }
             }
-    
+        }
         (_, Err(e)) => {
             error!("Failed to fetch code context: {}", e);
             HttpResponse::InternalServerError().json(ErrorResponse {
@@ -110,7 +110,6 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
             })
         }
     }
-}
 }
 
 async fn fetch_code_context(
@@ -190,7 +189,7 @@ mod test {
                 },
             },
             include_declaration: false,
-            include_code_context_context_lines: None,
+            include_code_context_lines: None,
             include_raw_response: false,
         });
 
@@ -225,6 +224,7 @@ mod test {
                     },
                 },
             ],
+            context: None,
         };
 
         assert_eq!(expected_response, reference_response);
@@ -256,7 +256,7 @@ mod test {
                 },
             },
             include_declaration: false,
-            include_code_context_context_lines: None,
+            include_code_context_lines: Some(3),
             include_raw_response: false,
         });
 
@@ -291,6 +291,7 @@ mod test {
                     },
                 },
             ],
+            context: None,
         };
 
         assert_eq!(expected_response, reference_response);
