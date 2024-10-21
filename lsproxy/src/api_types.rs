@@ -175,6 +175,9 @@ pub struct DefinitionResponse {
     /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition
     pub raw_response: Option<Value>,
     pub definitions: Vec<FilePosition>,
+    /// The source code of symbol definitions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_code_context: Option<Vec<CodeContext>>,
 }
 
 /// Response to a references request.
@@ -220,8 +223,14 @@ pub struct SymbolResponse {
     pub symbols: Vec<Symbol>,
 }
 
-impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
-    fn from((response, include_raw): (GotoDefinitionResponse, bool)) -> Self {
+impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
+    fn from(
+        (response, source_code_context, include_raw): (
+            GotoDefinitionResponse,
+            Option<Vec<CodeContext>>,
+            bool,
+        ),
+    ) -> Self {
         let raw_response = if include_raw {
             Some(to_value(&response).unwrap_or_else(|e| {
                 warn!("Serialization failed: {:?}", e);
@@ -242,6 +251,7 @@ impl From<(GotoDefinitionResponse, bool)> for DefinitionResponse {
         DefinitionResponse {
             raw_response,
             definitions,
+            source_code_context,
         }
     }
 }

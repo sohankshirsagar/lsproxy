@@ -1,12 +1,15 @@
-use crate::api_types::ErrorResponse;
-use crate::lsp::manager::LspManagerError;
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use crate::lsp::manager::{LspManager, LspManagerError};
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
-use log::{error, info};
+use log::{error, info, warn};
+use serde_json::to_value;
 
 use crate::api_types::{DefinitionResponse, GetDefinitionRequest};
 use crate::AppState;
-use lsp_types::Position;
+use lsp_types::{
+    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position as LspPosition, Range,
+};
 /// Get the definition of a symbol at a specific position in a file
 ///
 /// Returns the location of the definition for the symbol at the given position.
@@ -44,39 +47,33 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
 
     match data.lsp_manager.lock() {
         Ok(lsp_manager) => {
-            match lsp_manager
+            let definitions = lsp_manager
                 .definition(
                     &info.position.path,
-                    Position {
+                    LspPosition {
                         line: info.position.position.line,
                         character: info.position.position.character,
                     },
                 )
-                .await
-            {
-                Ok(definitions) => HttpResponse::Ok().json(DefinitionResponse::from((
-                    definitions,
-                    info.include_raw_response,
-                ))),
-                Err(e) => match e {
-                    LspManagerError::FileNotFound(path) => {
-                        HttpResponse::BadRequest().json(format!("File not found: {}", path))
+                .await?;
+
+            let source_code_context = if info.include_source_code {
+                match fetch_definition_source_code(&lsp_manager, definitions.clone()).await {
+                    Ok(context) => Some(context),
+                    Err(e) => {
+                        warn!("Failed to fetch definition source code: {:?}", e);
+                        None
                     }
-                    LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
-                        .json(ErrorResponse {
-                            error: format!("LSP client not found for {:?}", lang),
-                        }),
-                    LspManagerError::InternalError(msg) => HttpResponse::InternalServerError()
-                        .json(ErrorResponse {
-                            error: format!("Internal error: {}", msg),
-                        }),
-                    LspManagerError::UnsupportedFileType(path) => {
-                        HttpResponse::BadRequest().json(ErrorResponse {
-                            error: format!("Unsupported file type: {}", path),
-                        })
-                    }
-                },
-            }
+                }
+            } else {
+                None
+            };
+
+            HttpResponse::Ok().json(DefinitionResponse::from((
+                definitions,
+                source_code_context,
+                info.include_raw_response,
+            )))
         }
         Err(e) => {
             error!("Failed to lock lsp_manager: {:?}", e);
@@ -85,4 +82,75 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
             })
         }
     }
+}
+
+async fn fetch_definition_source_code(
+    lsp_manager: &LspManager,
+    definitions_response: GotoDefinitionResponse,
+) -> Result<Vec<CodeContext>, LspManagerError> {
+    let mut code_contexts = Vec::new();
+    let definitions = match definitions_response {
+        GotoDefinitionResponse::Scalar(definition) => vec![definition],
+        GotoDefinitionResponse::Array(definitions) => definitions,
+        GotoDefinitionResponse::Link(links) => links
+            .into_iter()
+            .map(|link| Location::new(link.target_uri, link.target_range))
+            .collect(),
+    };
+
+    for definition in definitions {
+        let file_symbols = match lsp_manager
+            .file_symbols(&definition.uri.to_file_path().unwrap().to_str().unwrap())
+            .await?
+        {
+            DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
+            DocumentSymbolResponse::Flat(_) => {
+                return Err(LspManagerError::InternalError(
+                    "Flat document symbols are not supported".to_string(),
+                ))
+            }
+        };
+        let symbol = file_symbols
+            .iter()
+            .find(|s| s.selection_range == definition.range);
+
+        let source_code = lsp_manager
+            .read_source_code(
+                definition.uri.to_file_path().unwrap().to_str().unwrap(),
+                Some(definition.range),
+            )
+            .await?;
+        match symbol {
+            Some(symbol) => {
+                code_contexts.push(CodeContext {
+                    range: FileRange {
+                        path: definition
+                            .uri
+                            .to_file_path()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .to_string(),
+                        start: Position {
+                            line: symbol.range.start.line,
+                            character: symbol.range.start.character,
+                        },
+                        end: Position {
+                            line: symbol.range.end.line,
+                            character: symbol.range.end.character,
+                        },
+                    },
+                    source_code,
+                });
+            }
+            None => {
+                warn!("Symbol not found for definition: {:?}", definition);
+                return Err(LspManagerError::InternalError(format!(
+                    "Symbol not found for definition at {:?}",
+                    definition
+                )));
+            }
+        }
+    }
+    Ok(code_contexts)
 }
