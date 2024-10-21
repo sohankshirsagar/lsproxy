@@ -1,4 +1,4 @@
-use crate::api_types::{SupportedLanguages, MOUNT_DIR};
+use crate::api_types::{absolute_path_to_relative_path_string, SupportedLanguages, MOUNT_DIR};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
@@ -203,11 +203,7 @@ impl LspManager {
                     .list_files()
                     .await
                     .iter()
-                    .filter_map(|f| {
-                        f.strip_prefix(MOUNT_DIR)
-                            .map(|p| p.strip_prefix('/').unwrap_or(p))
-                            .map(|p| p.to_string())
-                    })
+                    .filter_map(|f| Some(absolute_path_to_relative_path_string(f)))
                     .collect::<Vec<String>>(),
             );
         }
@@ -234,10 +230,11 @@ impl LspManager {
         let client = self.get_client(self.detect_language(file_path)?).ok_or(
             LspManagerError::LspClientNotFound(self.detect_language(file_path)?),
         )?;
+        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
         let mut locked_client = client.lock().await;
         locked_client
             .get_workspace_documents()
-            .read_text_document(file_path, range)
+            .read_text_document(&full_path, range)
             .await
             .map_err(|e| {
                 LspManagerError::InternalError(format!("Source code retrieval failed: {}", e))

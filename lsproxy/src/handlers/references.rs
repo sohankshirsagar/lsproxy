@@ -3,7 +3,7 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Location, Position as LspPosition, Range};
 
-use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position, MOUNT_DIR};
+use crate::api_types::{uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position, MOUNT_DIR};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
 use crate::lsp::manager::{LspManager, LspManagerError};
 use crate::AppState;
@@ -128,7 +128,7 @@ async fn fetch_code_context(
         };
         match lsp_manager
             .read_source_code(
-                reference.uri.to_file_path().unwrap().to_str().unwrap(),
+                &uri_to_relative_path_string(reference.uri.clone()),
                 Some(range),
             )
             .await

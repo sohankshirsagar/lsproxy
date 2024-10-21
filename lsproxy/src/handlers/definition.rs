@@ -1,4 +1,6 @@
-use crate::api_types::{uri_to_relative_path_str, CodeContext, ErrorResponse, FileRange, Position, MOUNT_DIR};
+use crate::api_types::{
+    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
+};
 use crate::lsp::manager::{LspManager, LspManagerError};
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
@@ -107,7 +109,7 @@ async fn fetch_definition_source_code(
 
     for definition in definitions {
         let file_symbols = match lsp_manager
-            .file_symbols(&uri_to_relative_path_str(definition.uri))
+            .file_symbols(&uri_to_relative_path_string(definition.uri))
             .await?
         {
             DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
@@ -123,7 +125,7 @@ async fn fetch_definition_source_code(
 
         let source_code = lsp_manager
             .read_source_code(
-                definition.uri.to_file_path().unwrap().to_str().unwrap(),
+                &uri_to_relative_path_string(definition.uri.clone()),
                 Some(definition.range),
             )
             .await?;
