@@ -1,4 +1,4 @@
-use crate::api_types::test_utils::set_mount_dir;
+use crate::api_types::set_mount_dir;
 use crate::lsp::manager::LspManager;
 
 pub fn python_sample_path() -> String {
@@ -14,6 +14,11 @@ pub struct TestContext {
 }
 
 impl TestContext {
+    pub fn new(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        set_mount_dir(file_path);
+        Ok(Self { manager: None })
+    }
+
     pub async fn setup(file_path: &str, manager: bool) -> Result<Self, Box<dyn std::error::Error>> {
         set_mount_dir(file_path);
         if manager {

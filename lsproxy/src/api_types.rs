@@ -7,17 +7,24 @@ use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use std::cell::RefCell;
 use std::hash::Hash;
+use std::path::Path;
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
 thread_local! {
-    static MOUNT_DIR: Rc<RefCell<PathBuf>> = Rc::new(RefCell::new(PathBuf::from("/mnt/workspace")));
+    static MOUNT_DIR: Arc<RefCell<PathBuf>> = Arc::new(RefCell::new(PathBuf::from("/mnt/workspace")));
 }
 
 pub fn get_mount_dir() -> PathBuf {
     MOUNT_DIR.with(|dir| dir.borrow().clone())
+}
+
+pub fn set_mount_dir(path: impl AsRef<Path>) {
+    MOUNT_DIR.with(|dir| {
+        *dir.borrow_mut() = path.as_ref().to_path_buf();
+    });
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -423,17 +430,6 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
     }
 }
 
-#[cfg(test)]
-pub mod test_utils {
-    use super::*;
-    use std::path::Path;
-
-    pub fn set_mount_dir(path: impl AsRef<Path>) {
-        MOUNT_DIR.with(|dir| {
-            *dir.borrow_mut() = path.as_ref().to_path_buf();
-        });
-    }
-}
 
 #[cfg(test)]
 mod tests {
