@@ -65,15 +65,14 @@ pub struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
 }
 
-pub async fn initialize_app_state() -> Data<AppState> {
+pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
     let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
     lsp_manager
         .lock()
         .unwrap()
         .start_langservers(get_mount_dir().to_str().unwrap())
-        .await
-        .ok();
-    Data::new(AppState { lsp_manager })
+        .await?;
+    Ok(Data::new(AppState { lsp_manager }))
 }
 
 pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
@@ -115,9 +114,44 @@ pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
 }
 
 #[cfg(test)]
+mod test_utils;
+
+#[cfg(test)]
 mod test {
     use super::*;
+    use crate::test_utils::{python_sample_path, js_sample_path, TestContext};
     use tempfile::TempDir;
+
+    fn simple_diff(text1: &str, text2: &str) -> String {
+        let lines1: Vec<&str> = text1.lines().collect();
+        let lines2: Vec<&str> = text2.lines().collect();
+        let mut diff = String::new();
+        let mut diff_count = 0;
+
+        for (i, (l1, l2)) in lines1.iter().zip(lines2.iter()).enumerate() {
+            if l1 != l2 {
+                diff_count += 1;
+                if diff_count <= 3 {
+                    // Show up to 3 differences
+                    diff.push_str(&format!("Line {}: '{}' vs '{}'\n", i + 1, l1, l2));
+                }
+            }
+        }
+
+        if lines1.len() != lines2.len() {
+            diff.push_str(&format!(
+                "Files have different number of lines: {} vs {}\n",
+                lines1.len(),
+                lines2.len()
+            ));
+        }
+
+        if diff_count > 3 {
+            diff.push_str(&format!("... and {} more differences\n", diff_count - 3));
+        }
+
+        diff
+    }
 
     #[test]
     fn test_openapi_json() -> Result<(), Box<dyn std::error::Error>> {
@@ -151,34 +185,10 @@ mod test {
         Ok(())
     }
 
-    fn simple_diff(text1: &str, text2: &str) -> String {
-        let lines1: Vec<&str> = text1.lines().collect();
-        let lines2: Vec<&str> = text2.lines().collect();
-        let mut diff = String::new();
-        let mut diff_count = 0;
-
-        for (i, (l1, l2)) in lines1.iter().zip(lines2.iter()).enumerate() {
-            if l1 != l2 {
-                diff_count += 1;
-                if diff_count <= 3 {
-                    // Show up to 3 differences
-                    diff.push_str(&format!("Line {}: '{}' vs '{}'\n", i + 1, l1, l2));
-                }
-            }
-        }
-
-        if lines1.len() != lines2.len() {
-            diff.push_str(&format!(
-                "Files have different number of lines: {} vs {}\n",
-                lines1.len(),
-                lines2.len()
-            ));
-        }
-
-        if diff_count > 3 {
-            diff.push_str(&format!("... and {} more differences\n", diff_count - 3));
-        }
-
-        diff
+    #[tokio::test]
+    async fn test_initialize_app() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        initialize_app_state().await?;
+        Ok(())
     }
 }
