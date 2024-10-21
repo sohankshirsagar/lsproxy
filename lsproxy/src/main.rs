@@ -1,7 +1,7 @@
 use clap::Parser;
 use env_logger::Env;
 use log::info;
-use lsproxy::{initialize_app_state, run_server, write_openapi_to_file};
+use lsproxy::{initialize_app_state, run_server, write_openapi_to_file, api_types::set_mount_dir};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -10,6 +10,10 @@ struct Cli {
     /// Write OpenAPI spec to file (openapi.json)
     #[arg(short, long)]
     write_openapi: bool,
+
+    /// Set the mount directory
+    #[arg(short, long, default_value = "/mnt/workspace")]
+    mount_dir: String,
 }
 
 #[actix_web::main]
@@ -23,6 +27,10 @@ async fn main() -> std::io::Result<()> {
     info!("Logger initialized");
 
     let cli = Cli::parse();
+
+    // Set the mount directory
+    set_mount_dir(&cli.mount_dir);
+    info!("Mount directory set to: {}", cli.mount_dir);
 
     if cli.write_openapi {
         if let Err(e) = write_openapi_to_file(&PathBuf::from("openapi.json")) {

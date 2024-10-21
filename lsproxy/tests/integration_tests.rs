@@ -3,11 +3,11 @@ use std::time::Duration;
 use std::thread;
 use reqwest;
 use serde_json::Value;
-use lsproxy::api_types::{set_mount_dir, get_mount_dir};
+use tempfile::TempDir;
 
-fn start_server() -> Child {
+fn start_server(mount_dir: &str) -> Child {
     Command::new("cargo")
-        .args(&["run", "--bin", "lsproxy"])
+        .args(&["run", "--bin", "lsproxy", "--", "--mount-dir", mount_dir])
         .spawn()
         .expect("Failed to start server")
 }
@@ -25,11 +25,18 @@ fn wait_for_server(url: &str) {
 
 #[test]
 fn test_server_integration() {
-    // Set up the test environment
-    let python_sample_path = "/mnt/lsproxy_root/sample_project/python";
-    set_mount_dir(python_sample_path);
+    // Create a temporary directory for the test
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let mount_dir = temp_dir.path().to_str().unwrap();
 
-    let mut server = start_server();
+    // Copy the sample project to the temporary directory
+    let sample_project = "/mnt/lsproxy_root/sample_project/python";
+    std::process::Command::new("cp")
+        .args(&["-r", sample_project, mount_dir])
+        .output()
+        .expect("Failed to copy sample project");
+
+    let mut server = start_server(mount_dir);
     
     let base_url = "http://localhost:4444";
     wait_for_server(&format!("{}/v1/workspace/list-files", base_url));
