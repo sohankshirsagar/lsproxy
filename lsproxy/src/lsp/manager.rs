@@ -261,10 +261,9 @@ impl std::error::Error for LspManagerError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{python_sample_path, js_sample_path, TestContext};
     use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
+    use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use lsp_types::{Range, Url};
-
 
     #[tokio::test]
     async fn test_start_manager_python() -> Result<(), Box<dyn std::error::Error>> {
@@ -275,7 +274,10 @@ mod tests {
     #[tokio::test]
     async fn test_workspace_files_python() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&python_sample_path(), true).await?;
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
 
         let mut result = manager.workspace_files().await?;
         let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
@@ -287,7 +289,10 @@ mod tests {
     #[tokio::test]
     async fn test_file_symbols_python() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&python_sample_path(), true).await?;
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
 
         let file_path = "main.py";
         let file_symbols = manager.file_symbols(file_path).await?;
@@ -351,7 +356,10 @@ mod tests {
     #[tokio::test]
     async fn test_references_python() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&python_sample_path(), true).await?;
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
         let file_path = "graph.py";
 
         let references = manager
@@ -401,7 +409,10 @@ mod tests {
     #[tokio::test]
     async fn test_definition_python() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&python_sample_path(), true).await?;
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
         let def_response = manager
             .definition(
                 "main.py",
@@ -448,7 +459,10 @@ mod tests {
     async fn test_workspace_files_js() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&js_sample_path(), true).await?;
 
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
         let files = manager.workspace_files().await?;
 
         assert_eq!(files, vec!["astar_search.js"]);
@@ -459,7 +473,10 @@ mod tests {
     async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
         // TODO: Properties return with the extra double quotes, is this intended behavior?
         let context = TestContext::setup(&js_sample_path(), true).await?;
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
         let file_symbols = manager.file_symbols(file_path).await?;
@@ -703,7 +720,10 @@ mod tests {
     #[tokio::test]
     async fn test_references_js() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&js_sample_path(), true).await?;
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
 
@@ -753,7 +773,10 @@ mod tests {
     #[tokio::test]
     async fn test_definition_js() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&js_sample_path(), true).await?;
-        let manager = context.manager.as_ref().ok_or("Manager is not initialized")?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
         let def_response = manager
             .definition(
                 "astar_search.js",

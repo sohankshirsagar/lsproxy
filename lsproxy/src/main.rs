@@ -32,7 +32,9 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-    let app_state = initialize_app_state().await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+    let app_state = initialize_app_state()
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
     run_server(app_state).await
 }

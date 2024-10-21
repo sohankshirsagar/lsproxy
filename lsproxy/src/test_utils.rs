@@ -22,9 +22,11 @@ impl TestContext {
                 set_mount_dir("/mnt/workspace");
                 return Err(e);
             }
-            return Ok(Self { manager: Some(manager) })
+            return Ok(Self {
+                manager: Some(manager),
+            });
         }
-        Ok(Self {manager: None})
+        Ok(Self { manager: None })
     }
 }
 
@@ -33,4 +35,3 @@ impl Drop for TestContext {
         set_mount_dir("/mnt/workspace");
     }
 }
-

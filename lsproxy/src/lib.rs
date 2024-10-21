@@ -119,7 +119,7 @@ mod test_utils;
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_utils::{python_sample_path, js_sample_path, TestContext};
+    use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use tempfile::TempDir;
 
     fn simple_diff(text1: &str, text2: &str) -> String {
