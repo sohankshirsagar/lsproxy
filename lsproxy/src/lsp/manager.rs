@@ -324,7 +324,6 @@ mod tests {
                         character: 0,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("result"),
@@ -336,7 +335,6 @@ mod tests {
                         character: 0,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("cost"),
@@ -348,7 +346,6 @@ mod tests {
                         character: 8,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("barrier"),
@@ -360,7 +357,6 @@ mod tests {
                         character: 4,
                     },
                 },
-                source_code: None,
             },
         ];
         assert_eq!(symbol_response.symbols, expected);
@@ -508,7 +504,6 @@ mod tests {
                         character: 9,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("filter() callback"),
@@ -520,7 +515,6 @@ mod tests {
                         character: 13,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("forEach() callback"),
@@ -532,7 +526,6 @@ mod tests {
                         character: 14,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("\"coord\""),
@@ -544,7 +537,6 @@ mod tests {
                         character: 12,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("\"distance\""),
@@ -556,7 +548,6 @@ mod tests {
                         character: 12,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("\"heuristic\""),
@@ -568,7 +559,6 @@ mod tests {
                         character: 12,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("\"previous\""),
@@ -580,7 +570,6 @@ mod tests {
                         character: 12,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("lambda"),
@@ -592,7 +581,6 @@ mod tests {
                         character: 25,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("px"),
@@ -604,7 +592,6 @@ mod tests {
                         character: 19,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("py"),
@@ -616,7 +603,6 @@ mod tests {
                         character: 23,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("newClosed"),
@@ -628,7 +614,6 @@ mod tests {
                         character: 8,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("newCurrent"),
@@ -640,7 +625,6 @@ mod tests {
                         character: 11,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("newOpen"),
@@ -652,7 +636,6 @@ mod tests {
                         character: 8,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("newx"),
@@ -664,7 +647,6 @@ mod tests {
                         character: 11,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("newy"),
@@ -676,7 +658,6 @@ mod tests {
                         character: 17,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("x"),
@@ -688,7 +669,6 @@ mod tests {
                         character: 11,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("y"),
@@ -700,7 +680,6 @@ mod tests {
                         character: 14,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("board"),
@@ -712,7 +691,6 @@ mod tests {
                         character: 6,
                     },
                 },
-                source_code: None,
             },
             Symbol {
                 name: String::from("manhattan"),
@@ -724,7 +702,6 @@ mod tests {
                         character: 9,
                     },
                 },
-                source_code: None,
             },
         ];
         assert_eq!(symbol_response.symbols, expected);

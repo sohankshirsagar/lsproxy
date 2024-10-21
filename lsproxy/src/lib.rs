@@ -98,11 +98,11 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
                         scope("/symbol")
                             .service(resource("/definitions-in-file").route(get().to(file_symbols)))
                             .service(resource("/find-definition").route(post().to(definition)))
-                            .service(resource("/find-references").route(post().to(references)))
+                            .service(resource("/find-references").route(post().to(references))),
                     )
                     .service(
                         scope("/workspace")
-                            .service(resource("/list-files").route(get().to(workspace_files)))
+                            .service(resource("/list-files").route(get().to(workspace_files))),
                     ),
             )
     })

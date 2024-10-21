@@ -85,9 +85,6 @@ pub struct Symbol {
 
     /// The start position of the symbol's identifier.
     pub identifier_start_position: FilePosition,
-
-    /// The code context of the symbol.
-    pub source_code: Option<CodeContext>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -316,7 +313,6 @@ impl From<SymbolInformation> for Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
             identifier_start_position: FilePosition::from(symbol.location),
-            source_code: None,
         }
     }
 }
@@ -333,7 +329,6 @@ impl Symbol {
                     character: symbol.selection_range.start.character,
                 },
             },
-            source_code: None,
         }
     }
 }
@@ -347,7 +342,6 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
                     name: symbol.name,
                     kind: symbol_kind_to_string(symbol.kind).to_owned(),
                     identifier_start_position: FilePosition::from(symbol.location),
-                    source_code: None,
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
