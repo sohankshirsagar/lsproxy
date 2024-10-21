@@ -108,10 +108,8 @@ async fn fetch_definition_source_code(
     };
 
     for definition in definitions {
-        let file_symbols = match lsp_manager
-            .file_symbols(&uri_to_relative_path_string(definition.uri))
-            .await?
-        {
+        let relative_path = uri_to_relative_path_string(definition.uri.clone());
+        let file_symbols = match lsp_manager.file_symbols(&relative_path).await? {
             DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
             DocumentSymbolResponse::Flat(_) => {
                 return Err(LspManagerError::InternalError(
@@ -124,22 +122,13 @@ async fn fetch_definition_source_code(
             .find(|s| s.selection_range == definition.range);
 
         let source_code = lsp_manager
-            .read_source_code(
-                &uri_to_relative_path_string(definition.uri.clone()),
-                Some(definition.range),
-            )
+            .read_source_code(&relative_path, Some(definition.range))
             .await?;
         match symbol {
             Some(symbol) => {
                 code_contexts.push(CodeContext {
                     range: FileRange {
-                        path: definition
-                            .uri
-                            .to_file_path()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_string(),
+                        path: relative_path,
                         start: Position {
                             line: symbol.range.start.line,
                             character: symbol.range.start.character,
