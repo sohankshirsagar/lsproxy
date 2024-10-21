@@ -1,4 +1,4 @@
-use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use crate::api_types::{uri_to_relative_path_str, CodeContext, ErrorResponse, FileRange, Position, MOUNT_DIR};
 use crate::lsp::manager::{LspManager, LspManagerError};
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
@@ -77,7 +77,7 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
             .await
             .map(Some)
             .unwrap_or_else(|e| {
-                warn!("Failed to fetch definition source code: {:?}", e);
+                error!("Failed to fetch definition source code: {:?}", e);
                 None
             })
     } else {
@@ -107,7 +107,7 @@ async fn fetch_definition_source_code(
 
     for definition in definitions {
         let file_symbols = match lsp_manager
-            .file_symbols(&definition.uri.to_file_path().unwrap().to_str().unwrap())
+            .file_symbols(&uri_to_relative_path_str(definition.uri))
             .await?
         {
             DocumentSymbolResponse::Nested(file_symbols) => file_symbols,

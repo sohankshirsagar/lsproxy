@@ -117,7 +117,7 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
     }
 
     async fn list_files(&self) -> Vec<String> {
-        let mut cache = self.cache.write().await;
+        let cache = self.cache.read().await;
         if cache.is_empty() {
             let (include_patterns, exclude_patterns) = self.patterns.read().await.clone();
             let file_paths = search_files(
@@ -129,6 +129,7 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
                 error!("Error searching files: {}", err);
                 Vec::new()
             });
+            let mut cache = self.cache.write().await;
             for file_path in file_paths {
                 cache.insert(file_path.to_string_lossy().into_owned(), None);
             }
