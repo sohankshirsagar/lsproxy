@@ -130,10 +130,7 @@ async fn fetch_code_context(
             },
         };
         match lsp_manager
-            .read_source_code(
-                &uri_to_relative_path_string(&reference.uri),
-                Some(range),
-            )
+            .read_source_code(&uri_to_relative_path_string(&reference.uri), Some(range))
             .await
         {
             Ok(source_code) => {
