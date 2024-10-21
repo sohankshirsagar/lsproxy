@@ -140,14 +140,7 @@ async fn fetch_code_context(
                 code_contexts.push(CodeContext {
                     source_code,
                     range: FileRange {
-                        path: reference
-                            .uri
-                            .to_file_path()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .trim_start_matches(&format!("{}/", get_mount_dir()))
-                            .to_string(),
+                        path: uri_to_relative_path_string(reference.uri.clone()),
                         start: Position {
                             line: range.start.line,
                             character: 0,
