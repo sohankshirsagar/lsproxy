@@ -4,7 +4,7 @@ use log::{error, info};
 use lsp_types::{Location, Position as LspPosition, Range};
 
 use crate::api_types::{
-    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position, MOUNT_DIR,
+    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position, get_mount_dir,
 };
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
 use crate::lsp::manager::{LspManager, LspManagerError};
@@ -146,7 +146,7 @@ async fn fetch_code_context(
                             .unwrap()
                             .to_str()
                             .unwrap()
-                            .trim_start_matches(&format!("{}/", MOUNT_DIR))
+                            .trim_start_matches(&format!("{}/", get_mount_dir()))
                             .to_string(),
                         start: Position {
                             line: range.start.line,
@@ -190,73 +190,6 @@ mod test {
             },
             include_declaration: false,
             include_code_context_lines: None,
-            include_raw_response: false,
-        });
-
-        let response = references(state, mock_request).await;
-
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "application/json"
-        );
-
-        // Check the body
-        let body = response.into_body();
-        let bytes = actix_web::body::to_bytes(body).await.unwrap();
-        let reference_response: ReferencesResponse = serde_json::from_slice(&bytes).unwrap();
-
-        let expected_response = ReferencesResponse {
-            raw_response: None,
-            references: vec![
-                FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 1,
-                        character: 18,
-                    },
-                },
-                FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 5,
-                        character: 8,
-                    },
-                },
-            ],
-            context: None,
-        };
-
-        assert_eq!(expected_response, reference_response);
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    use actix_web::http::StatusCode;
-
-    use crate::api_types::{FilePosition, Position};
-    use crate::initialize_app_state;
-    use crate::test_utils::{python_sample_path, TestContext};
-
-    #[tokio::test]
-    async fn test_python_references() -> Result<(), Box<dyn std::error::Error>> {
-        let _context = TestContext::setup(&python_sample_path(), false).await?;
-        let state = initialize_app_state().await?;
-
-        let mock_request = Json(GetReferencesRequest {
-            symbol_identifier_position: FilePosition {
-                path: String::from("graph.py"),
-                position: Position {
-                    line: 0,
-                    character: 6,
-                },
-            },
-            include_declaration: false,
-            include_code_context_lines: Some(3),
             include_raw_response: false,
         });
 
