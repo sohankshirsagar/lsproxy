@@ -63,7 +63,7 @@ impl WorkspaceDocumentsHandler {
             while let Ok(event) = rx.recv().await {
                 for path in event.paths {
                     if WorkspaceDocumentsHandler::matches_patterns(&path, &patterns_clone).await {
-                        cache_clone.write().await.remove(&path);
+                        cache_clone.write().await.clear();
                         debug!("Cache cleared for {:?}", path);
                     }
                 }
