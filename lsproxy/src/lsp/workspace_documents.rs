@@ -1,7 +1,7 @@
 use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
-use notify::{Config, Event, RecommendedWatcher, Watcher};
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
     collections::HashMap,
     error::Error,
@@ -32,6 +32,7 @@ pub struct WorkspaceDocumentsHandler {
     event_sender: Sender<Event>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
+    watcher: RecommendedWatcher,
 }
 
 impl WorkspaceDocumentsHandler {
@@ -46,7 +47,7 @@ impl WorkspaceDocumentsHandler {
         let patterns = Arc::new(RwLock::new((include_patterns, exclude_patterns)));
         let root_path = root_path.to_path_buf();
 
-        let watcher = RecommendedWatcher::new(
+        let mut watcher = RecommendedWatcher::new(
             move |res: notify::Result<Event>| {
                 if let Ok(event) = res {
                     let _ = tx.send(event);
@@ -56,11 +57,16 @@ impl WorkspaceDocumentsHandler {
         )
         .unwrap();
 
+        watcher
+        .watch(&root_path, RecursiveMode::Recursive)
+        .unwrap_or_else(|e| error!("Failed to watch {:?}: {:?}", root_path, e));
+
         let cache_clone = Arc::clone(&cache);
         let patterns_clone = Arc::clone(&patterns);
 
         tokio::spawn(async move {
             while let Ok(event) = rx.recv().await {
+                debug!("Received event: {:?}", event);
                 for path in event.paths {
                     if WorkspaceDocumentsHandler::matches_patterns(&path, &patterns_clone).await {
                         cache_clone.write().await.clear();
@@ -75,6 +81,7 @@ impl WorkspaceDocumentsHandler {
             patterns,
             root_path,
             event_sender,
+            watcher,
         }
     }
 
