@@ -5,7 +5,7 @@ use lsp_types::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
-use std::cell::RefCell;
+use std::{cell::RefCell, path::Path};
 use std::hash::Hash;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -369,7 +369,7 @@ pub fn uri_to_relative_path_string(uri: Url) -> String {
 }
 
 pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
-    let mount_dir = Path::new(MOUNT_DIR);
+    let mount_dir = get_mount_dir();
     path.strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|e| {
