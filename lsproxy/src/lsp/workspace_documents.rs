@@ -230,3 +230,106 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
         self.cache.write().await.clear();
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+    use lsp_types::Range;
+
+    #[tokio::test]
+    async fn test_read_text_document() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory and file
+        let dir = tempdir()?;
+        let file_path = dir.path().join("test.txt");
+        fs::write(&file_path, "Hello, world!\nThis is a test.")?;
+
+        // Initialize WorkspaceDocumentsHandler
+        let handler = WorkspaceDocumentsHandler::new(
+            dir.path(),
+            vec!["*.txt".to_string()],
+            vec![],
+        );
+
+        // Test reading the entire document
+        let content = handler.read_text_document(&file_path, None).await?;
+        assert_eq!(content, "Hello, world!\nThis is a test.");
+
+        // Test reading a specific range
+        let range = Range {
+            start: lsp_types::Position { line: 0, character: 7 },
+            end: lsp_types::Position { line: 0, character: 12 },
+        };
+        let extracted = handler.read_text_document(&file_path, Some(range)).await?;
+        assert_eq!(extracted, "world");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_list_files() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory and files
+        let dir = tempdir()?;
+        fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
+        fs::write(dir.path().join("file2.txt"), "Hello")?;
+
+        // Initialize WorkspaceDocumentsHandler with include and exclude patterns
+        let handler = WorkspaceDocumentsHandler::new(
+            dir.path(),
+            vec!["*.rs".to_string()],
+            vec!["file2.txt".to_string()],
+        );
+
+        // Test listing files based on patterns
+        let files = handler.list_files().await;
+        assert_eq!(files.len(), 1);
+        assert!(files.contains(&dir.path().join("file1.rs")));
+
+        fs::write(dir.path().join("file3.rs"), "fn main() {}")?;
+        // Wait for the watcher to update the cache
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+
+        let files = handler.list_files().await;
+        println!("Files: {:?}", files);
+        assert_eq!(files.len(), 2);
+        assert!(files.contains(&dir.path().join("file1.rs")));
+        assert!(files.contains(&dir.path().join("file3.rs")));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_update_patterns() -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Setup temporary directory and files
+        let dir = tempdir()?;
+        fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
+        fs::write(dir.path().join("file2.txt"), "Hello")?;
+
+        // Initialize WorkspaceDocumentsHandler with initial patterns
+        let handler = WorkspaceDocumentsHandler::new(
+            dir.path(),
+            vec!["*.txt".to_string()],
+            vec![],
+        );
+
+        // Verify initial file listing
+        let initial_files = handler.list_files().await;
+        assert_eq!(initial_files.len(), 1);
+        assert!(initial_files.contains(&dir.path().join("file2.txt")));
+
+        // Update patterns to include Rust files
+        handler.update_patterns(
+            vec!["*.rs".to_string()],
+            vec![],
+        ).await;
+
+        // Verify updated file listing
+        let updated_files = handler.list_files().await;
+        assert_eq!(updated_files.len(), 1);
+        assert!(updated_files.contains(&dir.path().join("file1.rs")));
+
+        Ok(())
+    }
+}
