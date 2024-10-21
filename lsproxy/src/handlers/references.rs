@@ -30,6 +30,7 @@ use crate::AppState;
 #[utoipa::path(
     post,
     path = "/references",
+    tag = "symbol",
     request_body = GetReferencesRequest,
     responses(
         (status = 200, description = "References retrieved successfully", body = ReferencesResponse),
@@ -82,5 +83,71 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use actix_web::http::StatusCode;
+
+    use crate::api_types::{FilePosition, Position};
+    use crate::initialize_app_state;
+    use crate::test_utils::{python_sample_path, TestContext};
+
+    #[tokio::test]
+    async fn test_python_references() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencesRequest {
+            symbol_identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 0,
+                    character: 6,
+                },
+            },
+            include_declaration: false,
+            include_code_context_context_lines: None,
+            include_raw_response: false,
+        });
+
+        let response = references(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json"
+        );
+
+        // Check the body
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let reference_response: ReferencesResponse = serde_json::from_slice(&bytes).unwrap();
+
+        let expected_response = ReferencesResponse {
+            raw_response: None,
+            references: vec![
+                FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 1,
+                        character: 18,
+                    },
+                },
+                FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 5,
+                        character: 8,
+                    },
+                },
+            ],
+        };
+
+        assert_eq!(expected_response, reference_response);
+        Ok(())
     }
 }

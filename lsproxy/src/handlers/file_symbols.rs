@@ -23,6 +23,7 @@ use crate::AppState;
 #[utoipa::path(
     get,
     path = "/file-symbols",
+    tag = "symbol",
     params(FileSymbolsRequest),
     responses(
         (status = 200, description = "Symbols retrieved successfully", body = SymbolResponse),
@@ -64,5 +65,97 @@ pub async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>)
                 })
             }
         },
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use actix_web::http::StatusCode;
+
+    use crate::api_types::{FilePosition, Position, Symbol};
+    use crate::initialize_app_state;
+    use crate::test_utils::{python_sample_path, TestContext};
+
+    #[tokio::test]
+    async fn test_python_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Query(FileSymbolsRequest {
+            file_path: String::from("main.py"),
+            include_raw_response: false,
+        });
+
+        let response = file_symbols(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json"
+        );
+
+        // Check the body
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let file_symbols_response: SymbolResponse = serde_json::from_slice(&bytes).unwrap();
+
+        let expected_response = SymbolResponse {
+            raw_response: None,
+            symbols: vec![
+                Symbol {
+                    name: String::from("graph"),
+                    kind: String::from("variable"),
+                    identifier_start_position: FilePosition {
+                        path: String::from("main.py"),
+                        position: Position {
+                            line: 5,
+                            character: 0,
+                        },
+                    },
+                    source_code: None,
+                },
+                Symbol {
+                    name: String::from("result"),
+                    kind: String::from("variable"),
+                    identifier_start_position: FilePosition {
+                        path: String::from("main.py"),
+                        position: Position {
+                            line: 6,
+                            character: 0,
+                        },
+                    },
+                    source_code: None,
+                },
+                Symbol {
+                    name: String::from("cost"),
+                    kind: String::from("variable"),
+                    identifier_start_position: FilePosition {
+                        path: String::from("main.py"),
+                        position: Position {
+                            line: 6,
+                            character: 8,
+                        },
+                    },
+                    source_code: None,
+                },
+                Symbol {
+                    name: String::from("barrier"),
+                    kind: String::from("variable"),
+                    identifier_start_position: FilePosition {
+                        path: String::from("main.py"),
+                        position: Position {
+                            line: 10,
+                            character: 4,
+                        },
+                    },
+                    source_code: None,
+                },
+            ],
+        };
+
+        assert_eq!(expected_response, file_symbols_response);
+        Ok(())
     }
 }

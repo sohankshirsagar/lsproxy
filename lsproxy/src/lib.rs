@@ -18,15 +18,14 @@ mod lsp;
 mod utils;
 
 use crate::api_types::{
-    DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
+    get_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
     GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
-    MOUNT_DIR,
 };
 use crate::handlers::{definition, file_symbols, references, workspace_files};
 use crate::lsp::manager::LspManager;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
-    fs::read_dir(MOUNT_DIR)?;
+    fs::read_dir(get_mount_dir())?;
     Ok(())
 }
 
@@ -66,21 +65,20 @@ pub struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
 }
 
-pub async fn initialize_app_state() -> Data<AppState> {
+pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
     let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
     lsp_manager
         .lock()
         .unwrap()
-        .start_langservers(MOUNT_DIR)
-        .await
-        .ok();
-    Data::new(AppState { lsp_manager })
+        .start_langservers(get_mount_dir().to_str().unwrap())
+        .await?;
+    Ok(Data::new(AppState { lsp_manager }))
 }
 
 pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
-    // Check if MOUNT_DIR exists and is mounted
+    // Check if mount dir exists and is mounted
     if let Err(e) = check_mount_dir() {
-        eprintln!("Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location in your docker run or docker compose commands.", MOUNT_DIR);
+        eprintln!("Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location in your docker run or docker compose commands.", get_mount_dir().to_string_lossy());
         return Err(e);
     }
 
@@ -116,9 +114,44 @@ pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
 }
 
 #[cfg(test)]
+mod test_utils;
+
+#[cfg(test)]
 mod test {
     use super::*;
+    use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use tempfile::TempDir;
+
+    fn simple_diff(text1: &str, text2: &str) -> String {
+        let lines1: Vec<&str> = text1.lines().collect();
+        let lines2: Vec<&str> = text2.lines().collect();
+        let mut diff = String::new();
+        let mut diff_count = 0;
+
+        for (i, (l1, l2)) in lines1.iter().zip(lines2.iter()).enumerate() {
+            if l1 != l2 {
+                diff_count += 1;
+                if diff_count <= 3 {
+                    // Show up to 3 differences
+                    diff.push_str(&format!("Line {}: '{}' vs '{}'\n", i + 1, l1, l2));
+                }
+            }
+        }
+
+        if lines1.len() != lines2.len() {
+            diff.push_str(&format!(
+                "Files have different number of lines: {} vs {}\n",
+                lines1.len(),
+                lines2.len()
+            ));
+        }
+
+        if diff_count > 3 {
+            diff.push_str(&format!("... and {} more differences\n", diff_count - 3));
+        }
+
+        diff
+    }
 
     #[test]
     fn test_openapi_json() -> Result<(), Box<dyn std::error::Error>> {
@@ -152,34 +185,17 @@ mod test {
         Ok(())
     }
 
-    fn simple_diff(text1: &str, text2: &str) -> String {
-        let lines1: Vec<&str> = text1.lines().collect();
-        let lines2: Vec<&str> = text2.lines().collect();
-        let mut diff = String::new();
-        let mut diff_count = 0;
+    #[tokio::test]
+    async fn test_initialize_app_python() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        initialize_app_state().await?;
+        Ok(())
+    }
 
-        for (i, (l1, l2)) in lines1.iter().zip(lines2.iter()).enumerate() {
-            if l1 != l2 {
-                diff_count += 1;
-                if diff_count <= 3 {
-                    // Show up to 3 differences
-                    diff.push_str(&format!("Line {}: '{}' vs '{}'\n", i + 1, l1, l2));
-                }
-            }
-        }
-
-        if lines1.len() != lines2.len() {
-            diff.push_str(&format!(
-                "Files have different number of lines: {} vs {}\n",
-                lines1.len(),
-                lines2.len()
-            ));
-        }
-
-        if diff_count > 3 {
-            diff.push_str(&format!("... and {} more differences\n", diff_count - 3));
-        }
-
-        diff
+    #[tokio::test]
+    async fn test_initialize_app_js() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&js_sample_path(), false).await?;
+        initialize_app_state().await?;
+        Ok(())
     }
 }

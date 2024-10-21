@@ -1,4 +1,4 @@
-use crate::api_types::{SupportedLanguages, MOUNT_DIR};
+use crate::api_types::{get_mount_dir, SupportedLanguages};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
@@ -69,7 +69,10 @@ impl LspManager {
         lsps
     }
 
-    pub async fn start_langservers(&mut self, workspace_path: &str) -> Result<(), String> {
+    pub async fn start_langservers(
+        &mut self,
+        workspace_path: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let lsps = self.detect_languages_in_workspace(workspace_path);
         for lsp in lsps {
             if self.get_client(lsp).is_some() {
@@ -115,7 +118,7 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str)?;
         let client = self
@@ -139,7 +142,7 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()).into());
         }
-        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
@@ -175,7 +178,7 @@ impl LspManager {
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let full_path = Path::new(&MOUNT_DIR).join(&file_path);
+        let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
@@ -195,6 +198,7 @@ impl LspManager {
 
     pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
+        let mount_dir = get_mount_dir().to_string_lossy().into_owned();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
             files.extend(
@@ -204,7 +208,7 @@ impl LspManager {
                     .await
                     .iter()
                     .filter_map(|f| {
-                        f.strip_prefix(MOUNT_DIR)
+                        f.strip_prefix(&mount_dir)
                             .map(|p| p.strip_prefix('/').unwrap_or(p))
                             .map(|p| p.to_string())
                     })
@@ -253,3 +257,558 @@ impl fmt::Display for LspManagerError {
 }
 
 impl std::error::Error for LspManagerError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
+    use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
+    use lsp_types::{Range, Url};
+
+    #[tokio::test]
+    async fn test_start_manager_python() -> Result<(), Box<dyn std::error::Error>> {
+        TestContext::setup(&python_sample_path(), true).await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_workspace_files_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+
+        let mut result = manager.workspace_files().await?;
+        let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
+
+        assert_eq!(result.sort(), expected.sort());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+
+        let file_path = "main.py";
+        let file_symbols = manager.file_symbols(file_path).await?;
+
+        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+
+        let expected = vec![
+            Symbol {
+                name: String::from("graph"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("result"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("cost"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("barrier"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 10,
+                        character: 4,
+                    },
+                },
+                source_code: None,
+            },
+        ];
+        assert_eq!(symbol_response.symbols, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_references_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let file_path = "graph.py";
+
+        let references = manager
+            .references(
+                file_path,
+                lsp_types::Position {
+                    line: 0,
+                    character: 6,
+                },
+                false,
+            )
+            .await?;
+
+        let expected = vec![
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 1,
+                        character: 18,
+                    },
+                    end: lsp_types::Position {
+                        line: 1,
+                        character: 28,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 5,
+                        character: 8,
+                    },
+                    end: lsp_types::Position {
+                        line: 5,
+                        character: 18,
+                    },
+                },
+            },
+        ];
+        assert_eq!(references, expected);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_definition_python() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&python_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let def_response = manager
+            .definition(
+                "main.py",
+                lsp_types::Position {
+                    line: 1,
+                    character: 18,
+                },
+            )
+            .await?;
+
+        let definitions = match def_response {
+            GotoDefinitionResponse::Scalar(location) => vec![location],
+            GotoDefinitionResponse::Array(locations) => locations,
+            GotoDefinitionResponse::Link(_links) => Vec::new(),
+        };
+
+        assert_eq!(
+            definitions,
+            vec![Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/graph.py").unwrap(),
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 0,
+                        character: 6,
+                    },
+                    end: lsp_types::Position {
+                        line: 0,
+                        character: 16,
+                    },
+                },
+            }]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_start_manager_js() -> Result<(), Box<dyn std::error::Error>> {
+        TestContext::setup(&js_sample_path(), true).await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_workspace_files_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path(), true).await?;
+
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let files = manager.workspace_files().await?;
+
+        assert_eq!(files, vec!["astar_search.js"]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
+        // TODO: Properties return with the extra double quotes, is this intended behavior?
+        let context = TestContext::setup(&js_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+
+        let file_path = "astar_search.js";
+        let file_symbols = manager.file_symbols(file_path).await?;
+
+        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+
+        let expected = vec![
+            Symbol {
+                name: String::from("aStar"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 4,
+                        character: 9,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("filter() callback"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 33,
+                        character: 13,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("forEach() callback"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 36,
+                        character: 14,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"coord\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 38,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"distance\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 39,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"heuristic\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 40,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("\"previous\""),
+                kind: String::from("property"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 41,
+                        character: 12,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("lambda"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 17,
+                        character: 25,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("px"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 21,
+                        character: 19,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("py"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 21,
+                        character: 23,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newClosed"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 45,
+                        character: 8,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newCurrent"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 48,
+                        character: 11,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newOpen"),
+                kind: String::from("variable"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 29,
+                        character: 8,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newx"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 53,
+                        character: 11,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("newy"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 53,
+                        character: 17,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("x"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 13,
+                        character: 11,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("y"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 13,
+                        character: 14,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("board"),
+                kind: String::from("constant"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 60,
+                        character: 6,
+                    },
+                },
+                source_code: None,
+            },
+            Symbol {
+                name: String::from("manhattan"),
+                kind: String::from("function"),
+                identifier_start_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 0,
+                        character: 9,
+                    },
+                },
+                source_code: None,
+            },
+        ];
+        assert_eq!(symbol_response.symbols, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_references_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+
+        let file_path = "astar_search.js";
+
+        let references = manager
+            .references(
+                file_path,
+                lsp_types::Position {
+                    line: 0,
+                    character: 6,
+                },
+                false,
+            )
+            .await?;
+
+        let expected = vec![
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 10,
+                        character: 21,
+                    },
+                    end: lsp_types::Position {
+                        line: 10,
+                        character: 30,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 40,
+                        character: 25,
+                    },
+                    end: lsp_types::Position {
+                        line: 40,
+                        character: 34,
+                    },
+                },
+            },
+        ];
+        assert_eq!(references, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_definition_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let def_response = manager
+            .definition(
+                "astar_search.js",
+                lsp_types::Position {
+                    line: 1,
+                    character: 18,
+                },
+            )
+            .await?;
+
+        let definitions = match def_response {
+            GotoDefinitionResponse::Scalar(location) => vec![location],
+            GotoDefinitionResponse::Array(locations) => locations,
+            GotoDefinitionResponse::Link(_links) => Vec::new(),
+        };
+
+        assert_eq!(
+            definitions,
+            vec![Location {
+                uri: Url::parse("file:///usr/lib/node_modules/typescript/lib/lib.es5.d.ts")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 681,
+                        character: 4
+                    },
+                    end: lsp_types::Position {
+                        line: 681,
+                        character: 7
+                    }
+                }
+            }]
+        );
+        Ok(())
+    }
+}

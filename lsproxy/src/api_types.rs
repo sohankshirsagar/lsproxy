@@ -5,12 +5,20 @@ use lsp_types::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
+use std::cell::RefCell;
 use std::hash::Hash;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::rc::Rc;
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
-pub const MOUNT_DIR: &str = "/mnt/workspace";
+thread_local! {
+    static MOUNT_DIR: Rc<RefCell<PathBuf>> = Rc::new(RefCell::new(PathBuf::from("/mnt/workspace")));
+}
+
+pub fn get_mount_dir() -> PathBuf {
+    MOUNT_DIR.with(|dir| dir.borrow().clone())
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ErrorResponse {
@@ -31,7 +39,7 @@ pub enum SupportedLanguages {
     Rust,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Position {
     /// 0-indexed line number.
     #[schema(example = 10)]
@@ -42,14 +50,14 @@ pub struct Position {
 }
 
 /// Specific position within a file.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
     #[schema(example = "src/main.py")]
     pub path: String,
     pub position: Position,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FileRange {
     /// The path to the file.
     #[schema(example = "src/main.py")]
@@ -60,13 +68,13 @@ pub struct FileRange {
     pub end: Position,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CodeContext {
     pub range: FileRange,
     pub source_code: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Symbol {
     /// The name of the symbol.
     #[schema(example = "User")]
@@ -167,7 +175,7 @@ pub struct WorkspaceSymbolsRequest {
 /// __________^
 /// ```
 /// The definition(s) will be `[{"path": "src/main.py", "line": 0, "character": 6}]`.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DefinitionResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
@@ -194,7 +202,7 @@ pub struct DefinitionResponse {
 /// 7: print(user.name)
 /// ```
 /// The references will be `[{"path": "src/main.py", "line": 5, "character": 7}]`.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencesResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
@@ -205,7 +213,7 @@ pub struct ReferencesResponse {
     pub references: Vec<FilePosition>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SymbolResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// The raw response from the langserver.
@@ -336,8 +344,7 @@ fn uri_to_path_str(uri: Url) -> String {
         PathBuf::from(uri.path())
     });
 
-    let mount_dir = Path::new(MOUNT_DIR);
-    path.strip_prefix(mount_dir)
+    path.strip_prefix(get_mount_dir().as_path())
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|e| {
             warn!("Failed to strip prefix: {:?}", e);
@@ -393,6 +400,18 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
         SymbolKind::OPERATOR => "operator",
         SymbolKind::TYPE_PARAMETER => "type_parameter",
         _ => "unknown",
+    }
+}
+
+#[cfg(test)]
+pub mod test_utils {
+    use super::*;
+    use std::path::Path;
+
+    pub fn set_mount_dir(path: impl AsRef<Path>) {
+        MOUNT_DIR.with(|dir| {
+            *dir.borrow_mut() = path.as_ref().to_path_buf();
+        });
     }
 }
 

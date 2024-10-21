@@ -18,7 +18,7 @@
     "/definition": {
       "post": {
         "tags": [
-          "crate::handlers"
+          "symbol"
         ],
         "summary": "Get the definition of a symbol at a specific position in a file",
         "description": "Get the definition of a symbol at a specific position in a file\n\nReturns the location of the definition for the symbol at the given position.\n\nThe input position should point inside the symbol's identifier, e.g.\n\nThe returned position points to the identifier of the symbol, and the file_path from workspace root\n\ne.g. for the definition of `User` on line 5 of `src/main.py` with the code:\n```\n0: class User:\noutput___^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\ninput_____^^^^\n```",
@@ -56,7 +56,7 @@
     "/file-symbols": {
       "get": {
         "tags": [
-          "crate::handlers"
+          "symbol"
         ],
         "summary": "Get symbols in a specific file",
         "description": "Get symbols in a specific file\n\nReturns a list of symbols (functions, classes, variables, etc.) defined in the specified file.\n\nThe returned positions point to the start of the symbol's identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\n_________^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n```",
@@ -104,7 +104,7 @@
     "/references": {
       "post": {
         "tags": [
-          "crate::handlers"
+          "symbol"
         ],
         "summary": "Find all references to a symbol",
         "description": "Find all references to a symbol\n\nThe input position should point to the identifier of the symbol you want to get the references for.\n\nReturns a list of locations where the symbol at the given position is referenced.\n\nThe returned positions point to the start of the reference identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\ninput____^^^^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\noutput____^\n```",
@@ -142,7 +142,7 @@
     "/workspace-files": {
       "get": {
         "tags": [
-          "crate::handlers"
+          "workspace"
         ],
         "summary": "Get a list of all files in the workspace",
         "description": "Get a list of all files in the workspace\n\nReturns an array of file paths for all files in the current workspace.\n\nThis is a convenience endpoint that does not use the underlying Language Servers directly, but it does apply the same filtering.",
@@ -245,10 +245,13 @@
           "position"
         ],
         "properties": {
-          "include_code_context": {
-            "type": "boolean",
-            "description": "Whether to include the source code of the symbol in the response.\nDefaults to false.",
-            "example": false
+          "include_code_context_lines": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Whether to include the source code around the symbol's identifier in the response.\nDefaults to false.",
+            "example": 5,
+            "nullable": true,
+            "minimum": 0
           },
           "include_raw_response": {
             "type": "boolean",
@@ -266,6 +269,14 @@
           "symbol_identifier_position"
         ],
         "properties": {
+          "include_code_context_context_lines": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Whether to include the source code of the symbol in the response.\nDefaults to false.",
+            "example": 5,
+            "nullable": true,
+            "minimum": 0
+          },
           "include_declaration": {
             "type": "boolean",
             "description": "Whether to include the declaration (definition) of the symbol in the response.\nDefaults to false."
@@ -277,6 +288,29 @@
           },
           "symbol_identifier_position": {
             "$ref": "#/components/schemas/FilePosition"
+          }
+        }
+      },
+      "Position": {
+        "type": "object",
+        "required": [
+          "line",
+          "character"
+        ],
+        "properties": {
+          "character": {
+            "type": "integer",
+            "format": "int32",
+            "description": "0-indexed character index.",
+            "example": 5,
+            "minimum": 0
+          },
+          "line": {
+            "type": "integer",
+            "format": "int32",
+            "description": "0-indexed line number.",
+            "example": 10,
+            "minimum": 0
           }
         }
       },
