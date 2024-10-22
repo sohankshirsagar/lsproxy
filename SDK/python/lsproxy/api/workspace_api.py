@@ -38,7 +38,7 @@ class WorkspaceApi:
 
 
     @validate_call
-    def workspace_files(
+    def list_files(
         self,
         _request_timeout: Union[
             None,
@@ -79,7 +79,7 @@ class WorkspaceApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._workspace_files_serialize(
+        _param = self._list_files_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -103,7 +103,7 @@ class WorkspaceApi:
 
 
     @validate_call
-    def workspace_files_with_http_info(
+    def list_files_with_http_info(
         self,
         _request_timeout: Union[
             None,
@@ -144,7 +144,7 @@ class WorkspaceApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._workspace_files_serialize(
+        _param = self._list_files_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -168,7 +168,7 @@ class WorkspaceApi:
 
 
     @validate_call
-    def workspace_files_without_preload_content(
+    def list_files_without_preload_content(
         self,
         _request_timeout: Union[
             None,
@@ -209,7 +209,7 @@ class WorkspaceApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._workspace_files_serialize(
+        _param = self._list_files_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -228,7 +228,7 @@ class WorkspaceApi:
         return response_data.response
 
 
-    def _workspace_files_serialize(
+    def _list_files_serialize(
         self,
         _request_auth,
         _content_type,

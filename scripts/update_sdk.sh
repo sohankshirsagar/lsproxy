@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Check if OpenAPI Generator is installed
 if ! command -v openapi-generator &> /dev/null; then
     echo "OpenAPI Generator could not be found. Please install it first."

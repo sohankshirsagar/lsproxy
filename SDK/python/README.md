@@ -67,15 +67,16 @@ configuration = lsproxy.Configuration(
 with lsproxy.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lsproxy.SymbolApi(api_client)
-    get_definition_request = lsproxy.GetDefinitionRequest() # GetDefinitionRequest | 
+    file_path = 'file_path_example' # str | The path to the file to get the symbols for, relative to the root of the workspace.
+    include_raw_response = True # bool | Whether to include the raw response from the langserver in the response. Defaults to false. (optional)
 
     try:
-        # Get the definition of a symbol at a specific position in a file
-        api_response = api_instance.definition(get_definition_request)
-        print("The response of SymbolApi->definition:\n")
+        # Get symbols in a specific file
+        api_response = api_instance.definitions_in_file(file_path, include_raw_response=include_raw_response)
+        print("The response of SymbolApi->definitions_in_file:\n")
         pprint(api_response)
     except ApiException as e:
-        print("Exception when calling SymbolApi->definition: %s\n" % e)
+        print("Exception when calling SymbolApi->definitions_in_file: %s\n" % e)
 
 ```
 
@@ -85,10 +86,10 @@ All URIs are relative to *http://localhost:4444/v1*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*SymbolApi* | [**definition**](docs/SymbolApi.md#definition) | **POST** /symbol/find-definition | Get the definition of a symbol at a specific position in a file
-*SymbolApi* | [**file_symbols**](docs/SymbolApi.md#file_symbols) | **GET** /symbol/definitions-in-file | Get symbols in a specific file
-*SymbolApi* | [**references**](docs/SymbolApi.md#references) | **POST** /symbol/find-references | Find all references to a symbol
-*WorkspaceApi* | [**workspace_files**](docs/WorkspaceApi.md#workspace_files) | **GET** /workspace/list-files | Get a list of all files in the workspace
+*SymbolApi* | [**definitions_in_file**](docs/SymbolApi.md#definitions_in_file) | **GET** /symbol/definitions-in-file | Get symbols in a specific file
+*SymbolApi* | [**find_definition**](docs/SymbolApi.md#find_definition) | **POST** /symbol/find-definition | Get the definition of a symbol at a specific position in a file
+*SymbolApi* | [**find_references**](docs/SymbolApi.md#find_references) | **POST** /symbol/find-references | Find all references to a symbol
+*WorkspaceApi* | [**list_files**](docs/WorkspaceApi.md#list_files) | **GET** /workspace/list-files | Get a list of all files in the workspace
 
 
 ## Documentation For Models

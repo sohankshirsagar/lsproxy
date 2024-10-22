@@ -4,11 +4,11 @@ All URIs are relative to *http://localhost:4444/v1*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**workspace_files**](WorkspaceApi.md#workspace_files) | **GET** /workspace/list-files | Get a list of all files in the workspace
+[**list_files**](WorkspaceApi.md#list_files) | **GET** /workspace/list-files | Get a list of all files in the workspace
 
 
-# **workspace_files**
-> List[str] workspace_files()
+# **list_files**
+> List[str] list_files()
 
 Get a list of all files in the workspace
 
@@ -36,11 +36,11 @@ with lsproxy.ApiClient(configuration) as api_client:
 
     try:
         # Get a list of all files in the workspace
-        api_response = api_instance.workspace_files()
-        print("The response of WorkspaceApi->workspace_files:\n")
+        api_response = api_instance.list_files()
+        print("The response of WorkspaceApi->list_files:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling WorkspaceApi->workspace_files: %s\n" % e)
+        print("Exception when calling WorkspaceApi->list_files: %s\n" % e)
 ```
 
 

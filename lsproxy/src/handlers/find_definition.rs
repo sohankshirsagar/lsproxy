@@ -110,7 +110,7 @@ async fn fetch_definition_source_code(
 
     for definition in definitions {
         let relative_path = uri_to_relative_path_string(&definition.uri);
-        let file_symbols = match lsp_manager.file_symbols(&relative_path).await? {
+        let file_symbols = match lsp_manager.definitions_in_file(&relative_path).await? {
             DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
             DocumentSymbolResponse::Flat(_) => {
                 return Err(LspManagerError::InternalError(
