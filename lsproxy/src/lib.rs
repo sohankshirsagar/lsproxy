@@ -178,7 +178,7 @@ mod test_utils;
 mod test {
     use super::*;
     use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
-    use crate::api_types::set_mount_dir;
+    use crate::api_types::set_thread_local_mount_dir;
     use tempfile::TempDir;
     use std::net::TcpStream;
     use std::time::Duration;
@@ -270,7 +270,9 @@ mod test {
         // Spawn the server in a separate thread
         let _server_thread = thread::spawn(move || {
             // Set the mount directory for the server thread
-            set_mount_dir(&test_path);
+            // This only sets the thread local variable.
+            // That's fine since we don't make any requests
+            set_thread_local_mount_dir(&test_path);
 
             let system = actix_web::rt::System::new();
             if let Err(e) = system.block_on(async {

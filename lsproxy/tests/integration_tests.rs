@@ -1,15 +1,8 @@
-use std::process::{Command, Child};
+use std::process::Command;
 use std::time::Duration;
 use std::thread;
 use reqwest;
-use serde_json::Value;
-
-fn start_server(mount_dir: &str) -> Child {
-    Command::new("cargo")
-        .args(&["run", "--bin", "lsproxy", "--", "--mount-dir", mount_dir])
-        .spawn()
-        .expect("Failed to start server")
-}
+use lsproxy::api_types::{SymbolResponse, FilePosition, Position, Symbol};
 
 fn wait_for_server(url: &str) {
     let client = reqwest::blocking::Client::new();
@@ -23,12 +16,15 @@ fn wait_for_server(url: &str) {
 }
 
 #[test]
-fn test_server_integration() {
+fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
     // Use the sample project directory directly as the mount directory
     let mount_dir = "/mnt/lsproxy_root/sample_project/python";
 
-    let mut server = start_server(mount_dir);
-    
+    Command::new("cargo")
+        .args(&["run", "--bin", "lsproxy", "--", "--mount-dir", mount_dir])
+        .spawn()
+        .expect("Failed to start server");
+
     let base_url = "http://localhost:4444";
     wait_for_server(&format!("{}/v1/workspace/list-files", base_url));
 
@@ -59,11 +55,8 @@ fn test_server_integration() {
 
     assert_eq!(response.status(), 200);
 
-    let symbols: Value = response.json().expect("Failed to parse JSON");
-    assert!(symbols.as_array().unwrap().len() > 0, "No symbols returned");
-
-    // You can add more specific checks for the symbols if needed
-
-    // Shutdown the server
-    server.kill().expect("Failed to kill server process");
+    let returned_symbols: SymbolResponse = serde_json::from_value(response.json().expect("Failed to parse JSON"))?;
+    let expected = SymbolResponse { raw_response: None, symbols: vec![Symbol { name: String::from("graph"), kind: String::from("variable"), start_position: FilePosition { path: String::from("main.py"), position: Position { line: 5, character: 0 } } }, Symbol { name: String::from("result"), kind: String::from("variable"), start_position: FilePosition { path: String::from("main.py"), position: Position { line: 6, character: 0 } } }, Symbol { name: String::from("cost"), kind: String::from("variable"), start_position: FilePosition { path: String::from("main.py"), position: Position { line: 6, character: 8 } } }, Symbol { name: String::from("barrier"), kind: String::from("variable"), start_position: FilePosition { path: String::from("main.py"), position: Position { line: 10, character: 4 } } }] };
+    assert_eq!(returned_symbols, expected);
+    Ok(())
 }

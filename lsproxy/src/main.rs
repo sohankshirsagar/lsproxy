@@ -1,7 +1,7 @@
 use clap::Parser;
 use env_logger::Env;
 use log::info;
-use lsproxy::{initialize_app_state, run_server, write_openapi_to_file, api_types::set_mount_dir};
+use lsproxy::{api_types::set_global_mount_dir, initialize_app_state, run_server, write_openapi_to_file};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     let cli = Cli::parse();
 
     // Set the mount directory
-    set_mount_dir(&cli.mount_dir);
+    set_global_mount_dir(&cli.mount_dir);
     info!("Mount directory set to: {}", cli.mount_dir);
 
     if cli.write_openapi {
