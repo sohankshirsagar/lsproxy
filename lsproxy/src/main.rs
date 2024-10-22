@@ -16,10 +16,6 @@ struct Cli {
     /// Set the mount directory
     #[arg(short, long, default_value = "/mnt/workspace")]
     mount_dir: String,
-
-    /// Set the port number
-    #[arg(short, long, default_value = "4444")]
-    port: u16,
 }
 
 #[actix_web::main]
@@ -50,5 +46,5 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
-    run_server(app_state, cli.port).await
+    run_server(app_state).await
 }
