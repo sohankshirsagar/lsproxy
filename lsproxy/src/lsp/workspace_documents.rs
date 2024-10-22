@@ -29,9 +29,11 @@ pub trait WorkspaceDocuments: Send + Sync {
 
 pub struct WorkspaceDocumentsHandler {
     cache: Arc<RwLock<HashMap<PathBuf, Option<String>>>>,
+    #[allow(unused)] // TODO: implement subscription
     event_sender: Sender<Event>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
+    #[allow(unused)] // TODO: remove or keep this based on subscription needs
     watcher: RecommendedWatcher,
 }
 
@@ -117,6 +119,7 @@ impl WorkspaceDocumentsHandler {
         }
     }
 
+    #[allow(unused)] // TODO: use this in client to notify servers
     pub fn subscribe_to_file_changes(&self) -> Receiver<Event> {
         self.event_sender.subscribe()
     }
@@ -134,7 +137,18 @@ impl WorkspaceDocumentsHandler {
         }
 
         let start_line = range.start.line as usize;
-        let end_line = (range.end.line as usize).min(total_lines - 1);
+        let mut end_line = range.end.line as usize;
+        let start_char = range.start.character as usize;
+        let mut end_char = range.end.character as usize;
+
+        if end_line >= total_lines {
+            warn!(
+                "End line exceeds total lines: {} >= {}. Adjusting to include up to and including the last line.",
+                end_line, total_lines
+            );
+            end_line = total_lines - 1;
+            end_char = lines[end_line].len();
+        }
 
         if start_line > end_line {
             warn!(
@@ -143,9 +157,6 @@ impl WorkspaceDocumentsHandler {
             );
             return Ok(String::new());
         }
-
-        let start_char = range.start.character as usize;
-        let end_char = range.end.character as usize;
 
         let extracted: Vec<&str> = lines[start_line..=end_line]
             .iter()

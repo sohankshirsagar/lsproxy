@@ -1,4 +1,4 @@
-use log::{debug, warn};
+use log::warn;
 use lsp_types::{
     DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
     SymbolInformation, SymbolKind, Url,
@@ -371,8 +371,6 @@ pub fn uri_to_relative_path_string(uri: &Url) -> String {
 
 pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
     let mount_dir = get_mount_dir();
-    debug!("mount_dir is {:?}", mount_dir);
-    debug!("path is {:?}", path);
     path.strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|e| {
@@ -431,7 +429,6 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
         _ => "unknown",
     }
 }
-
 
 #[cfg(test)]
 mod tests {

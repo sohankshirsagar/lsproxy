@@ -210,6 +210,7 @@ impl LspManager {
                     .collect::<Vec<String>>(),
             );
         }
+        files.sort();
         Ok(files)
     }
 

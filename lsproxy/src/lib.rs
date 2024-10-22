@@ -1,7 +1,7 @@
 use actix_cors::Cors;
 use actix_web::{
     web::{get, post, resource, scope, Data},
-    App, HttpServer
+    App, HttpServer,
 };
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use std::fs;
@@ -9,8 +9,8 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use utoipa::OpenApi;
 use utoipa::openapi::PathItemType;
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod api_types;
@@ -22,7 +22,7 @@ use crate::api_types::{
     get_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
     GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
 };
-use crate::handlers::{find_definition, definitions_in_file, find_references, list_files};
+use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
 use crate::lsp::manager::LspManager;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
@@ -103,15 +103,16 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
     }
 
     let openapi = ApiDoc::openapi();
-    
+
     // Parse the full server URL to get just the path component
-    let server_path = openapi.servers
-        .as_ref()  // Get reference to the Option<Vec>
-        .and_then(|servers| servers.first())  // Get first server if vec is not empty
+    let server_path = openapi
+        .servers
+        .as_ref() // Get reference to the Option<Vec>
+        .and_then(|servers| servers.first()) // Get first server if vec is not empty
         .and_then(|s| url::Url::parse(&s.url).ok())
-        .map(|url| url.path().to_string())  // Convert path to owned String
-        .and_then(|path| path.strip_prefix('/').map(|s| s.to_string()))  // Convert stripped result to String
-        .unwrap_or_else(|| String::new());  // Use empty string as default
+        .map(|url| url.path().to_string()) // Convert path to owned String
+        .and_then(|path| path.strip_prefix('/').map(|s| s.to_string())) // Convert stripped result to String
+        .unwrap_or_else(|| String::new()); // Use empty string as default
 
     HttpServer::new(move || {
         let mut api_scope = scope(format!("/{}", server_path).as_str());
@@ -129,19 +130,15 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
             api_scope = match (path.as_str(), method) {
                 ("/symbol/find-definition", Some(Method::Post)) => 
                     api_scope.service(resource(path).route(post().to(find_definition))),
-                
                 ("/symbol/find-references", Some(Method::Post)) => 
                     api_scope.service(resource(path).route(post().to(find_references))),
-                
                 ("/symbol/definitions-in-file", Some(Method::Get)) => 
                     api_scope.service(resource(path).route(get().to(definitions_in_file))),
-                
                 ("/workspace/list-files", Some(Method::Get)) => 
                     api_scope.service(resource(path).route(get().to(list_files))),
-                
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
-                    p, 
+                    p,
                     m
                 )
             };
@@ -177,13 +174,13 @@ mod test_utils;
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use crate::api_types::set_mount_dir;
-    use tempfile::TempDir;
+    use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use std::net::TcpStream;
-    use std::time::Duration;
-    use std::thread;
     use std::sync::mpsc;
+    use std::thread;
+    use std::time::Duration;
+    use tempfile::TempDir;
 
     fn simple_diff(text1: &str, text2: &str) -> String {
         let lines1: Vec<&str> = text1.lines().collect();
@@ -277,7 +274,8 @@ mod test {
                 match initialize_app_state().await {
                     Ok(app_state) => run_server(app_state).await,
                     Err(e) => {
-                        tx.send(format!("Failed to initialize app state: {}", e)).unwrap();
+                        tx.send(format!("Failed to initialize app state: {}", e))
+                            .unwrap();
                         Ok(())
                     }
                 }

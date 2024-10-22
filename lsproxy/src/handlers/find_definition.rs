@@ -41,7 +41,10 @@ use lsp_types::{
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn find_definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
+pub async fn find_definition(
+    data: Data<AppState>,
+    info: Json<GetDefinitionRequest>,
+) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
         info.position.path, info.position.position.line, info.position.position.character
