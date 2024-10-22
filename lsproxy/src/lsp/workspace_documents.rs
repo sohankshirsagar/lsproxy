@@ -1,12 +1,14 @@
 use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{RecommendedWatcher, RecursiveMode};
+use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::{
     collections::HashMap,
     error::Error,
     path::{Path, PathBuf},
     sync::Arc,
+    time::Duration,
 };
 use tokio::{
     fs::read_to_string,
@@ -29,12 +31,10 @@ pub trait WorkspaceDocuments: Send + Sync {
 
 pub struct WorkspaceDocumentsHandler {
     cache: Arc<RwLock<HashMap<PathBuf, Option<String>>>>,
-    #[allow(unused)] // TODO: implement subscription
-    event_sender: Sender<Event>,
+    event_sender: Sender<DebouncedEvent>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
-    #[allow(unused)] // TODO: remove or keep this based on subscription needs
-    watcher: RecommendedWatcher,
+    debouncer: notify_debouncer_mini::Debouncer<RecommendedWatcher>,
 }
 
 impl WorkspaceDocumentsHandler {
@@ -49,19 +49,25 @@ impl WorkspaceDocumentsHandler {
         let patterns = Arc::new(RwLock::new((include_patterns, exclude_patterns)));
         let root_path = root_path.to_path_buf();
 
-        let mut watcher = RecommendedWatcher::new(
-            move |res: notify::Result<Event>| {
-                if let Ok(event) = res {
-                    let _ = tx.send(event);
+        // Initialize debouncer with a 2-second debounce duration
+        let mut debouncer = new_debouncer(
+            Duration::from_secs(2),
+            move |res: DebounceEventResult| match res {
+                Ok(events) => {
+                    for event in events {
+                        let _ = tx.send(event.clone());
+                    }
                 }
+                Err(e) => error!("Debounce error: {:?}", e),
             },
-            Config::default(),
         )
-        .unwrap();
+        .expect("Failed to create debouncer");
 
-        watcher
+        // Watch the root path recursively
+        debouncer
+            .watcher()
             .watch(&root_path, RecursiveMode::Recursive)
-            .unwrap_or_else(|e| error!("Failed to watch {:?}: {:?}", root_path, e));
+            .expect("Failed to watch path");
 
         let cache_clone = Arc::clone(&cache);
         let patterns_clone = Arc::clone(&patterns);
@@ -69,11 +75,9 @@ impl WorkspaceDocumentsHandler {
         tokio::spawn(async move {
             while let Ok(event) = rx.recv().await {
                 debug!("Received event: {:?}", event);
-                for path in event.paths {
-                    if WorkspaceDocumentsHandler::matches_patterns(&path, &patterns_clone).await {
-                        cache_clone.write().await.clear();
-                        debug!("Cache cleared for {:?}", path);
-                    }
+                if WorkspaceDocumentsHandler::matches_patterns(&event.path, &patterns_clone).await {
+                    cache_clone.write().await.clear();
+                    debug!("Cache cleared for {:?}", event.path);
                 }
             }
         });
@@ -83,7 +87,7 @@ impl WorkspaceDocumentsHandler {
             patterns,
             root_path,
             event_sender,
-            watcher,
+            debouncer,
         }
     }
 
@@ -120,7 +124,7 @@ impl WorkspaceDocumentsHandler {
     }
 
     #[allow(unused)] // TODO: use this in client to notify servers
-    pub fn subscribe_to_file_changes(&self) -> Receiver<Event> {
+    pub fn subscribe_to_file_changes(&self) -> Receiver<DebouncedEvent> {
         self.event_sender.subscribe()
     }
 
