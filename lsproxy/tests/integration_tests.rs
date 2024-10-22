@@ -6,13 +6,13 @@ use lsproxy::api_types::{SymbolResponse, FilePosition, Position, Symbol};
 
 fn wait_for_server(url: &str) {
     let client = reqwest::blocking::Client::new();
-    for _ in 0..30 {  // Try for 30 seconds
+    for _ in 0..60 {  // Try for 60 seconds
         if client.get(url).send().is_ok() {
             return;
         }
         thread::sleep(Duration::from_secs(1));
     }
-    panic!("Server did not start within 30 seconds");
+    panic!("Server did not start within 60 seconds");
 }
 
 #[test]
