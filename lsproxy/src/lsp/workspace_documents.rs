@@ -74,7 +74,6 @@ impl WorkspaceDocumentsHandler {
 
         tokio::spawn(async move {
             while let Ok(event) = rx.recv().await {
-                debug!("Received event: {:?}", event);
                 if WorkspaceDocumentsHandler::matches_patterns(&event.path, &patterns_clone).await {
                     cache_clone.write().await.clear();
                     debug!("Cache cleared for {:?}", event.path);
