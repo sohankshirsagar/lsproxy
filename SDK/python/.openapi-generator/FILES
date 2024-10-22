@@ -1,7 +1,3 @@
-.github/workflows/python.yml
-.gitignore
-.gitlab-ci.yml
-.travis.yml
 README.md
 docs/CodeContext.md
 docs/DefinitionResponse.md
@@ -18,7 +14,6 @@ docs/Symbol.md
 docs/SymbolApi.md
 docs/SymbolResponse.md
 docs/WorkspaceApi.md
-git_push.sh
 lsproxy/__init__.py
 lsproxy/api/__init__.py
 lsproxy/api/symbol_api.py
@@ -47,6 +42,3 @@ pyproject.toml
 requirements.txt
 setup.cfg
 setup.py
-test-requirements.txt
-test/__init__.py
-tox.ini

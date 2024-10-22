@@ -40,7 +40,7 @@ use crate::AppState;
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> HttpResponse {
+pub async fn find_references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
         info.symbol_identifier_position.path,
@@ -49,7 +49,7 @@ pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) 
     );
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let references_result = lsp_manager
-        .references(
+        .find_references(
             &info.symbol_identifier_position.path,
             LspPosition {
                 line: info.symbol_identifier_position.position.line,
@@ -183,7 +183,7 @@ mod test {
             include_raw_response: false,
         });
 
-        let response = references(state, mock_request).await;
+        let response = find_references(state, mock_request).await;
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(

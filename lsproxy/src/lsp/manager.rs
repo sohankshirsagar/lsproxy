@@ -109,12 +109,12 @@ impl LspManager {
         Ok(())
     }
 
-    pub async fn file_symbols(
+    pub async fn definitions_in_file(
         &self,
         file_path: &str,
     ) -> Result<DocumentSymbolResponse, LspManagerError> {
         // Check if the file_path is included in the workspace files
-        let workspace_files = self.workspace_files().await?;
+        let workspace_files = self.list_files().await?;
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
@@ -131,12 +131,12 @@ impl LspManager {
             .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
 
-    pub async fn definition(
+    pub async fn find_definition(
         &self,
         file_path: &str,
         position: Position,
     ) -> Result<GotoDefinitionResponse, LspManagerError> {
-        let workspace_files = self.workspace_files().await.map_err(|e| {
+        let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
         if !workspace_files.iter().any(|f| f == file_path) {
@@ -166,13 +166,13 @@ impl LspManager {
         self.clients.get(&lsp_type).cloned()
     }
 
-    pub async fn references(
+    pub async fn find_references(
         &self,
         file_path: &str,
         position: Position,
         include_declaration: bool,
     ) -> Result<Vec<Location>, LspManagerError> {
-        let workspace_files = self.workspace_files().await.map_err(|e| {
+        let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
         if !workspace_files.iter().any(|f| f == file_path) {
@@ -196,7 +196,7 @@ impl LspManager {
             })
     }
 
-    pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
+    pub async fn list_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
@@ -293,7 +293,7 @@ mod tests {
             .as_ref()
             .ok_or("Manager is not initialized")?;
 
-        let mut result = manager.workspace_files().await?;
+        let mut result = manager.list_files().await?;
         let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
 
         assert_eq!(result.sort(), expected.sort());
@@ -309,7 +309,7 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "main.py";
-        let file_symbols = manager.file_symbols(file_path).await?;
+        let file_symbols = manager.definitions_in_file(file_path).await?;
 
         let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
 
@@ -373,7 +373,7 @@ mod tests {
         let file_path = "graph.py";
 
         let references = manager
-            .references(
+            .find_references(
                 file_path,
                 lsp_types::Position {
                     line: 0,
@@ -424,7 +424,7 @@ mod tests {
             .as_ref()
             .ok_or("Manager is not initialized")?;
         let def_response = manager
-            .definition(
+            .find_definition(
                 "main.py",
                 lsp_types::Position {
                     line: 1,
@@ -473,7 +473,7 @@ mod tests {
             .manager
             .as_ref()
             .ok_or("Manager is not initialized")?;
-        let files = manager.workspace_files().await?;
+        let files = manager.list_files().await?;
 
         assert_eq!(files, vec!["astar_search.js"]);
         Ok(())
@@ -489,7 +489,7 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
-        let file_symbols = manager.file_symbols(file_path).await?;
+        let file_symbols = manager.definitions_in_file(file_path).await?;
 
         let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
 
@@ -719,7 +719,7 @@ mod tests {
         let file_path = "astar_search.js";
 
         let references = manager
-            .references(
+            .find_references(
                 file_path,
                 lsp_types::Position {
                     line: 0,
@@ -769,7 +769,7 @@ mod tests {
             .as_ref()
             .ok_or("Manager is not initialized")?;
         let def_response = manager
-            .definition(
+            .find_definition(
                 "astar_search.js",
                 lsp_types::Position {
                     line: 1,

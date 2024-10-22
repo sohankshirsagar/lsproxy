@@ -22,7 +22,7 @@ use crate::api_types::{
     get_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
     GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
 };
-use crate::handlers::{definition, file_symbols, references, workspace_files};
+use crate::handlers::{find_definition, definitions_in_file, find_references, list_files};
 use crate::lsp::manager::LspManager;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
@@ -41,10 +41,10 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         )
     ),
     paths(
-        crate::handlers::file_symbols,
-        crate::handlers::definition,
-        crate::handlers::references,
-        crate::handlers::workspace_files
+        crate::handlers::definitions_in_file,
+        crate::handlers::find_definition,
+        crate::handlers::find_references,
+        crate::handlers::list_files
     ),
     components(
         schemas(
@@ -128,16 +128,16 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
 
             api_scope = match (path.as_str(), method) {
                 ("/symbol/find-definition", Some(Method::Post)) => 
-                    api_scope.service(resource(path).route(post().to(definition))),
+                    api_scope.service(resource(path).route(post().to(find_definition))),
                 
                 ("/symbol/find-references", Some(Method::Post)) => 
-                    api_scope.service(resource(path).route(post().to(references))),
+                    api_scope.service(resource(path).route(post().to(find_references))),
                 
                 ("/symbol/definitions-in-file", Some(Method::Get)) => 
-                    api_scope.service(resource(path).route(get().to(file_symbols))),
+                    api_scope.service(resource(path).route(get().to(definitions_in_file))),
                 
                 ("/workspace/list-files", Some(Method::Get)) => 
-                    api_scope.service(resource(path).route(get().to(workspace_files))),
+                    api_scope.service(resource(path).route(get().to(list_files))),
                 
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 

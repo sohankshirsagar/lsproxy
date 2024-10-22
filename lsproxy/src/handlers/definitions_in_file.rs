@@ -31,12 +31,12 @@ use crate::AppState;
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn file_symbols(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> HttpResponse {
+pub async fn definitions_in_file(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
 
     let result = {
         let lsp_manager = data.lsp_manager.lock().unwrap();
-        lsp_manager.file_symbols(&info.file_path).await
+        lsp_manager.definitions_in_file(&info.file_path).await
     };
 
     match result {
@@ -88,7 +88,7 @@ mod test {
             include_raw_response: false,
         });
 
-        let response = file_symbols(state, mock_request).await;
+        let response = definitions_in_file(state, mock_request).await;
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(
