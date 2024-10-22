@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**identifier_start_position** | [**FilePosition**](FilePosition.md) |  | 
 **kind** | **str** | The kind of the symbol (e.g., function, class). | 
 **name** | **str** | The name of the symbol. | 
+**start_position** | [**FilePosition**](FilePosition.md) |  | 
 
 ## Example
 

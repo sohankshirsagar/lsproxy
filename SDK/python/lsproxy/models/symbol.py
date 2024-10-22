@@ -27,10 +27,10 @@ class Symbol(BaseModel):
     """
     Symbol
     """ # noqa: E501
-    identifier_start_position: FilePosition
     kind: StrictStr = Field(description="The kind of the symbol (e.g., function, class).")
     name: StrictStr = Field(description="The name of the symbol.")
-    __properties: ClassVar[List[str]] = ["identifier_start_position", "kind", "name"]
+    start_position: FilePosition
+    __properties: ClassVar[List[str]] = ["kind", "name", "start_position"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -71,9 +71,9 @@ class Symbol(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of identifier_start_position
-        if self.identifier_start_position:
-            _dict['identifier_start_position'] = self.identifier_start_position.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of start_position
+        if self.start_position:
+            _dict['start_position'] = self.start_position.to_dict()
         return _dict
 
     @classmethod
@@ -86,9 +86,9 @@ class Symbol(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "identifier_start_position": FilePosition.from_dict(obj["identifier_start_position"]) if obj.get("identifier_start_position") is not None else None,
             "kind": obj.get("kind"),
-            "name": obj.get("name")
+            "name": obj.get("name"),
+            "start_position": FilePosition.from_dict(obj["start_position"]) if obj.get("start_position") is not None else None
         })
         return _obj
 

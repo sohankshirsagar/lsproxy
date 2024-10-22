@@ -43,17 +43,17 @@ use crate::AppState;
 pub async fn find_references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
-        info.symbol_identifier_position.path,
-        info.symbol_identifier_position.position.line,
-        info.symbol_identifier_position.position.character
+        info.start_position.path,
+        info.start_position.position.line,
+        info.start_position.position.character
     );
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let references_result = lsp_manager
         .find_references(
-            &info.symbol_identifier_position.path,
+            &info.start_position.path,
             LspPosition {
-                line: info.symbol_identifier_position.position.line,
-                character: info.symbol_identifier_position.position.character,
+                line: info.start_position.position.line,
+                character: info.start_position.position.character,
             },
             info.include_declaration,
         )
@@ -171,7 +171,7 @@ mod test {
         let state = initialize_app_state().await?;
 
         let mock_request = Json(GetReferencesRequest {
-            symbol_identifier_position: FilePosition {
+            start_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
                     line: 0,

@@ -317,7 +317,7 @@ mod tests {
             Symbol {
                 name: String::from("graph"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 5,
@@ -328,7 +328,7 @@ mod tests {
             Symbol {
                 name: String::from("result"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -339,7 +339,7 @@ mod tests {
             Symbol {
                 name: String::from("cost"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -350,7 +350,7 @@ mod tests {
             Symbol {
                 name: String::from("barrier"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 10,
@@ -497,7 +497,7 @@ mod tests {
             Symbol {
                 name: String::from("aStar"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 4,
@@ -508,7 +508,7 @@ mod tests {
             Symbol {
                 name: String::from("filter() callback"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 33,
@@ -519,7 +519,7 @@ mod tests {
             Symbol {
                 name: String::from("forEach() callback"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 36,
@@ -530,7 +530,7 @@ mod tests {
             Symbol {
                 name: String::from("\"coord\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 38,
@@ -541,7 +541,7 @@ mod tests {
             Symbol {
                 name: String::from("\"distance\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 39,
@@ -552,7 +552,7 @@ mod tests {
             Symbol {
                 name: String::from("\"heuristic\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 40,
@@ -563,7 +563,7 @@ mod tests {
             Symbol {
                 name: String::from("\"previous\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 41,
@@ -574,7 +574,7 @@ mod tests {
             Symbol {
                 name: String::from("lambda"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 17,
@@ -585,7 +585,7 @@ mod tests {
             Symbol {
                 name: String::from("px"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 21,
@@ -596,7 +596,7 @@ mod tests {
             Symbol {
                 name: String::from("py"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 21,
@@ -607,7 +607,7 @@ mod tests {
             Symbol {
                 name: String::from("newClosed"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 45,
@@ -618,7 +618,7 @@ mod tests {
             Symbol {
                 name: String::from("newCurrent"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 48,
@@ -629,7 +629,7 @@ mod tests {
             Symbol {
                 name: String::from("newOpen"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 29,
@@ -640,7 +640,7 @@ mod tests {
             Symbol {
                 name: String::from("newx"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 53,
@@ -651,7 +651,7 @@ mod tests {
             Symbol {
                 name: String::from("newy"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 53,
@@ -662,7 +662,7 @@ mod tests {
             Symbol {
                 name: String::from("x"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 13,
@@ -673,7 +673,7 @@ mod tests {
             Symbol {
                 name: String::from("y"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 13,
@@ -684,7 +684,7 @@ mod tests {
             Symbol {
                 name: String::from("board"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 60,
@@ -695,7 +695,7 @@ mod tests {
             Symbol {
                 name: String::from("manhattan"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 0,

@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **include_code_context_lines** | **int** | Whether to include the source code of the symbol in the response. Defaults to none. | [optional] 
 **include_declaration** | **bool** | Whether to include the declaration (definition) of the symbol in the response. Defaults to false. | [optional] 
 **include_raw_response** | **bool** | Whether to include the raw response from the langserver in the response. Defaults to false. | [optional] 
-**symbol_identifier_position** | [**FilePosition**](FilePosition.md) |  | 
+**start_position** | [**FilePosition**](FilePosition.md) |  | 
 
 ## Example
 

@@ -107,7 +107,7 @@ mod test {
                 Symbol {
                     name: String::from("graph"),
                     kind: String::from("variable"),
-                    identifier_start_position: FilePosition {
+                    start_position: FilePosition {
                         path: String::from("main.py"),
                         position: Position {
                             line: 5,
@@ -118,7 +118,7 @@ mod test {
                 Symbol {
                     name: String::from("result"),
                     kind: String::from("variable"),
-                    identifier_start_position: FilePosition {
+                    start_position: FilePosition {
                         path: String::from("main.py"),
                         position: Position {
                             line: 6,
@@ -129,7 +129,7 @@ mod test {
                 Symbol {
                     name: String::from("cost"),
                     kind: String::from("variable"),
-                    identifier_start_position: FilePosition {
+                    start_position: FilePosition {
                         path: String::from("main.py"),
                         position: Position {
                             line: 6,
@@ -140,7 +140,7 @@ mod test {
                 Symbol {
                     name: String::from("barrier"),
                     kind: String::from("variable"),
-                    identifier_start_position: FilePosition {
+                    start_position: FilePosition {
                         path: String::from("main.py"),
                         position: Position {
                             line: 10,

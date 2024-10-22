@@ -91,7 +91,7 @@ pub struct Symbol {
     pub kind: String,
 
     /// The start position of the symbol's identifier.
-    pub identifier_start_position: FilePosition,
+    pub start_position: FilePosition,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -113,7 +113,7 @@ pub struct GetDefinitionRequest {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    pub symbol_identifier_position: FilePosition,
+    pub start_position: FilePosition,
 
     /// Whether to include the declaration (definition) of the symbol in the response.
     /// Defaults to false.
@@ -319,7 +319,7 @@ impl From<SymbolInformation> for Symbol {
         Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition::from(symbol.location),
+            start_position: FilePosition::from(symbol.location),
         }
     }
 }
@@ -329,7 +329,7 @@ impl Symbol {
         Symbol {
             name: symbol.name.to_string(),
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition {
+            start_position: FilePosition {
                 path: file_path.to_owned(),
                 position: Position {
                     line: symbol.selection_range.start.line,
@@ -348,7 +348,7 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
                 .map(|symbol| Symbol {
                     name: symbol.name,
                     kind: symbol_kind_to_string(symbol.kind).to_owned(),
-                    identifier_start_position: FilePosition::from(symbol.location),
+                    start_position: FilePosition::from(symbol.location),
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
@@ -474,8 +474,8 @@ mod tests {
 
         assert_eq!(symbol.name, "test_function");
         assert_eq!(symbol.kind, "function");
-        assert_eq!(symbol.identifier_start_position.path, file_path);
-        assert_eq!(symbol.identifier_start_position.position.line, 10);
-        assert_eq!(symbol.identifier_start_position.position.character, 4);
+        assert_eq!(symbol.start_position.path, file_path);
+        assert_eq!(symbol.start_position.position.line, 10);
+        assert_eq!(symbol.start_position.position.character, 4);
     }
 }

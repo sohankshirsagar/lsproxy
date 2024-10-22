@@ -308,7 +308,7 @@
       "GetReferencesRequest": {
         "type": "object",
         "required": [
-          "symbol_identifier_position"
+          "start_position"
         ],
         "properties": {
           "include_code_context_lines": {
@@ -328,7 +328,7 @@
             "description": "Whether to include the raw response from the langserver in the response.\nDefaults to false.",
             "example": false
           },
-          "symbol_identifier_position": {
+          "start_position": {
             "$ref": "#/components/schemas/FilePosition"
           }
         }
@@ -396,12 +396,9 @@
         "required": [
           "name",
           "kind",
-          "identifier_start_position"
+          "start_position"
         ],
         "properties": {
-          "identifier_start_position": {
-            "$ref": "#/components/schemas/FilePosition"
-          },
           "kind": {
             "type": "string",
             "description": "The kind of the symbol (e.g., function, class).",
@@ -411,6 +408,9 @@
             "type": "string",
             "description": "The name of the symbol.",
             "example": "User"
+          },
+          "start_position": {
+            "$ref": "#/components/schemas/FilePosition"
           }
         }
       },

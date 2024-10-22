@@ -31,8 +31,8 @@ class GetReferencesRequest(BaseModel):
     include_code_context_lines: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Whether to include the source code of the symbol in the response. Defaults to none.")
     include_declaration: Optional[StrictBool] = Field(default=None, description="Whether to include the declaration (definition) of the symbol in the response. Defaults to false.")
     include_raw_response: Optional[StrictBool] = Field(default=None, description="Whether to include the raw response from the langserver in the response. Defaults to false.")
-    symbol_identifier_position: FilePosition
-    __properties: ClassVar[List[str]] = ["include_code_context_lines", "include_declaration", "include_raw_response", "symbol_identifier_position"]
+    start_position: FilePosition
+    __properties: ClassVar[List[str]] = ["include_code_context_lines", "include_declaration", "include_raw_response", "start_position"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -73,9 +73,9 @@ class GetReferencesRequest(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of symbol_identifier_position
-        if self.symbol_identifier_position:
-            _dict['symbol_identifier_position'] = self.symbol_identifier_position.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of start_position
+        if self.start_position:
+            _dict['start_position'] = self.start_position.to_dict()
         # set to None if include_code_context_lines (nullable) is None
         # and model_fields_set contains the field
         if self.include_code_context_lines is None and "include_code_context_lines" in self.model_fields_set:
@@ -96,7 +96,7 @@ class GetReferencesRequest(BaseModel):
             "include_code_context_lines": obj.get("include_code_context_lines"),
             "include_declaration": obj.get("include_declaration"),
             "include_raw_response": obj.get("include_raw_response"),
-            "symbol_identifier_position": FilePosition.from_dict(obj["symbol_identifier_position"]) if obj.get("symbol_identifier_position") is not None else None
+            "start_position": FilePosition.from_dict(obj["start_position"]) if obj.get("start_position") is not None else None
         })
         return _obj
 
