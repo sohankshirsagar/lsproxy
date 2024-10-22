@@ -1,7 +1,7 @@
 use actix_cors::Cors;
 use actix_web::{
     web::{get, post, resource, scope, Data},
-    App, HttpServer,
+    App, HttpServer
 };
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use std::fs;
@@ -10,6 +10,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
+use utoipa::openapi::PathItemType;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod api_types;
@@ -31,6 +32,14 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        title = "lsproxy",
+        version = "0.1.0",
+        license(
+            name = "Apache-2.0",
+            url = "https://www.apache.org/licenses/LICENSE-2.0"
+        )
+    ),
     paths(
         crate::handlers::file_symbols,
         crate::handlers::definition,
@@ -58,7 +67,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         (name = "lsproxy-api", description = "LSP Proxy API")
     ),
     servers(
-        (url = "/v1", description = "API v1")
+        (url = "http://localhost:4444/v1", description = "API server v1")
     )
 )]
 pub struct ApiDoc;
@@ -77,34 +86,75 @@ pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error
     Ok(Data::new(AppState { lsp_manager }))
 }
 
+// Helper enum for cleaner matching
+#[derive(Debug)]
+enum Method {
+    Get,
+    Post,
+}
+
 pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
-    // Check if mount dir exists and is mounted
     if let Err(e) = check_mount_dir() {
-        eprintln!("Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location in your docker run or docker compose commands.", get_mount_dir().to_string_lossy());
+        eprintln!(
+            "Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
+            get_mount_dir().to_string_lossy()
+        );
         return Err(e);
     }
 
     let openapi = ApiDoc::openapi();
+    
+    // Parse the full server URL to get just the path component
+    let server_path = openapi.servers
+        .as_ref()  // Get reference to the Option<Vec>
+        .and_then(|servers| servers.first())  // Get first server if vec is not empty
+        .and_then(|s| url::Url::parse(&s.url).ok())
+        .map(|url| url.path().to_string())  // Convert path to owned String
+        .and_then(|path| path.strip_prefix('/').map(|s| s.to_string()))  // Convert stripped result to String
+        .unwrap_or_else(|| String::new());  // Use empty string as default
+
     HttpServer::new(move || {
+        let mut api_scope = scope(format!("/{}", server_path).as_str());
+
+        // Add routes based on OpenAPI paths
+        for (path, path_item) in openapi.paths.paths.iter() {
+            let method = if path_item.operations.get(&PathItemType::Get).is_some() {
+                Some(Method::Get)
+            } else if path_item.operations.get(&PathItemType::Post).is_some() {
+                Some(Method::Post)
+            } else {
+                None
+            };
+
+            api_scope = match (path.as_str(), method) {
+                ("/symbol/find-definition", Some(Method::Post)) => 
+                    api_scope.service(resource(path).route(post().to(definition))),
+                
+                ("/symbol/find-references", Some(Method::Post)) => 
+                    api_scope.service(resource(path).route(post().to(references))),
+                
+                ("/symbol/definitions-in-file", Some(Method::Get)) => 
+                    api_scope.service(resource(path).route(get().to(file_symbols))),
+                
+                ("/workspace/list-files", Some(Method::Get)) => 
+                    api_scope.service(resource(path).route(get().to(workspace_files))),
+                
+                (p, m) => panic!(
+                    "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
+                    p, 
+                    m
+                )
+            };
+        }
+
         App::new()
             .wrap(Cors::permissive())
             .app_data(app_state.clone())
             .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", openapi.clone())
             )
-            .service(
-                scope("/v1")
-                    .service(
-                        scope("/symbol")
-                            .service(resource("/definitions-in-file").route(get().to(file_symbols)))
-                            .service(resource("/find-definition").route(post().to(definition)))
-                            .service(resource("/find-references").route(post().to(references))),
-                    )
-                    .service(
-                        scope("/workspace")
-                            .service(resource("/list-files").route(get().to(workspace_files))),
-                    ),
-            )
+            .service(api_scope)
     })
     .bind("0.0.0.0:4444")?
     .run()
