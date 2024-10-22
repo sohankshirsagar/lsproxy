@@ -31,7 +31,10 @@ use crate::AppState;
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn definitions_in_file(data: Data<AppState>, info: Query<FileSymbolsRequest>) -> HttpResponse {
+pub async fn definitions_in_file(
+    data: Data<AppState>,
+    info: Query<FileSymbolsRequest>,
+) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
 
     let result = {

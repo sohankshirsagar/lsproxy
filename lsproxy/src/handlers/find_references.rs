@@ -40,7 +40,10 @@ use crate::AppState;
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn find_references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> HttpResponse {
+pub async fn find_references(
+    data: Data<AppState>,
+    info: Json<GetReferencesRequest>,
+) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
         info.start_position.path,

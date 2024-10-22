@@ -1,7 +1,9 @@
 use clap::Parser;
 use env_logger::Env;
 use log::info;
-use lsproxy::{api_types::set_global_mount_dir, initialize_app_state, run_server, write_openapi_to_file};
+use lsproxy::{
+    api_types::set_global_mount_dir, initialize_app_state, run_server, write_openapi_to_file,
+};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
