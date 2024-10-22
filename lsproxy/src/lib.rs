@@ -20,8 +20,9 @@ mod lsp;
 mod utils;
 
 use crate::api_types::{
-    get_mount_dir, set_global_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
-    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
+    get_mount_dir, set_global_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest,
+    GetDefinitionRequest, GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol,
+    SymbolResponse,
 };
 use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
 use crate::lsp::manager::LspManager;
@@ -82,7 +83,7 @@ pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error
 }
 
 pub async fn initialize_app_state_with_mount_dir(
-    mount_dir_override: Option<&str>
+    mount_dir_override: Option<&str>,
 ) -> Result<Data<AppState>, Box<dyn std::error::Error>> {
     if let Some(global_mount_dir) = mount_dir_override {
         set_global_mount_dir(global_mount_dir);
@@ -91,8 +92,6 @@ pub async fn initialize_app_state_with_mount_dir(
 
     let mount_dir_path = get_mount_dir();
     let mount_dir = mount_dir_path.to_string_lossy();
-
-
 
     let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
     lsp_manager
