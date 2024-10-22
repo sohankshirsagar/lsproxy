@@ -76,12 +76,16 @@ pub struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
 }
 
-pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
+pub async fn initialize_app_state(mount_dir: Option<String>) -> Result<Data<AppState>, Box<dyn std::error::Error>> {
+    let mount_dir = mount_dir.unwrap_or_else(|| "/mnt/workspace".to_string());
+    set_global_mount_dir(&mount_dir);
+    info!("Mount directory set to: {}", mount_dir);
+
     let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
     lsp_manager
         .lock()
         .unwrap()
-        .start_langservers(get_mount_dir().to_str().unwrap())
+        .start_langservers(&mount_dir)
         .await?;
     Ok(Data::new(AppState { lsp_manager }))
 }
