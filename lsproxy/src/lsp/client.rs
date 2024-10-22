@@ -341,7 +341,6 @@ pub trait LspClient: Send {
             .into_iter()
             .map(|f| format!("**/{f}"))
             .collect();
-        debug!("include_patterns: {:?}", include_patterns);
         let exclude_patterns = DEFAULT_EXCLUDE_PATTERNS
             .iter()
             .map(|&s| s.to_string())
@@ -352,14 +351,6 @@ pub trait LspClient: Send {
                 for dir in dirs {
                     let folder_path = Path::new(&root_path).join(&dir);
                     if let Ok(uri) = Url::from_file_path(&folder_path) {
-                        // remore folders that are parents of this one, because we prefer more specific paths
-                        // this is pretty inefficient but moving on
-                        workspace_folders.retain(|folder: &WorkspaceFolder| {
-                            !uri.to_file_path()
-                                .unwrap()
-                                .starts_with(folder.uri.to_file_path().unwrap())
-                        });
-
                         workspace_folders.push(WorkspaceFolder {
                             uri,
                             name: folder_path
@@ -376,14 +367,11 @@ pub trait LspClient: Send {
 
         if workspace_folders.is_empty() {
             // Fallback: use the root_path itself as a workspace folder
+            warn!("No workspace folders found. Using root path as workspace.");
             if let Ok(uri) = Url::from_file_path(&root_path) {
                 workspace_folders.push(WorkspaceFolder {
                     uri,
-                    name: Path::new(&root_path)
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    name: root_path.to_string(),
                 });
             }
         }

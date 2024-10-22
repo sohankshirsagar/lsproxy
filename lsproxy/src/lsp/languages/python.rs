@@ -8,7 +8,6 @@ use crate::lsp::{
 };
 
 pub const PYRIGHT_ROOT_FILES: &[&str] = &[
-    ".git",
     "pyproject.toml",
     "setup.py",
     "setup.cfg",

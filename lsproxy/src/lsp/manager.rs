@@ -32,7 +32,7 @@ impl LspManager {
         let mut lsps = Vec::new();
         for lsp in [
             SupportedLanguages::Python,
-            SupportedLanguages::TypeScriptJavaScript,
+            //SupportedLanguages::TypeScriptJavaScript,
             SupportedLanguages::Rust,
         ] {
             let patterns = match lsp {
