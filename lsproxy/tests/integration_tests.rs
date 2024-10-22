@@ -5,8 +5,6 @@ use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use std::process::Command;
-use std::fs;
 
 fn wait_for_server(url: &str) {
     let client = reqwest::blocking::Client::new();
@@ -148,55 +146,5 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
         ],
     };
     assert_eq!(returned_symbols, expected);
-    Ok(())
-}
-
-#[test]
-fn test_main_function() -> Result<(), Box<dyn std::error::Error>> {
-    // Use a temporary directory for the mount directory
-    let temp_dir = tempfile::tempdir()?;
-    let mount_dir = temp_dir.path().to_str().unwrap().to_string();
-
-    // Copy the sample project to the temporary directory
-    fs::copy_dir_all("/mnt/lsproxy_root/sample_project/python", &mount_dir)?;
-
-    // Start the server in a separate process
-    let mut child = Command::new("cargo")
-        .args(&["run", "--", "--mount-dir", &mount_dir])
-        .spawn()?;
-
-    // Give the server some time to start
-    thread::sleep(Duration::from_secs(5));
-
-    // Check if the server is running
-    match TcpStream::connect("0.0.0.0:4444") {
-        Ok(_) => println!("Server is running"),
-        Err(e) => return Err(format!("Failed to connect to server: {}", e).into()),
-    }
-
-    let base_url = "http://localhost:4444";
-    wait_for_server(&format!("{}/v1/workspace/list-files", base_url));
-
-    let client = reqwest::blocking::Client::new();
-    
-    // Test workspace/list-files endpoint
-    let response = client
-        .get(&format!("{}/v1/workspace/list-files", base_url))
-        .send()?;
-    assert_eq!(response.status(), 200);
-
-    let workspace_files: Vec<String> = response.json()?;
-    let mut expected_files = vec!["graph.py", "main.py", "search.py", "__init__.py"];
-    
-    assert_eq!(workspace_files.len(), expected_files.len(), "Unexpected number of files");
-
-    workspace_files.sort();
-    expected_files.sort();
-    assert_eq!(workspace_files, expected_files, "File lists do not match");
-
-    // Clean up
-    child.kill()?;
-    child.wait()?;
-
     Ok(())
 }
