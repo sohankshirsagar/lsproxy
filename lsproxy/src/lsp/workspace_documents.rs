@@ -149,7 +149,7 @@ impl WorkspaceDocumentsHandler {
                 "End line exceeds total lines: {} >= {}. Adjusting to include up to and including the last line.",
                 end_line, total_lines
             );
-            end_line = total_lines - 1;
+            end_line = total_lines.saturating_sub(1);
             end_char = lines[end_line].len();
         }
 
