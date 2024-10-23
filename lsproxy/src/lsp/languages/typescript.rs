@@ -18,8 +18,7 @@ pub struct TypeScriptLanguageClient {
     workspace_documents: WorkspaceDocumentsHandler,
 }
 
-pub const TYPESCRIPT_ROOT_FILES: &[&str] =
-    &["tsconfig.json", "jsconfig.json", "package.json", ".git"];
+pub const TYPESCRIPT_ROOT_FILES: &[&str] = &["tsconfig.json", "jsconfig.json", "package.json"];
 
 pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
 

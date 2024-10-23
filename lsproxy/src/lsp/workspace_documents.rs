@@ -1,12 +1,14 @@
 use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{RecommendedWatcher, RecursiveMode};
+use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::{
     collections::HashMap,
     error::Error,
     path::{Path, PathBuf},
     sync::Arc,
+    time::Duration,
 };
 use tokio::{
     fs::read_to_string,
@@ -29,10 +31,10 @@ pub trait WorkspaceDocuments: Send + Sync {
 
 pub struct WorkspaceDocumentsHandler {
     cache: Arc<RwLock<HashMap<PathBuf, Option<String>>>>,
-    event_sender: Sender<Event>,
+    event_sender: Sender<DebouncedEvent>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
-    watcher: RecommendedWatcher,
+    debouncer: notify_debouncer_mini::Debouncer<RecommendedWatcher>,
 }
 
 impl WorkspaceDocumentsHandler {
@@ -47,31 +49,34 @@ impl WorkspaceDocumentsHandler {
         let patterns = Arc::new(RwLock::new((include_patterns, exclude_patterns)));
         let root_path = root_path.to_path_buf();
 
-        let mut watcher = RecommendedWatcher::new(
-            move |res: notify::Result<Event>| {
-                if let Ok(event) = res {
-                    let _ = tx.send(event);
+        // Initialize debouncer with a 2-second debounce duration
+        let mut debouncer = new_debouncer(
+            Duration::from_secs(2),
+            move |res: DebounceEventResult| match res {
+                Ok(events) => {
+                    for event in events {
+                        let _ = tx.send(event.clone());
+                    }
                 }
+                Err(e) => error!("Debounce error: {:?}", e),
             },
-            Config::default(),
         )
-        .unwrap();
+        .expect("Failed to create debouncer");
 
-        watcher
+        // Watch the root path recursively
+        debouncer
+            .watcher()
             .watch(&root_path, RecursiveMode::Recursive)
-            .unwrap_or_else(|e| error!("Failed to watch {:?}: {:?}", root_path, e));
+            .expect("Failed to watch path");
 
         let cache_clone = Arc::clone(&cache);
         let patterns_clone = Arc::clone(&patterns);
 
         tokio::spawn(async move {
             while let Ok(event) = rx.recv().await {
-                debug!("Received event: {:?}", event);
-                for path in event.paths {
-                    if WorkspaceDocumentsHandler::matches_patterns(&path, &patterns_clone).await {
-                        cache_clone.write().await.clear();
-                        debug!("Cache cleared for {:?}", path);
-                    }
+                if WorkspaceDocumentsHandler::matches_patterns(&event.path, &patterns_clone).await {
+                    cache_clone.write().await.clear();
+                    debug!("Cache cleared for {:?}", event.path);
                 }
             }
         });
@@ -81,7 +86,7 @@ impl WorkspaceDocumentsHandler {
             patterns,
             root_path,
             event_sender,
-            watcher,
+            debouncer,
         }
     }
 
@@ -117,7 +122,8 @@ impl WorkspaceDocumentsHandler {
         }
     }
 
-    pub fn subscribe_to_file_changes(&self) -> Receiver<Event> {
+    #[allow(unused)] // TODO: use this in client to notify servers
+    pub fn subscribe_to_file_changes(&self) -> Receiver<DebouncedEvent> {
         self.event_sender.subscribe()
     }
 
@@ -134,7 +140,18 @@ impl WorkspaceDocumentsHandler {
         }
 
         let start_line = range.start.line as usize;
-        let end_line = (range.end.line as usize).min(total_lines - 1);
+        let mut end_line = range.end.line as usize;
+        let start_char = range.start.character as usize;
+        let mut end_char = range.end.character as usize;
+
+        if end_line >= total_lines {
+            warn!(
+                "End line exceeds total lines: {} >= {}. Adjusting to include up to and including the last line.",
+                end_line, total_lines
+            );
+            end_line = total_lines.saturating_sub(1);
+            end_char = lines[end_line].len();
+        }
 
         if start_line > end_line {
             warn!(
@@ -143,9 +160,6 @@ impl WorkspaceDocumentsHandler {
             );
             return Ok(String::new());
         }
-
-        let start_char = range.start.character as usize;
-        let end_char = range.end.character as usize;
 
         let extracted: Vec<&str> = lines[start_line..=end_line]
             .iter()
