@@ -82,6 +82,7 @@ impl PyrightClient {
             process: process_handler,
             json_rpc: json_rpc_handler,
             workspace_documents: workspace_documents,
+            pending_requests: PendingRequests::new(),
         })
     }
 }

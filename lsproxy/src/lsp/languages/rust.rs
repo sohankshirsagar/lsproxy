@@ -4,14 +4,15 @@ use async_trait::async_trait;
 use tokio::process::Command;
 
 use crate::lsp::{
-    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, ProcessHandler,
-    DEFAULT_EXCLUDE_PATTERNS,
+    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, PendingRequests,
+    ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
 };
 
 pub struct RustAnalyzerClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
     workspace_documents: WorkspaceDocumentsHandler,
+    pending_requests: PendingRequests,
 }
 
 pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
@@ -38,12 +39,16 @@ impl LspClient for RustAnalyzerClient {
         &mut self.workspace_documents
     }
 
+    fn get_pending_requests(&mut self) -> &mut PendingRequests {
+        &mut self.pending_requests
+    }
+
     async fn setup_workspace(
         &mut self,
         _root_path: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         // This is required for workspace features like go to definition to work
-        self.send_request("rust-analyzer/reloadWorkspace", None, false)
+        self.send_request("rust-analyzer/reloadWorkspace", None)
             .await?;
         Ok(())
     }
@@ -80,6 +85,7 @@ impl RustAnalyzerClient {
             process: process_handler,
             json_rpc: json_rpc_handler,
             workspace_documents,
+            pending_requests: PendingRequests::new(),
         })
     }
 }

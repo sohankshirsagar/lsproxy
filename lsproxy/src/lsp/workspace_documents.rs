@@ -136,14 +136,8 @@ impl WorkspaceDocumentsHandler {
             return Ok(String::new());
         }
 
-<<<<<<< HEAD
-        // Validate and adjust line bounds
-        let start_line = range.start.line.min(total_lines as u32 - 1) as usize;
-        let end_line = range.end.line.min(total_lines as u32 - 1) as usize;
-=======
         let start_line = range.start.line as usize;
         let mut end_line = range.end.line as usize;
-        let start_char = range.start.character as usize;
         let mut end_char = range.end.character as usize;
 
         if end_line >= total_lines {
@@ -154,7 +148,6 @@ impl WorkspaceDocumentsHandler {
             end_line = total_lines.saturating_sub(1);
             end_char = lines[end_line].len();
         }
->>>>>>> 1da1ead9727c0de461dedd19f1b911b547f67b76
 
         // If start line is greater than end line, return empty string
         if start_line > end_line {

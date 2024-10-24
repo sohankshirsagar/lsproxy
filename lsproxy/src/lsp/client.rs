@@ -12,10 +12,11 @@ use lsp_types::{
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
     WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
+use tokio::sync::Mutex;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tokio::sync::oneshot::{channel, Sender};
 
 use super::workspace_documents::WorkspaceDocumentsHandler;
@@ -31,12 +32,13 @@ pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     ".git",
 ];
 
+#[derive(Clone)]
 pub struct PendingRequests {
-    channels: Arc<Mutex<HashMap<String, Sender<JsonRpcMessage>>>>,
+    channels: Arc<Mutex<HashMap<u64, Sender<JsonRpcMessage>>>>,
 }
 
 impl PendingRequests {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             channels: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -44,25 +46,25 @@ impl PendingRequests {
 
     async fn add(
         &self,
-        id: String,
+        id: u64,
         sender: Sender<JsonRpcMessage>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.channels
             .lock()
-            .map_err(|e| format!("Failed to acquire lock: {}", e))?
+            .await
             .insert(id, sender);
         Ok(())
     }
 
     async fn remove(
         &self,
-        id: &str,
+        id: u64,
     ) -> Result<Option<Sender<JsonRpcMessage>>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .channels
             .lock()
-            .map_err(|e| format!("Failed to acquire lock: {}", e))?
-            .remove(id))
+            .await
+            .remove(&id))
     }
 }
 
@@ -73,6 +75,7 @@ pub trait LspClient: Send {
         root_path: String,
     ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
         debug!("Initializing LSP client with root path: {:?}", root_path);
+        self.start_response_listener().await?;
 
         let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
         debug!("Found workspace folders: {:?}", workspace_folders);
@@ -97,7 +100,7 @@ pub trait LspClient: Send {
         };
 
         let result = self
-            .send_request("initialize", Some(serde_json::to_value(params)?), true)
+            .send_request("initialize", Some(serde_json::to_value(params)?))
             .await?;
         let init_result: InitializeResult = serde_json::from_value(result)?;
         debug!("Initialization successful: {:?}", init_result);
@@ -109,41 +112,29 @@ pub trait LspClient: Send {
         &mut self,
         method: &str,
         params: Option<serde_json::Value>,
-        expect_response: bool,
     ) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
-        let params = params.unwrap_or(serde_json::json!({}));
-        let request = self.get_json_rpc().create_request(method, params);
-        let id = self.get_json_rpc().get_last_id().to_string();
+        let (id, request) = self.get_json_rpc().create_request(method, params);
 
-        if !expect_response {
-            let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-            self.get_process().send(&message).await?;
-            return Ok(serde_json::Value::Null);
+        let (response_sender, response_receiver) = channel::<JsonRpcMessage>();
+        self.get_pending_requests().add(id, response_sender).await?;
+
+        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+        self.get_process().send(&message).await?;
+
+        let response = response_receiver
+            .await
+            .map_err(|e| format!("Failed to receive response: {}", e))?;
+
+        if let Some(result) = response.result {
+            Ok(result)
+        } else if let Some(error) = response.error {
+            Err(error.into())
         } else {
-            let (response_sender, response_receiver) = channel();
-            self.get_pending_requests()
-                .add(id.clone(), response_sender)
-                .await;
-
-            let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-            self.get_process().send(&message).await?;
-
-            let response = response_receiver
-                .await
-                .map_err(|e| format!("Failed to receive response: {}", e))?;
-            self.get_pending_requests().remove(&id).await?;
-
-            if let Some(result) = response.result {
-                Ok(result)
-            } else if let Some(error) = response.error {
-                Err(error.into())
-            } else {
-                Err("Unexpected empty response".into())
-            }
+            Ok(serde_json::Value::Null)
         }
     }
 
-    async fn start_response_listener(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn start_response_listener(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         let process = self.get_process().clone();
         let pending_requests = self.get_pending_requests().clone();
         let json_rpc = self.get_json_rpc().clone();
@@ -154,11 +145,18 @@ pub trait LspClient: Send {
                     Ok(raw_response) => {
                         match json_rpc.parse_message(&raw_response) {
                             Ok(message) => {
-                                if let Some(id) = message.id.as_ref().and_then(|v| v.as_str()) {
-                                    if let Some(sender) = pending_requests.remove(id).await.unwrap() {
-                                        if sender.send(message).is_err() {
+                                debug!("Parsed message id: {:?}", message.id);
+                                if let Some(id) = message.id {
+                                    debug!("Received response for request {}", id);
+                                    if let Some(sender) = pending_requests.remove(id).await.unwrap()
+                                    {
+                                        let message_clone = message.clone();
+                                        if sender.send(message_clone).is_err() {
                                             error!("Failed to send response for request {}", id);
                                         }
+                                    } else {
+                                        error!("Failed to remove pending request for {}", id);
+                                        error!("Message: {:?}", message);
                                     }
                                 } else {
                                     // Handle notifications or other non-request messages
@@ -232,7 +230,6 @@ pub trait LspClient: Send {
             .send_request(
                 "textDocument/definition",
                 Some(serde_json::to_value(params)?),
-                true,
             )
             .await?;
 
@@ -252,9 +249,9 @@ pub trait LspClient: Send {
             query: query.to_string(),
             ..Default::default()
         };
-        let request = self
+        let (id, request) = self
             .get_json_rpc()
-            .create_request("workspace/symbol", serde_json::to_value(params)?);
+            .create_request("workspace/symbol", Some(serde_json::to_value(params)?));
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
 
@@ -290,7 +287,6 @@ pub trait LspClient: Send {
             .send_request(
                 "textDocument/documentSymbol",
                 Some(serde_json::to_value(params)?),
-                true,
             )
             .await?;
 
@@ -323,7 +319,6 @@ pub trait LspClient: Send {
             .send_request(
                 "textDocument/references",
                 Some(serde_json::to_value(params)?),
-                true,
             )
             .await?;
 
