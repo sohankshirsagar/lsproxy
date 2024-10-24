@@ -10,10 +10,7 @@ use std::{
 };
 use tokio::{
     fs::read_to_string,
-    sync::{
-        broadcast::Receiver,
-        RwLock,
-    },
+    sync::{broadcast::Receiver, RwLock},
 };
 
 pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
@@ -225,9 +222,9 @@ mod tests {
     use super::*;
     use lsp_types::Range;
     use notify_debouncer_mini::DebouncedEventKind;
-    use tokio::sync::broadcast::{channel, Sender};
     use std::{fs, time::Duration};
     use tempfile::tempdir;
+    use tokio::sync::broadcast::{channel, Sender};
 
     fn create_test_watcher_channels() -> (Sender<DebouncedEvent>, Receiver<DebouncedEvent>) {
         channel(100)
