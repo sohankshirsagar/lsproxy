@@ -109,11 +109,10 @@ impl CtagsClient {
                     .iter()
                     .find(|&&part| part.starts_with("line:"))
                     .and_then(|part| part.trim_start_matches("line:").parse::<u32>().ok())
-                    .unwrap_or(0);
+                    .unwrap_or(1) - 1;
 
                 // Find column number using the line content from the tags file
-                let column_number =
-                    line_content.find(tag_name).map(|pos| pos + 1).unwrap_or(0) as u32;
+                let column_number = line_content.find(tag_name).unwrap_or(0) as u32;
 
                 names.push(tag_name.to_string());
                 files.push(file_name.to_string());
@@ -154,8 +153,8 @@ mod test {
                 start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 7,
-                        character: 9,
+                        line: 6,
+                        character: 8,
                     },
                 },
             },
@@ -165,8 +164,8 @@ mod test {
                 start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 6,
-                        character: 1,
+                        line: 5,
+                        character: 0,
                     },
                 },
             },
@@ -176,8 +175,8 @@ mod test {
                 start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 1,
-                        character: 29,
+                        line: 0,
+                        character: 28,
                     },
                 },
             },
@@ -187,8 +186,8 @@ mod test {
                 start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 7,
-                        character: 1,
+                        line: 6,
+                        character: 0,
                     },
                 },
             },
