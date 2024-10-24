@@ -60,7 +60,7 @@ impl CtagsClient {
             }
         }
 
-        let output = command.output()?;
+        let output = command.output().map_err(|e| format!("Failed to execute ctags command: {}", e))?;
 
         if !output.status.success() {
             return Err(format!(
