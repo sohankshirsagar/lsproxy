@@ -12,12 +12,12 @@ use lsp_types::{
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
     WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
-use tokio::sync::Mutex;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::oneshot::{channel, Sender};
+use tokio::sync::Mutex;
 
 use super::workspace_documents::WorkspaceDocumentsHandler;
 
@@ -49,10 +49,7 @@ impl PendingRequests {
         id: u64,
         sender: Sender<JsonRpcMessage>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.channels
-            .lock()
-            .await
-            .insert(id, sender);
+        self.channels.lock().await.insert(id, sender);
         Ok(())
     }
 
@@ -60,11 +57,7 @@ impl PendingRequests {
         &self,
         id: u64,
     ) -> Result<Option<Sender<JsonRpcMessage>>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .channels
-            .lock()
-            .await
-            .remove(&id))
+        Ok(self.channels.lock().await.remove(&id))
     }
 }
 
