@@ -10,7 +10,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use utoipa::openapi::PathItemType;
+use utoipa::openapi::extensions::Extensions;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -26,6 +26,7 @@ use crate::api_types::{
 };
 use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
 use crate::lsp::manager::LspManager;
+use crate::utils::doc_utils::make_code_sample;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
     fs::read_dir(get_mount_dir())?;
@@ -139,9 +140,9 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
 
         // Add routes based on OpenAPI paths
         for (path, path_item) in openapi.paths.paths.iter() {
-            let method = if path_item.operations.get(&PathItemType::Get).is_some() {
+            let method = if path_item.get.is_some() {
                 Some(Method::Get)
-            } else if path_item.operations.get(&PathItemType::Post).is_some() {
+            } else if path_item.post.is_some() {
                 Some(Method::Post)
             } else {
                 None
@@ -178,8 +179,28 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
     .await
 }
 
+const PYTHON_SAMPLE: &str = r#"
+import requests
+
+def get_pet(pet_id: int):
+    response = requests.get(f'/pets/{pet_id}')
+    return response.json()
+"#;
+
 pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
-    let openapi = ApiDoc::openapi();
+    // We use a clone since we're just adding the docs and writing it to the file. We don't need
+    // this for runtime
+    let mut openapi = ApiDoc::openapi().clone();
+    if let Some(path_item) = openapi.paths.paths.get_mut("/symbol/find-definition") {
+        if let Some(post_op) = &mut path_item.post {
+            let mut extensions = Extensions::default();
+            extensions.insert(
+                String::from("x-codeSamples"),
+                serde_json::json!(vec![make_code_sample("python", PYTHON_SAMPLE),]),
+            );
+            post_op.extensions = Some(extensions);
+        }
+    }
     let openapi_json =
         serde_json::to_string_pretty(&openapi).expect("Failed to serialize OpenAPI to JSON");
     let mut file = File::create(file_path)?;
