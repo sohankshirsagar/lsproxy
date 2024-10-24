@@ -7,7 +7,7 @@ use serde_json::{from_str, Value};
 use tokio::process::Command;
 use url::Url;
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler, PendingRequests};
+use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
     WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,

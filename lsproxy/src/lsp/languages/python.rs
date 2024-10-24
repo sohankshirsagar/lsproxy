@@ -3,7 +3,7 @@ use std::{path::Path, process::Stdio};
 use async_trait::async_trait;
 use tokio::process::Command;
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler, PendingRequests};
+use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
     WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, PYRIGHT_ROOT_FILES,

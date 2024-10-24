@@ -60,7 +60,9 @@ impl CtagsClient {
             }
         }
 
-        let output = command.output().map_err(|e| format!("Failed to execute ctags command: {}", e))?;
+        let output = command
+            .output()
+            .map_err(|e| format!("Failed to execute ctags command: {}", e))?;
 
         if !output.status.success() {
             return Err(format!(
@@ -109,7 +111,8 @@ impl CtagsClient {
                     .iter()
                     .find(|&&part| part.starts_with("line:"))
                     .and_then(|part| part.trim_start_matches("line:").parse::<u32>().ok())
-                    .unwrap_or(1) - 1;
+                    .unwrap_or(1)
+                    - 1;
 
                 // Find column number using the line content from the tags file
                 let column_number = line_content.find(tag_name).unwrap_or(0) as u32;
@@ -148,13 +151,13 @@ mod test {
         let symbols = client.get_file_symbols("main.py")?;
         let expected = vec![
             Symbol {
-                name: String::from("cost"),
+                name: String::from("plt"),
                 kind: String::from("ctag_definition"),
                 start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 6,
-                        character: 8,
+                        line: 0,
+                        character: 28,
                     },
                 },
             },
@@ -170,17 +173,6 @@ mod test {
                 },
             },
             Symbol {
-                name: String::from("plt"),
-                kind: String::from("ctag_definition"),
-                start_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 0,
-                        character: 28,
-                    },
-                },
-            },
-            Symbol {
                 name: String::from("result"),
                 kind: String::from("ctag_definition"),
                 start_position: FilePosition {
@@ -188,6 +180,17 @@ mod test {
                     position: Position {
                         line: 6,
                         character: 0,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("cost"),
+                kind: String::from("ctag_definition"),
+                start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 8,
                     },
                 },
             },

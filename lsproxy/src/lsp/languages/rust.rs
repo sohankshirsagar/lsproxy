@@ -3,7 +3,7 @@ use std::{error::Error, path::Path, process::Stdio};
 use async_trait::async_trait;
 use tokio::process::Command;
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler, PendingRequests};
+use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
     WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,

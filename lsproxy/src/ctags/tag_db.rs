@@ -48,6 +48,12 @@ impl TagDatabase {
             .clone()
             .lazy()
             .filter(col("file_name").eq(lit(file_name)))
+            .sort_by_exprs(
+                vec![col("line"), col("column")],
+                vec![false, false],
+                false,
+                false,
+            )
             .collect()?;
 
         let names = filtered_df.column("name")?.str()?;
@@ -78,6 +84,12 @@ impl TagDatabase {
             .clone()
             .lazy()
             .filter(col("name").eq(lit(name)))
+            .sort_by_exprs(
+                vec![col("line"), col("column")],
+                vec![false, false],
+                false,
+                false,
+            )
             .collect()?;
 
         let names = filtered_df.column("name")?.str()?;
