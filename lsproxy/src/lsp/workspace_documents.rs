@@ -1,8 +1,8 @@
 use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
-use notify::{RecommendedWatcher, RecursiveMode};
-use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
+use notify::RecursiveMode;
+use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent, Debouncer};
 use std::{
     collections::HashMap,
     error::Error,
@@ -34,7 +34,8 @@ pub struct WorkspaceDocumentsHandler {
     event_sender: Sender<DebouncedEvent>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
-    debouncer: notify_debouncer_mini::Debouncer<RecommendedWatcher>,
+    #[allow(unused)] // need to keep this around for watcher to work
+    debouncer: Debouncer<notify::RecommendedWatcher>,
 }
 
 impl WorkspaceDocumentsHandler {
@@ -131,18 +132,13 @@ impl WorkspaceDocumentsHandler {
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
-        if range.start.line as usize >= total_lines {
-            warn!(
-                "Start line out of bounds: {}  ({} total lines)",
-                range.start.line, total_lines
-            );
+        // Handle empty content case
+        if total_lines == 0 {
             return Ok(String::new());
         }
 
         let start_line = range.start.line as usize;
         let mut end_line = range.end.line as usize;
-        let start_char = range.start.character as usize;
-        let mut end_char = range.end.character as usize;
 
         if end_line >= total_lines {
             warn!(
@@ -150,53 +146,35 @@ impl WorkspaceDocumentsHandler {
                 end_line, total_lines
             );
             end_line = total_lines.saturating_sub(1);
-            end_char = lines[end_line].len();
         }
 
+        // If start line is greater than end line, return empty string
         if start_line > end_line {
-            warn!(
-                "Start line is greater than end line: {} > {}",
-                start_line, end_line
-            );
+            warn!("Invalid range: start_line > end_line");
             return Ok(String::new());
         }
 
         let extracted: Vec<&str> = lines[start_line..=end_line]
             .iter()
             .enumerate()
-            .map(|(i, &line)| match (i, start_line == end_line) {
-                (0, true) => {
-                    let line_start = start_char.min(line.len());
-                    let line_end = end_char.min(line.len());
-                    if line_start != start_char || line_end != end_char {
-                        warn!(
-                            "Adjusted range for single-line extraction: {}..{} to {}..{} on line {}",
-                            start_char, end_char, line_start, line_end, i + start_line
-                        );
+            .map(|(i, &line)| {
+                let line_len = line.chars().count();
+                match (i, start_line == end_line) {
+                    (0, true) => {
+                        let start_char = range.start.character.min(line_len as u32) as usize;
+                        let end_char = range.end.character.min(line_len as u32) as usize;
+                        &line[..line_len].get(start_char..end_char).unwrap_or("")
                     }
-                    &line[line_start..line_end]
-                }
-                (0, false) => {
-                    let line_start = start_char.min(line.len());
-                    if line_start != start_char {
-                        warn!(
-                            "Adjusted start character: {} to {} on line {}",
-                            start_char, line_start, i + start_line
-                        );
+                    (0, false) => {
+                        let start_char = range.start.character.min(line_len as u32) as usize;
+                        &line[..line_len].get(start_char..).unwrap_or("")
                     }
-                    &line[line_start..]
-                }
-                (n, _) if n == end_line - start_line => {
-                    let line_end = end_char.min(line.len());
-                    if line_end != end_char {
-                        warn!(
-                            "Adjusted end character: {} to {} on line {}",
-                            end_char, line_end, i + start_line
-                        );
+                    (n, _) if n == end_line - start_line => {
+                        let end_char = range.end.character.min(line_len as u32) as usize;
+                        &line[..line_len].get(..end_char).unwrap_or("")
                     }
-                    &line[..line_end]
+                    _ => line,
                 }
-                _ => line,
             })
             .collect();
 
@@ -298,13 +276,15 @@ mod tests {
         );
 
         // Test listing files based on patterns
+        // we exclude file2.txt so we expect 1 file
         let files = handler.list_files().await;
         assert_eq!(files.len(), 1);
         assert!(files.contains(&dir.path().join("file1.rs")));
 
         fs::write(dir.path().join("file3.rs"), "fn main() {}")?;
-        // Wait for the watcher to update the cache
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        // Wait for the watcher to update the cache after debounce
+        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+        // Addend another rs file se we expect 2 files
 
         let files = handler.list_files().await;
         println!("Files: {:?}", files);

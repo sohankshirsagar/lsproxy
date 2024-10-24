@@ -163,6 +163,12 @@ pub struct FileSymbolsRequest {
     #[serde(default)]
     #[schema(example = false)]
     pub include_raw_response: bool,
+
+    /// Whether to include the source code of the symbols in the response.
+    /// Defaults to none.
+    #[serde(default)]
+    #[schema(example = 5)]
+    pub include_source_code: bool,
 }
 
 /// Request to get the symbols in the workspace.
@@ -251,6 +257,7 @@ pub struct SymbolResponse {
     /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol
     pub raw_response: Option<Value>,
     pub symbols: Vec<Symbol>,
+    pub source_code_context: Option<Vec<CodeContext>>,
 }
 
 impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
@@ -357,8 +364,22 @@ impl Symbol {
         }
     }
 }
-impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
-    fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
+impl
+    From<(
+        DocumentSymbolResponse,
+        String,
+        bool,
+        Option<Vec<CodeContext>>,
+    )> for SymbolResponse
+{
+    fn from(
+        (response, file_path, include_raw, source_code_context): (
+            DocumentSymbolResponse,
+            String,
+            bool,
+            Option<Vec<CodeContext>>,
+        ),
+    ) -> Self {
         let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
         let symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
@@ -374,6 +395,7 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
         SymbolResponse {
             raw_response,
             symbols,
+            source_code_context,
         }
     }
 }

@@ -98,6 +98,7 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::from_value(response.json().expect("Failed to parse JSON"))?;
     let expected = SymbolResponse {
         raw_response: None,
+        source_code_context: None,
         symbols: vec![
             Symbol {
                 name: String::from("graph"),

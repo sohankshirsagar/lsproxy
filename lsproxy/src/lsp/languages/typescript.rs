@@ -9,13 +9,14 @@ use url::Url;
 
 use crate::lsp::{
     workspace_documents::{WorkspaceDocuments, WorkspaceDocumentsHandler},
-    JsonRpcHandler, LspClient, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
+    JsonRpcHandler, LspClient, PendingRequests, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
 };
 
 pub struct TypeScriptLanguageClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
     workspace_documents: WorkspaceDocumentsHandler,
+    pending_requests: PendingRequests,
 }
 
 pub const TYPESCRIPT_ROOT_FILES: &[&str] = &["tsconfig.json", "jsconfig.json", "package.json"];
@@ -37,6 +38,10 @@ impl LspClient for TypeScriptLanguageClient {
             .iter()
             .map(|&s| s.to_owned())
             .collect()
+    }
+
+    fn get_pending_requests(&mut self) -> &mut PendingRequests {
+        &mut self.pending_requests
     }
 
     fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
@@ -94,6 +99,7 @@ impl TypeScriptLanguageClient {
             process: process_handler,
             json_rpc: json_rpc_handler,
             workspace_documents: workspace_documents,
+            pending_requests: PendingRequests::new(),
         })
     }
 

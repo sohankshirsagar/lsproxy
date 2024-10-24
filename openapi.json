@@ -42,6 +42,15 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "include_source_code",
+            "in": "query",
+            "description": "Whether to include the source code of the symbols in the response.\nDefaults to none.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -99,13 +108,7 @@
           "500": {
             "description": "Internal server error"
           }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "source": "\nimport requests\n\ndef get_pet(pet_id: int):\n    response = requests.get(f'/pets/{pet_id}')\n    return response.json()\n"
-          }
-        ]
+        }
       }
     },
     "/symbol/find-references": {
@@ -290,6 +293,11 @@
             "type": "boolean",
             "description": "Whether to include the raw response from the langserver in the response.\nDefaults to false.",
             "example": false
+          },
+          "include_source_code": {
+            "type": "boolean",
+            "description": "Whether to include the source code of the symbols in the response.\nDefaults to none.",
+            "example": 5
           }
         }
       },
@@ -435,6 +443,15 @@
         "properties": {
           "raw_response": {
             "description": "The raw response from the langserver.\n\nhttps://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol\nhttps://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol"
+          },
+          "source_code_context": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CodeContext"
+            }
           },
           "symbols": {
             "type": "array",
