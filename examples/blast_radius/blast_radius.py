@@ -32,7 +32,7 @@ API_BASE_URL = "http://localhost:4444/v1"
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def run_docker(workspace_path: str):
+def run_docker(workspace_path: str) -> subprocess.Popen:
     """Run the lsproxy in a Docker container.
 
     Args:
@@ -40,24 +40,29 @@ def run_docker(workspace_path: str):
 
     Raises:
         RuntimeError: If the server fails to start within 30 seconds
+
+    Returns:
+        subprocess.Popen: The subprocess running the Docker container
     """
     logging.info("Starting Docker container")
-    subprocess.Popen(
-        ["./scripts/run.sh", workspace_path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        cwd="../../",
-    )
+    with open("lsproxy.log", "w") as f:
+        process = subprocess.Popen(
+            ["./scripts/run.sh", workspace_path],
+            stdout=f,
+            stderr=subprocess.STDOUT,
+            cwd="../../",
+        )
 
     logging.info("Waiting for server to start...")
-    for _ in range(120):  # Try for 30 seconds
+    for _ in range(120):  # Try for 120 seconds
         try:
             requests.get(f"{API_BASE_URL}/workspace/list-files")
             logging.info("Server is running")
-            return
+            return process
         except requests.exceptions.ConnectionError:
             sleep(1)
-    raise RuntimeError("Server failed to start after 30 seconds")
+    process.terminate()
+    raise RuntimeError("Server failed to start after 120 seconds")
 
 
 def main():
@@ -72,11 +77,12 @@ def main():
     client = APIClient()
     all_nodes = set()
     all_edges = set()
+    process = None  # Initialize process variable
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             clone_repo(args.repo_url, temp_dir)
             checkout_commit(temp_dir, args.commit1)
-            run_docker(temp_dir)
+            process = run_docker(temp_dir)
             affected_lines, diff_text = parse_diff(temp_dir, args.commit1, args.commit2)
             affected_files = list(affected_lines.keys())
             lsp_files = client.list_files()
@@ -163,6 +169,10 @@ def main():
 
         traceback.print_exc()
     finally:
+        if process:
+            logging.info("Shutting down Docker container")
+            process.terminate()
+            process.wait()
         # Force remove the temporary directory if it's not empty
         shutil.rmtree(temp_dir, ignore_errors=True)
 

@@ -35,9 +35,6 @@ class APIClient:
         self._client.timeout = timeout
 
 
-    @retry(
-        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
-    )
     def _request(self, method: str, endpoint: str, **kwargs) -> httpx.Response:
         logger.debug(f"{method} {endpoint} with params: {kwargs}")
         response = self._client.request(method, endpoint, **kwargs)

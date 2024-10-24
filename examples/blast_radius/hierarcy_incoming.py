@@ -101,8 +101,6 @@ def get_symbols_containing_position(
                         source_code_context=source_code_context,
                     )
                 )
-                #target_positions.remove(target_position)
-                #break
                 
     return list(symbols_to_return)
 
@@ -123,11 +121,15 @@ def get_hierarchy_incoming(
             continue
         nodes.add(symbol)
 
-        references_response = client.find_references(
-            GetReferencesRequest(
-                start_position=symbol.defined_at, include_declaration=False
+        try:
+            references_response = client.find_references(
+                GetReferencesRequest(
+                    start_position=symbol.defined_at, include_declaration=False
+                )
             )
-        )
+        except Exception as e:
+            logging.error(f"Error finding references for symbol {symbol}: {e}")
+            continue
 
         # Group references by file for more efficient processing
         references_by_file = {}
