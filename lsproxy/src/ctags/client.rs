@@ -155,7 +155,7 @@ mod test {
 
     #[tokio::test]
     async fn test_python_tags() -> Result<(), Box<dyn std::error::Error>> {
-        let (tx, rx) = create_test_watcher_channels();
+        let (_, rx) = create_test_watcher_channels();
         let _context = TestContext::setup_no_manager(&python_sample_path());
         let client = CtagsClient::new(&python_sample_path(), rx).await?;
         let symbols = client.get_file_symbols("main.py")?;

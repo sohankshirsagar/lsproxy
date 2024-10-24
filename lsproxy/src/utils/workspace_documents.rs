@@ -78,6 +78,7 @@ impl WorkspaceDocumentsHandler {
         tokio::spawn(async move {
             let mut watch_events_rx = watch_events_rx; // Make it mutable
             while let Ok(event) = watch_events_rx.recv().await {
+                debug!("Received event: {:?}", event);
                 if WorkspaceDocumentsHandler::matches_patterns(&event.path, &patterns_clone).await {
                     cache_clone.write().await.clear();
                     debug!("Cache cleared for {:?}", event.path);
@@ -225,7 +226,7 @@ mod tests {
     use lsp_types::Range;
     use notify_debouncer_mini::DebouncedEventKind;
     use tokio::sync::broadcast::{channel, Sender};
-    use std::fs;
+    use std::{fs, time::Duration};
     use tempfile::tempdir;
 
     fn create_test_watcher_channels() -> (Sender<DebouncedEvent>, Receiver<DebouncedEvent>) {
@@ -292,6 +293,8 @@ mod tests {
             kind: DebouncedEventKind::Any,
         })?;
         // Addend another rs file se we expect 2 files
+        // Sleep briefly to allow the file system events to be processed
+        tokio::time::sleep(Duration::from_millis(100)).await;
 
         let files = handler.list_files().await;
         println!("Files: {:?}", files);
