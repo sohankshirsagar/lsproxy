@@ -80,7 +80,7 @@ impl CtagsClient {
         let mut columns = Vec::new();
 
         // Read the tags file
-        let file = File::open(path).expect("couldn't find tag file");
+        let file = File::open(path).expect("Failed to open tags file at the specified path");
         let reader = BufReader::new(file);
 
         // Process each line
