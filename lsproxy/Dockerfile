@@ -6,6 +6,7 @@ WORKDIR /usr/src/app
 # Install runtime dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
     pkg-config \
+    universal-ctags \
     libssl-dev \
     libssl3 \
     ca-certificates \

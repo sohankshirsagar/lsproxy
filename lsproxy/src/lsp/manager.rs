@@ -1,11 +1,11 @@
 use crate::api_types::{absolute_path_to_relative_path_string, get_mount_dir, SupportedLanguages};
 use crate::lsp::client::LspClient;
-use crate::lsp::languages::{
-    PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient, PYRIGHT_FILE_PATTERNS,
+use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
+use crate::utils::file_utils::search_files;
+use crate::utils::workspace_documents::{
+    WorkspaceDocuments, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
     RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
 };
-use crate::lsp::DEFAULT_EXCLUDE_PATTERNS;
-use crate::utils::file_utils::search_files;
 use log::{debug, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range};
 use std::collections::HashMap;
@@ -13,8 +13,6 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-
-use super::workspace_documents::WorkspaceDocuments;
 
 pub struct LspManager {
     clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,

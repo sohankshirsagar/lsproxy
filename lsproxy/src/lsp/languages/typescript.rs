@@ -7,9 +7,11 @@ use serde_json::{from_str, Value};
 use tokio::process::Command;
 use url::Url;
 
-use crate::lsp::{
-    workspace_documents::{WorkspaceDocuments, WorkspaceDocumentsHandler},
-    JsonRpcHandler, LspClient, PendingRequests, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
+use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler, PendingRequests};
+
+use crate::utils::workspace_documents::{
+    WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
+    TYPESCRIPT_FILE_PATTERNS, TYPESCRIPT_ROOT_FILES,
 };
 
 pub struct TypeScriptLanguageClient {
@@ -18,10 +20,6 @@ pub struct TypeScriptLanguageClient {
     workspace_documents: WorkspaceDocumentsHandler,
     pending_requests: PendingRequests,
 }
-
-pub const TYPESCRIPT_ROOT_FILES: &[&str] = &["tsconfig.json", "jsconfig.json", "package.json"];
-
-pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
 
 #[async_trait]
 impl LspClient for TypeScriptLanguageClient {
@@ -98,7 +96,7 @@ impl TypeScriptLanguageClient {
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
-            workspace_documents: workspace_documents,
+            workspace_documents,
             pending_requests: PendingRequests::new(),
         })
     }

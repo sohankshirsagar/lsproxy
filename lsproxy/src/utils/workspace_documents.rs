@@ -18,6 +18,34 @@ use tokio::{
     },
 };
 
+pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "**/dist",
+    "**/target",
+    "**/build",
+    ".git",
+];
+
+pub const PYRIGHT_ROOT_FILES: &[&str] = &[
+    "pyproject.toml",
+    "setup.py",
+    "setup.cfg",
+    "requirements.txt",
+    "Pipfile",
+    "pyrightconfig.json",
+];
+
+pub const PYRIGHT_FILE_PATTERNS: &[&str] = &["**/*.py"];
+
+pub const TYPESCRIPT_ROOT_FILES: &[&str] = &["tsconfig.json", "jsconfig.json", "package.json"];
+
+pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
+
+pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
+pub const RUST_ANALYZER_FILE_PATTERNS: &[&str] = &["**/*.rs"];
+
 #[async_trait::async_trait]
 pub trait WorkspaceDocuments: Send + Sync {
     async fn read_text_document(

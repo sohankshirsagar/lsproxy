@@ -14,6 +14,11 @@ pub struct TestContext {
 }
 
 impl TestContext {
+    pub fn setup_no_manager(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        set_thread_local_mount_dir(file_path);
+        Ok(Self { manager: None })
+    }
+
     pub async fn setup(file_path: &str, manager: bool) -> Result<Self, Box<dyn std::error::Error>> {
         set_thread_local_mount_dir(file_path);
         if manager {

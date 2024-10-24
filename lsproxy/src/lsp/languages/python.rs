@@ -3,21 +3,11 @@ use std::{path::Path, process::Stdio};
 use async_trait::async_trait;
 use tokio::process::Command;
 
-use crate::lsp::{
-    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, PendingRequests,
-    ProcessHandler,
+use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler, PendingRequests};
+
+use crate::utils::workspace_documents::{
+    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, PYRIGHT_ROOT_FILES,
 };
-
-pub const PYRIGHT_ROOT_FILES: &[&str] = &[
-    "pyproject.toml",
-    "setup.py",
-    "setup.cfg",
-    "requirements.txt",
-    "Pipfile",
-    "pyrightconfig.json",
-];
-
-pub const PYRIGHT_FILE_PATTERNS: &[&str] = &["**/*.py"];
 
 pub struct PyrightClient {
     process: ProcessHandler,
@@ -70,7 +60,7 @@ impl PyrightClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
-            crate::lsp::client::DEFAULT_EXCLUDE_PATTERNS
+            DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
@@ -81,7 +71,7 @@ impl PyrightClient {
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
-            workspace_documents: workspace_documents,
+            workspace_documents,
             pending_requests: PendingRequests::new(),
         })
     }

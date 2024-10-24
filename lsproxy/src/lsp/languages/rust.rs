@@ -3,9 +3,11 @@ use std::{error::Error, path::Path, process::Stdio};
 use async_trait::async_trait;
 use tokio::process::Command;
 
-use crate::lsp::{
-    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, PendingRequests,
-    ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
+use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler, PendingRequests};
+
+use crate::utils::workspace_documents::{
+    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
+    RUST_ANALYZER_ROOT_FILES,
 };
 
 pub struct RustAnalyzerClient {
@@ -14,9 +16,6 @@ pub struct RustAnalyzerClient {
     workspace_documents: WorkspaceDocumentsHandler,
     pending_requests: PendingRequests,
 }
-
-pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
-pub const RUST_ANALYZER_FILE_PATTERNS: &[&str] = &["**/*.rs"];
 
 #[async_trait]
 impl LspClient for RustAnalyzerClient {
