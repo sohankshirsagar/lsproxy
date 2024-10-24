@@ -131,72 +131,42 @@ impl WorkspaceDocumentsHandler {
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
-        if range.start.line as usize >= total_lines {
-            warn!(
-                "Start line out of bounds: {}  ({} total lines)",
-                range.start.line, total_lines
-            );
+        // Handle empty content case
+        if total_lines == 0 {
             return Ok(String::new());
         }
 
-        let start_line = range.start.line as usize;
-        let mut end_line = range.end.line as usize;
-        let start_char = range.start.character as usize;
-        let mut end_char = range.end.character as usize;
+        // Validate and adjust line bounds
+        let start_line = range.start.line.min(total_lines as u32 - 1) as usize;
+        let end_line = range.end.line.min(total_lines as u32 - 1) as usize;
 
-        if end_line >= total_lines {
-            warn!(
-                "End line exceeds total lines: {} >= {}. Adjusting to include up to and including the last line.",
-                end_line, total_lines
-            );
-            end_line = total_lines - 1;
-            end_char = lines[end_line].len();
-        }
-
+        // If start line is greater than end line, return empty string
         if start_line > end_line {
-            warn!(
-                "Start line is greater than end line: {} > {}",
-                start_line, end_line
-            );
+            warn!("Invalid range: start_line > end_line");
             return Ok(String::new());
         }
 
         let extracted: Vec<&str> = lines[start_line..=end_line]
             .iter()
             .enumerate()
-            .map(|(i, &line)| match (i, start_line == end_line) {
-                (0, true) => {
-                    let line_start = start_char.min(line.len());
-                    let line_end = end_char.min(line.len());
-                    if line_start != start_char || line_end != end_char {
-                        warn!(
-                            "Adjusted range for single-line extraction: {}..{} to {}..{} on line {}",
-                            start_char, end_char, line_start, line_end, i + start_line
-                        );
+            .map(|(i, &line)| {
+                let line_len = line.chars().count();
+                match (i, start_line == end_line) {
+                    (0, true) => {
+                        let start_char = range.start.character.min(line_len as u32) as usize;
+                        let end_char = range.end.character.min(line_len as u32) as usize;
+                        &line[..line_len].get(start_char..end_char).unwrap_or("")
                     }
-                    &line[line_start..line_end]
-                }
-                (0, false) => {
-                    let line_start = start_char.min(line.len());
-                    if line_start != start_char {
-                        warn!(
-                            "Adjusted start character: {} to {} on line {}",
-                            start_char, line_start, i + start_line
-                        );
+                    (0, false) => {
+                        let start_char = range.start.character.min(line_len as u32) as usize;
+                        &line[..line_len].get(start_char..).unwrap_or("")
                     }
-                    &line[line_start..]
-                }
-                (n, _) if n == end_line - start_line => {
-                    let line_end = end_char.min(line.len());
-                    if line_end != end_char {
-                        warn!(
-                            "Adjusted end character: {} to {} on line {}",
-                            end_char, line_end, i + start_line
-                        );
+                    (n, _) if n == end_line - start_line => {
+                        let end_char = range.end.character.min(line_len as u32) as usize;
+                        &line[..line_len].get(..end_char).unwrap_or("")
                     }
-                    &line[..line_end]
+                    _ => line,
                 }
-                _ => line,
             })
             .collect();
 

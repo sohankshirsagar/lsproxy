@@ -312,7 +312,8 @@ mod tests {
         let file_path = "main.py";
         let file_symbols = manager.definitions_in_file(file_path).await?;
 
-        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+        let symbol_response =
+            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
 
         let expected = vec![
             Symbol {
@@ -492,7 +493,8 @@ mod tests {
         let file_path = "astar_search.js";
         let file_symbols = manager.definitions_in_file(file_path).await?;
 
-        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+        let symbol_response =
+            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
 
         let expected = vec![
             Symbol {

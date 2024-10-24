@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
+use std::sync::atomic::{AtomicU64, Ordering};
 use uuid::Uuid;
 
 pub trait JsonRpc: Send + Sync {
@@ -34,19 +35,28 @@ impl fmt::Display for JsonRpcError {
 
 impl std::error::Error for JsonRpcError {}
 
-pub struct JsonRpcHandler;
+pub struct JsonRpcHandler {
+    id_counter: AtomicU64,
+}
 
 impl JsonRpcHandler {
     pub fn new() -> Self {
-        Self
+        Self {
+            id_counter: AtomicU64::new(0),
+        }
+    }
+
+    pub fn get_last_id(&self) -> u64 {
+        self.id_counter.load(Ordering::Relaxed)
     }
 }
 
 impl JsonRpc for JsonRpcHandler {
     fn create_request(&self, method: &str, params: Value) -> String {
+        let id = self.id_counter.fetch_add(1, Ordering::Relaxed);
         serde_json::json!({
             "jsonrpc": "2.0",
-            "id": Uuid::new_v4().to_string(),
+            "id": id,
             "method": method,
             "params": params
         })

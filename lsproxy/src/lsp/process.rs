@@ -1,6 +1,5 @@
 use log::{debug, error, warn};
 use std::error::Error;
-use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 
@@ -40,7 +39,6 @@ impl Process for ProcessHandler {
         let mut buffer = Vec::new();
 
         loop {
-            let timeout = tokio::time::sleep(Duration::from_secs(5));
             tokio::select! {
                 result = self.stdout.read_until(b'\n', &mut buffer) => {
                     match result {
@@ -68,10 +66,6 @@ impl Process for ProcessHandler {
                         }
                     }
                     buffer.clear();
-                }
-                _ = timeout => {
-                    warn!("Timeout while reading response");
-                    return Err("Timeout while reading response".into());
                 }
             }
         }
