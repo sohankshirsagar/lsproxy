@@ -21,9 +21,9 @@ use crate::AppState;
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn workspace_files(data: Data<AppState>) -> HttpResponse {
+pub async fn list_files(data: Data<AppState>) -> HttpResponse {
     let lsp_manager = data.lsp_manager.lock().unwrap();
-    let files = lsp_manager.workspace_files().await;
+    let files = lsp_manager.list_files().await;
     match files {
         Ok(files) => HttpResponse::Ok().json(files),
         Err(e) => {
@@ -67,7 +67,7 @@ mod test {
         let _context = TestContext::setup(&python_sample_path(), false).await?;
         let state = initialize_app_state().await?;
 
-        let response = workspace_files(state).await;
+        let response = list_files(state).await;
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(

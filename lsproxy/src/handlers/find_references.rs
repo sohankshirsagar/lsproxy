@@ -40,20 +40,23 @@ use crate::AppState;
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn references(data: Data<AppState>, info: Json<GetReferencesRequest>) -> HttpResponse {
+pub async fn find_references(
+    data: Data<AppState>,
+    info: Json<GetReferencesRequest>,
+) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
-        info.symbol_identifier_position.path,
-        info.symbol_identifier_position.position.line,
-        info.symbol_identifier_position.position.character
+        info.start_position.path,
+        info.start_position.position.line,
+        info.start_position.position.character
     );
     let lsp_manager = data.lsp_manager.lock().unwrap();
     let references_result = lsp_manager
-        .references(
-            &info.symbol_identifier_position.path,
+        .find_references(
+            &info.start_position.path,
             LspPosition {
-                line: info.symbol_identifier_position.position.line,
-                character: info.symbol_identifier_position.position.character,
+                line: info.start_position.position.line,
+                character: info.start_position.position.character,
             },
             info.include_declaration,
         )
@@ -171,7 +174,7 @@ mod test {
         let state = initialize_app_state().await?;
 
         let mock_request = Json(GetReferencesRequest {
-            symbol_identifier_position: FilePosition {
+            start_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
                     line: 0,
@@ -183,7 +186,7 @@ mod test {
             include_raw_response: false,
         });
 
-        let response = references(state, mock_request).await;
+        let response = find_references(state, mock_request).await;
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(

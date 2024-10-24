@@ -4,6 +4,7 @@ use actix_web::{
     App, HttpServer,
 };
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use log::warn;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -12,17 +13,19 @@ use std::sync::{Arc, Mutex};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-mod api_types;
+pub mod api_types;
 mod handlers;
 mod lsp;
 mod utils;
 
 use crate::api_types::{
-    get_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
-    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
+    get_mount_dir, set_global_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest,
+    GetDefinitionRequest, GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol,
+    SymbolResponse,
 };
-use crate::handlers::{definition, file_symbols, references, workspace_files};
+use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
 use crate::lsp::manager::LspManager;
+// use crate::utils::doc_utils::make_code_sample;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
     fs::read_dir(get_mount_dir())?;
@@ -31,11 +34,19 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        title = "lsproxy",
+        version = "0.1.0a6",
+        license(
+            name = "Apache-2.0",
+            url = "https://www.apache.org/licenses/LICENSE-2.0"
+        )
+    ),
     paths(
-        crate::handlers::file_symbols,
-        crate::handlers::definition,
-        crate::handlers::references,
-        crate::handlers::workspace_files
+        crate::handlers::definitions_in_file,
+        crate::handlers::find_definition,
+        crate::handlers::find_references,
+        crate::handlers::list_files
     ),
     components(
         schemas(
@@ -58,7 +69,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         (name = "lsproxy-api", description = "LSP Proxy API")
     ),
     servers(
-        (url = "/v1", description = "API v1")
+        (url = "http://localhost:4444/v1", description = "API server v1")
     )
 )]
 pub struct ApiDoc;
@@ -68,51 +79,127 @@ pub struct AppState {
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
+    initialize_app_state_with_mount_dir(None).await
+}
+
+pub async fn initialize_app_state_with_mount_dir(
+    mount_dir_override: Option<&str>,
+) -> Result<Data<AppState>, Box<dyn std::error::Error>> {
+    if let Some(global_mount_dir) = mount_dir_override {
+        set_global_mount_dir(global_mount_dir);
+        warn!("Changing global mount dir to: {}", global_mount_dir);
+    }
+
+    let mount_dir_path = get_mount_dir();
+    let mount_dir = mount_dir_path.to_string_lossy();
+
     let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
     lsp_manager
         .lock()
         .unwrap()
-        .start_langservers(get_mount_dir().to_str().unwrap())
+        .start_langservers(&mount_dir)
         .await?;
     Ok(Data::new(AppState { lsp_manager }))
 }
 
+// Helper enum for cleaner matching
+#[derive(Debug)]
+enum Method {
+    Get,
+    Post,
+}
+
 pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
-    // Check if mount dir exists and is mounted
+    run_server_with_port(app_state, 4444).await
+}
+
+pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::io::Result<()> {
     if let Err(e) = check_mount_dir() {
-        eprintln!("Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location in your docker run or docker compose commands.", get_mount_dir().to_string_lossy());
+        eprintln!(
+            "Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
+            get_mount_dir().to_string_lossy()
+        );
         return Err(e);
     }
 
     let openapi = ApiDoc::openapi();
+
+    // Parse the full server URL to get just the path component
+    let server_path = openapi
+        .servers
+        .as_ref() // Get reference to the Option<Vec>
+        .and_then(|servers| servers.first()) // Get first server if vec is not empty
+        .and_then(|s| url::Url::parse(&s.url).ok())
+        .map(|url| url.path().to_string()) // Convert path to owned String
+        .and_then(|path| path.strip_prefix('/').map(|s| s.to_string())) // Convert stripped result to String
+        .unwrap_or_else(|| String::new()); // Use empty string as default
+
     HttpServer::new(move || {
+        let mut api_scope = scope(format!("/{}", server_path).as_str());
+
+        // Add routes based on OpenAPI paths
+        for (path, path_item) in openapi.paths.paths.iter() {
+            let method = if path_item.get.is_some() {
+                Some(Method::Get)
+            } else if path_item.post.is_some() {
+                Some(Method::Post)
+            } else {
+                None
+            };
+
+            api_scope = match (path.as_str(), method) {
+                ("/symbol/find-definition", Some(Method::Post)) => 
+                    api_scope.service(resource(path).route(post().to(find_definition))),
+                ("/symbol/find-references", Some(Method::Post)) => 
+                    api_scope.service(resource(path).route(post().to(find_references))),
+                ("/symbol/definitions-in-file", Some(Method::Get)) => 
+                    api_scope.service(resource(path).route(get().to(definitions_in_file))),
+                ("/workspace/list-files", Some(Method::Get)) => 
+                    api_scope.service(resource(path).route(get().to(list_files))),
+                (p, m) => panic!(
+                    "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
+                    p,
+                    m
+                )
+            };
+        }
+
         App::new()
             .wrap(Cors::permissive())
             .app_data(app_state.clone())
             .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", openapi.clone())
             )
-            .service(
-                scope("/v1")
-                    .service(
-                        scope("/symbol")
-                            .service(resource("/definitions-in-file").route(get().to(file_symbols)))
-                            .service(resource("/find-definition").route(post().to(definition)))
-                            .service(resource("/find-references").route(post().to(references))),
-                    )
-                    .service(
-                        scope("/workspace")
-                            .service(resource("/list-files").route(get().to(workspace_files))),
-                    ),
-            )
+            .service(api_scope)
     })
-    .bind("0.0.0.0:4444")?
+    .bind(format!("0.0.0.0:{}", port))?
     .run()
     .await
 }
 
+// const PYTHON_SAMPLE: &str = r#"
+// import requests
+
+// def get_pet(pet_id: int):
+//     response = requests.get(f'/pets/{pet_id}')
+//     return response.json()
+// "#;
+
 pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
-    let openapi = ApiDoc::openapi();
+    // We use a clone since we're just adding the docs and writing it to the file. We don't need
+    // this for runtime
+    let openapi = ApiDoc::openapi().clone();
+    // if let Some(path_item) = openapi.paths.paths.get_mut("/symbol/find-definition") {
+    //     if let Some(post_op) = &mut path_item.post {
+    //         let mut extensions = Extensions::default();
+    //         extensions.insert(
+    //             String::from("x-codeSamples"),
+    //             serde_json::json!(vec![make_code_sample("python", PYTHON_SAMPLE),]),
+    //         );
+    //         post_op.extensions = Some(extensions);
+    //     }
+    // }
     let openapi_json =
         serde_json::to_string_pretty(&openapi).expect("Failed to serialize OpenAPI to JSON");
     let mut file = File::create(file_path)?;
@@ -127,7 +214,13 @@ mod test_utils;
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use crate::api_types::set_thread_local_mount_dir;
     use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
+    use std::net::TcpStream;
+    use std::sync::mpsc;
+    use std::thread;
+    use std::time::Duration;
     use tempfile::TempDir;
 
     fn simple_diff(text1: &str, text2: &str) -> String {
@@ -204,6 +297,50 @@ mod test {
     async fn test_initialize_app_js() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup(&js_sample_path(), false).await?;
         initialize_app_state().await?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_run_server() -> Result<(), Box<dyn std::error::Error>> {
+        let test_path = js_sample_path();
+        let (tx, rx) = mpsc::channel();
+
+        // Spawn the server in a separate thread
+        let _server_thread = thread::spawn(move || {
+            // Set the mount directory for the server thread
+            // This only sets the thread local variable.
+            // That's fine since we don't make any requests
+            set_thread_local_mount_dir(&test_path);
+
+            let system = actix_web::rt::System::new();
+            if let Err(e) = system.block_on(async {
+                match initialize_app_state().await {
+                    Ok(app_state) => run_server(app_state).await,
+                    Err(e) => {
+                        tx.send(format!("Failed to initialize app state: {}", e))
+                            .unwrap();
+                        Ok(())
+                    }
+                }
+            }) {
+                tx.send(format!("System error: {}", e)).unwrap();
+            }
+        });
+
+        // Give the server some time to start
+        thread::sleep(Duration::from_secs(5));
+
+        // Check for any errors from the server thread
+        if let Ok(error_msg) = rx.try_recv() {
+            return Err(error_msg.into());
+        }
+
+        // Check if the server is running
+        match TcpStream::connect("0.0.0.0:4444") {
+            Ok(_) => println!("Server is running"),
+            Err(e) => return Err(format!("Failed to connect to server: {}", e).into()),
+        }
+
         Ok(())
     }
 }

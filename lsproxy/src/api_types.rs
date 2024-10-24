@@ -7,17 +7,42 @@ use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use std::cell::RefCell;
 use std::hash::Hash;
-use std::path::PathBuf;
-use std::rc::Rc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, LazyLock, RwLock};
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
 
+static GLOBAL_MOUNT_DIR: LazyLock<Arc<RwLock<PathBuf>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(PathBuf::from("/mnt/workspace"))));
+
 thread_local! {
-    static MOUNT_DIR: Rc<RefCell<PathBuf>> = Rc::new(RefCell::new(PathBuf::from("/mnt/workspace")));
+    static THREAD_LOCAL_MOUNT_DIR: RefCell<Option<PathBuf>> = RefCell::new(None);
 }
 
 pub fn get_mount_dir() -> PathBuf {
-    MOUNT_DIR.with(|dir| dir.borrow().clone())
+    THREAD_LOCAL_MOUNT_DIR.with(|local| {
+        local
+            .borrow()
+            .clone()
+            .unwrap_or_else(|| GLOBAL_MOUNT_DIR.read().unwrap().clone())
+    })
+}
+
+pub fn set_thread_local_mount_dir(path: impl AsRef<Path>) {
+    THREAD_LOCAL_MOUNT_DIR.with(|local| {
+        *local.borrow_mut() = Some(path.as_ref().to_path_buf());
+    });
+}
+
+pub fn unset_thread_local_mount_dir() {
+    THREAD_LOCAL_MOUNT_DIR.with(|local| {
+        *local.borrow_mut() = None;
+    });
+}
+
+pub fn set_global_mount_dir(path: impl AsRef<Path>) {
+    let mut global_dir = GLOBAL_MOUNT_DIR.write().unwrap();
+    *global_dir = path.as_ref().to_path_buf();
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -84,7 +109,7 @@ pub struct Symbol {
     pub kind: String,
 
     /// The start position of the symbol's identifier.
-    pub identifier_start_position: FilePosition,
+    pub start_position: FilePosition,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -106,7 +131,7 @@ pub struct GetDefinitionRequest {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    pub symbol_identifier_position: FilePosition,
+    pub start_position: FilePosition,
 
     /// Whether to include the declaration (definition) of the symbol in the response.
     /// Defaults to false.
@@ -138,6 +163,12 @@ pub struct FileSymbolsRequest {
     #[serde(default)]
     #[schema(example = false)]
     pub include_raw_response: bool,
+
+    /// Whether to include the source code of the symbols in the response.
+    /// Defaults to none.
+    #[serde(default)]
+    #[schema(example = 5)]
+    pub include_source_code: bool,
 }
 
 /// Request to get the symbols in the workspace.
@@ -226,6 +257,7 @@ pub struct SymbolResponse {
     /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol
     pub raw_response: Option<Value>,
     pub symbols: Vec<Symbol>,
+    pub source_code_context: Option<Vec<CodeContext>>,
 }
 
 impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
@@ -312,7 +344,7 @@ impl From<SymbolInformation> for Symbol {
         Symbol {
             name: symbol.name,
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition::from(symbol.location),
+            start_position: FilePosition::from(symbol.location),
         }
     }
 }
@@ -322,7 +354,7 @@ impl Symbol {
         Symbol {
             name: symbol.name.to_string(),
             kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            identifier_start_position: FilePosition {
+            start_position: FilePosition {
                 path: file_path.to_owned(),
                 position: Position {
                     line: symbol.selection_range.start.line,
@@ -332,8 +364,22 @@ impl Symbol {
         }
     }
 }
-impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
-    fn from((response, file_path, include_raw): (DocumentSymbolResponse, String, bool)) -> Self {
+impl
+    From<(
+        DocumentSymbolResponse,
+        String,
+        bool,
+        Option<Vec<CodeContext>>,
+    )> for SymbolResponse
+{
+    fn from(
+        (response, file_path, include_raw, source_code_context): (
+            DocumentSymbolResponse,
+            String,
+            bool,
+            Option<Vec<CodeContext>>,
+        ),
+    ) -> Self {
         let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
         let symbols = match response {
             DocumentSymbolResponse::Flat(symbols) => symbols
@@ -341,7 +387,7 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
                 .map(|symbol| Symbol {
                     name: symbol.name,
                     kind: symbol_kind_to_string(symbol.kind).to_owned(),
-                    identifier_start_position: FilePosition::from(symbol.location),
+                    start_position: FilePosition::from(symbol.location),
                 })
                 .collect(),
             DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
@@ -349,6 +395,7 @@ impl From<(DocumentSymbolResponse, String, bool)> for SymbolResponse {
         SymbolResponse {
             raw_response,
             symbols,
+            source_code_context,
         }
     }
 }
@@ -424,18 +471,6 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
 }
 
 #[cfg(test)]
-pub mod test_utils {
-    use super::*;
-    use std::path::Path;
-
-    pub fn set_mount_dir(path: impl AsRef<Path>) {
-        MOUNT_DIR.with(|dir| {
-            *dir.borrow_mut() = path.as_ref().to_path_buf();
-        });
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
     use lsp_types::{Range, SymbolKind};
@@ -476,8 +511,8 @@ mod tests {
 
         assert_eq!(symbol.name, "test_function");
         assert_eq!(symbol.kind, "function");
-        assert_eq!(symbol.identifier_start_position.path, file_path);
-        assert_eq!(symbol.identifier_start_position.position.line, 10);
-        assert_eq!(symbol.identifier_start_position.position.character, 4);
+        assert_eq!(symbol.start_position.path, file_path);
+        assert_eq!(symbol.start_position.position.line, 10);
+        assert_eq!(symbol.start_position.position.character, 4);
     }
 }

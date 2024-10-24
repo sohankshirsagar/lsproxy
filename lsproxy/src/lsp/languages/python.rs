@@ -4,11 +4,11 @@ use async_trait::async_trait;
 use tokio::process::Command;
 
 use crate::lsp::{
-    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, ProcessHandler,
+    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, PendingRequests,
+    ProcessHandler,
 };
 
 pub const PYRIGHT_ROOT_FILES: &[&str] = &[
-    ".git",
     "pyproject.toml",
     "setup.py",
     "setup.cfg",
@@ -23,6 +23,7 @@ pub struct PyrightClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
     workspace_documents: WorkspaceDocumentsHandler,
+    pending_requests: PendingRequests,
 }
 
 #[async_trait]
@@ -41,6 +42,10 @@ impl LspClient for PyrightClient {
 
     fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
         &mut self.workspace_documents
+    }
+
+    fn get_pending_requests(&mut self) -> &mut PendingRequests {
+        &mut self.pending_requests
     }
 }
 
@@ -77,6 +82,7 @@ impl PyrightClient {
             process: process_handler,
             json_rpc: json_rpc_handler,
             workspace_documents: workspace_documents,
+            pending_requests: PendingRequests::new(),
         })
     }
 }

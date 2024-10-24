@@ -41,7 +41,10 @@ use lsp_types::{
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) -> HttpResponse {
+pub async fn find_definition(
+    data: Data<AppState>,
+    info: Json<GetDefinitionRequest>,
+) -> HttpResponse {
     info!(
         "Received definition request for file: {}, line: {}, character: {}",
         info.position.path, info.position.position.line, info.position.position.character
@@ -59,7 +62,7 @@ pub async fn definition(data: Data<AppState>, info: Json<GetDefinitionRequest>) 
         .unwrap();
 
     let definitions = lsp_manager
-        .definition(
+        .find_definition(
             &info.position.path,
             LspPosition {
                 line: info.position.position.line,
@@ -110,7 +113,7 @@ async fn fetch_definition_source_code(
 
     for definition in definitions {
         let relative_path = uri_to_relative_path_string(&definition.uri);
-        let file_symbols = match lsp_manager.file_symbols(&relative_path).await? {
+        let file_symbols = match lsp_manager.definitions_in_file(&relative_path).await? {
             DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
             DocumentSymbolResponse::Flat(_) => {
                 return Err(LspManagerError::InternalError(
@@ -183,7 +186,7 @@ mod test {
             include_raw_response: false,
         });
 
-        let response = definition(state, mock_request).await;
+        let response = find_definition(state, mock_request).await;
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(

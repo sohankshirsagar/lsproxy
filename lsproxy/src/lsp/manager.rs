@@ -109,12 +109,12 @@ impl LspManager {
         Ok(())
     }
 
-    pub async fn file_symbols(
+    pub async fn definitions_in_file(
         &self,
         file_path: &str,
     ) -> Result<DocumentSymbolResponse, LspManagerError> {
         // Check if the file_path is included in the workspace files
-        let workspace_files = self.workspace_files().await?;
+        let workspace_files = self.list_files().await?;
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
@@ -131,12 +131,12 @@ impl LspManager {
             .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
 
-    pub async fn definition(
+    pub async fn find_definition(
         &self,
         file_path: &str,
         position: Position,
     ) -> Result<GotoDefinitionResponse, LspManagerError> {
-        let workspace_files = self.workspace_files().await.map_err(|e| {
+        let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
         if !workspace_files.iter().any(|f| f == file_path) {
@@ -166,13 +166,13 @@ impl LspManager {
         self.clients.get(&lsp_type).cloned()
     }
 
-    pub async fn references(
+    pub async fn find_references(
         &self,
         file_path: &str,
         position: Position,
         include_declaration: bool,
     ) -> Result<Vec<Location>, LspManagerError> {
-        let workspace_files = self.workspace_files().await.map_err(|e| {
+        let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
         if !workspace_files.iter().any(|f| f == file_path) {
@@ -196,7 +196,7 @@ impl LspManager {
             })
     }
 
-    pub async fn workspace_files(&self) -> Result<Vec<String>, LspManagerError> {
+    pub async fn list_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
         for client in self.clients.values() {
             let mut locked_client = client.lock().await;
@@ -210,6 +210,7 @@ impl LspManager {
                     .collect::<Vec<String>>(),
             );
         }
+        files.sort();
         Ok(files)
     }
 
@@ -293,7 +294,7 @@ mod tests {
             .as_ref()
             .ok_or("Manager is not initialized")?;
 
-        let mut result = manager.workspace_files().await?;
+        let mut result = manager.list_files().await?;
         let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
 
         assert_eq!(result.sort(), expected.sort());
@@ -309,15 +310,16 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "main.py";
-        let file_symbols = manager.file_symbols(file_path).await?;
+        let file_symbols = manager.definitions_in_file(file_path).await?;
 
-        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+        let symbol_response =
+            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
 
         let expected = vec![
             Symbol {
                 name: String::from("graph"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 5,
@@ -328,7 +330,7 @@ mod tests {
             Symbol {
                 name: String::from("result"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -339,7 +341,7 @@ mod tests {
             Symbol {
                 name: String::from("cost"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -350,7 +352,7 @@ mod tests {
             Symbol {
                 name: String::from("barrier"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 10,
@@ -373,7 +375,7 @@ mod tests {
         let file_path = "graph.py";
 
         let references = manager
-            .references(
+            .find_references(
                 file_path,
                 lsp_types::Position {
                     line: 0,
@@ -424,7 +426,7 @@ mod tests {
             .as_ref()
             .ok_or("Manager is not initialized")?;
         let def_response = manager
-            .definition(
+            .find_definition(
                 "main.py",
                 lsp_types::Position {
                     line: 1,
@@ -473,7 +475,7 @@ mod tests {
             .manager
             .as_ref()
             .ok_or("Manager is not initialized")?;
-        let files = manager.workspace_files().await?;
+        let files = manager.list_files().await?;
 
         assert_eq!(files, vec!["astar_search.js"]);
         Ok(())
@@ -489,15 +491,16 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
-        let file_symbols = manager.file_symbols(file_path).await?;
+        let file_symbols = manager.definitions_in_file(file_path).await?;
 
-        let symbol_response = SymbolResponse::from((file_symbols, file_path.to_owned(), false));
+        let symbol_response =
+            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
 
         let expected = vec![
             Symbol {
                 name: String::from("aStar"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 4,
@@ -508,7 +511,7 @@ mod tests {
             Symbol {
                 name: String::from("filter() callback"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 33,
@@ -519,7 +522,7 @@ mod tests {
             Symbol {
                 name: String::from("forEach() callback"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 36,
@@ -530,7 +533,7 @@ mod tests {
             Symbol {
                 name: String::from("\"coord\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 38,
@@ -541,7 +544,7 @@ mod tests {
             Symbol {
                 name: String::from("\"distance\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 39,
@@ -552,7 +555,7 @@ mod tests {
             Symbol {
                 name: String::from("\"heuristic\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 40,
@@ -563,7 +566,7 @@ mod tests {
             Symbol {
                 name: String::from("\"previous\""),
                 kind: String::from("property"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 41,
@@ -574,7 +577,7 @@ mod tests {
             Symbol {
                 name: String::from("lambda"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 17,
@@ -585,7 +588,7 @@ mod tests {
             Symbol {
                 name: String::from("px"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 21,
@@ -596,7 +599,7 @@ mod tests {
             Symbol {
                 name: String::from("py"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 21,
@@ -607,7 +610,7 @@ mod tests {
             Symbol {
                 name: String::from("newClosed"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 45,
@@ -618,7 +621,7 @@ mod tests {
             Symbol {
                 name: String::from("newCurrent"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 48,
@@ -629,7 +632,7 @@ mod tests {
             Symbol {
                 name: String::from("newOpen"),
                 kind: String::from("variable"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 29,
@@ -640,7 +643,7 @@ mod tests {
             Symbol {
                 name: String::from("newx"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 53,
@@ -651,7 +654,7 @@ mod tests {
             Symbol {
                 name: String::from("newy"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 53,
@@ -662,7 +665,7 @@ mod tests {
             Symbol {
                 name: String::from("x"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 13,
@@ -673,7 +676,7 @@ mod tests {
             Symbol {
                 name: String::from("y"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 13,
@@ -684,7 +687,7 @@ mod tests {
             Symbol {
                 name: String::from("board"),
                 kind: String::from("constant"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 60,
@@ -695,7 +698,7 @@ mod tests {
             Symbol {
                 name: String::from("manhattan"),
                 kind: String::from("function"),
-                identifier_start_position: FilePosition {
+                start_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 0,
@@ -719,7 +722,7 @@ mod tests {
         let file_path = "astar_search.js";
 
         let references = manager
-            .references(
+            .find_references(
                 file_path,
                 lsp_types::Position {
                     line: 0,
@@ -769,7 +772,7 @@ mod tests {
             .as_ref()
             .ok_or("Manager is not initialized")?;
         let def_response = manager
-            .definition(
+            .find_definition(
                 "astar_search.js",
                 lsp_types::Position {
                     line: 1,
