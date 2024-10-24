@@ -178,13 +178,13 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
     .await
 }
 
-const PYTHON_SAMPLE: &str = r#"
-import requests
+// const PYTHON_SAMPLE: &str = r#"
+// import requests
 
-def get_pet(pet_id: int):
-    response = requests.get(f'/pets/{pet_id}')
-    return response.json()
-"#;
+// def get_pet(pet_id: int):
+//     response = requests.get(f'/pets/{pet_id}')
+//     return response.json()
+// "#;
 
 pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
     // We use a clone since we're just adding the docs and writing it to the file. We don't need

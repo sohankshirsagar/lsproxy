@@ -50,7 +50,7 @@ pub async fn definitions_in_file(
 
     let source_code_context = if info.include_source_code {
         match result {
-            Ok(DocumentSymbolResponse::Flat(ref symbols)) => {
+            Ok(DocumentSymbolResponse::Flat(ref _symbols)) => {
                 error!("Source code context not supported for flat response");
                 None
             }

@@ -1,7 +1,7 @@
 use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
-use notify::{RecommendedWatcher, RecursiveMode};
+use notify::RecursiveMode;
 use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::{
     collections::HashMap,
@@ -34,7 +34,6 @@ pub struct WorkspaceDocumentsHandler {
     event_sender: Sender<DebouncedEvent>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
-    debouncer: notify_debouncer_mini::Debouncer<RecommendedWatcher>,
 }
 
 impl WorkspaceDocumentsHandler {
@@ -86,7 +85,6 @@ impl WorkspaceDocumentsHandler {
             patterns,
             root_path,
             event_sender,
-            debouncer,
         }
     }
 
@@ -138,7 +136,6 @@ impl WorkspaceDocumentsHandler {
 
         let start_line = range.start.line as usize;
         let mut end_line = range.end.line as usize;
-        let mut end_char = range.end.character as usize;
 
         if end_line >= total_lines {
             warn!(
@@ -146,7 +143,6 @@ impl WorkspaceDocumentsHandler {
                 end_line, total_lines
             );
             end_line = total_lines.saturating_sub(1);
-            end_char = lines[end_line].len();
         }
 
         // If start line is greater than end line, return empty string

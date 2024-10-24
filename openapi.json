@@ -108,13 +108,7 @@
           "500": {
             "description": "Internal server error"
           }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "source": "\nimport requests\n\ndef get_pet(pet_id: int):\n    response = requests.get(f'/pets/{pet_id}')\n    return response.json()\n"
-          }
-        ]
+        }
       }
     },
     "/symbol/find-references": {
@@ -451,11 +445,13 @@
             "description": "The raw response from the langserver.\n\nhttps://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol\nhttps://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol"
           },
           "source_code_context": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "$ref": "#/components/schemas/CodeContext"
-            },
-            "nullable": true
+            }
           },
           "symbols": {
             "type": "array",
