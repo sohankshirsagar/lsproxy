@@ -2,7 +2,7 @@ use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
 use notify::RecursiveMode;
-use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
+use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent, Debouncer};
 use std::{
     collections::HashMap,
     error::Error,
@@ -34,6 +34,8 @@ pub struct WorkspaceDocumentsHandler {
     event_sender: Sender<DebouncedEvent>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
+    #[allow(unused)] // need to keep this around for watcher to work
+    debouncer: Debouncer<notify::RecommendedWatcher>,
 }
 
 impl WorkspaceDocumentsHandler {
@@ -85,6 +87,7 @@ impl WorkspaceDocumentsHandler {
             patterns,
             root_path,
             event_sender,
+            debouncer,
         }
     }
 
@@ -279,8 +282,8 @@ mod tests {
         assert!(files.contains(&dir.path().join("file1.rs")));
 
         fs::write(dir.path().join("file3.rs"), "fn main() {}")?;
-        // Wait for the watcher to update the cache
-        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        // Wait for the watcher to update the cache after debounce
+        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
         // Addend another rs file se we expect 2 files
 
         let files = handler.list_files().await;
