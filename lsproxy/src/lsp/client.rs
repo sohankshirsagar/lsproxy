@@ -272,6 +272,9 @@ pub trait LspClient: Send {
         } else if let Some(error) = response.error {
             error!("References error: {:?}", error);
             Err(error.into())
+        } else if response.result == None {
+            warn!("Recieved None from result response");
+            Ok(Vec::new())
         } else {
             Err("Unexpected references response".into())
         }
