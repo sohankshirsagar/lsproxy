@@ -4,6 +4,7 @@ use actix_web::{
     App, HttpServer,
 };
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use log::warn;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -19,8 +20,9 @@ mod lsp;
 mod utils;
 
 use crate::api_types::{
-    get_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest, GetDefinitionRequest,
-    GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
+    get_mount_dir, set_global_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest,
+    GetDefinitionRequest, GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol,
+    SymbolResponse,
 };
 use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
 use crate::lsp::manager::LspManager;
@@ -77,11 +79,25 @@ pub struct AppState {
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
+    initialize_app_state_with_mount_dir(None).await
+}
+
+pub async fn initialize_app_state_with_mount_dir(
+    mount_dir_override: Option<&str>,
+) -> Result<Data<AppState>, Box<dyn std::error::Error>> {
+    if let Some(global_mount_dir) = mount_dir_override {
+        set_global_mount_dir(global_mount_dir);
+        warn!("Changing global mount dir to: {}", global_mount_dir);
+    }
+
+    let mount_dir_path = get_mount_dir();
+    let mount_dir = mount_dir_path.to_string_lossy();
+
     let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
     lsp_manager
         .lock()
         .unwrap()
-        .start_langservers(get_mount_dir().to_str().unwrap())
+        .start_langservers(&mount_dir)
         .await?;
     Ok(Data::new(AppState { lsp_manager }))
 }
@@ -94,6 +110,10 @@ enum Method {
 }
 
 pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
+    run_server_with_port(app_state, 4444).await
+}
+
+pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::io::Result<()> {
     if let Err(e) = check_mount_dir() {
         eprintln!(
             "Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
@@ -153,7 +173,7 @@ pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
             )
             .service(api_scope)
     })
-    .bind("0.0.0.0:4444")?
+    .bind(format!("0.0.0.0:{}", port))?
     .run()
     .await
 }
@@ -174,7 +194,8 @@ mod test_utils;
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::api_types::set_mount_dir;
+
+    use crate::api_types::set_thread_local_mount_dir;
     use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use std::net::TcpStream;
     use std::sync::mpsc;
@@ -267,7 +288,9 @@ mod test {
         // Spawn the server in a separate thread
         let _server_thread = thread::spawn(move || {
             // Set the mount directory for the server thread
-            set_mount_dir(&test_path);
+            // This only sets the thread local variable.
+            // That's fine since we don't make any requests
+            set_thread_local_mount_dir(&test_path);
 
             let system = actix_web::rt::System::new();
             if let Err(e) = system.block_on(async {

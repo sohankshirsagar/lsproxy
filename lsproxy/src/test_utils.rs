@@ -1,4 +1,4 @@
-use crate::api_types::set_mount_dir;
+use crate::api_types::{set_thread_local_mount_dir, unset_thread_local_mount_dir};
 use crate::lsp::manager::LspManager;
 
 pub fn python_sample_path() -> String {
@@ -14,17 +14,12 @@ pub struct TestContext {
 }
 
 impl TestContext {
-    pub fn new(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        set_mount_dir(file_path);
-        Ok(Self { manager: None })
-    }
-
     pub async fn setup(file_path: &str, manager: bool) -> Result<Self, Box<dyn std::error::Error>> {
-        set_mount_dir(file_path);
+        set_thread_local_mount_dir(file_path);
         if manager {
             let mut manager = LspManager::new();
             if let Err(e) = manager.start_langservers(file_path).await {
-                set_mount_dir("/mnt/workspace");
+                unset_thread_local_mount_dir();
                 return Err(e);
             }
             return Ok(Self {
@@ -37,6 +32,6 @@ impl TestContext {
 
 impl Drop for TestContext {
     fn drop(&mut self) {
-        set_mount_dir("/mnt/workspace");
+        unset_thread_local_mount_dir();
     }
 }
