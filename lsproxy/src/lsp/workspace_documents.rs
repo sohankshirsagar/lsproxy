@@ -273,13 +273,15 @@ mod tests {
         );
 
         // Test listing files based on patterns
+        // we exclude file2.txt so we expect 1 file
         let files = handler.list_files().await;
         assert_eq!(files.len(), 1);
         assert!(files.contains(&dir.path().join("file1.rs")));
 
         fs::write(dir.path().join("file3.rs"), "fn main() {}")?;
         // Wait for the watcher to update the cache
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        // Addend another rs file se we expect 2 files
 
         let files = handler.list_files().await;
         println!("Files: {:?}", files);
