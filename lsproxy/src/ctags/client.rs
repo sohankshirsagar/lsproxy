@@ -3,7 +3,7 @@ use tokio::sync::broadcast::Receiver;
 
 use super::tag_db::TagDatabase;
 use crate::api_types::{get_mount_dir, Symbol};
-use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
+use crate::utils::file_utils::search_files;
 use crate::utils::workspace_documents::{
     DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
     TYPESCRIPT_FILE_PATTERNS,
@@ -60,7 +60,7 @@ impl CtagsClient {
 
         // Add all discovered files to the command
         for file in files {
-            command.arg(absolute_path_to_relative_path_string(&file));
+            command.arg(file);
         }
 
         let output = command
