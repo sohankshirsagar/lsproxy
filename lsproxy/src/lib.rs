@@ -26,6 +26,7 @@ use crate::api_types::{
 };
 use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
 use crate::lsp::manager::LspManager;
+use crate::ctags::client::CtagsClient;
 // use crate::utils::doc_utils::make_code_sample;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
@@ -77,6 +78,7 @@ pub struct ApiDoc;
 
 pub struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
+    ctags_client: Arc<Mutex<CtagsClient>>,
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
@@ -100,7 +102,9 @@ pub async fn initialize_app_state_with_mount_dir(
         .unwrap()
         .start_langservers(&mount_dir)
         .await?;
-    Ok(Data::new(AppState { lsp_manager }))
+
+    let ctags_client = Arc::new(Mutex::new(CtagsClient::new(&mount_dir).await?));
+    Ok(Data::new(AppState { lsp_manager, ctags_client }))
 }
 
 // Helper enum for cleaner matching

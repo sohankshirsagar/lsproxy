@@ -14,7 +14,7 @@ pub struct CtagsClient {
 }
 
 impl CtagsClient {
-    async fn new(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let mut client = Self {
             tags: TagDatabase::new()?,
         };
