@@ -1,8 +1,12 @@
+use notify_debouncer_mini::DebouncedEvent;
+use tokio::sync::broadcast::Receiver;
+
 use super::tag_db::TagDatabase;
 use crate::api_types::{get_mount_dir, Symbol};
+use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
-    RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
+    DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
+    TYPESCRIPT_FILE_PATTERNS,
 };
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -14,20 +18,23 @@ pub struct CtagsClient {
 }
 
 impl CtagsClient {
-    async fn new(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let mut client = Self {
             tags: TagDatabase::new()?,
         };
-        client.generate(file_path).await?;
-        client.load(Path::new(file_path).join("tags"))?;
+        client.generate(root_path).await?;
+        client.load(Path::new(root_path).join(".tags"))?;
         Ok(client)
     }
 
-    async fn generate(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn generate(&self, root_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         // Run ctags command to generate tags file
-        let output_file = Path::new(file_path).join("tags");
-        let files = WorkspaceDocumentsHandler::new(
-            Path::new(file_path),
+        let output_file = Path::new(root_path).join(".tags");
+        let files = search_files(
+            Path::new(root_path),
             PYRIGHT_FILE_PATTERNS
                 .iter()
                 .chain(TYPESCRIPT_FILE_PATTERNS.iter())
@@ -38,9 +45,7 @@ impl CtagsClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
-        )
-        .list_files()
-        .await;
+        )?;
 
         // Build command with base args
         let mut command = Command::new("ctags");
@@ -55,12 +60,12 @@ impl CtagsClient {
 
         // Add all discovered files to the command
         for file in files {
-            if let Some(file_str) = file.to_str() {
-                command.arg(file_str);
-            }
+            command.arg(absolute_path_to_relative_path_string(&file));
         }
 
-        let output = command.output().map_err(|e| format!("Failed to execute ctags command: {}", e))?;
+        let output = command
+            .output()
+            .map_err(|e| format!("Failed to execute ctags command: {}", e))?;
 
         if !output.status.success() {
             return Err(format!(
@@ -109,7 +114,8 @@ impl CtagsClient {
                     .iter()
                     .find(|&&part| part.starts_with("line:"))
                     .and_then(|part| part.trim_start_matches("line:").parse::<u32>().ok())
-                    .unwrap_or(1) - 1;
+                    .unwrap_or(1)
+                    - 1;
 
                 // Find column number using the line content from the tags file
                 let column_number = line_content.find(tag_name).unwrap_or(0) as u32;
@@ -137,14 +143,21 @@ impl CtagsClient {
 
 #[cfg(test)]
 mod test {
+    use tokio::sync::broadcast::{channel, Sender};
+
     use super::*;
     use crate::api_types::{FilePosition, Position, Symbol};
     use crate::test_utils::{python_sample_path, TestContext};
 
+    fn create_test_watcher_channels() -> (Sender<DebouncedEvent>, Receiver<DebouncedEvent>) {
+        channel(100)
+    }
+
     #[tokio::test]
     async fn test_python_tags() -> Result<(), Box<dyn std::error::Error>> {
+        let (tx, rx) = create_test_watcher_channels();
         let _context = TestContext::setup_no_manager(&python_sample_path());
-        let client = CtagsClient::new(&python_sample_path()).await?;
+        let client = CtagsClient::new(&python_sample_path(), rx).await?;
         let symbols = client.get_file_symbols("main.py")?;
         let expected = vec![
             Symbol {

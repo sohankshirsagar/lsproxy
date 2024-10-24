@@ -94,7 +94,7 @@ pub async fn initialize_app_state_with_mount_dir(
     let mount_dir_path = get_mount_dir();
     let mount_dir = mount_dir_path.to_string_lossy();
 
-    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
+    let lsp_manager = Arc::new(Mutex::new(LspManager::new(&mount_dir)));
     lsp_manager
         .lock()
         .unwrap()

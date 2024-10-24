@@ -1,7 +1,7 @@
 use log::warn;
 use lsp_types::{
     DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
-    SymbolInformation, SymbolKind, Url,
+    SymbolInformation, SymbolKind,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
@@ -11,6 +11,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, RwLock};
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
+
+use crate::utils::file_utils::uri_to_relative_path_string;
 
 static GLOBAL_MOUNT_DIR: LazyLock<Arc<RwLock<PathBuf>>> =
     LazyLock::new(|| Arc::new(RwLock::new(PathBuf::from("/mnt/workspace"))));
@@ -398,25 +400,6 @@ impl
             source_code_context,
         }
     }
-}
-
-pub fn uri_to_relative_path_string(uri: &Url) -> String {
-    let path = uri.to_file_path().unwrap_or_else(|e| {
-        warn!("Failed to convert URI to file path: {:?}", e);
-        PathBuf::from(uri.path())
-    });
-
-    absolute_path_to_relative_path_string(&path)
-}
-
-pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
-    let mount_dir = get_mount_dir();
-    path.strip_prefix(mount_dir)
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|e| {
-            warn!("Failed to strip prefix: {:?}", e);
-            path.to_string_lossy().into_owned()
-        })
 }
 
 fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<Symbol> {

@@ -3,11 +3,10 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Location, Position as LspPosition, Range};
 
-use crate::api_types::{
-    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
-};
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
 use crate::lsp::manager::{LspManager, LspManagerError};
+use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
 
 /// Find all references to a symbol

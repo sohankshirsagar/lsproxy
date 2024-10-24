@@ -1,9 +1,11 @@
 use std::{error::Error, path::Path, process::Stdio};
 
 use async_trait::async_trait;
+use notify_debouncer_mini::DebouncedEvent;
 use tokio::process::Command;
+use tokio::sync::broadcast::Receiver;
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler, PendingRequests};
+use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
     WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
@@ -54,7 +56,10 @@ impl LspClient for RustAnalyzerClient {
 }
 
 impl RustAnalyzerClient {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("rust-analyzer")
             .current_dir(root_path)
             .stdin(Stdio::piped())
@@ -78,6 +83,7 @@ impl RustAnalyzerClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
+            watch_events_rx,
         );
 
         Ok(Self {

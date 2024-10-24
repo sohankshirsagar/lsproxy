@@ -1,7 +1,6 @@
-use crate::api_types::{
-    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
-};
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::lsp::manager::{LspManager, LspManagerError};
+use crate::utils::file_utils::uri_to_relative_path_string;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info, warn};

@@ -1,27 +1,54 @@
-use crate::api_types::{absolute_path_to_relative_path_string, get_mount_dir, SupportedLanguages};
+use crate::api_types::{get_mount_dir, SupportedLanguages};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
-use crate::utils::file_utils::search_files;
+use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
 use crate::utils::workspace_documents::{
     WorkspaceDocuments, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
     RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
 };
-use log::{debug, warn};
+use log::{debug, error, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range};
+use notify::RecursiveMode;
+use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::broadcast::{channel, Sender};
 use tokio::sync::Mutex;
 
 pub struct LspManager {
     clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
+    watch_events_sender: Sender<DebouncedEvent>,
 }
 
 impl LspManager {
-    pub fn new() -> Self {
+    pub fn new(root_path: &str) -> Self {
+        let (tx, _) = channel(100);
+        let event_sender = tx.clone();
+        let mut debouncer = new_debouncer(
+            Duration::from_secs(2),
+            move |res: DebounceEventResult| match res {
+                Ok(events) => {
+                    for event in events {
+                        let _ = tx.send(event.clone());
+                    }
+                }
+                Err(e) => error!("Debounce error: {:?}", e),
+            },
+        )
+        .expect("Failed to create debouncer");
+
+        // Watch the root path recursively
+        debouncer
+            .watcher()
+            .watch(Path::new(root_path), RecursiveMode::Recursive)
+            .expect("Failed to watch path");
+
         Self {
             clients: HashMap::new(),
+            watch_events_sender: event_sender,
         }
     }
 
@@ -79,17 +106,20 @@ impl LspManager {
             debug!("Starting {:?} LSP", lsp);
             let mut client: Box<dyn LspClient> = match lsp {
                 SupportedLanguages::Python => Box::new(
-                    PyrightClient::new(workspace_path)
+                    PyrightClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
                 SupportedLanguages::TypeScriptJavaScript => Box::new(
-                    TypeScriptLanguageClient::new(workspace_path)
-                        .await
-                        .map_err(|e| e.to_string())?,
+                    TypeScriptLanguageClient::new(
+                        workspace_path,
+                        self.watch_events_sender.subscribe(),
+                    )
+                    .await
+                    .map_err(|e| e.to_string())?,
                 ),
                 SupportedLanguages::Rust => Box::new(
-                    RustAnalyzerClient::new(workspace_path)
+                    RustAnalyzerClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
