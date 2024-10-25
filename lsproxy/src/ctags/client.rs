@@ -18,7 +18,7 @@ pub struct CtagsClient {
 }
 
 impl CtagsClient {
-    async fn new(
+    pub async fn new(
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
@@ -161,13 +161,13 @@ mod test {
         let symbols = client.get_file_symbols("main.py")?;
         let expected = vec![
             Symbol {
-                name: String::from("cost"),
+                name: String::from("plt"),
                 kind: String::from("ctag_definition"),
                 start_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 6,
-                        character: 8,
+                        line: 0,
+                        character: 28,
                     },
                 },
             },
@@ -183,17 +183,6 @@ mod test {
                 },
             },
             Symbol {
-                name: String::from("plt"),
-                kind: String::from("ctag_definition"),
-                start_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 0,
-                        character: 28,
-                    },
-                },
-            },
-            Symbol {
                 name: String::from("result"),
                 kind: String::from("ctag_definition"),
                 start_position: FilePosition {
@@ -201,6 +190,17 @@ mod test {
                     position: Position {
                         line: 6,
                         character: 0,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("cost"),
+                kind: String::from("ctag_definition"),
+                start_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 8,
                     },
                 },
             },

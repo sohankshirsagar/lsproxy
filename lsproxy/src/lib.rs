@@ -24,7 +24,10 @@ use crate::api_types::{
     GetDefinitionRequest, GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol,
     SymbolResponse,
 };
-use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
+use crate::ctags::client::CtagsClient;
+use crate::handlers::{
+    ctags_definitions_in_file, definitions_in_file, find_definition, find_references, list_files,
+};
 use crate::lsp::manager::LspManager;
 // use crate::utils::doc_utils::make_code_sample;
 
@@ -44,6 +47,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         )
     ),
     paths(
+        crate::handlers::ctags_definitions_in_file,
         crate::handlers::definitions_in_file,
         crate::handlers::find_definition,
         crate::handlers::find_references,
@@ -77,6 +81,7 @@ pub struct ApiDoc;
 
 pub struct AppState {
     lsp_manager: Arc<Mutex<LspManager>>,
+    ctags_client: Arc<Mutex<CtagsClient>>,
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
@@ -100,7 +105,12 @@ pub async fn initialize_app_state_with_mount_dir(
         .unwrap()
         .start_langservers(&mount_dir)
         .await?;
-    Ok(Data::new(AppState { lsp_manager }))
+
+    let ctags_client = Arc::new(Mutex::new(CtagsClient::new(&mount_dir).await?));
+    Ok(Data::new(AppState {
+        lsp_manager,
+        ctags_client,
+    }))
 }
 
 // Helper enum for cleaner matching
@@ -149,13 +159,15 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
             };
 
             api_scope = match (path.as_str(), method) {
-                ("/symbol/find-definition", Some(Method::Post)) => 
+                ("/symbol/find-definition", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(find_definition))),
-                ("/symbol/find-references", Some(Method::Post)) => 
+                ("/symbol/find-references", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(find_references))),
-                ("/symbol/definitions-in-file", Some(Method::Get)) => 
+                ("/symbol/ctags-definitions-in-file", Some(Method::Get)) =>
+                    api_scope.service(resource(path).route(get().to(ctags_definitions_in_file))),
+                ("/symbol/definitions-in-file", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(definitions_in_file))),
-                ("/workspace/list-files", Some(Method::Get)) => 
+                ("/workspace/list-files", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(list_files))),
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
