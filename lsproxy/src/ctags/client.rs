@@ -1,5 +1,7 @@
+use log::{debug, error};
 use notify_debouncer_mini::DebouncedEvent;
 use tokio::sync::broadcast::Receiver;
+use tokio::sync::RwLock;
 
 use super::tag_db::TagDatabase;
 use crate::api_types::{get_mount_dir, Symbol};
@@ -12,9 +14,10 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::Arc;
 
 pub struct CtagsClient {
-    tags: TagDatabase,
+    tags: Arc<RwLock<TagDatabase>>,
 }
 
 impl CtagsClient {
@@ -22,15 +25,19 @@ impl CtagsClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let mut client = Self {
-            tags: TagDatabase::new()?,
-        };
-        client.generate(root_path).await?;
-        client.load(Path::new(root_path).join(".tags"))?;
-        Ok(client)
+        let db = Arc::new(RwLock::new(TagDatabase::new()?));
+
+        Self::generate(root_path).await?;
+        Self::load(db.clone(), Path::new(root_path).join(".tags")).await?;
+        tokio::spawn(Self::handle_watch_events(
+            root_path.to_string(),
+            db.clone(),
+            watch_events_rx,
+        ));
+        Ok(Self { tags: db })
     }
 
-    async fn generate(&self, root_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn generate(root_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         // Run ctags command to generate tags file
         let output_file = Path::new(root_path).join(".tags");
         let files = search_files(
@@ -77,7 +84,10 @@ impl CtagsClient {
         Ok(())
     }
 
-    fn load(&mut self, path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    async fn load(
+        db: Arc<RwLock<TagDatabase>>,
+        path: PathBuf,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // Prepare vectors for column-based storage
         let mut names = Vec::new();
         let mut files = Vec::new();
@@ -126,17 +136,59 @@ impl CtagsClient {
                 columns.push(column_number);
             }
         }
-
-        self.tags
-            .add_tags_by_columns(names, files, lines, columns)?;
-        Ok(())
+        db.write()
+            .await
+            .add_tags_by_columns(names, files, lines, columns)
     }
 
-    pub fn get_file_symbols(
+    async fn handle_watch_events(
+        root_path: String,
+        db: Arc<RwLock<TagDatabase>>,
+        mut watch_events_rx: Receiver<DebouncedEvent>,
+    ) {
+        while let Ok(event) = watch_events_rx.recv().await {
+            if Self::event_matches(&event) {
+                debug!("Relevant event detected. Regenerating tags.");
+                if let Err(e) = Self::generate(&root_path).await {
+                    error!("Failed to generate tags: {}", e);
+                    continue;
+                }
+                if let Err(e) = Self::load(db.clone(), Path::new(&root_path).join(".tags")).await {
+                    error!("Failed to load tags: {}", e);
+                } else {
+                    debug!("Tags successfully regenerated and loaded.");
+                }
+            }
+        }
+    }
+
+    fn event_matches(event: &DebouncedEvent) -> bool {
+        let path_str = event.path.to_string_lossy();
+        let include_patterns: Vec<String> = PYRIGHT_FILE_PATTERNS
+            .iter()
+            .chain(TYPESCRIPT_FILE_PATTERNS.iter())
+            .chain(RUST_ANALYZER_FILE_PATTERNS.iter())
+            .map(|&s| s.to_string())
+            .collect();
+        let exclude_patterns: Vec<String> = DEFAULT_EXCLUDE_PATTERNS
+            .iter()
+            .map(|&s| s.to_string())
+            .collect();
+
+        let included = include_patterns
+            .iter()
+            .any(|pat| glob::Pattern::new(pat).unwrap().matches(&path_str));
+        let excluded = exclude_patterns
+            .iter()
+            .any(|pat| glob::Pattern::new(pat).unwrap().matches(&path_str));
+        included && !excluded
+    }
+
+    pub async fn get_file_symbols(
         &self,
         file_name: &str,
     ) -> Result<Vec<Symbol>, Box<dyn std::error::Error>> {
-        let symbols = self.tags.get_file_symbols(file_name)?;
+        let symbols = self.tags.read().await.get_file_symbols(file_name)?;
         Ok(symbols)
     }
 }
@@ -158,7 +210,7 @@ mod test {
         let (_, rx) = create_test_watcher_channels();
         let _context = TestContext::setup_no_manager(&python_sample_path());
         let client = CtagsClient::new(&python_sample_path(), rx).await?;
-        let symbols = client.get_file_symbols("main.py")?;
+        let symbols = client.get_file_symbols("main.py").await?;
         let expected = vec![
             Symbol {
                 name: String::from("cost"),

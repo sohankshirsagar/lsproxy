@@ -39,6 +39,10 @@ impl TagDatabase {
         Ok(())
     }
 
+    pub fn clear(&mut self) {
+        self.df.clear();
+    }
+
     pub fn get_file_symbols(
         &self,
         file_name: &str,
