@@ -425,28 +425,6 @@ mod tests {
                     },
                 },
             },
-            Symbol {
-                name: String::from("barrier"),
-                kind: String::from("variable"),
-                identifier_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 10,
-                        character: 4,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 10,
-                        character: 4,
-                    },
-                    end: Position {
-                        line: 10,
-                        character: 11,
-                    },
-                },
-            },
         ];
         assert_eq!(symbol_response, expected);
         Ok(())

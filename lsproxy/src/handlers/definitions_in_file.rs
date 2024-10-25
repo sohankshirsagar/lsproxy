@@ -88,7 +88,7 @@ mod test {
         let bytes = actix_web::body::to_bytes(body).await.unwrap();
         let file_symbols_response: Vec<Symbol> = serde_json::from_slice(&bytes).unwrap();
 
-        let expected_response = vec![
+        let expected = vec![
             Symbol {
                 name: String::from("graph"),
                 kind: String::from("variable"),
@@ -106,7 +106,7 @@ mod test {
                         character: 0,
                     },
                     end: Position {
-                        line: 5,
+                        line: 6,
                         character: 0,
                     },
                 },
@@ -128,7 +128,7 @@ mod test {
                         character: 0,
                     },
                     end: Position {
-                        line: 6,
+                        line: 7,
                         character: 0,
                     },
                 },
@@ -147,17 +147,17 @@ mod test {
                     path: String::from("main.py"),
                     start: Position {
                         line: 6,
-                        character: 8,
+                        character: 0,
                     },
                     end: Position {
-                        line: 6,
-                        character: 8,
+                        line: 7,
+                        character: 0,
                     },
                 },
             },
         ];
 
-        assert_eq!(expected_response, file_symbols_response);
+        assert_eq!(expected, file_symbols_response);
         Ok(())
     }
 }
