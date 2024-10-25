@@ -182,8 +182,7 @@ impl CtagsClient {
 
 #[cfg(test)]
 mod test {
-    use fs_extra::dir::{copy, CopyOptions};
-    use std::fs::remove_file;
+
     use tokio::sync::broadcast::{channel, Sender};
     use tokio::time::{sleep, Duration};
 
@@ -253,39 +252,40 @@ mod test {
 
     #[tokio::test]
     async fn test_watch_event_deletion() -> Result<(), Box<dyn std::error::Error>> {
-        // 1. Copy the python project to a temp dir
-        let temp_dir = tempfile::tempdir()?;
-        let _context = TestContext::setup_no_manager(temp_dir.path().to_str().unwrap());
-
-        copy(
-            &python_sample_path(),
-            temp_dir.path(),
-            &CopyOptions::new().overwrite(true),
-        )?;
-
-        // 2. Check the symbols in main
         let (tx, rx) = create_test_watcher_channels();
-        let client = CtagsClient::new(temp_dir.path().to_str().unwrap(), rx).await?;
-        let symbols_before = client.get_file_symbols("main.py").await?;
-        assert!(!symbols_before.is_empty());
+        let sample_path = python_sample_path();
+        let _context = TestContext::setup_no_manager(&sample_path);
+        let client = CtagsClient::new(&sample_path, rx).await?;
+        // this is done after client is initialized, so ctags are already loaded
+        let temp_file = tempfile::Builder::new()
+            .prefix("test_file")
+            .suffix(".py")
+            .tempfile_in(&sample_path)?;
+        tokio::fs::write(
+            &temp_file.path(),
+            "def test_func():\n    x = 1\n    return x",
+        )
+        .await?;
 
-        // 3. Delete main from temp dir
-        remove_file(temp_dir.path().join("main.py"))?;
+        let relative_file_path = temp_file.path().file_name().unwrap().to_str().unwrap();
 
-        // 4. Send a watch event
+        let symbols = client.get_file_symbols(relative_file_path).await?;
+        assert!(symbols.is_empty()); // add a new temp f
+
         tx.send(DebouncedEvent {
-            path: temp_dir.path().join("main.py"),
+            path: temp_file.path().to_path_buf(),
             kind: notify_debouncer_mini::DebouncedEventKind::Any,
         })?;
 
-        // 5. Sleep to allow event processing
         sleep(Duration::from_millis(100)).await;
 
-        // 6. Check the symbols in main
-        let symbols_after = client.get_file_symbols("main.py").await?;
+        let symbols_after = client.get_file_symbols(relative_file_path).await?;
 
-        // 7. Should be empty
-        assert!(symbols_after.is_empty());
+        assert!(
+            !symbols_after.is_empty(),
+            "No symbols found in {}",
+            relative_file_path
+        );
 
         Ok(())
     }
