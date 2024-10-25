@@ -111,7 +111,9 @@ pub struct Symbol {
     pub kind: String,
 
     /// The start position of the symbol's identifier.
-    pub start_position: FilePosition,
+    pub identifier_position: FilePosition,
+
+    pub range: FileRange,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -341,86 +343,6 @@ impl From<LocationLink> for FilePosition {
     }
 }
 
-impl From<SymbolInformation> for Symbol {
-    fn from(symbol: SymbolInformation) -> Self {
-        Symbol {
-            name: symbol.name,
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            start_position: FilePosition::from(symbol.location),
-        }
-    }
-}
-
-impl Symbol {
-    fn new(symbol: &DocumentSymbol, file_path: &str) -> Self {
-        Symbol {
-            name: symbol.name.to_string(),
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            start_position: FilePosition {
-                path: file_path.to_owned(),
-                position: Position {
-                    line: symbol.selection_range.start.line,
-                    character: symbol.selection_range.start.character,
-                },
-            },
-        }
-    }
-}
-impl
-    From<(
-        DocumentSymbolResponse,
-        String,
-        bool,
-        Option<Vec<CodeContext>>,
-    )> for SymbolResponse
-{
-    fn from(
-        (response, file_path, include_raw, source_code_context): (
-            DocumentSymbolResponse,
-            String,
-            bool,
-            Option<Vec<CodeContext>>,
-        ),
-    ) -> Self {
-        let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
-        let symbols = match response {
-            DocumentSymbolResponse::Flat(symbols) => symbols
-                .into_iter()
-                .map(|symbol| Symbol {
-                    name: symbol.name,
-                    kind: symbol_kind_to_string(symbol.kind).to_owned(),
-                    start_position: FilePosition::from(symbol.location),
-                })
-                .collect(),
-            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
-        };
-        SymbolResponse {
-            raw_response,
-            symbols,
-            source_code_context,
-        }
-    }
-}
-
-fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<Symbol> {
-    fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<Symbol>) {
-        result.push(Symbol::new(&symbol, file_path));
-
-        if let Some(children) = symbol.children {
-            for child in children {
-                recursive_flatten(child, file_path, result);
-            }
-        }
-    }
-
-    let mut flattened = Vec::new();
-
-    for symbol in symbols {
-        recursive_flatten(symbol, file_path, &mut flattened);
-    }
-    flattened
-}
-
 fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
     match kind {
         SymbolKind::FILE => "file",
@@ -494,8 +416,8 @@ mod tests {
 
         assert_eq!(symbol.name, "test_function");
         assert_eq!(symbol.kind, "function");
-        assert_eq!(symbol.start_position.path, file_path);
-        assert_eq!(symbol.start_position.position.line, 10);
-        assert_eq!(symbol.start_position.position.character, 4);
+        assert_eq!(symbol.identifier_position.path, file_path);
+        assert_eq!(symbol.identifier_position.position.line, 10);
+        assert_eq!(symbol.identifier_position.position.character, 4);
     }
 }

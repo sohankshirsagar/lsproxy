@@ -1,8 +1,7 @@
 use ignore::WalkBuilder;
 use log::warn;
-use std::path::{Path, PathBuf};
 use url::Url;
-
+use std::path::{Path, PathBuf};
 use crate::api_types::get_mount_dir;
 
 pub fn search_files(

@@ -16,14 +16,14 @@
     }
   ],
   "paths": {
-    "/symbol/ctags-definitions-in-file": {
+    "/symbol/definitions-in-file": {
       "get": {
         "tags": [
           "symbol"
         ],
         "summary": "Get symbols in a specific file using ctags",
         "description": "Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.\n\nThe returned positions point to the start of the symbol's identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\n_________^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n```",
-        "operationId": "ctags_definitions_in_file",
+        "operationId": "definitions_in_file",
         "parameters": [
           {
             "name": "file_path",
@@ -63,63 +63,6 @@
                   "items": {
                     "$ref": "#/components/schemas/Symbol"
                   }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/symbol/definitions-in-file": {
-      "get": {
-        "tags": [
-          "symbol"
-        ],
-        "summary": "Get symbols in a specific file",
-        "description": "Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.\n\nThe returned positions point to the start of the symbol's identifier.\n\ne.g. for `User` on line 0 of `src/main.py`:\n```\n0: class User:\n_________^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n```",
-        "operationId": "definitions_in_file",
-        "parameters": [
-          {
-            "name": "file_path",
-            "in": "query",
-            "description": "The path to the file to get the symbols for, relative to the root of the workspace.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "include_raw_response",
-            "in": "query",
-            "description": "Whether to include the raw response from the langserver in the response.\nDefaults to false.",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "include_source_code",
-            "in": "query",
-            "description": "Whether to include the source code of the symbols in the response.\nDefaults to none.",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Symbols retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SymbolResponse"
                 }
               }
             }
@@ -476,9 +419,14 @@
         "required": [
           "name",
           "kind",
-          "start_position"
+          "identifier_position",
+          "range"
         ],
         "properties": {
+          "identifier_position": {
+            "$ref": "#/components/schemas/FilePosition",
+            "description": "The start position of the symbol's identifier."
+          },
           "kind": {
             "type": "string",
             "description": "The kind of the symbol (e.g., function, class).",
@@ -489,9 +437,8 @@
             "description": "The name of the symbol.",
             "example": "User"
           },
-          "start_position": {
-            "$ref": "#/components/schemas/FilePosition",
-            "description": "The start position of the symbol's identifier."
+          "range": {
+            "$ref": "#/components/schemas/FileRange"
           }
         }
       },

@@ -25,7 +25,7 @@ use crate::api_types::{
     SymbolResponse,
 };
 use crate::handlers::{
-    ctags_definitions_in_file, definitions_in_file, find_definition, find_references, list_files,
+    definitions_in_file, find_definition, find_references, list_files,
 };
 use crate::lsp::manager::Manager;
 // use crate::utils::doc_utils::make_code_sample;
@@ -46,7 +46,6 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         )
     ),
     paths(
-        crate::handlers::ctags_definitions_in_file,
         crate::handlers::definitions_in_file,
         crate::handlers::find_definition,
         crate::handlers::find_references,
@@ -157,8 +156,6 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
                     api_scope.service(resource(path).route(post().to(find_definition))),
                 ("/symbol/find-references", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(find_references))),
-                ("/symbol/ctags-definitions-in-file", Some(Method::Get)) =>
-                    api_scope.service(resource(path).route(get().to(ctags_definitions_in_file))),
                 ("/symbol/definitions-in-file", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(definitions_in_file))),
                 ("/workspace/list-files", Some(Method::Get)) =>

@@ -103,7 +103,7 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
             Symbol {
                 name: String::from("graph"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 5,
@@ -114,7 +114,7 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
             Symbol {
                 name: String::from("result"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -125,7 +125,7 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
             Symbol {
                 name: String::from("cost"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -136,7 +136,7 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
             Symbol {
                 name: String::from("barrier"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 10,
