@@ -196,7 +196,7 @@ impl CtagsClient {
 #[cfg(test)]
 mod test {
     use fs_extra::dir::{copy, CopyOptions};
-    use std::fs::{self, remove_file};
+    use std::fs::{remove_file};
     use tokio::sync::broadcast::{channel, Sender};
     use tokio::time::{sleep, Duration};
 
