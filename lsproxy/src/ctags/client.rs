@@ -195,7 +195,10 @@ impl CtagsClient {
 
 #[cfg(test)]
 mod test {
+    use fs_extra::dir::{copy, CopyOptions};
+    use std::fs::{self, remove_file};
     use tokio::sync::broadcast::{channel, Sender};
+    use tokio::time::{sleep, Duration};
 
     use super::*;
     use crate::api_types::{FilePosition, Position, Symbol};
@@ -258,6 +261,43 @@ mod test {
             },
         ];
         assert_eq!(symbols, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_watch_event_deletion() -> Result<(), Box<dyn std::error::Error>> {
+        // 1. Copy the python project to a temp dir
+        let temp_dir = tempfile::tempdir()?;
+        copy(
+            &python_sample_path(),
+            temp_dir.path(),
+            &CopyOptions::new().overwrite(true),
+        )?;
+
+        // 2. Check the symbols in main
+        let (tx, rx) = create_test_watcher_channels();
+        let client = CtagsClient::new(temp_dir.path().to_str().unwrap(), rx).await?;
+        let symbols_before = client.get_file_symbols("main.py").await?;
+        assert!(!symbols_before.is_empty());
+
+        // 3. Delete main from temp dir
+        remove_file(temp_dir.path().join("main.py"))?;
+
+        // 4. Send a watch event
+        tx.send(DebouncedEvent {
+            path: temp_dir.path().join("main.py"),
+            kind: notify_debouncer_mini::DebouncedEventKind::Any,
+        })?;
+
+        // 5. Sleep to allow event processing
+        sleep(Duration::from_millis(100)).await;
+
+        // 6. Check the symbols in main
+        let symbols_after = client.get_file_symbols("main.py").await?;
+
+        // 7. Should be empty
+        assert!(symbols_after.is_empty());
+
         Ok(())
     }
 }
