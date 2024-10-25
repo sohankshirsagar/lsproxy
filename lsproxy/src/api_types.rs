@@ -1,8 +1,5 @@
 use log::warn;
-use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
-    SymbolInformation, SymbolKind,
-};
+use lsp_types::{GotoDefinitionResponse, Location, LocationLink, SymbolKind};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use std::cell::RefCell;
@@ -252,17 +249,7 @@ pub struct ReferencesResponse {
     pub context: Option<Vec<CodeContext>>,
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
-pub struct SymbolResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    /// The raw response from the langserver.
-    ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol
-    pub raw_response: Option<Value>,
-    pub symbols: Vec<Symbol>,
-    pub source_code_context: Option<Vec<CodeContext>>,
-}
+pub type SymbolResponse = Vec<Symbol>;
 
 impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
     fn from(
@@ -372,52 +359,5 @@ fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
         SymbolKind::OPERATOR => "operator",
         SymbolKind::TYPE_PARAMETER => "type_parameter",
         _ => "unknown",
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use lsp_types::{Range, SymbolKind};
-
-    #[test]
-    fn test_symbol_new_from_document_symbol() {
-        let document_symbol = DocumentSymbol {
-            name: "test_function".to_string(),
-            detail: None,
-            kind: SymbolKind::FUNCTION,
-            tags: None,
-            deprecated: None,
-            range: Range {
-                start: lsp_types::Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: lsp_types::Position {
-                    line: 15,
-                    character: 1,
-                },
-            },
-            selection_range: Range {
-                start: lsp_types::Position {
-                    line: 10,
-                    character: 4,
-                },
-                end: lsp_types::Position {
-                    line: 10,
-                    character: 17,
-                },
-            },
-            children: None,
-        };
-
-        let file_path = "src/main.rs";
-        let symbol = Symbol::new(&document_symbol, file_path);
-
-        assert_eq!(symbol.name, "test_function");
-        assert_eq!(symbol.kind, "function");
-        assert_eq!(symbol.identifier_position.path, file_path);
-        assert_eq!(symbol.identifier_position.position.line, 10);
-        assert_eq!(symbol.identifier_position.position.character, 4);
     }
 }

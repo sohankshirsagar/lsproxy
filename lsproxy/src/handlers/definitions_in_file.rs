@@ -46,7 +46,6 @@ pub async fn definitions_in_file(
     };
     let result = manager.definitions_in_file_ctags(&info.file_path).await;
 
-
     match result {
         Ok(symbols) => HttpResponse::Ok().json(symbols),
         Err(e) => HttpResponse::BadRequest().json(ErrorResponse {
@@ -122,6 +121,17 @@ mod test {
                         character: 0,
                     },
                 },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                },
             },
             Symbol {
                 name: String::from("cost"),
@@ -129,6 +139,17 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                    end: Position {
                         line: 6,
                         character: 8,
                     },

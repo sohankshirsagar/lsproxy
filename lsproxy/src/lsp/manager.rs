@@ -320,7 +320,7 @@ impl std::error::Error for LspManagerError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
+    use crate::api_types::{FilePosition, FileRange, Position, Symbol, SymbolResponse};
     use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use lsp_types::{Range, Url};
 
@@ -354,10 +354,9 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "main.py";
-        let file_symbols = manager.definitions_in_file(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
 
-        let symbol_response =
-            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
+        let symbol_response: SymbolResponse = file_symbols;
 
         let expected = vec![
             Symbol {
@@ -367,6 +366,17 @@ mod tests {
                     path: String::from("main.py"),
                     position: Position {
                         line: 5,
+                        character: 0,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
                         character: 0,
                     },
                 },
@@ -381,6 +391,17 @@ mod tests {
                         character: 0,
                     },
                 },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 7,
+                        character: 0,
+                    },
+                },
             },
             Symbol {
                 name: String::from("cost"),
@@ -390,6 +411,17 @@ mod tests {
                     position: Position {
                         line: 6,
                         character: 8,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 7,
+                        character: 0,
                     },
                 },
             },
@@ -403,9 +435,20 @@ mod tests {
                         character: 4,
                     },
                 },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 10,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 11,
+                    },
+                },
             },
         ];
-        assert_eq!(symbol_response.symbols, expected);
+        assert_eq!(symbol_response, expected);
         Ok(())
     }
 
@@ -535,10 +578,9 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
-        let file_symbols = manager.definitions_in_file(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
 
-        let symbol_response =
-            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
+        let symbol_response: SymbolResponse = file_symbols;
 
         let expected = vec![
             Symbol {
@@ -549,6 +591,17 @@ mod tests {
                     position: Position {
                         line: 4,
                         character: 9,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 4,
+                        character: 9,
+                    },
+                    end: Position {
+                        line: 4,
+                        character: 18,
                     },
                 },
             },
@@ -562,6 +615,17 @@ mod tests {
                         character: 13,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 33,
+                        character: 13,
+                    },
+                    end: Position {
+                        line: 33,
+                        character: 26,
+                    },
+                },
             },
             Symbol {
                 name: String::from("forEach() callback"),
@@ -573,6 +637,17 @@ mod tests {
                         character: 14,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 36,
+                        character: 14,
+                    },
+                    end: Position {
+                        line: 36,
+                        character: 26,
+                    },
+                },
             },
             Symbol {
                 name: String::from("\"coord\""),
@@ -580,6 +655,17 @@ mod tests {
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
+                        line: 38,
+                        character: 12,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 38,
+                        character: 12,
+                    },
+                    end: Position {
                         line: 38,
                         character: 12,
                     },
@@ -595,6 +681,17 @@ mod tests {
                         character: 12,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 39,
+                        character: 12,
+                    },
+                    end: Position {
+                        line: 39,
+                        character: 12,
+                    },
+                },
             },
             Symbol {
                 name: String::from("\"heuristic\""),
@@ -602,6 +699,17 @@ mod tests {
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
+                        line: 40,
+                        character: 12,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 40,
+                        character: 12,
+                    },
+                    end: Position {
                         line: 40,
                         character: 12,
                     },
@@ -617,6 +725,17 @@ mod tests {
                         character: 12,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 41,
+                        character: 12,
+                    },
+                    end: Position {
+                        line: 41,
+                        character: 12,
+                    },
+                },
             },
             Symbol {
                 name: String::from("lambda"),
@@ -626,6 +745,17 @@ mod tests {
                     position: Position {
                         line: 17,
                         character: 25,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 17,
+                        character: 25,
+                    },
+                    end: Position {
+                        line: 17,
+                        character: 32,
                     },
                 },
             },
@@ -639,6 +769,17 @@ mod tests {
                         character: 19,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 21,
+                        character: 19,
+                    },
+                    end: Position {
+                        line: 21,
+                        character: 23,
+                    },
+                },
             },
             Symbol {
                 name: String::from("py"),
@@ -646,6 +787,17 @@ mod tests {
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
+                        line: 21,
+                        character: 23,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 21,
+                        character: 23,
+                    },
+                    end: Position {
                         line: 21,
                         character: 23,
                     },
@@ -661,6 +813,17 @@ mod tests {
                         character: 8,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 45,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 45,
+                        character: 8,
+                    },
+                },
             },
             Symbol {
                 name: String::from("newCurrent"),
@@ -668,6 +831,17 @@ mod tests {
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
+                        line: 48,
+                        character: 11,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 48,
+                        character: 11,
+                    },
+                    end: Position {
                         line: 48,
                         character: 11,
                     },
@@ -683,6 +857,17 @@ mod tests {
                         character: 8,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 29,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 29,
+                        character: 8,
+                    },
+                },
             },
             Symbol {
                 name: String::from("newx"),
@@ -694,6 +879,17 @@ mod tests {
                         character: 11,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 53,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 53,
+                        character: 17,
+                    },
+                },
             },
             Symbol {
                 name: String::from("newy"),
@@ -701,6 +897,17 @@ mod tests {
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
+                        line: 53,
+                        character: 17,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 53,
+                        character: 17,
+                    },
+                    end: Position {
                         line: 53,
                         character: 17,
                     },
@@ -716,6 +923,17 @@ mod tests {
                         character: 11,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 13,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 13,
+                        character: 14,
+                    },
+                },
             },
             Symbol {
                 name: String::from("y"),
@@ -723,6 +941,17 @@ mod tests {
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
+                        line: 13,
+                        character: 14,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 13,
+                        character: 11,
+                    },
+                    end: Position {
                         line: 13,
                         character: 14,
                     },
@@ -738,6 +967,17 @@ mod tests {
                         character: 6,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 60,
+                        character: 6,
+                    },
+                    end: Position {
+                        line: 61,
+                        character: 0,
+                    },
+                },
             },
             Symbol {
                 name: String::from("manhattan"),
@@ -749,9 +989,20 @@ mod tests {
                         character: 9,
                     },
                 },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 1,
+                        character: 0,
+                    },
+                },
             },
         ];
-        assert_eq!(symbol_response.symbols, expected);
+        assert_eq!(symbol_response, expected);
         Ok(())
     }
 

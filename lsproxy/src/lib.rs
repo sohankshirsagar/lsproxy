@@ -24,9 +24,7 @@ use crate::api_types::{
     GetDefinitionRequest, GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol,
     SymbolResponse,
 };
-use crate::handlers::{
-    definitions_in_file, find_definition, find_references, list_files,
-};
+use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
 use crate::lsp::manager::Manager;
 // use crate::utils::doc_utils::make_code_sample;
 

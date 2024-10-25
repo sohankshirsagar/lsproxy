@@ -442,28 +442,33 @@
           }
         }
       },
-      "SymbolResponse": {
-        "type": "object",
-        "required": [
-          "symbols"
-        ],
-        "properties": {
-          "raw_response": {
-            "description": "The raw response from the langserver.\n\nhttps://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol\nhttps://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol"
-          },
-          "source_code_context": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/CodeContext"
-            }
-          },
-          "symbols": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Symbol"
+      "Vec": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "kind",
+            "identifier_position",
+            "range"
+          ],
+          "properties": {
+            "identifier_position": {
+              "$ref": "#/components/schemas/FilePosition",
+              "description": "The start position of the symbol's identifier."
+            },
+            "kind": {
+              "type": "string",
+              "description": "The kind of the symbol (e.g., function, class).",
+              "example": "class"
+            },
+            "name": {
+              "type": "string",
+              "description": "The name of the symbol.",
+              "example": "User"
+            },
+            "range": {
+              "$ref": "#/components/schemas/FileRange"
             }
           }
         }

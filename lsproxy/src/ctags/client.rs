@@ -35,15 +35,13 @@ impl CtagsClient {
     }
 
     async fn generate(root_path: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let output_file = Path::new(root_path).join("tags");
-
         // Build command with base args
         let mut command = Command::new("ctags");
         command.args(&[
-            "--fields=+neKl", // Include line numbers, long kind names, and language
-            "--python-kinds=-I",// Remove imports
-            "--rust-kinds=-n",// Remove modules
-            "--quiet",     // don't print warnings
+            "--fields=+neKl",    // Include line numbers, long kind names, and language
+            "--python-kinds=-I", // Remove imports
+            "--rust-kinds=-n",   // Remove modules
+            "--quiet",           // don't print warnings
             "-f -",
         ]);
 
@@ -95,7 +93,6 @@ impl CtagsClient {
         let mut start_characters = Vec::new();
         let mut end_lines = Vec::new();
 
-
         // Process each line
         for line in ctags.lines() {
             // Skip comment lines
@@ -135,12 +132,14 @@ impl CtagsClient {
                 let start_character = line_content.find(tag_name).unwrap_or(0) as u32;
 
                 // Parse the end line number
+                // WE ARE ADDING 1 HERE TO MAKE THE RANGE INCLUSIVE
+                // WITHOUT KNOWING HOW LONG THE END LINE IS
+                // IF THERE IS NO END WE ASSUME IT IS THE SAME AS THE START LINE
                 let end_line = parts
                     .iter()
                     .find(|&&part| part.starts_with("end:"))
                     .and_then(|part| part.trim_start_matches("end:").parse::<u32>().ok())
-                    .unwrap_or(1)
-                    - 1;
+                    .unwrap_or(start_line + 1);
 
                 names.push(tag_name.to_string());
                 kinds.push(kind.to_string());
@@ -151,9 +150,15 @@ impl CtagsClient {
                 end_lines.push(end_line);
             }
         }
-        db.write()
-            .await
-            .add_tags_by_columns(names, kinds, languages, files, start_lines, start_characters, end_lines)
+        db.write().await.add_tags_by_columns(
+            names,
+            kinds,
+            languages,
+            files,
+            start_lines,
+            start_characters,
+            end_lines,
+        )
     }
 
     async fn handle_watch_events(
@@ -214,7 +219,7 @@ mod test {
     use tokio::time::{sleep, Duration};
 
     use super::*;
-    use crate::api_types::{FilePosition, Position, Symbol};
+    use crate::api_types::{FilePosition, FileRange, Position, Symbol};
     use crate::test_utils::{python_sample_path, rust_sample_path, TestContext};
 
     fn create_test_watcher_channels() -> (Sender<DebouncedEvent>, Receiver<DebouncedEvent>) {
@@ -238,6 +243,17 @@ mod test {
                         character: 0,
                     },
                 },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                },
             },
             Symbol {
                 name: String::from("result"),
@@ -249,6 +265,17 @@ mod test {
                         character: 0,
                     },
                 },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                },
             },
             Symbol {
                 name: String::from("cost"),
@@ -256,6 +283,17 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                    end: Position {
                         line: 6,
                         character: 8,
                     },
@@ -283,6 +321,17 @@ mod test {
                         character: 11,
                     },
                 },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 1,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 1,
+                        character: 11,
+                    },
+                },
             },
             Symbol {
                 name: String::from("x"),
@@ -290,6 +339,17 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
+                        line: 2,
+                        character: 8,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 2,
+                        character: 8,
+                    },
+                    end: Position {
                         line: 2,
                         character: 8,
                     },
@@ -305,6 +365,17 @@ mod test {
                         character: 8,
                     },
                 },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 3,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 3,
+                        character: 8,
+                    },
+                },
             },
             Symbol {
                 name: String::from("Point"),
@@ -312,6 +383,17 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
+                        line: 6,
+                        character: 5,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 6,
+                        character: 5,
+                    },
+                    end: Position {
                         line: 6,
                         character: 5,
                     },
@@ -327,6 +409,17 @@ mod test {
                         character: 11,
                     },
                 },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 7,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 7,
+                        character: 11,
+                    },
+                },
             },
             Symbol {
                 name: String::from("Point"),
@@ -334,6 +427,17 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
+                        line: 12,
+                        character: 23,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 12,
+                        character: 23,
+                    },
+                    end: Position {
                         line: 12,
                         character: 23,
                     },
@@ -349,6 +453,17 @@ mod test {
                         character: 9,
                     },
                 },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 13,
+                        character: 9,
+                    },
+                    end: Position {
+                        line: 13,
+                        character: 9,
+                    },
+                },
             },
             Symbol {
                 name: String::from("add"),
@@ -356,6 +471,17 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
+                        line: 15,
+                        character: 7,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("src/point.rs"),
+                    start: Position {
+                        line: 15,
+                        character: 7,
+                    },
+                    end: Position {
                         line: 15,
                         character: 7,
                     },
