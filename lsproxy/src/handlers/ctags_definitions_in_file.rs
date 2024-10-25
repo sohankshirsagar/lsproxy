@@ -34,7 +34,7 @@ pub async fn ctags_definitions_in_file(
     info: Query<FileSymbolsRequest>,
 ) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
-    let ctags_client = match data.ctags_client.lock() {
+    let manager = match data.manager.lock() {
         Ok(guard) => guard,
         Err(e) => {
             error!("Failed to acquire lock on LSP manager: {}", e);
@@ -43,12 +43,13 @@ pub async fn ctags_definitions_in_file(
             });
         }
     };
-    let result = ctags_client.get_file_symbols(&info.file_path);
+
+    let result = manager.definitions_in_file_ctags(&info.file_path).await;
 
     match result {
         Ok(symbols) => HttpResponse::Ok().json(symbols),
         Err(e) => HttpResponse::BadRequest().json(ErrorResponse {
-            error: format!("Couldn't get symbols: {}", e),
+            error: format!("Couldn't get symbols from ctags: {}", e),
         }),
     }
 }

@@ -1,4 +1,5 @@
-use crate::api_types::{get_mount_dir, SupportedLanguages};
+use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
+use crate::ctags::client::CtagsClient;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
@@ -18,13 +19,14 @@ use std::time::Duration;
 use tokio::sync::broadcast::{channel, Sender};
 use tokio::sync::Mutex;
 
-pub struct LspManager {
-    clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
+pub struct Manager {
+    lsp_clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
     watch_events_sender: Sender<DebouncedEvent>,
+    ctags_client: CtagsClient,
 }
 
-impl LspManager {
-    pub fn new(root_path: &str) -> Self {
+impl Manager {
+    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let (tx, _) = channel(100);
         let event_sender = tx.clone();
         let mut debouncer = new_debouncer(
@@ -46,10 +48,13 @@ impl LspManager {
             .watch(Path::new(root_path), RecursiveMode::Recursive)
             .expect("Failed to watch path");
 
-        Self {
-            clients: HashMap::new(),
+        let ctags_client = CtagsClient::new(root_path, event_sender.subscribe()).await?;
+
+        Ok(Self {
+            lsp_clients: HashMap::new(),
             watch_events_sender: event_sender,
-        }
+            ctags_client,
+        })
     }
 
     /// Detects the languages in the workspace by searching for files that match the language server's file patterns, before LSPs are started.
@@ -132,7 +137,7 @@ impl LspManager {
                 .setup_workspace(workspace_path)
                 .await
                 .map_err(|e| e.to_string())?;
-            self.clients.insert(lsp, Arc::new(Mutex::new(client)));
+            self.lsp_clients.insert(lsp, Arc::new(Mutex::new(client)));
         }
         Ok(())
     }
@@ -155,6 +160,17 @@ impl LspManager {
         let mut locked_client = client.lock().await;
         locked_client
             .text_document_symbols(full_path_str)
+            .await
+            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
+    }
+
+    pub async fn definitions_in_file_ctags(
+        &self,
+        file_path: &str,
+    ) -> Result<Vec<Symbol>, LspManagerError> {
+        // breaking abstraction :(
+        self.ctags_client
+            .get_file_symbols(file_path)
             .await
             .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
@@ -191,7 +207,7 @@ impl LspManager {
         &self,
         lsp_type: SupportedLanguages,
     ) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
-        self.clients.get(&lsp_type).cloned()
+        self.lsp_clients.get(&lsp_type).cloned()
     }
 
     pub async fn find_references(
@@ -226,7 +242,7 @@ impl LspManager {
 
     pub async fn list_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
-        for client in self.clients.values() {
+        for client in self.lsp_clients.values() {
             let mut locked_client = client.lock().await;
             files.extend(
                 locked_client

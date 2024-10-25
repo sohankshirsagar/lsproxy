@@ -24,11 +24,10 @@ use crate::api_types::{
     GetDefinitionRequest, GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol,
     SymbolResponse,
 };
-use crate::ctags::client::CtagsClient;
 use crate::handlers::{
     ctags_definitions_in_file, definitions_in_file, find_definition, find_references, list_files,
 };
-use crate::lsp::manager::LspManager;
+use crate::lsp::manager::Manager;
 // use crate::utils::doc_utils::make_code_sample;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
@@ -80,8 +79,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 pub struct ApiDoc;
 
 pub struct AppState {
-    lsp_manager: Arc<Mutex<LspManager>>,
-    ctags_client: Arc<Mutex<CtagsClient>>,
+    manager: Arc<Mutex<Manager>>,
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
@@ -99,18 +97,14 @@ pub async fn initialize_app_state_with_mount_dir(
     let mount_dir_path = get_mount_dir();
     let mount_dir = mount_dir_path.to_string_lossy();
 
-    let lsp_manager = Arc::new(Mutex::new(LspManager::new(&mount_dir)));
-    lsp_manager
+    let manager = Arc::new(Mutex::new(Manager::new(&mount_dir).await?));
+    manager
         .lock()
         .unwrap()
         .start_langservers(&mount_dir)
         .await?;
 
-    let ctags_client = Arc::new(Mutex::new(CtagsClient::new(&mount_dir).await?));
-    Ok(Data::new(AppState {
-        lsp_manager,
-        ctags_client,
-    }))
+    Ok(Data::new(AppState { manager }))
 }
 
 // Helper enum for cleaner matching

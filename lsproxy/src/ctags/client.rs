@@ -148,7 +148,7 @@ impl CtagsClient {
     ) {
         while let Ok(event) = watch_events_rx.recv().await {
             if Self::event_matches(&event) {
-                debug!("Relevant event detected. Regenerating tags.");
+                db.write().await.clear();
                 if let Err(e) = Self::generate(&root_path).await {
                     error!("Failed to generate tags: {}", e);
                     continue;

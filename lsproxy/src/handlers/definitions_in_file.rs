@@ -37,7 +37,7 @@ pub async fn definitions_in_file(
     info: Query<FileSymbolsRequest>,
 ) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
-    let lsp_manager = match data.lsp_manager.lock() {
+    let manager = match data.manager.lock() {
         Ok(guard) => guard,
         Err(e) => {
             error!("Failed to acquire lock on LSP manager: {}", e);
@@ -46,7 +46,7 @@ pub async fn definitions_in_file(
             });
         }
     };
-    let result = lsp_manager.definitions_in_file(&info.file_path).await;
+    let result = manager.definitions_in_file(&info.file_path).await;
 
     let source_code_context = if info.include_source_code {
         match result {
@@ -59,7 +59,7 @@ pub async fn definitions_in_file(
 
                 let mut context = Vec::new();
                 for range in ranges {
-                    if let Ok(source_code) = lsp_manager
+                    if let Ok(source_code) = manager
                         .read_source_code(&info.file_path, Some(range.clone()))
                         .await
                     {

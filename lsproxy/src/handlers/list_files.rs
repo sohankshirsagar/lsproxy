@@ -22,8 +22,8 @@ use crate::AppState;
     )
 )]
 pub async fn list_files(data: Data<AppState>) -> HttpResponse {
-    let lsp_manager = data.lsp_manager.lock().unwrap();
-    let files = lsp_manager.list_files().await;
+    let manager = data.manager.lock().unwrap();
+    let files = manager.list_files().await;
     match files {
         Ok(files) => HttpResponse::Ok().json(files),
         Err(e) => {
