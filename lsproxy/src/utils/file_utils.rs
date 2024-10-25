@@ -1,5 +1,6 @@
 use ignore::WalkBuilder;
 use std::path::{Path, PathBuf};
+use crate::api_types::SupportedLanguages;
 
 pub fn search_files(
     path: &std::path::Path,
