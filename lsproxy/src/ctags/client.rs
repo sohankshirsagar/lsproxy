@@ -10,13 +10,10 @@ use crate::utils::workspace_documents::{
     DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
     TYPESCRIPT_FILE_PATTERNS,
 };
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::io::BufRead;
+use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
-
-const TAGS_FILENAME: &str = ".lsproxy_tags";
 pub struct CtagsClient {
     tags: Arc<RwLock<TagDatabase>>,
 }
@@ -28,8 +25,8 @@ impl CtagsClient {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let db = Arc::new(RwLock::new(TagDatabase::new()?));
 
-        Self::generate(root_path).await?;
-        Self::load(db.clone(), Path::new(root_path).join(TAGS_FILENAME)).await?;
+        let ctags = Self::generate(root_path).await?;
+        Self::load(db.clone(), ctags).await?;
         tokio::spawn(Self::handle_watch_events(
             root_path.to_string(),
             db.clone(),
@@ -38,9 +35,8 @@ impl CtagsClient {
         Ok(Self { tags: db })
     }
 
-    async fn generate(root_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    async fn generate(root_path: &str) -> Result<String, Box<dyn std::error::Error>> {
         // Run ctags command to generate tags file
-        let output_file = Path::new(root_path).join(TAGS_FILENAME);
         let files = search_files(
             Path::new(root_path),
             PYRIGHT_FILE_PATTERNS
@@ -59,11 +55,8 @@ impl CtagsClient {
         let mut command = Command::new("ctags");
         command.args(&[
             "--fields=+n", // Include line numbers
-            "--output-format=u-ctags",
-            "-f",
-            output_file
-                .to_str()
-                .expect("Output path contains invalid UTF-8"),
+            "--quiet",     // don't print warnings
+            "-f -",        // output to stdout
         ]);
 
         // Add all discovered files to the command
@@ -82,12 +75,13 @@ impl CtagsClient {
             )
             .into());
         }
-        Ok(())
+        let output_string = String::from_utf8(output.stdout)?;
+        Ok(output_string)
     }
 
     async fn load(
         db: Arc<RwLock<TagDatabase>>,
-        path: PathBuf,
+        ctags: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // Prepare vectors for column-based storage
         let mut names = Vec::new();
@@ -95,14 +89,8 @@ impl CtagsClient {
         let mut lines = Vec::new();
         let mut columns = Vec::new();
 
-        // Read the tags file
-        let file = File::open(path).expect("Failed to open tags file at the specified path");
-        let reader = BufReader::new(file);
-
         // Process each line
-        for line in reader.lines() {
-            let line = line?;
-
+        for line in ctags.lines() {
             // Skip comment lines
             if line.starts_with('!') {
                 continue;
@@ -150,17 +138,14 @@ impl CtagsClient {
         while let Ok(event) = watch_events_rx.recv().await {
             if Self::event_matches(&event) {
                 db.write().await.clear();
-                if let Err(e) = Self::generate(&root_path).await {
+                let ctags = Self::generate(&root_path).await.unwrap_or_else(|e| {
                     error!("Failed to generate tags: {}", e);
-                    continue;
-                }
-                if let Err(e) =
-                    Self::load(db.clone(), Path::new(&root_path).join(TAGS_FILENAME)).await
-                {
+                    String::new()
+                });
+                Self::load(db.clone(), ctags).await.unwrap_or_else(|e| {
                     error!("Failed to load tags: {}", e);
-                } else {
-                    debug!("Tags successfully regenerated and loaded.");
-                }
+                });
+                debug!("Tags successfully regenerated and loaded.");
             }
         }
     }
