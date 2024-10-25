@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
 
+const TAGS_FILENAME: &str = ".lsproxy_tags";
 pub struct CtagsClient {
     tags: Arc<RwLock<TagDatabase>>,
 }
@@ -28,7 +29,7 @@ impl CtagsClient {
         let db = Arc::new(RwLock::new(TagDatabase::new()?));
 
         Self::generate(root_path).await?;
-        Self::load(db.clone(), Path::new(root_path).join(".tags")).await?;
+        Self::load(db.clone(), Path::new(root_path).join(TAGS_FILENAME)).await?;
         tokio::spawn(Self::handle_watch_events(
             root_path.to_string(),
             db.clone(),
@@ -39,7 +40,7 @@ impl CtagsClient {
 
     async fn generate(root_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         // Run ctags command to generate tags file
-        let output_file = Path::new(root_path).join(".tags");
+        let output_file = Path::new(root_path).join(TAGS_FILENAME);
         let files = search_files(
             Path::new(root_path),
             PYRIGHT_FILE_PATTERNS
@@ -153,7 +154,9 @@ impl CtagsClient {
                     error!("Failed to generate tags: {}", e);
                     continue;
                 }
-                if let Err(e) = Self::load(db.clone(), Path::new(&root_path).join(".tags")).await {
+                if let Err(e) =
+                    Self::load(db.clone(), Path::new(&root_path).join(TAGS_FILENAME)).await
+                {
                     error!("Failed to load tags: {}", e);
                 } else {
                     debug!("Tags successfully regenerated and loaded.");
@@ -196,7 +199,7 @@ impl CtagsClient {
 #[cfg(test)]
 mod test {
     use fs_extra::dir::{copy, CopyOptions};
-    use std::fs::{remove_file};
+    use std::fs::remove_file;
     use tokio::sync::broadcast::{channel, Sender};
     use tokio::time::{sleep, Duration};
 
