@@ -10,7 +10,6 @@ use crate::utils::workspace_documents::{
     DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
     TYPESCRIPT_FILE_PATTERNS,
 };
-use std::io::BufRead;
 use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
@@ -256,6 +255,8 @@ mod test {
     async fn test_watch_event_deletion() -> Result<(), Box<dyn std::error::Error>> {
         // 1. Copy the python project to a temp dir
         let temp_dir = tempfile::tempdir()?;
+        let _context = TestContext::setup_no_manager(temp_dir.path().to_str().unwrap());
+
         copy(
             &python_sample_path(),
             temp_dir.path(),
