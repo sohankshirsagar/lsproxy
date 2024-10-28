@@ -1,0 +1,14 @@
+id: variable
+language: python
+rule:
+    kind: identifier
+    inside:
+        any:
+            - kind: assignment
+            - kind: pattern_list
+        inside:
+            kind: expression_statement
+            stopBy: end
+            inside:
+                kind: module
+

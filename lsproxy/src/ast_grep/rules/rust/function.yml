@@ -1,0 +1,7 @@
+id: function
+language: rust
+rule:
+    kind: identifier
+    inside:
+      any:
+        - kind: function_item

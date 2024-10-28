@@ -1,0 +1,9 @@
+id: variable
+language: javascript
+rule:
+  kind: identifier
+  inside:
+    kind: lexical_declaration 
+    stopBy: end
+    inside:
+      kind: program

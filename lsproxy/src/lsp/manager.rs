@@ -1,5 +1,5 @@
 use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
-use crate::ctags::client::CtagsClient;
+use crate::ast_grep::client::AstGrepClient;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
@@ -22,7 +22,7 @@ use tokio::sync::Mutex;
 pub struct Manager {
     lsp_clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
     watch_events_sender: Sender<DebouncedEvent>,
-    ctags_client: CtagsClient,
+    ast_grep: AstGrepClient,
 }
 
 impl Manager {
@@ -48,12 +48,14 @@ impl Manager {
             .watch(Path::new(root_path), RecursiveMode::Recursive)
             .expect("Failed to watch path");
 
-        let ctags_client = CtagsClient::new(root_path, event_sender.subscribe()).await?;
-
+        let ast_grep = AstGrepClient {
+            root_path: root_path.to_string(),
+            config_path: "/usr/src/sgconfig.yml".to_string(),
+        };
         Ok(Self {
             lsp_clients: HashMap::new(),
             watch_events_sender: event_sender,
-            ctags_client,
+            ast_grep,
         })
     }
 
@@ -164,15 +166,27 @@ impl Manager {
             .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
 
-    pub async fn definitions_in_file_ctags(
+    pub async fn definitions_in_file_ast_grep(
         &self,
         file_path: &str,
     ) -> Result<Vec<Symbol>, LspManagerError> {
-        // breaking abstraction :(
-        self.ctags_client
-            .get_file_symbols(file_path)
+        let workspace_files = self.list_files().await?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(LspManagerError::FileNotFound(file_path.to_string()));
+        }
+        let full_path = get_mount_dir().join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default();
+        let ast_grep_result = self
+            .ast_grep
+            .get_file_symbols(full_path_str)
             .await
-            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
+            .map_err(|e| {
+                LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e))
+            })?;
+        Ok(ast_grep_result
+            .into_iter()
+            .map(|s| Symbol::from(s))
+            .collect())
     }
 
     pub async fn find_definition(
@@ -354,7 +368,7 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "main.py";
-        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
 
         let symbol_response: SymbolResponse = file_symbols;
 
@@ -515,7 +529,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
-        // TODO: Properties return with the extra double quotes, is this intended behavior?
         let context = TestContext::setup(&js_sample_path(), true).await?;
         let manager = context
             .manager
@@ -523,7 +536,7 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
-        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
 
         let symbol_response: SymbolResponse = file_symbols;
 
@@ -551,8 +564,19 @@ mod tests {
                 },
             },
             Symbol {
+                name: String::from("lambda"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 17,
+                        character: 16,
+                    },
+                },
+            },
+            Symbol {
                 name: String::from("board"),
-                kind: String::from("constant"),
+                kind: String::from("variable"),
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {

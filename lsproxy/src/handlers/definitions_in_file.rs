@@ -44,7 +44,7 @@ pub async fn definitions_in_file(
             });
         }
     };
-    let result = manager.definitions_in_file_ctags(&info.file_path).await;
+    let result = manager.definitions_in_file_ast_grep(&info.file_path).await;
 
     match result {
         Ok(symbols) => HttpResponse::Ok().json(symbols),

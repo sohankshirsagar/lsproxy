@@ -1,0 +1,8 @@
+id: class
+language: javascript
+rule:
+  kind: identifier
+  inside:
+    any:
+      - kind: class_declaration
+      - kind: class
