@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install rust-analyzer
 RUN rustup component add rust-analyzer
+RUN rustup component add rustfmt
 
 # Install global npm packages
 RUN npm install -g pyright typescript-language-server typescript
