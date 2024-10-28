@@ -19,7 +19,6 @@ use std::time::Duration;
 use tokio::sync::broadcast::{channel, Sender};
 use tokio::sync::Mutex;
 
-
 pub struct Manager {
     lsp_clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
     watch_events_sender: Sender<DebouncedEvent>,
@@ -51,7 +50,7 @@ impl Manager {
 
         let ast_grep = AstGrepClient {
             root_path: root_path.to_string(),
-            config_path: root_path.to_string(),
+            config_path: ".lsproxy/sgconfig.yml".to_string(),
         };
         Ok(Self {
             lsp_clients: HashMap::new(),
@@ -172,11 +171,17 @@ impl Manager {
         file_path: &str,
     ) -> Result<Vec<Symbol>, LspManagerError> {
         // breaking abstraction :(
-        let ast_grep_result = self.ast_grep
+        let ast_grep_result = self
+            .ast_grep
             .get_file_symbols(file_path)
             .await
-            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))?;
-        Ok(ast_grep_result.into_iter().map(|s| Symbol::from(s)).collect())
+            .map_err(|e| {
+                LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e))
+            })?;
+        Ok(ast_grep_result
+            .into_iter()
+            .map(|s| Symbol::from(s))
+            .collect())
     }
 
     pub async fn find_definition(

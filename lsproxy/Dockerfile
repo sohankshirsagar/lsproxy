@@ -3,10 +3,14 @@ FROM rust:1.81.0-slim-bookworm
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
+COPY ./src/ast_grep/rules ./.lsproxy/ast_grep_rules
+# Create sgconfig.yml file pointing to rules directory
+RUN echo "ruleDirs:\n  - .lsproxy/ast_grep_rules" > sgconfig.yml
+
+
 # Install runtime dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
     pkg-config \
-    universal-ctags \
     libssl-dev \
     libssl3 \
     ca-certificates \

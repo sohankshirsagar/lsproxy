@@ -1,6 +1,5 @@
 use tokio::process::Command;
 
-
 use super::types::AstGrepMatch;
 
 pub struct AstGrepClient {
@@ -9,7 +8,6 @@ pub struct AstGrepClient {
 }
 
 impl AstGrepClient {
-
     pub async fn get_file_symbols(
         &self,
         file_name: &str,
