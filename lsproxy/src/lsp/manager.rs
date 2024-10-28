@@ -320,7 +320,7 @@ impl std::error::Error for LspManagerError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api_types::{FilePosition, FileRange, Position, Symbol, SymbolResponse};
+    use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
     use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
     use lsp_types::{Range, Url};
 

@@ -219,7 +219,7 @@ mod test {
     use tokio::time::{sleep, Duration};
 
     use super::*;
-    use crate::api_types::{FilePosition, FileRange, Position, Symbol};
+    use crate::api_types::{FilePosition, Position, Symbol};
     use crate::test_utils::{python_sample_path, rust_sample_path, TestContext};
 
     fn create_test_watcher_channels() -> (Sender<DebouncedEvent>, Receiver<DebouncedEvent>) {

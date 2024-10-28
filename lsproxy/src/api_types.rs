@@ -165,7 +165,7 @@ pub struct FileSymbolsRequest {
     pub include_raw_response: bool,
 
     /// Whether to include the source code of the symbols in the response.
-    /// Defaults to false. 
+    /// Defaults to false.
     /// TODO: Implement this
     #[serde(default)]
     #[schema(example = false)]

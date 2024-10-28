@@ -1,6 +1,4 @@
-use lsproxy::api_types::{
-    set_global_mount_dir, FilePosition, FileRange, Position, Symbol, SymbolResponse,
-};
+use lsproxy::api_types::{set_global_mount_dir, FilePosition, Position, Symbol, SymbolResponse};
 use lsproxy::{initialize_app_state, run_server};
 use reqwest;
 use std::net::TcpStream;

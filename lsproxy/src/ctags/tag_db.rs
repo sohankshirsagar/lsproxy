@@ -1,4 +1,4 @@
-use crate::api_types::{FilePosition, FileRange, Position, Symbol};
+use crate::api_types::{FilePosition, Position, Symbol};
 use polars::prelude::*;
 
 #[derive(Debug)]

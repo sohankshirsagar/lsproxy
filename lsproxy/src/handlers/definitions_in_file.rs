@@ -60,7 +60,7 @@ mod test {
 
     use actix_web::http::StatusCode;
 
-    use crate::api_types::{FilePosition, FileRange, Position, Symbol};
+    use crate::api_types::{FilePosition, Position, Symbol};
     use crate::initialize_app_state;
     use crate::test_utils::{python_sample_path, TestContext};
 
