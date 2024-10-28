@@ -1,0 +1,9 @@
+id: implementation
+language: rust
+rule:
+    any:
+      - kind: type_identifier
+      - kind: scoped_type_identifier
+    inside:
+      kind: impl_item
+    nthChild: 1

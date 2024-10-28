@@ -1,0 +1,6 @@
+id: function
+language: typescript
+rule:
+    kind: identifier
+    inside:
+      kind: function_signature

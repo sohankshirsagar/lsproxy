@@ -1,0 +1,6 @@
+id: enum
+language: rust
+rule:
+    kind: type_identifier
+    inside:
+      kind: enum_item

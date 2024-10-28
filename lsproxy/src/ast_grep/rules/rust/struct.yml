@@ -1,0 +1,6 @@
+id: struct
+language: rust
+rule:
+    kind: type_identifier
+    inside:
+      kind: struct_item

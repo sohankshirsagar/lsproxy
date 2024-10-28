@@ -1,0 +1,1658 @@
+[
+{
+  "text": "new",
+  "range": {
+    "byteOffset": {
+      "start": 99,
+      "end": 102
+    },
+    "start": {
+      "line": 7,
+      "column": 11
+    },
+    "end": {
+      "line": 7,
+      "column": 14
+    }
+  },
+  "file": "../sample_project/rust/src/map.rs",
+  "lines": "    pub fn new() -> Self {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 12
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub fn new() -> Self {\n        let m = [\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 1, 1, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 1, 1, 1, 1, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n        ];\n        Map { m, w: 8, h: 8 }\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 92,
+              "end": 483
+            },
+            "start": {
+              "line": 7,
+              "column": 4
+            },
+            "end": {
+              "line": 19,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub fn new() -> Self {\n        let m = [\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 1, 1, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 1, 1, 1, 1, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n        ];\n        Map { m, w: 8, h: 8 }\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 92,
+          "end": 483
+        },
+        "start": {
+          "line": 7,
+          "column": 4
+        },
+        "end": {
+          "line": 19,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "get",
+  "range": {
+    "byteOffset": {
+      "start": 496,
+      "end": 499
+    },
+    "start": {
+      "line": 21,
+      "column": 11
+    },
+    "end": {
+      "line": 21,
+      "column": 14
+    }
+  },
+  "file": "../sample_project/rust/src/map.rs",
+  "lines": "    pub fn get(&self, x: i32, y: i32) -> i8 {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 31
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub fn get(&self, x: i32, y: i32) -> i8 {\n        self.m[y as usize][x as usize]\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 489,
+              "end": 575
+            },
+            "start": {
+              "line": 21,
+              "column": 4
+            },
+            "end": {
+              "line": 23,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub fn get(&self, x: i32, y: i32) -> i8 {\n        self.m[y as usize][x as usize]\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 489,
+          "end": 575
+        },
+        "start": {
+          "line": 21,
+          "column": 4
+        },
+        "end": {
+          "line": 23,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "Map",
+  "range": {
+    "byteOffset": {
+      "start": 11,
+      "end": 14
+    },
+    "start": {
+      "line": 0,
+      "column": 11
+    },
+    "end": {
+      "line": 0,
+      "column": 14
+    }
+  },
+  "file": "../sample_project/rust/src/map.rs",
+  "lines": "pub struct Map {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 2
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub struct Map {\n    pub m: [[i8; 8]; 8],\n    pub w: i32,\n    pub h: i32,\n}",
+          "range": {
+            "byteOffset": {
+              "start": 0,
+              "end": 75
+            },
+            "start": {
+              "line": 0,
+              "column": 0
+            },
+            "end": {
+              "line": 4,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "struct",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub struct Map {\n    pub m: [[i8; 8]; 8],\n    pub w: i32,\n    pub h: i32,\n}",
+      "range": {
+        "byteOffset": {
+          "start": 0,
+          "end": 75
+        },
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 4,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "Map",
+  "range": {
+    "byteOffset": {
+      "start": 82,
+      "end": 85
+    },
+    "start": {
+      "line": 6,
+      "column": 5
+    },
+    "end": {
+      "line": 6,
+      "column": 8
+    }
+  },
+  "file": "../sample_project/rust/src/map.rs",
+  "lines": "impl Map {",
+  "charCount": {
+    "leading": 5,
+    "trailing": 2
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "impl Map {\n    pub fn new() -> Self {\n        let m = [\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 1, 1, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 1, 1, 1, 1, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n        ];\n        Map { m, w: 8, h: 8 }\n    }\n\n    pub fn get(&self, x: i32, y: i32) -> i8 {\n        self.m[y as usize][x as usize]\n    }\n}",
+          "range": {
+            "byteOffset": {
+              "start": 77,
+              "end": 577
+            },
+            "start": {
+              "line": 6,
+              "column": 0
+            },
+            "end": {
+              "line": 24,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "implementation",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "impl Map {\n    pub fn new() -> Self {\n        let m = [\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 1, 1, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 0, 0, 0, 1, 0],\n            [0, 0, 1, 1, 1, 1, 1, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n            [0, 0, 0, 0, 0, 0, 0, 0],\n        ];\n        Map { m, w: 8, h: 8 }\n    }\n\n    pub fn get(&self, x: i32, y: i32) -> i8 {\n        self.m[y as usize][x as usize]\n    }\n}",
+      "range": {
+        "byteOffset": {
+          "start": 77,
+          "end": 577
+        },
+        "start": {
+          "line": 6,
+          "column": 0
+        },
+        "end": {
+          "line": 24,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "PartialOrd",
+  "range": {
+    "byteOffset": {
+      "start": 161,
+      "end": 171
+    },
+    "start": {
+      "line": 10,
+      "column": 5
+    },
+    "end": {
+      "line": 10,
+      "column": 15
+    }
+  },
+  "file": "../sample_project/rust/src/node.rs",
+  "lines": "impl PartialOrd for Node {",
+  "charCount": {
+    "leading": 5,
+    "trailing": 11
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "impl PartialOrd for Node {\n    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {\n        (self.dist + self.cost).partial_cmp(&(other.dist + other.cost))\n    }\n}",
+          "range": {
+            "byteOffset": {
+              "start": 156,
+              "end": 334
+            },
+            "start": {
+              "line": 10,
+              "column": 0
+            },
+            "end": {
+              "line": 14,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "implementation",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "impl PartialOrd for Node {\n    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {\n        (self.dist + self.cost).partial_cmp(&(other.dist + other.cost))\n    }\n}",
+      "range": {
+        "byteOffset": {
+          "start": 156,
+          "end": 334
+        },
+        "start": {
+          "line": 10,
+          "column": 0
+        },
+        "end": {
+          "line": 14,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "partial_cmp",
+  "range": {
+    "byteOffset": {
+      "start": 190,
+      "end": 201
+    },
+    "start": {
+      "line": 11,
+      "column": 7
+    },
+    "end": {
+      "line": 11,
+      "column": 18
+    }
+  },
+  "file": "../sample_project/rust/src/node.rs",
+  "lines": "    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {",
+  "charCount": {
+    "leading": 7,
+    "trailing": 53
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {\n        (self.dist + self.cost).partial_cmp(&(other.dist + other.cost))\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 187,
+              "end": 332
+            },
+            "start": {
+              "line": 11,
+              "column": 4
+            },
+            "end": {
+              "line": 13,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {\n        (self.dist + self.cost).partial_cmp(&(other.dist + other.cost))\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 187,
+          "end": 332
+        },
+        "start": {
+          "line": 11,
+          "column": 4
+        },
+        "end": {
+          "line": 13,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "Node",
+  "range": {
+    "byteOffset": {
+      "start": 65,
+      "end": 69
+    },
+    "start": {
+      "line": 3,
+      "column": 11
+    },
+    "end": {
+      "line": 3,
+      "column": 15
+    }
+  },
+  "file": "../sample_project/rust/src/node.rs",
+  "lines": "pub struct Node {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 2
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub struct Node {\n    pub pos: Point,\n    pub parent: Point,\n    pub dist: i32,\n    pub cost: i32,\n}",
+          "range": {
+            "byteOffset": {
+              "start": 54,
+              "end": 154
+            },
+            "start": {
+              "line": 3,
+              "column": 0
+            },
+            "end": {
+              "line": 8,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "struct",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub struct Node {\n    pub pos: Point,\n    pub parent: Point,\n    pub dist: i32,\n    pub cost: i32,\n}",
+      "range": {
+        "byteOffset": {
+          "start": 54,
+          "end": 154
+        },
+        "start": {
+          "line": 3,
+          "column": 0
+        },
+        "end": {
+          "line": 8,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "main",
+  "range": {
+    "byteOffset": {
+      "start": 124,
+      "end": 128
+    },
+    "start": {
+      "line": 10,
+      "column": 3
+    },
+    "end": {
+      "line": 10,
+      "column": 7
+    }
+  },
+  "file": "../sample_project/rust/src/main.rs",
+  "lines": "fn main() {",
+  "charCount": {
+    "leading": 3,
+    "trailing": 4
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "fn main() {\n    let mut astar = AStar::new();\n    let map = Map::new();\n    let start = Point::new(0, 0);\n    let end = Point::new(7, 7);\n\n    if astar.search(start, end, map) {\n        let (path, cost) = astar.path();\n        \n        for y in -1..9 {\n            for x in -1..9 {\n                if x < 0 || y < 0 || x > 7 || y > 7 || astar.m.get(x, y) == 1 {\n                    print!(\"█\");\n                } else {\n                    if path.contains(&Point::new(x, y)) {\n                        print!(\"x\");\n                    } else {\n                        print!(\".\");\n                    }\n                }\n            }\n            println!();\n        }\n\n        print!(\"\\nPath cost {}: \", cost);\n        io::stdout().flush().unwrap();\n        \n        for p in path {\n            print!(\"({}, {}) \", p.x, p.y);\n        }\n        println!(\"\\n\");\n    }\n}",
+          "range": {
+            "byteOffset": {
+              "start": 121,
+              "end": 991
+            },
+            "start": {
+              "line": 10,
+              "column": 0
+            },
+            "end": {
+              "line": 42,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "fn main() {\n    let mut astar = AStar::new();\n    let map = Map::new();\n    let start = Point::new(0, 0);\n    let end = Point::new(7, 7);\n\n    if astar.search(start, end, map) {\n        let (path, cost) = astar.path();\n        \n        for y in -1..9 {\n            for x in -1..9 {\n                if x < 0 || y < 0 || x > 7 || y > 7 || astar.m.get(x, y) == 1 {\n                    print!(\"█\");\n                } else {\n                    if path.contains(&Point::new(x, y)) {\n                        print!(\"x\");\n                    } else {\n                        print!(\".\");\n                    }\n                }\n            }\n            println!();\n        }\n\n        print!(\"\\nPath cost {}: \", cost);\n        io::stdout().flush().unwrap();\n        \n        for p in path {\n            print!(\"({}, {}) \", p.x, p.y);\n        }\n        println!(\"\\n\");\n    }\n}",
+      "range": {
+        "byteOffset": {
+          "start": 121,
+          "end": 991
+        },
+        "start": {
+          "line": 10,
+          "column": 0
+        },
+        "end": {
+          "line": 42,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "Point",
+  "range": {
+    "byteOffset": {
+      "start": 93,
+      "end": 98
+    },
+    "start": {
+      "line": 6,
+      "column": 5
+    },
+    "end": {
+      "line": 6,
+      "column": 10
+    }
+  },
+  "file": "../sample_project/rust/src/point.rs",
+  "lines": "impl Point {",
+  "charCount": {
+    "leading": 5,
+    "trailing": 2
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "impl Point {\n    pub fn new(x: i32, y: i32) -> Self {\n        Point { x, y }\n    }\n}",
+          "range": {
+            "byteOffset": {
+              "start": 88,
+              "end": 172
+            },
+            "start": {
+              "line": 6,
+              "column": 0
+            },
+            "end": {
+              "line": 10,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "implementation",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "impl Point {\n    pub fn new(x: i32, y: i32) -> Self {\n        Point { x, y }\n    }\n}",
+      "range": {
+        "byteOffset": {
+          "start": 88,
+          "end": 172
+        },
+        "start": {
+          "line": 6,
+          "column": 0
+        },
+        "end": {
+          "line": 10,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "std::ops::Add",
+  "range": {
+    "byteOffset": {
+      "start": 179,
+      "end": 192
+    },
+    "start": {
+      "line": 12,
+      "column": 5
+    },
+    "end": {
+      "line": 12,
+      "column": 18
+    }
+  },
+  "file": "../sample_project/rust/src/point.rs",
+  "lines": "impl std::ops::Add for Point {",
+  "charCount": {
+    "leading": 5,
+    "trailing": 12
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "impl std::ops::Add for Point {\n    type Output = Self;\n    \n    fn add(self, other: Self) -> Self {\n        Point {\n            x: self.x + other.x,\n            y: self.y + other.y,\n        }\n    }\n}",
+          "range": {
+            "byteOffset": {
+              "start": 174,
+              "end": 373
+            },
+            "start": {
+              "line": 12,
+              "column": 0
+            },
+            "end": {
+              "line": 21,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "implementation",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "impl std::ops::Add for Point {\n    type Output = Self;\n    \n    fn add(self, other: Self) -> Self {\n        Point {\n            x: self.x + other.x,\n            y: self.y + other.y,\n        }\n    }\n}",
+      "range": {
+        "byteOffset": {
+          "start": 174,
+          "end": 373
+        },
+        "start": {
+          "line": 12,
+          "column": 0
+        },
+        "end": {
+          "line": 21,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "Output",
+  "range": {
+    "byteOffset": {
+      "start": 214,
+      "end": 220
+    },
+    "start": {
+      "line": 13,
+      "column": 9
+    },
+    "end": {
+      "line": 13,
+      "column": 15
+    }
+  },
+  "file": "../sample_project/rust/src/point.rs",
+  "lines": "    type Output = Self;",
+  "charCount": {
+    "leading": 9,
+    "trailing": 8
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "type Output = Self;",
+          "range": {
+            "byteOffset": {
+              "start": 209,
+              "end": 228
+            },
+            "start": {
+              "line": 13,
+              "column": 4
+            },
+            "end": {
+              "line": 13,
+              "column": 23
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "type",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "type Output = Self;",
+      "range": {
+        "byteOffset": {
+          "start": 209,
+          "end": 228
+        },
+        "start": {
+          "line": 13,
+          "column": 4
+        },
+        "end": {
+          "line": 13,
+          "column": 23
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "Point",
+  "range": {
+    "byteOffset": {
+      "start": 45,
+      "end": 50
+    },
+    "start": {
+      "line": 1,
+      "column": 11
+    },
+    "end": {
+      "line": 1,
+      "column": 16
+    }
+  },
+  "file": "../sample_project/rust/src/point.rs",
+  "lines": "pub struct Point {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 2
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub struct Point {\n    pub x: i32,\n    pub y: i32,\n}",
+          "range": {
+            "byteOffset": {
+              "start": 34,
+              "end": 86
+            },
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 4,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "struct",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub struct Point {\n    pub x: i32,\n    pub y: i32,\n}",
+      "range": {
+        "byteOffset": {
+          "start": 34,
+          "end": 86
+        },
+        "start": {
+          "line": 1,
+          "column": 0
+        },
+        "end": {
+          "line": 4,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "new",
+  "range": {
+    "byteOffset": {
+      "start": 112,
+      "end": 115
+    },
+    "start": {
+      "line": 7,
+      "column": 11
+    },
+    "end": {
+      "line": 7,
+      "column": 14
+    }
+  },
+  "file": "../sample_project/rust/src/point.rs",
+  "lines": "    pub fn new(x: i32, y: i32) -> Self {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 26
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub fn new(x: i32, y: i32) -> Self {\n        Point { x, y }\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 105,
+              "end": 170
+            },
+            "start": {
+              "line": 7,
+              "column": 4
+            },
+            "end": {
+              "line": 9,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub fn new(x: i32, y: i32) -> Self {\n        Point { x, y }\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 105,
+          "end": 170
+        },
+        "start": {
+          "line": 7,
+          "column": 4
+        },
+        "end": {
+          "line": 9,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "add",
+  "range": {
+    "byteOffset": {
+      "start": 241,
+      "end": 244
+    },
+    "start": {
+      "line": 15,
+      "column": 7
+    },
+    "end": {
+      "line": 15,
+      "column": 10
+    }
+  },
+  "file": "../sample_project/rust/src/point.rs",
+  "lines": "    fn add(self, other: Self) -> Self {",
+  "charCount": {
+    "leading": 7,
+    "trailing": 29
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "fn add(self, other: Self) -> Self {\n        Point {\n            x: self.x + other.x,\n            y: self.y + other.y,\n        }\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 238,
+              "end": 371
+            },
+            "start": {
+              "line": 15,
+              "column": 4
+            },
+            "end": {
+              "line": 20,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "fn add(self, other: Self) -> Self {\n        Point {\n            x: self.x + other.x,\n            y: self.y + other.y,\n        }\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 238,
+          "end": 371
+        },
+        "start": {
+          "line": 15,
+          "column": 4
+        },
+        "end": {
+          "line": 20,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "AStar",
+  "range": {
+    "byteOffset": {
+      "start": 219,
+      "end": 224
+    },
+    "start": {
+      "line": 13,
+      "column": 5
+    },
+    "end": {
+      "line": 13,
+      "column": 10
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "impl AStar {",
+  "charCount": {
+    "leading": 5,
+    "trailing": 2
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "impl AStar {\n    pub fn new() -> Self {\n        let neighbours = [\n            Point::new(-1, -1), Point::new(1, -1),\n            Point::new(-1, 1),  Point::new(1, 1),\n            Point::new(0, -1),  Point::new(-1, 0),\n            Point::new(0, 1),   Point::new(1, 0),\n        ];\n        AStar {\n            neighbours,\n            open: Vec::new(),\n            closed: Vec::new(),\n            m: Map::new(),\n            start: Point::new(0, 0),\n            end: Point::new(0, 0),\n        }\n    }\n\n    fn calc_dist(&self, p: &Point) -> i32 {\n        let x = self.end.x - p.x;\n        let y = self.end.y - p.y;\n        x * x + y * y\n    }\n\n    fn is_valid(&self, p: &Point) -> bool {\n        p.x >= 0 && p.y >= 0 && p.x < self.m.w && p.y < self.m.h\n    }\n\n    fn exist_point(&mut self, p: &Point, cost: i32) -> bool {\n        if let Some(pos) = self.closed.iter().position(|n| n.pos == *p) {\n            if self.closed[pos].cost + self.closed[pos].dist < cost {\n                return true;\n            }\n            self.closed.remove(pos);\n            return false;\n        }\n        if let Some(pos) = self.open.iter().position(|n| n.pos == *p) {\n            if self.open[pos].cost + self.open[pos].dist < cost {\n                return true;\n            }\n            self.open.remove(pos);\n            return false;\n        }\n        false\n    }\n\n    fn fill_open(&mut self, n: &Node) -> bool {\n        // Create a local copy of neighbours to avoid borrowing self\n        let neighbours = self.neighbours;\n        \n        for (i, neighbour_offset) in neighbours.iter().enumerate() {\n            let step_cost = if i < 4 { 1 } else { 1 };\n            let neighbour = n.pos + *neighbour_offset;\n            \n            if neighbour == self.end {\n                return true;\n            }\n\n            if self.is_valid(&neighbour) && self.m.get(neighbour.x, neighbour.y) != 1 {\n                let nc = step_cost + n.cost;\n                let dist = self.calc_dist(&neighbour);\n                \n                if !self.exist_point(&neighbour, nc + dist) {\n                    self.open.push(Node {\n                        cost: nc,\n                        dist,\n                        pos: neighbour,\n                        parent: n.pos,\n                    });\n                }\n            }\n        }\n        false\n    }\n\n    pub fn search(&mut self, s: Point, e: Point, mp: Map) -> bool {\n        self.end = e;\n        self.start = s;\n        self.m = mp;\n        \n        self.open.push(Node {\n            cost: 0,\n            pos: s,\n            parent: Point::new(0, 0),\n            dist: self.calc_dist(&s),\n        });\n\n        while !self.open.is_empty() {\n            self.open.sort_by(|a, b| (a.cost + a.dist).cmp(&(b.cost + b.dist)));\n            let n = self.open.remove(0);\n            self.closed.push(n.clone());\n            if self.fill_open(&n) {\n                return true;\n            }\n        }\n        false\n    }\n\n    pub fn path(&self) -> (Vec<Point>, i32) {\n        let mut path = vec![self.end];\n        let cost = 1 + self.closed.last().unwrap().cost;\n        path.push(self.closed.last().unwrap().pos);\n        let mut parent = self.closed.last().unwrap().parent;\n\n        for node in self.closed.iter().rev() {\n            if node.pos == parent && !(node.pos == self.start) {\n                path.push(node.pos);\n                parent = node.parent;\n            }\n        }\n        path.push(self.start);\n        path.reverse();\n        (path, cost)\n    }\n}",
+          "range": {
+            "byteOffset": {
+              "start": 214,
+              "end": 3711
+            },
+            "start": {
+              "line": 13,
+              "column": 0
+            },
+            "end": {
+              "line": 127,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "implementation",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "impl AStar {\n    pub fn new() -> Self {\n        let neighbours = [\n            Point::new(-1, -1), Point::new(1, -1),\n            Point::new(-1, 1),  Point::new(1, 1),\n            Point::new(0, -1),  Point::new(-1, 0),\n            Point::new(0, 1),   Point::new(1, 0),\n        ];\n        AStar {\n            neighbours,\n            open: Vec::new(),\n            closed: Vec::new(),\n            m: Map::new(),\n            start: Point::new(0, 0),\n            end: Point::new(0, 0),\n        }\n    }\n\n    fn calc_dist(&self, p: &Point) -> i32 {\n        let x = self.end.x - p.x;\n        let y = self.end.y - p.y;\n        x * x + y * y\n    }\n\n    fn is_valid(&self, p: &Point) -> bool {\n        p.x >= 0 && p.y >= 0 && p.x < self.m.w && p.y < self.m.h\n    }\n\n    fn exist_point(&mut self, p: &Point, cost: i32) -> bool {\n        if let Some(pos) = self.closed.iter().position(|n| n.pos == *p) {\n            if self.closed[pos].cost + self.closed[pos].dist < cost {\n                return true;\n            }\n            self.closed.remove(pos);\n            return false;\n        }\n        if let Some(pos) = self.open.iter().position(|n| n.pos == *p) {\n            if self.open[pos].cost + self.open[pos].dist < cost {\n                return true;\n            }\n            self.open.remove(pos);\n            return false;\n        }\n        false\n    }\n\n    fn fill_open(&mut self, n: &Node) -> bool {\n        // Create a local copy of neighbours to avoid borrowing self\n        let neighbours = self.neighbours;\n        \n        for (i, neighbour_offset) in neighbours.iter().enumerate() {\n            let step_cost = if i < 4 { 1 } else { 1 };\n            let neighbour = n.pos + *neighbour_offset;\n            \n            if neighbour == self.end {\n                return true;\n            }\n\n            if self.is_valid(&neighbour) && self.m.get(neighbour.x, neighbour.y) != 1 {\n                let nc = step_cost + n.cost;\n                let dist = self.calc_dist(&neighbour);\n                \n                if !self.exist_point(&neighbour, nc + dist) {\n                    self.open.push(Node {\n                        cost: nc,\n                        dist,\n                        pos: neighbour,\n                        parent: n.pos,\n                    });\n                }\n            }\n        }\n        false\n    }\n\n    pub fn search(&mut self, s: Point, e: Point, mp: Map) -> bool {\n        self.end = e;\n        self.start = s;\n        self.m = mp;\n        \n        self.open.push(Node {\n            cost: 0,\n            pos: s,\n            parent: Point::new(0, 0),\n            dist: self.calc_dist(&s),\n        });\n\n        while !self.open.is_empty() {\n            self.open.sort_by(|a, b| (a.cost + a.dist).cmp(&(b.cost + b.dist)));\n            let n = self.open.remove(0);\n            self.closed.push(n.clone());\n            if self.fill_open(&n) {\n                return true;\n            }\n        }\n        false\n    }\n\n    pub fn path(&self) -> (Vec<Point>, i32) {\n        let mut path = vec![self.end];\n        let cost = 1 + self.closed.last().unwrap().cost;\n        path.push(self.closed.last().unwrap().pos);\n        let mut parent = self.closed.last().unwrap().parent;\n\n        for node in self.closed.iter().rev() {\n            if node.pos == parent && !(node.pos == self.start) {\n                path.push(node.pos);\n                parent = node.parent;\n            }\n        }\n        path.push(self.start);\n        path.reverse();\n        (path, cost)\n    }\n}",
+      "range": {
+        "byteOffset": {
+          "start": 214,
+          "end": 3711
+        },
+        "start": {
+          "line": 13,
+          "column": 0
+        },
+        "end": {
+          "line": 127,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "AStar",
+  "range": {
+    "byteOffset": {
+      "start": 81,
+      "end": 86
+    },
+    "start": {
+      "line": 4,
+      "column": 11
+    },
+    "end": {
+      "line": 4,
+      "column": 16
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "pub struct AStar {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 2
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub struct AStar {\n    neighbours: [Point; 8],\n    open: Vec<Node>,\n    closed: Vec<Node>,\n    pub m: Map,\n    start: Point,\n    end: Point,\n}",
+          "range": {
+            "byteOffset": {
+              "start": 70,
+              "end": 212
+            },
+            "start": {
+              "line": 4,
+              "column": 0
+            },
+            "end": {
+              "line": 11,
+              "column": 1
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "struct",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub struct AStar {\n    neighbours: [Point; 8],\n    open: Vec<Node>,\n    closed: Vec<Node>,\n    pub m: Map,\n    start: Point,\n    end: Point,\n}",
+      "range": {
+        "byteOffset": {
+          "start": 70,
+          "end": 212
+        },
+        "start": {
+          "line": 4,
+          "column": 0
+        },
+        "end": {
+          "line": 11,
+          "column": 1
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "new",
+  "range": {
+    "byteOffset": {
+      "start": 238,
+      "end": 241
+    },
+    "start": {
+      "line": 14,
+      "column": 11
+    },
+    "end": {
+      "line": 14,
+      "column": 14
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "    pub fn new() -> Self {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 12
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub fn new() -> Self {\n        let neighbours = [\n            Point::new(-1, -1), Point::new(1, -1),\n            Point::new(-1, 1),  Point::new(1, 1),\n            Point::new(0, -1),  Point::new(-1, 0),\n            Point::new(0, 1),   Point::new(1, 0),\n        ];\n        AStar {\n            neighbours,\n            open: Vec::new(),\n            closed: Vec::new(),\n            m: Map::new(),\n            start: Point::new(0, 0),\n            end: Point::new(0, 0),\n        }\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 231,
+              "end": 710
+            },
+            "start": {
+              "line": 14,
+              "column": 4
+            },
+            "end": {
+              "line": 29,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub fn new() -> Self {\n        let neighbours = [\n            Point::new(-1, -1), Point::new(1, -1),\n            Point::new(-1, 1),  Point::new(1, 1),\n            Point::new(0, -1),  Point::new(-1, 0),\n            Point::new(0, 1),   Point::new(1, 0),\n        ];\n        AStar {\n            neighbours,\n            open: Vec::new(),\n            closed: Vec::new(),\n            m: Map::new(),\n            start: Point::new(0, 0),\n            end: Point::new(0, 0),\n        }\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 231,
+          "end": 710
+        },
+        "start": {
+          "line": 14,
+          "column": 4
+        },
+        "end": {
+          "line": 29,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "calc_dist",
+  "range": {
+    "byteOffset": {
+      "start": 719,
+      "end": 728
+    },
+    "start": {
+      "line": 31,
+      "column": 7
+    },
+    "end": {
+      "line": 31,
+      "column": 16
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "    fn calc_dist(&self, p: &Point) -> i32 {",
+  "charCount": {
+    "leading": 7,
+    "trailing": 27
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "fn calc_dist(&self, p: &Point) -> i32 {\n        let x = self.end.x - p.x;\n        let y = self.end.y - p.y;\n        x * x + y * y\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 716,
+              "end": 851
+            },
+            "start": {
+              "line": 31,
+              "column": 4
+            },
+            "end": {
+              "line": 35,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "fn calc_dist(&self, p: &Point) -> i32 {\n        let x = self.end.x - p.x;\n        let y = self.end.y - p.y;\n        x * x + y * y\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 716,
+          "end": 851
+        },
+        "start": {
+          "line": 31,
+          "column": 4
+        },
+        "end": {
+          "line": 35,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "is_valid",
+  "range": {
+    "byteOffset": {
+      "start": 860,
+      "end": 868
+    },
+    "start": {
+      "line": 37,
+      "column": 7
+    },
+    "end": {
+      "line": 37,
+      "column": 15
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "    fn is_valid(&self, p: &Point) -> bool {",
+  "charCount": {
+    "leading": 7,
+    "trailing": 28
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "fn is_valid(&self, p: &Point) -> bool {\n        p.x >= 0 && p.y >= 0 && p.x < self.m.w && p.y < self.m.h\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 857,
+              "end": 967
+            },
+            "start": {
+              "line": 37,
+              "column": 4
+            },
+            "end": {
+              "line": 39,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "fn is_valid(&self, p: &Point) -> bool {\n        p.x >= 0 && p.y >= 0 && p.x < self.m.w && p.y < self.m.h\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 857,
+          "end": 967
+        },
+        "start": {
+          "line": 37,
+          "column": 4
+        },
+        "end": {
+          "line": 39,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "exist_point",
+  "range": {
+    "byteOffset": {
+      "start": 976,
+      "end": 987
+    },
+    "start": {
+      "line": 41,
+      "column": 7
+    },
+    "end": {
+      "line": 41,
+      "column": 18
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "    fn exist_point(&mut self, p: &Point, cost: i32) -> bool {",
+  "charCount": {
+    "leading": 7,
+    "trailing": 43
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "fn exist_point(&mut self, p: &Point, cost: i32) -> bool {\n        if let Some(pos) = self.closed.iter().position(|n| n.pos == *p) {\n            if self.closed[pos].cost + self.closed[pos].dist < cost {\n                return true;\n            }\n            self.closed.remove(pos);\n            return false;\n        }\n        if let Some(pos) = self.open.iter().position(|n| n.pos == *p) {\n            if self.open[pos].cost + self.open[pos].dist < cost {\n                return true;\n            }\n            self.open.remove(pos);\n            return false;\n        }\n        false\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 973,
+              "end": 1562
+            },
+            "start": {
+              "line": 41,
+              "column": 4
+            },
+            "end": {
+              "line": 57,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "fn exist_point(&mut self, p: &Point, cost: i32) -> bool {\n        if let Some(pos) = self.closed.iter().position(|n| n.pos == *p) {\n            if self.closed[pos].cost + self.closed[pos].dist < cost {\n                return true;\n            }\n            self.closed.remove(pos);\n            return false;\n        }\n        if let Some(pos) = self.open.iter().position(|n| n.pos == *p) {\n            if self.open[pos].cost + self.open[pos].dist < cost {\n                return true;\n            }\n            self.open.remove(pos);\n            return false;\n        }\n        false\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 973,
+          "end": 1562
+        },
+        "start": {
+          "line": 41,
+          "column": 4
+        },
+        "end": {
+          "line": 57,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "fill_open",
+  "range": {
+    "byteOffset": {
+      "start": 1571,
+      "end": 1580
+    },
+    "start": {
+      "line": 59,
+      "column": 7
+    },
+    "end": {
+      "line": 59,
+      "column": 16
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "    fn fill_open(&mut self, n: &Node) -> bool {",
+  "charCount": {
+    "leading": 7,
+    "trailing": 31
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "fn fill_open(&mut self, n: &Node) -> bool {\n        // Create a local copy of neighbours to avoid borrowing self\n        let neighbours = self.neighbours;\n        \n        for (i, neighbour_offset) in neighbours.iter().enumerate() {\n            let step_cost = if i < 4 { 1 } else { 1 };\n            let neighbour = n.pos + *neighbour_offset;\n            \n            if neighbour == self.end {\n                return true;\n            }\n\n            if self.is_valid(&neighbour) && self.m.get(neighbour.x, neighbour.y) != 1 {\n                let nc = step_cost + n.cost;\n                let dist = self.calc_dist(&neighbour);\n                \n                if !self.exist_point(&neighbour, nc + dist) {\n                    self.open.push(Node {\n                        cost: nc,\n                        dist,\n                        pos: neighbour,\n                        parent: n.pos,\n                    });\n                }\n            }\n        }\n        false\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 1568,
+              "end": 2544
+            },
+            "start": {
+              "line": 59,
+              "column": 4
+            },
+            "end": {
+              "line": 86,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "fn fill_open(&mut self, n: &Node) -> bool {\n        // Create a local copy of neighbours to avoid borrowing self\n        let neighbours = self.neighbours;\n        \n        for (i, neighbour_offset) in neighbours.iter().enumerate() {\n            let step_cost = if i < 4 { 1 } else { 1 };\n            let neighbour = n.pos + *neighbour_offset;\n            \n            if neighbour == self.end {\n                return true;\n            }\n\n            if self.is_valid(&neighbour) && self.m.get(neighbour.x, neighbour.y) != 1 {\n                let nc = step_cost + n.cost;\n                let dist = self.calc_dist(&neighbour);\n                \n                if !self.exist_point(&neighbour, nc + dist) {\n                    self.open.push(Node {\n                        cost: nc,\n                        dist,\n                        pos: neighbour,\n                        parent: n.pos,\n                    });\n                }\n            }\n        }\n        false\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 1568,
+          "end": 2544
+        },
+        "start": {
+          "line": 59,
+          "column": 4
+        },
+        "end": {
+          "line": 86,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "search",
+  "range": {
+    "byteOffset": {
+      "start": 2557,
+      "end": 2563
+    },
+    "start": {
+      "line": 88,
+      "column": 11
+    },
+    "end": {
+      "line": 88,
+      "column": 17
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "    pub fn search(&mut self, s: Point, e: Point, mp: Map) -> bool {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 50
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub fn search(&mut self, s: Point, e: Point, mp: Map) -> bool {\n        self.end = e;\n        self.start = s;\n        self.m = mp;\n        \n        self.open.push(Node {\n            cost: 0,\n            pos: s,\n            parent: Point::new(0, 0),\n            dist: self.calc_dist(&s),\n        });\n\n        while !self.open.is_empty() {\n            self.open.sort_by(|a, b| (a.cost + a.dist).cmp(&(b.cost + b.dist)));\n            let n = self.open.remove(0);\n            self.closed.push(n.clone());\n            if self.fill_open(&n) {\n                return true;\n            }\n        }\n        false\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 2550,
+              "end": 3159
+            },
+            "start": {
+              "line": 88,
+              "column": 4
+            },
+            "end": {
+              "line": 109,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub fn search(&mut self, s: Point, e: Point, mp: Map) -> bool {\n        self.end = e;\n        self.start = s;\n        self.m = mp;\n        \n        self.open.push(Node {\n            cost: 0,\n            pos: s,\n            parent: Point::new(0, 0),\n            dist: self.calc_dist(&s),\n        });\n\n        while !self.open.is_empty() {\n            self.open.sort_by(|a, b| (a.cost + a.dist).cmp(&(b.cost + b.dist)));\n            let n = self.open.remove(0);\n            self.closed.push(n.clone());\n            if self.fill_open(&n) {\n                return true;\n            }\n        }\n        false\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 2550,
+          "end": 3159
+        },
+        "start": {
+          "line": 88,
+          "column": 4
+        },
+        "end": {
+          "line": 109,
+          "column": 5
+        }
+      }
+    }
+  ]
+},
+{
+  "text": "path",
+  "range": {
+    "byteOffset": {
+      "start": 3172,
+      "end": 3176
+    },
+    "start": {
+      "line": 111,
+      "column": 11
+    },
+    "end": {
+      "line": 111,
+      "column": 15
+    }
+  },
+  "file": "../sample_project/rust/src/astar.rs",
+  "lines": "    pub fn path(&self) -> (Vec<Point>, i32) {",
+  "charCount": {
+    "leading": 11,
+    "trailing": 30
+  },
+  "language": "Rust",
+  "metaVariables": {
+    "single": {},
+    "multi": {
+      "secondary": [
+        {
+          "text": "pub fn path(&self) -> (Vec<Point>, i32) {\n        let mut path = vec![self.end];\n        let cost = 1 + self.closed.last().unwrap().cost;\n        path.push(self.closed.last().unwrap().pos);\n        let mut parent = self.closed.last().unwrap().parent;\n\n        for node in self.closed.iter().rev() {\n            if node.pos == parent && !(node.pos == self.start) {\n                path.push(node.pos);\n                parent = node.parent;\n            }\n        }\n        path.push(self.start);\n        path.reverse();\n        (path, cost)\n    }",
+          "range": {
+            "byteOffset": {
+              "start": 3165,
+              "end": 3709
+            },
+            "start": {
+              "line": 111,
+              "column": 4
+            },
+            "end": {
+              "line": 126,
+              "column": 5
+            }
+          }
+        }
+      ]
+    },
+    "transformed": {}
+  },
+  "ruleId": "function",
+  "severity": "hint",
+  "note": null,
+  "message": "",
+  "labels": [
+    {
+      "text": "pub fn path(&self) -> (Vec<Point>, i32) {\n        let mut path = vec![self.end];\n        let cost = 1 + self.closed.last().unwrap().cost;\n        path.push(self.closed.last().unwrap().pos);\n        let mut parent = self.closed.last().unwrap().parent;\n\n        for node in self.closed.iter().rev() {\n            if node.pos == parent && !(node.pos == self.start) {\n                path.push(node.pos);\n                parent = node.parent;\n            }\n        }\n        path.push(self.start);\n        path.reverse();\n        (path, cost)\n    }",
+      "range": {
+        "byteOffset": {
+          "start": 3165,
+          "end": 3709
+        },
+        "start": {
+          "line": 111,
+          "column": 4
+        },
+        "end": {
+          "line": 126,
+          "column": 5
+        }
+      }
+    }
+  ]
+}
+]

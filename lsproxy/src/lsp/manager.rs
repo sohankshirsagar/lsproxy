@@ -1,5 +1,5 @@
 use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
-use crate::ctags::client::CtagsClient;
+use crate::ast_grep::client::AstGrepClient;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
@@ -19,10 +19,11 @@ use std::time::Duration;
 use tokio::sync::broadcast::{channel, Sender};
 use tokio::sync::Mutex;
 
+
 pub struct Manager {
     lsp_clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
     watch_events_sender: Sender<DebouncedEvent>,
-    ctags_client: CtagsClient,
+    ast_grep: AstGrepClient,
 }
 
 impl Manager {
@@ -48,12 +49,14 @@ impl Manager {
             .watch(Path::new(root_path), RecursiveMode::Recursive)
             .expect("Failed to watch path");
 
-        let ctags_client = CtagsClient::new(root_path, event_sender.subscribe()).await?;
-
+        let ast_grep = AstGrepClient {
+            root_path: root_path.to_string(),
+            config_path: root_path.to_string(),
+        };
         Ok(Self {
             lsp_clients: HashMap::new(),
             watch_events_sender: event_sender,
-            ctags_client,
+            ast_grep,
         })
     }
 
@@ -164,15 +167,16 @@ impl Manager {
             .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
 
-    pub async fn definitions_in_file_ctags(
+    pub async fn definitions_in_file_ast_grep(
         &self,
         file_path: &str,
     ) -> Result<Vec<Symbol>, LspManagerError> {
         // breaking abstraction :(
-        self.ctags_client
+        let ast_grep_result = self.ast_grep
             .get_file_symbols(file_path)
             .await
-            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
+            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))?;
+        Ok(ast_grep_result.into_iter().map(|s| Symbol::from(s)).collect())
     }
 
     pub async fn find_definition(
@@ -354,7 +358,7 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "main.py";
-        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
 
         let symbol_response: SymbolResponse = file_symbols;
 
@@ -523,7 +527,7 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
-        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
 
         let symbol_response: SymbolResponse = file_symbols;
 

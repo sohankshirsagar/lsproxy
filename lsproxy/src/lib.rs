@@ -14,6 +14,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod api_types;
+mod ast_grep;
 mod ctags;
 mod handlers;
 mod lsp;
