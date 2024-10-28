@@ -50,7 +50,7 @@ impl Manager {
 
         let ast_grep = AstGrepClient {
             root_path: root_path.to_string(),
-            config_path: ".lsproxy/sgconfig.yml".to_string(),
+            config_path: "/usr/src/sgconfig.yml".to_string(),
         };
         Ok(Self {
             lsp_clients: HashMap::new(),

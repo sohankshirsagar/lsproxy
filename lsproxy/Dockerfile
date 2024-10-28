@@ -3,11 +3,6 @@ FROM rust:1.81.0-slim-bookworm
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-COPY ./src/ast_grep/rules ./.lsproxy/ast_grep_rules
-# Create sgconfig.yml file pointing to rules directory
-RUN echo "ruleDirs:\n  - .lsproxy/ast_grep_rules" > sgconfig.yml
-
-
 # Install runtime dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
     pkg-config \
@@ -40,6 +35,12 @@ COPY Cargo.toml .
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN touch src/lib.rs
 RUN cargo build --release
+
+
+RUN cargo install ast-grep --locked
+COPY ./src/ast_grep/rules /usr/src/.lsproxy/ast_grep_rules
+# Create sgconfig.yml file pointing to rules directory
+RUN echo "ruleDirs:\n  - /usr/src/.lsproxy/ast_grep_rules" > /usr/src/sgconfig.yml
 
 # Document that the container listens on port 4444
 EXPOSE 4444
