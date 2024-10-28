@@ -131,7 +131,7 @@ pub struct GetDefinitionRequest {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    pub start_position: FilePosition,
+    pub identifier_position: FilePosition,
 
     /// Whether to include the declaration (definition) of the symbol in the response.
     /// Defaults to false.

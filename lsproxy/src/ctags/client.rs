@@ -38,9 +38,11 @@ impl CtagsClient {
         // Build command with base args
         let mut command = Command::new("ctags");
         command.args(&[
-            "--fields=+neKl",    // Include line numbers, long kind names, and language
-            "--python-kinds=-I", // Remove imports
-            "--rust-kinds=-n",   // Remove modules
+            "--map-typescript=+.tsx", // Enable typescript tsx files
+            "--fields=+neKl", // Include line numbers, long kind names, and language
+            "--python-kinds=-iIx", // Remove imports
+            "--rust-kinds=-n", // Remove modules
+            "--output-format=u-ctags",
             "--quiet",           // don't print warnings
             "-f -",
         ]);
@@ -231,37 +233,59 @@ mod test {
         let (_, rx) = create_test_watcher_channels();
         let _context = TestContext::setup_no_manager(&python_sample_path());
         let client = CtagsClient::new(&python_sample_path(), rx).await?;
-        let symbols = client.get_file_symbols("main.py").await?;
+        let symbols = client.get_file_symbols("graph.py")?;
         let expected = vec![
             Symbol {
-                name: String::from("graph"),
-                kind: String::from("variable"),
+                name: String::from("AstarGraph"),
+                kind: String::from("class"),
                 identifier_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("graph.py"),
                     position: Position {
-                        line: 5,
-                        character: 0,
+                        line: 0,
+                        character: 6,
                     },
                 },
             },
             Symbol {
-                name: String::from("result"),
-                kind: String::from("variable"),
+                name: String::from("__init__"),
+                kind: String::from("member"),
                 identifier_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("graph.py"),
                     position: Position {
-                        line: 6,
-                        character: 0,
+                        line: 3,
+                        character: 8,
                     },
                 },
             },
             Symbol {
-                name: String::from("cost"),
-                kind: String::from("variable"),
+                name: String::from("heuristic"),
+                kind: String::from("member"),
                 identifier_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("graph.py"),
                     position: Position {
-                        line: 6,
+                        line: 22,
+                        character: 8,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("get_vertex_neighbours"),
+                kind: String::from("member"),
+                identifier_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 31,
+                        character: 8,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("move_cost"),
+                kind: String::from("member"),
+                identifier_position: FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 51,
                         character: 8,
                     },
                 },

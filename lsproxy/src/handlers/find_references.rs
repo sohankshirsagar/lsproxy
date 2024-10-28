@@ -45,17 +45,17 @@ pub async fn find_references(
 ) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
-        info.start_position.path,
-        info.start_position.position.line,
-        info.start_position.position.character
+        info.identifier_position.path,
+        info.identifier_position.position.line,
+        info.identifier_position.position.character
     );
     let manager = data.manager.lock().unwrap();
     let references_result = manager
         .find_references(
-            &info.start_position.path,
+            &info.identifier_position.path,
             LspPosition {
-                line: info.start_position.position.line,
-                character: info.start_position.position.character,
+                line: info.identifier_position.position.line,
+                character: info.identifier_position.position.character,
             },
             info.include_declaration,
         )
@@ -173,7 +173,7 @@ mod test {
         let state = initialize_app_state().await?;
 
         let mock_request = Json(GetReferencesRequest {
-            start_position: FilePosition {
+            identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
                     line: 0,
