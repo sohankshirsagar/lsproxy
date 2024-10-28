@@ -3,11 +3,10 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Location, Position as LspPosition, Range};
 
-use crate::api_types::{
-    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
-};
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::lsp::manager::{LspManager, LspManagerError};
+use crate::lsp::manager::{LspManagerError, Manager};
+use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
 
 /// Find all references to a symbol
@@ -50,8 +49,8 @@ pub async fn find_references(
         info.start_position.position.line,
         info.start_position.position.character
     );
-    let lsp_manager = data.lsp_manager.lock().unwrap();
-    let references_result = lsp_manager
+    let manager = data.manager.lock().unwrap();
+    let references_result = manager
         .find_references(
             &info.start_position.path,
             LspPosition {
@@ -64,7 +63,7 @@ pub async fn find_references(
 
     let code_contexts_result = if let Some(lines) = info.include_code_context_lines {
         match &references_result {
-            Ok(refs) => fetch_code_context(&lsp_manager, refs.clone(), lines)
+            Ok(refs) => fetch_code_context(&manager, refs.clone(), lines)
                 .await
                 .map(Some)
                 .map_err(|e| {
@@ -116,7 +115,7 @@ pub async fn find_references(
 }
 
 async fn fetch_code_context(
-    lsp_manager: &LspManager,
+    manager: &Manager,
     references: Vec<Location>,
     context_lines: u32,
 ) -> Result<Vec<CodeContext>, LspManagerError> {
@@ -132,7 +131,7 @@ async fn fetch_code_context(
                 character: 0,
             },
         };
-        match lsp_manager
+        match manager
             .read_source_code(&uri_to_relative_path_string(&reference.uri), Some(range))
             .await
         {

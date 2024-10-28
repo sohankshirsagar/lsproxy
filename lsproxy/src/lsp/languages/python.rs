@@ -1,7 +1,9 @@
 use std::{path::Path, process::Stdio};
 
 use async_trait::async_trait;
+use notify_debouncer_mini::DebouncedEvent;
 use tokio::process::Command;
+use tokio::sync::broadcast::Receiver;
 
 use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
@@ -40,7 +42,10 @@ impl LspClient for PyrightClient {
 }
 
 impl PyrightClient {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("pyright-langserver")
             .arg("--stdio")
             .current_dir(root_path)
@@ -64,6 +69,7 @@ impl PyrightClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
+            watch_events_rx,
         );
 
         let json_rpc_handler = JsonRpcHandler::new();

@@ -3,8 +3,10 @@ use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
 use async_trait::async_trait;
 use log::debug;
 use lsp_types::TextDocumentItem;
+use notify_debouncer_mini::DebouncedEvent;
 use serde_json::{from_str, Value};
 use tokio::process::Command;
+use tokio::sync::broadcast::Receiver;
 use url::Url;
 
 use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
@@ -68,7 +70,10 @@ impl LspClient for TypeScriptLanguageClient {
 }
 
 impl TypeScriptLanguageClient {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("typescript-language-server")
             .arg("--stdio")
             .current_dir(root_path)
@@ -92,6 +97,7 @@ impl TypeScriptLanguageClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
+            watch_events_rx,
         );
         Ok(Self {
             process: process_handler,

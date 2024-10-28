@@ -1,47 +1,53 @@
+use log::{debug, error};
+use notify_debouncer_mini::DebouncedEvent;
+use tokio::sync::broadcast::Receiver;
+use tokio::sync::RwLock;
+
 use super::tag_db::TagDatabase;
 use crate::api_types::{get_mount_dir, Symbol};
+use crate::utils::file_utils::search_files;
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
-    RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
+    DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
+    TYPESCRIPT_FILE_PATTERNS,
 };
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-
+use std::sync::Arc;
 pub struct CtagsClient {
-    tags: TagDatabase,
+    tags: Arc<RwLock<TagDatabase>>,
 }
 
 impl CtagsClient {
-    pub async fn new(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let mut client = Self {
-            tags: TagDatabase::new()?,
-        };
-        client.generate(file_path).await?;
-        client.load(Path::new(file_path).join("tags"))?;
-        Ok(client)
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let db = Arc::new(RwLock::new(TagDatabase::new()?));
+
+        let ctags = Self::generate(root_path).await?;
+        Self::load(db.clone(), ctags).await?;
+        tokio::spawn(Self::handle_watch_events(
+            root_path.to_string(),
+            db.clone(),
+            watch_events_rx,
+        ));
+        Ok(Self { tags: db })
     }
 
-    async fn generate(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let output_file = Path::new(file_path).join("tags");
-
+    async fn generate(root_path: &str) -> Result<String, Box<dyn std::error::Error>> {
         // Build command with base args
         let mut command = Command::new("ctags");
         command.args(&[
-            "--fields=+neKl", // Include line numbers, long kind names, and language
-            "--python-kinds=-I",// Remove imports
-            "--rust-kinds=-n",// Remove modules
-            "--output-format=u-ctags",
-            "-f",
-            output_file
-                .to_str()
-                .expect("Output path contains invalid UTF-8"),
+            "--fields=+neKl",    // Include line numbers, long kind names, and language
+            "--python-kinds=-I", // Remove imports
+            "--rust-kinds=-n",   // Remove modules
+            "--quiet",           // don't print warnings
+            "-f -",
         ]);
 
         // Find all the workspace files
-        let files = WorkspaceDocumentsHandler::new(
-            Path::new(file_path),
+        let files = search_files(
+            Path::new(root_path),
             PYRIGHT_FILE_PATTERNS
                 .iter()
                 .chain(TYPESCRIPT_FILE_PATTERNS.iter())
@@ -52,15 +58,11 @@ impl CtagsClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
-        )
-        .list_files()
-        .await;
+        )?;
 
         // Add all discovered files to the command
         for file in files {
-            if let Some(file_str) = file.to_str() {
-                command.arg(file_str);
-            }
+            command.arg(file);
         }
 
         let output = command
@@ -74,10 +76,14 @@ impl CtagsClient {
             )
             .into());
         }
-        Ok(())
+        let output_string = String::from_utf8(output.stdout)?;
+        Ok(output_string)
     }
 
-    fn load(&mut self, path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    async fn load(
+        db: Arc<RwLock<TagDatabase>>,
+        ctags: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // Prepare vectors for column-based storage
         let mut names = Vec::new();
         let mut kinds = Vec::new();
@@ -87,14 +93,8 @@ impl CtagsClient {
         let mut start_characters = Vec::new();
         let mut end_lines = Vec::new();
 
-        // Read the tags file
-        let file = File::open(path).expect("Failed to open tags file at the specified path");
-        let reader = BufReader::new(file);
-
         // Process each line
-        for line in reader.lines() {
-            let line = line?;
-
+        for line in ctags.lines() {
             // Skip comment lines
             if line.starts_with('!') {
                 continue;
@@ -132,12 +132,14 @@ impl CtagsClient {
                 let start_character = line_content.find(tag_name).unwrap_or(0) as u32;
 
                 // Parse the end line number
+                // WE ARE ADDING 1 HERE TO MAKE THE RANGE INCLUSIVE
+                // WITHOUT KNOWING HOW LONG THE END LINE IS
+                // IF THERE IS NO END WE ASSUME IT IS THE SAME AS THE START LINE
                 let end_line = parts
                     .iter()
                     .find(|&&part| part.starts_with("end:"))
                     .and_then(|part| part.trim_start_matches("end:").parse::<u32>().ok())
-                    .unwrap_or(1)
-                    - 1;
+                    .unwrap_or(start_line + 1);
 
                 names.push(tag_name.to_string());
                 kinds.push(kind.to_string());
@@ -148,37 +150,93 @@ impl CtagsClient {
                 end_lines.push(end_line);
             }
         }
-
-        self.tags
-            .add_tags_by_columns(names, kinds, languages, files, start_lines, start_characters, end_lines)?;
-        Ok(())
+        db.write().await.add_tags_by_columns(
+            names,
+            kinds,
+            languages,
+            files,
+            start_lines,
+            start_characters,
+            end_lines,
+        )
     }
 
-    pub fn get_file_symbols(
+    async fn handle_watch_events(
+        root_path: String,
+        db: Arc<RwLock<TagDatabase>>,
+        mut watch_events_rx: Receiver<DebouncedEvent>,
+    ) {
+        while let Ok(event) = watch_events_rx.recv().await {
+            if Self::event_matches(&event) {
+                db.write().await.clear();
+                let ctags = Self::generate(&root_path).await.unwrap_or_else(|e| {
+                    error!("Failed to generate tags: {}", e);
+                    String::new()
+                });
+                Self::load(db.clone(), ctags).await.unwrap_or_else(|e| {
+                    error!("Failed to load tags: {}", e);
+                });
+                debug!("Tags successfully regenerated and loaded.");
+            }
+        }
+    }
+
+    fn event_matches(event: &DebouncedEvent) -> bool {
+        let path_str = event.path.to_string_lossy();
+        let include_patterns: Vec<String> = PYRIGHT_FILE_PATTERNS
+            .iter()
+            .chain(TYPESCRIPT_FILE_PATTERNS.iter())
+            .chain(RUST_ANALYZER_FILE_PATTERNS.iter())
+            .map(|&s| s.to_string())
+            .collect();
+        let exclude_patterns: Vec<String> = DEFAULT_EXCLUDE_PATTERNS
+            .iter()
+            .map(|&s| s.to_string())
+            .collect();
+
+        let included = include_patterns
+            .iter()
+            .any(|pat| glob::Pattern::new(pat).unwrap().matches(&path_str));
+        let excluded = exclude_patterns
+            .iter()
+            .any(|pat| glob::Pattern::new(pat).unwrap().matches(&path_str));
+        included && !excluded
+    }
+
+    pub async fn get_file_symbols(
         &self,
         file_name: &str,
     ) -> Result<Vec<Symbol>, Box<dyn std::error::Error>> {
-        let symbols = self.tags.get_file_symbols(file_name)?;
+        let symbols = self.tags.read().await.get_file_symbols(file_name)?;
         Ok(symbols)
     }
 }
 
 #[cfg(test)]
 mod test {
+
+    use tokio::sync::broadcast::{channel, Sender};
+    use tokio::time::{sleep, Duration};
+
     use super::*;
     use crate::api_types::{FilePosition, Position, Symbol};
     use crate::test_utils::{python_sample_path, rust_sample_path, TestContext};
 
+    fn create_test_watcher_channels() -> (Sender<DebouncedEvent>, Receiver<DebouncedEvent>) {
+        channel(100)
+    }
+
     #[tokio::test]
     async fn test_python_tags() -> Result<(), Box<dyn std::error::Error>> {
+        let (_, rx) = create_test_watcher_channels();
         let _context = TestContext::setup_no_manager(&python_sample_path());
-        let client = CtagsClient::new(&python_sample_path()).await?;
-        let symbols = client.get_file_symbols("main.py")?;
+        let client = CtagsClient::new(&python_sample_path(), rx).await?;
+        let symbols = client.get_file_symbols("main.py").await?;
         let expected = vec![
             Symbol {
                 name: String::from("graph"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 5,
@@ -189,7 +247,7 @@ mod test {
             Symbol {
                 name: String::from("result"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -200,7 +258,7 @@ mod test {
             Symbol {
                 name: String::from("cost"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -216,13 +274,14 @@ mod test {
     #[tokio::test]
     async fn test_rust_tags() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup_no_manager(&rust_sample_path());
-        let client = CtagsClient::new(&rust_sample_path()).await?;
-        let symbols = client.get_file_symbols("src/point.rs")?;
+        let (_, rx) = create_test_watcher_channels();
+        let client = CtagsClient::new(&rust_sample_path(), rx).await?;
+        let symbols = client.get_file_symbols("src/point.rs").await?;
         let expected = vec![
             Symbol {
                 name: String::from("Point"),
                 kind: String::from("struct"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 1,
@@ -233,7 +292,7 @@ mod test {
             Symbol {
                 name: String::from("x"),
                 kind: String::from("field"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 2,
@@ -244,7 +303,7 @@ mod test {
             Symbol {
                 name: String::from("y"),
                 kind: String::from("field"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 3,
@@ -255,7 +314,7 @@ mod test {
             Symbol {
                 name: String::from("Point"),
                 kind: String::from("implementation"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 6,
@@ -266,7 +325,7 @@ mod test {
             Symbol {
                 name: String::from("new"),
                 kind: String::from("method"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 7,
@@ -277,7 +336,7 @@ mod test {
             Symbol {
                 name: String::from("Point"),
                 kind: String::from("implementation"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 12,
@@ -288,7 +347,7 @@ mod test {
             Symbol {
                 name: String::from("Output"),
                 kind: String::from("typedef"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 13,
@@ -299,7 +358,7 @@ mod test {
             Symbol {
                 name: String::from("add"),
                 kind: String::from("method"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
                         line: 15,
@@ -309,6 +368,46 @@ mod test {
             },
         ];
         assert_eq!(symbols, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_watch_event_deletion() -> Result<(), Box<dyn std::error::Error>> {
+        let (tx, rx) = create_test_watcher_channels();
+        let sample_path = python_sample_path();
+        let _context = TestContext::setup_no_manager(&sample_path);
+        let client = CtagsClient::new(&sample_path, rx).await?;
+        // this is done after client is initialized, so ctags are already loaded
+        let temp_file = tempfile::Builder::new()
+            .prefix("test_file")
+            .suffix(".py")
+            .tempfile_in(&sample_path)?;
+        tokio::fs::write(
+            &temp_file.path(),
+            "def test_func():\n    x = 1\n    return x",
+        )
+        .await?;
+
+        let relative_file_path = temp_file.path().file_name().unwrap().to_str().unwrap();
+
+        let symbols = client.get_file_symbols(relative_file_path).await?;
+        assert!(symbols.is_empty()); // add a new temp f
+
+        tx.send(DebouncedEvent {
+            path: temp_file.path().to_path_buf(),
+            kind: notify_debouncer_mini::DebouncedEventKind::Any,
+        })?;
+
+        sleep(Duration::from_millis(100)).await;
+
+        let symbols_after = client.get_file_symbols(relative_file_path).await?;
+
+        assert!(
+            !symbols_after.is_empty(),
+            "No symbols found in {}",
+            relative_file_path
+        );
+
         Ok(())
     }
 }

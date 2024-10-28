@@ -48,6 +48,10 @@ impl TagDatabase {
         Ok(())
     }
 
+    pub fn clear(&mut self) {
+        self.df.clear();
+    }
+
     pub fn get_file_symbols(
         &self,
         file_name: &str,
@@ -70,13 +74,14 @@ impl TagDatabase {
         let files = filtered_df.column("file_name")?.str()?;
         let start_lines = filtered_df.column("start_line")?.u32()?;
         let start_characters = filtered_df.column("start_character")?.u32()?;
+        let end_lines = filtered_df.column("end_line")?.u32()?;
 
         let mut results = Vec::with_capacity(filtered_df.height());
         for i in 0..filtered_df.height() {
             results.push(Symbol {
                 name: names.get(i).expect("Row index out of bounds").to_string(),
                 kind: kinds.get(i).expect("Row index out of bounds").to_string(),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: files.get(i).expect("Row index out of bounds").to_string(),
                     position: Position {
                         line: start_lines.get(i).expect("Row index out of bounds"),

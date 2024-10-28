@@ -1,21 +1,16 @@
 use crate::utils::file_utils::search_files;
 use log::{debug, error, warn};
 use lsp_types::Range;
-use notify::RecursiveMode;
-use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent, Debouncer};
+use notify_debouncer_mini::DebouncedEvent;
 use std::{
     collections::HashMap,
     error::Error,
     path::{Path, PathBuf},
     sync::Arc,
-    time::Duration,
 };
 use tokio::{
     fs::read_to_string,
-    sync::{
-        broadcast::{channel, Receiver, Sender},
-        RwLock,
-    },
+    sync::{broadcast::Receiver, RwLock},
 };
 
 pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
@@ -59,11 +54,8 @@ pub trait WorkspaceDocuments: Send + Sync {
 
 pub struct WorkspaceDocumentsHandler {
     cache: Arc<RwLock<HashMap<PathBuf, Option<String>>>>,
-    event_sender: Sender<DebouncedEvent>,
     patterns: Arc<RwLock<(Vec<String>, Vec<String>)>>,
     root_path: PathBuf,
-    #[allow(unused)] // need to keep this around for watcher to work
-    debouncer: Debouncer<notify::RecommendedWatcher>,
 }
 
 impl WorkspaceDocumentsHandler {
@@ -71,38 +63,19 @@ impl WorkspaceDocumentsHandler {
         root_path: &Path,
         include_patterns: Vec<String>,
         exclude_patterns: Vec<String>,
+        watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Self {
-        let (tx, mut rx) = channel(100);
-        let event_sender = tx.clone();
         let cache = Arc::new(RwLock::new(HashMap::new()));
         let patterns = Arc::new(RwLock::new((include_patterns, exclude_patterns)));
         let root_path = root_path.to_path_buf();
-
-        // Initialize debouncer with a 2-second debounce duration
-        let mut debouncer = new_debouncer(
-            Duration::from_secs(2),
-            move |res: DebounceEventResult| match res {
-                Ok(events) => {
-                    for event in events {
-                        let _ = tx.send(event.clone());
-                    }
-                }
-                Err(e) => error!("Debounce error: {:?}", e),
-            },
-        )
-        .expect("Failed to create debouncer");
-
-        // Watch the root path recursively
-        debouncer
-            .watcher()
-            .watch(&root_path, RecursiveMode::Recursive)
-            .expect("Failed to watch path");
 
         let cache_clone = Arc::clone(&cache);
         let patterns_clone = Arc::clone(&patterns);
 
         tokio::spawn(async move {
-            while let Ok(event) = rx.recv().await {
+            let mut watch_events_rx = watch_events_rx; // Make it mutable
+            while let Ok(event) = watch_events_rx.recv().await {
+                debug!("Received event: {:?}", event);
                 if WorkspaceDocumentsHandler::matches_patterns(&event.path, &patterns_clone).await {
                     cache_clone.write().await.clear();
                     debug!("Cache cleared for {:?}", event.path);
@@ -114,8 +87,6 @@ impl WorkspaceDocumentsHandler {
             cache,
             patterns,
             root_path,
-            event_sender,
-            debouncer,
         }
     }
 
@@ -149,11 +120,6 @@ impl WorkspaceDocumentsHandler {
                 Ok(content)
             }
         }
-    }
-
-    #[allow(unused)] // TODO: use this in client to notify servers
-    pub fn subscribe_to_file_changes(&self) -> Receiver<DebouncedEvent> {
-        self.event_sender.subscribe()
     }
 
     fn extract_range(content: &str, range: Range) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -255,8 +221,14 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
 mod tests {
     use super::*;
     use lsp_types::Range;
-    use std::fs;
+    use notify_debouncer_mini::DebouncedEventKind;
+    use std::{fs, time::Duration};
     use tempfile::tempdir;
+    use tokio::sync::broadcast::{channel, Sender};
+
+    fn create_test_watcher_channels() -> (Sender<DebouncedEvent>, Receiver<DebouncedEvent>) {
+        channel(100)
+    }
 
     #[tokio::test]
     async fn test_read_text_document() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -264,9 +236,10 @@ mod tests {
         let dir = tempdir()?;
         let file_path = dir.path().join("test.txt");
         fs::write(&file_path, "Hello, world!\nThis is a test.")?;
-
+        let (_, rx) = create_test_watcher_channels();
         // Initialize WorkspaceDocumentsHandler
-        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+        let handler =
+            WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![], rx);
 
         // Test reading the entire document
         let content = handler.read_text_document(&file_path, None).await?;
@@ -295,12 +268,14 @@ mod tests {
         let dir = tempdir()?;
         fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
         fs::write(dir.path().join("file2.txt"), "Hello")?;
+        let (tx, rx) = create_test_watcher_channels();
 
         // Initialize WorkspaceDocumentsHandler with include and exclude patterns
         let handler = WorkspaceDocumentsHandler::new(
             dir.path(),
             vec!["*.rs".to_string()],
             vec!["file2.txt".to_string()],
+            rx,
         );
 
         // Test listing files based on patterns
@@ -310,9 +285,13 @@ mod tests {
         assert!(files.contains(&dir.path().join("file1.rs")));
 
         fs::write(dir.path().join("file3.rs"), "fn main() {}")?;
-        // Wait for the watcher to update the cache after debounce
-        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+        tx.send(DebouncedEvent {
+            path: dir.path().join("file3.rs"),
+            kind: DebouncedEventKind::Any,
+        })?;
         // Addend another rs file se we expect 2 files
+        // Sleep briefly to allow the file system events to be processed
+        tokio::time::sleep(Duration::from_millis(100)).await;
 
         let files = handler.list_files().await;
         println!("Files: {:?}", files);
@@ -329,9 +308,11 @@ mod tests {
         let dir = tempdir()?;
         fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
         fs::write(dir.path().join("file2.txt"), "Hello")?;
+        let (_, rx) = create_test_watcher_channels();
 
         // Initialize WorkspaceDocumentsHandler with initial patterns
-        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+        let handler =
+            WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![], rx);
 
         // Verify initial file listing
         let initial_files = handler.list_files().await;
@@ -357,9 +338,10 @@ mod tests {
         let dir = tempdir()?;
         let file_path = dir.path().join("test_out_of_bounds.txt");
         fs::write(&file_path, "Line 1\nLine 2")?;
-
+        let (_, rx) = create_test_watcher_channels();
         // Initialize WorkspaceDocumentsHandler
-        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+        let handler =
+            WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![], rx);
 
         // Test reading with a range beyond the number of lines
         let range = Range {
@@ -387,7 +369,9 @@ mod tests {
         fs::write(&file_path, "Short line")?;
 
         // Initialize WorkspaceDocumentsHandler
-        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+        let (_, rx) = create_test_watcher_channels();
+        let handler =
+            WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![], rx);
 
         // Test reading with character positions exceeding line length
         let range = Range {
@@ -414,7 +398,9 @@ mod tests {
         fs::write(&file_path, "")?;
 
         // Initialize WorkspaceDocumentsHandler
-        let handler = WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![]);
+        let (_, rx) = create_test_watcher_channels();
+        let handler =
+            WorkspaceDocumentsHandler::new(dir.path(), vec!["*.txt".to_string()], vec![], rx);
 
         // Test reading the entire empty document
         let content = handler.read_text_document(&file_path, None).await?;
@@ -442,12 +428,13 @@ mod tests {
         // Setup temporary directory without matching files
         let dir = tempdir()?;
         fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
-
+        let (_, rx) = create_test_watcher_channels();
         // Initialize WorkspaceDocumentsHandler with patterns that do not match
         let handler = WorkspaceDocumentsHandler::new(
             dir.path(),
             vec!["*.txt".to_string()],
             vec!["*.md".to_string()],
+            rx,
         );
 
         // Test listing files with no matches
@@ -464,12 +451,13 @@ mod tests {
         let dir = tempdir()?;
         fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
         fs::write(dir.path().join("file2.txt"), "Hello")?;
-
+        let (_, rx) = create_test_watcher_channels();
         // Initialize WorkspaceDocumentsHandler with initial patterns
         let handler = WorkspaceDocumentsHandler::new(
             dir.path(),
             vec!["*.rs".to_string()],
             vec!["file2.txt".to_string()],
+            rx,
         );
 
         // Update patterns with empty include and exclude

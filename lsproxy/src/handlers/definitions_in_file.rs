@@ -35,7 +35,7 @@ pub async fn definitions_in_file(
     info: Query<FileSymbolsRequest>,
 ) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
-    let ctags_client = match data.ctags_client.lock() {
+    let manager = match data.manager.lock() {
         Ok(guard) => guard,
         Err(e) => {
             error!("Failed to acquire lock on LSP manager: {}", e);
@@ -44,7 +44,7 @@ pub async fn definitions_in_file(
             });
         }
     };
-    let result = ctags_client.get_file_symbols(&info.file_path);
+    let result = manager.definitions_in_file_ctags(&info.file_path).await;
 
     match result {
         Ok(symbols) => HttpResponse::Ok().json(symbols),
@@ -88,11 +88,11 @@ mod test {
         let bytes = actix_web::body::to_bytes(body).await.unwrap();
         let file_symbols_response: Vec<Symbol> = serde_json::from_slice(&bytes).unwrap();
 
-        let expected_response = vec![
+        let expected = vec![
             Symbol {
                 name: String::from("graph"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 5,
@@ -103,7 +103,7 @@ mod test {
             Symbol {
                 name: String::from("result"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -114,7 +114,7 @@ mod test {
             Symbol {
                 name: String::from("cost"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -124,7 +124,7 @@ mod test {
             },
         ];
 
-        assert_eq!(expected_response, file_symbols_response);
+        assert_eq!(expected, file_symbols_response);
         Ok(())
     }
 }

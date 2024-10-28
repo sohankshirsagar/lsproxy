@@ -1,7 +1,6 @@
-use crate::api_types::{
-    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
-};
-use crate::lsp::manager::{LspManager, LspManagerError};
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use crate::lsp::manager::{LspManagerError, Manager};
+use crate::utils::file_utils::uri_to_relative_path_string;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info, warn};
@@ -50,18 +49,18 @@ pub async fn find_definition(
         info.position.path, info.position.position.line, info.position.position.character
     );
 
-    let lsp_manager = data
-        .lsp_manager
+    let manager = data
+        .manager
         .lock()
         .map_err(|e| {
-            error!("Failed to lock lsp_manager: {:?}", e);
+            error!("Failed to lock manager: {:?}", e);
             HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("Failed to lock lsp_manager: {}", e),
+                error: format!("Failed to lock manager: {}", e),
             })
         })
         .unwrap();
 
-    let definitions = lsp_manager
+    let definitions = manager
         .find_definition(
             &info.position.path,
             LspPosition {
@@ -79,7 +78,7 @@ pub async fn find_definition(
         .unwrap();
 
     let source_code_context = if info.include_source_code {
-        match fetch_definition_source_code(&lsp_manager, &definitions).await {
+        match fetch_definition_source_code(&manager, &definitions).await {
             Ok(context) => Some(context),
             Err(e) => {
                 error!("Failed to fetch definition source code: {:?}", e);
@@ -98,7 +97,7 @@ pub async fn find_definition(
 }
 
 async fn fetch_definition_source_code(
-    lsp_manager: &LspManager,
+    manager: &Manager,
     definitions_response: &GotoDefinitionResponse,
 ) -> Result<Vec<CodeContext>, LspManagerError> {
     let mut code_contexts = Vec::new();
@@ -113,7 +112,7 @@ async fn fetch_definition_source_code(
 
     for definition in definitions {
         let relative_path = uri_to_relative_path_string(&definition.uri);
-        let file_symbols = match lsp_manager.definitions_in_file(&relative_path).await? {
+        let file_symbols = match manager.definitions_in_file(&relative_path).await? {
             DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
             DocumentSymbolResponse::Flat(_) => {
                 return Err(LspManagerError::InternalError(
@@ -126,7 +125,7 @@ async fn fetch_definition_source_code(
             .find(|s| s.selection_range == definition.range);
         let source_code = match symbol {
             Some(symbol) => {
-                lsp_manager
+                manager
                     .read_source_code(&relative_path, Some(symbol.range))
                     .await?
             }

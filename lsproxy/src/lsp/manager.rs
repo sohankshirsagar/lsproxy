@@ -1,28 +1,60 @@
-use crate::api_types::{absolute_path_to_relative_path_string, get_mount_dir, SupportedLanguages};
+use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
+use crate::ctags::client::CtagsClient;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
-use crate::utils::file_utils::search_files;
+use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
 use crate::utils::workspace_documents::{
     WorkspaceDocuments, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
     RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
 };
-use log::{debug, warn};
+use log::{debug, error, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range};
+use notify::RecursiveMode;
+use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::broadcast::{channel, Sender};
 use tokio::sync::Mutex;
 
-pub struct LspManager {
-    clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
+pub struct Manager {
+    lsp_clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
+    watch_events_sender: Sender<DebouncedEvent>,
+    ctags_client: CtagsClient,
 }
 
-impl LspManager {
-    pub fn new() -> Self {
-        Self {
-            clients: HashMap::new(),
-        }
+impl Manager {
+    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let (tx, _) = channel(100);
+        let event_sender = tx.clone();
+        let mut debouncer = new_debouncer(
+            Duration::from_secs(2),
+            move |res: DebounceEventResult| match res {
+                Ok(events) => {
+                    for event in events {
+                        let _ = tx.send(event.clone());
+                    }
+                }
+                Err(e) => error!("Debounce error: {:?}", e),
+            },
+        )
+        .expect("Failed to create debouncer");
+
+        // Watch the root path recursively
+        debouncer
+            .watcher()
+            .watch(Path::new(root_path), RecursiveMode::Recursive)
+            .expect("Failed to watch path");
+
+        let ctags_client = CtagsClient::new(root_path, event_sender.subscribe()).await?;
+
+        Ok(Self {
+            lsp_clients: HashMap::new(),
+            watch_events_sender: event_sender,
+            ctags_client,
+        })
     }
 
     /// Detects the languages in the workspace by searching for files that match the language server's file patterns, before LSPs are started.
@@ -79,17 +111,20 @@ impl LspManager {
             debug!("Starting {:?} LSP", lsp);
             let mut client: Box<dyn LspClient> = match lsp {
                 SupportedLanguages::Python => Box::new(
-                    PyrightClient::new(workspace_path)
+                    PyrightClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
                 SupportedLanguages::TypeScriptJavaScript => Box::new(
-                    TypeScriptLanguageClient::new(workspace_path)
-                        .await
-                        .map_err(|e| e.to_string())?,
+                    TypeScriptLanguageClient::new(
+                        workspace_path,
+                        self.watch_events_sender.subscribe(),
+                    )
+                    .await
+                    .map_err(|e| e.to_string())?,
                 ),
                 SupportedLanguages::Rust => Box::new(
-                    RustAnalyzerClient::new(workspace_path)
+                    RustAnalyzerClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
@@ -102,7 +137,7 @@ impl LspManager {
                 .setup_workspace(workspace_path)
                 .await
                 .map_err(|e| e.to_string())?;
-            self.clients.insert(lsp, Arc::new(Mutex::new(client)));
+            self.lsp_clients.insert(lsp, Arc::new(Mutex::new(client)));
         }
         Ok(())
     }
@@ -125,6 +160,17 @@ impl LspManager {
         let mut locked_client = client.lock().await;
         locked_client
             .text_document_symbols(full_path_str)
+            .await
+            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
+    }
+
+    pub async fn definitions_in_file_ctags(
+        &self,
+        file_path: &str,
+    ) -> Result<Vec<Symbol>, LspManagerError> {
+        // breaking abstraction :(
+        self.ctags_client
+            .get_file_symbols(file_path)
             .await
             .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
@@ -161,7 +207,7 @@ impl LspManager {
         &self,
         lsp_type: SupportedLanguages,
     ) -> Option<Arc<Mutex<Box<dyn LspClient>>>> {
-        self.clients.get(&lsp_type).cloned()
+        self.lsp_clients.get(&lsp_type).cloned()
     }
 
     pub async fn find_references(
@@ -196,7 +242,7 @@ impl LspManager {
 
     pub async fn list_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
-        for client in self.clients.values() {
+        for client in self.lsp_clients.values() {
             let mut locked_client = client.lock().await;
             files.extend(
                 locked_client
@@ -308,16 +354,15 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "main.py";
-        let file_symbols = manager.definitions_in_file(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
 
-        let symbol_response =
-            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
+        let symbol_response: SymbolResponse = file_symbols;
 
         let expected = vec![
             Symbol {
                 name: String::from("graph"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 5,
@@ -328,7 +373,7 @@ mod tests {
             Symbol {
                 name: String::from("result"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -339,7 +384,7 @@ mod tests {
             Symbol {
                 name: String::from("cost"),
                 kind: String::from("variable"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
@@ -347,19 +392,8 @@ mod tests {
                     },
                 },
             },
-            Symbol {
-                name: String::from("barrier"),
-                kind: String::from("variable"),
-                start_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 10,
-                        character: 4,
-                    },
-                },
-            },
         ];
-        assert_eq!(symbol_response.symbols, expected);
+        assert_eq!(symbol_response, expected);
         Ok(())
     }
 
@@ -489,16 +523,26 @@ mod tests {
             .ok_or("Manager is not initialized")?;
 
         let file_path = "astar_search.js";
-        let file_symbols = manager.definitions_in_file(file_path).await?;
+        let file_symbols = manager.definitions_in_file_ctags(file_path).await?;
 
-        let symbol_response =
-            SymbolResponse::from((file_symbols, file_path.to_owned(), false, None));
+        let symbol_response: SymbolResponse = file_symbols;
 
         let expected = vec![
             Symbol {
+                name: String::from("manhattan"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 0,
+                        character: 9,
+                    },
+                },
+            },
+            Symbol {
                 name: String::from("aStar"),
                 kind: String::from("function"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 4,
@@ -507,185 +551,9 @@ mod tests {
                 },
             },
             Symbol {
-                name: String::from("filter() callback"),
-                kind: String::from("function"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 33,
-                        character: 13,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("forEach() callback"),
-                kind: String::from("function"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 36,
-                        character: 14,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("\"coord\""),
-                kind: String::from("property"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 38,
-                        character: 12,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("\"distance\""),
-                kind: String::from("property"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 39,
-                        character: 12,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("\"heuristic\""),
-                kind: String::from("property"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 40,
-                        character: 12,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("\"previous\""),
-                kind: String::from("property"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 41,
-                        character: 12,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("lambda"),
-                kind: String::from("function"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 17,
-                        character: 25,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("px"),
-                kind: String::from("constant"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 21,
-                        character: 19,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("py"),
-                kind: String::from("constant"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 21,
-                        character: 23,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("newClosed"),
-                kind: String::from("variable"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 45,
-                        character: 8,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("newCurrent"),
-                kind: String::from("constant"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 48,
-                        character: 11,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("newOpen"),
-                kind: String::from("variable"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 29,
-                        character: 8,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("newx"),
-                kind: String::from("constant"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 53,
-                        character: 11,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("newy"),
-                kind: String::from("constant"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 53,
-                        character: 17,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("x"),
-                kind: String::from("constant"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 13,
-                        character: 11,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("y"),
-                kind: String::from("constant"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 13,
-                        character: 14,
-                    },
-                },
-            },
-            Symbol {
                 name: String::from("board"),
                 kind: String::from("constant"),
-                start_position: FilePosition {
+                identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
                         line: 60,
@@ -693,19 +561,8 @@ mod tests {
                     },
                 },
             },
-            Symbol {
-                name: String::from("manhattan"),
-                kind: String::from("function"),
-                start_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 0,
-                        character: 9,
-                    },
-                },
-            },
         ];
-        assert_eq!(symbol_response.symbols, expected);
+        assert_eq!(symbol_response, expected);
         Ok(())
     }
 
