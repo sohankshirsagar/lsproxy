@@ -187,10 +187,11 @@ mod test {
     use super::*;
 
     use actix_web::http::StatusCode;
+    use tokio::time::{sleep, Duration};
 
     use crate::api_types::{FilePosition, Position};
     use crate::initialize_app_state;
-    use crate::test_utils::{python_sample_path, TestContext};
+    use crate::test_utils::{python_sample_path, rust_sample_path, TestContext};
 
     #[tokio::test]
     async fn test_python_references() -> Result<(), Box<dyn std::error::Error>> {
@@ -238,6 +239,106 @@ mod test {
                     position: Position {
                         line: 5,
                         character: 8,
+                    },
+                },
+            ],
+            context: None,
+        };
+
+        assert_eq!(expected_response, reference_response);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_rust_references() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&rust_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencesRequest {
+            identifier_position: FilePosition {
+                path: String::from("src/node.rs"),
+                position: Position {
+                    line: 3,
+                    character: 11,
+                },
+            },
+            include_declaration: false,
+            include_code_context_lines: None,
+            include_raw_response: false,
+        });
+
+        sleep(Duration::from_secs(5)).await;
+
+        let response = find_references(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json"
+        );
+
+        // Check the body
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let reference_response: ReferencesResponse = serde_json::from_slice(&bytes).unwrap();
+
+        let expected_response = ReferencesResponse {
+            raw_response: None,
+            references: vec![
+                FilePosition {
+                    path: String::from("src/node.rs"),
+                    position: Position {
+                        line: 10,
+                        character: 20,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/node.rs"),
+                    position: Position {
+                        line: 11,
+                        character: 34,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 1,
+                        character: 17,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 6,
+                        character: 14,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 7,
+                        character: 16,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 59,
+                        character: 32,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 76,
+                        character: 35,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 93,
+                        character: 23,
                     },
                 },
             ],

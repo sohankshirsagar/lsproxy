@@ -335,8 +335,10 @@ impl std::error::Error for LspManagerError {}
 mod tests {
     use super::*;
     use crate::api_types::{FilePosition, Position, Symbol, SymbolResponse};
-    use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
+    use crate::test_utils::{js_sample_path, python_sample_path, rust_sample_path, TestContext};
     use lsp_types::{Range, Url};
+
+    use tokio::time::{sleep, Duration};
 
     #[tokio::test]
     async fn test_start_manager_python() -> Result<(), Box<dyn std::error::Error>> {
@@ -682,6 +684,204 @@ mod tests {
                 }
             }]
         );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_workspace_files_rust() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&rust_sample_path(), true).await?;
+
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let files = manager.list_files().await?;
+
+        assert_eq!(
+            files,
+            vec![
+                "src/astar.rs",
+                "src/main.rs",
+                "src/map.rs",
+                "src/node.rs",
+                "src/point.rs"
+            ]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_references_rust() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&rust_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+
+        let file_path = "src/node.rs";
+
+        sleep(Duration::from_secs(5)).await;
+
+        let references = manager
+            .find_references(
+                file_path,
+                lsp_types::Position {
+                    line: 3,
+                    character: 11,
+                },
+                false,
+            )
+            .await?;
+        let expected = vec![
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/node.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 10,
+                        character: 20,
+                    },
+                    end: lsp_types::Position {
+                        line: 10,
+                        character: 24,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/node.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 11,
+                        character: 34,
+                    },
+                    end: lsp_types::Position {
+                        line: 11,
+                        character: 38,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/astar.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 1,
+                        character: 17,
+                    },
+                    end: lsp_types::Position {
+                        line: 1,
+                        character: 21,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/astar.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 6,
+                        character: 14,
+                    },
+                    end: lsp_types::Position {
+                        line: 6,
+                        character: 18,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/astar.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 7,
+                        character: 16,
+                    },
+                    end: lsp_types::Position {
+                        line: 7,
+                        character: 20,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/astar.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 59,
+                        character: 32,
+                    },
+                    end: lsp_types::Position {
+                        line: 59,
+                        character: 36,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/astar.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 76,
+                        character: 35,
+                    },
+                    end: lsp_types::Position {
+                        line: 76,
+                        character: 39,
+                    },
+                },
+            },
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/astar.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 93,
+                        character: 23,
+                    },
+                    end: lsp_types::Position {
+                        line: 93,
+                        character: 27,
+                    },
+                },
+            },
+        ];
+        assert_eq!(references, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_definition_rust() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&rust_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+
+        sleep(Duration::from_secs(5)).await;
+
+        let def_response = manager
+            .find_definition(
+                "src/node.rs",
+                lsp_types::Position {
+                    line: 3,
+                    character: 11,
+                },
+            )
+            .await?;
+
+        let definitions = match def_response {
+            GotoDefinitionResponse::Scalar(location) => vec![location],
+            GotoDefinitionResponse::Array(locations) => locations,
+            GotoDefinitionResponse::Link(_links) => Vec::new(),
+        };
+        let expected = vec![Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/node.rs")?,
+            range: Range {
+                start: lsp_types::Position {
+                    line: 3,
+                    character: 11,
+                },
+                end: lsp_types::Position {
+                    line: 3,
+                    character: 15,
+                },
+            },
+        }];
+        assert_eq!(definitions, expected);
+
         Ok(())
     }
 }
