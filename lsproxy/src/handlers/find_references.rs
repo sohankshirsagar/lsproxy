@@ -5,7 +5,7 @@ use lsp_types::{Location, Position as LspPosition, Range};
 
 use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::lsp::manager::{LspManagerError, Manager};
+use crate::lsp::manager::{self, LspManagerError, Manager};
 use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
 
@@ -61,8 +61,32 @@ pub async fn find_references(
         )
         .await;
 
+    // We can get references outside the workspace so we want to filter those out
+    let filtered_reference_result = match references_result {
+        Ok(refs) => {
+            match manager.list_files().await {
+                Ok(files) => {
+                    let filtered_refs: Vec<_> = refs.into_iter()
+                        .filter(|reference| {
+                            let path = uri_to_relative_path_string(&reference.uri);
+                            files.contains(&path)
+                        })
+                        .collect();
+
+                    Ok(filtered_refs)
+                },
+                Err(_) => Err(LspManagerError::InternalError(
+                    "Failed to get workspace files".to_string(),
+                )),
+            }
+        },
+        Err(_) => Err(LspManagerError::InternalError(
+            "Failed to get references".to_string(),
+        )),
+    };
+
     let code_contexts_result = if let Some(lines) = info.include_code_context_lines {
-        match &references_result {
+        match &filtered_reference_result {
             Ok(refs) => fetch_code_context(&manager, refs.clone(), lines)
                 .await
                 .map(Some)
@@ -77,7 +101,7 @@ pub async fn find_references(
     } else {
         Ok(None)
     };
-    match (references_result, code_contexts_result) {
+    match (filtered_reference_result, code_contexts_result) {
         (Ok(references), Ok(code_contexts)) => HttpResponse::Ok().json(ReferencesResponse::from((
             references,
             code_contexts,
