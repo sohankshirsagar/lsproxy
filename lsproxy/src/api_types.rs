@@ -1,5 +1,5 @@
 use log::warn;
-use lsp_types::{GotoDefinitionResponse, Location, LocationLink, SymbolKind};
+use lsp_types::{GotoDefinitionResponse, Location, LocationLink};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use std::cell::RefCell;
@@ -131,7 +131,7 @@ pub struct GetDefinitionRequest {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    pub start_position: FilePosition,
+    pub identifier_position: FilePosition,
 
     /// Whether to include the declaration (definition) of the symbol in the response.
     /// Defaults to false.
@@ -327,37 +327,5 @@ impl From<LocationLink> for FilePosition {
                 character: link.target_range.start.character,
             },
         }
-    }
-}
-
-fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
-    match kind {
-        SymbolKind::FILE => "file",
-        SymbolKind::MODULE => "module",
-        SymbolKind::NAMESPACE => "namespace",
-        SymbolKind::PACKAGE => "package",
-        SymbolKind::CLASS => "class",
-        SymbolKind::METHOD => "method",
-        SymbolKind::PROPERTY => "property",
-        SymbolKind::FIELD => "field",
-        SymbolKind::CONSTRUCTOR => "constructor",
-        SymbolKind::ENUM => "enum",
-        SymbolKind::INTERFACE => "interface",
-        SymbolKind::FUNCTION => "function",
-        SymbolKind::VARIABLE => "variable",
-        SymbolKind::CONSTANT => "constant",
-        SymbolKind::STRING => "string",
-        SymbolKind::NUMBER => "number",
-        SymbolKind::BOOLEAN => "boolean",
-        SymbolKind::ARRAY => "array",
-        SymbolKind::OBJECT => "object",
-        SymbolKind::KEY => "key",
-        SymbolKind::NULL => "null",
-        SymbolKind::ENUM_MEMBER => "enum_member",
-        SymbolKind::STRUCT => "struct",
-        SymbolKind::EVENT => "event",
-        SymbolKind::OPERATOR => "operator",
-        SymbolKind::TYPE_PARAMETER => "type_parameter",
-        _ => "unknown",
     }
 }

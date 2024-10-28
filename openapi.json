@@ -328,9 +328,12 @@
       "GetReferencesRequest": {
         "type": "object",
         "required": [
-          "start_position"
+          "identifier_position"
         ],
         "properties": {
+          "identifier_position": {
+            "$ref": "#/components/schemas/FilePosition"
+          },
           "include_code_context_lines": {
             "type": [
               "integer",
@@ -349,9 +352,6 @@
             "type": "boolean",
             "description": "Whether to include the raw response from the langserver in the response.\nDefaults to false.",
             "example": false
-          },
-          "start_position": {
-            "$ref": "#/components/schemas/FilePosition"
           }
         }
       },

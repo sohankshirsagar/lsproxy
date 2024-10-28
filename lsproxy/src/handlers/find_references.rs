@@ -5,7 +5,7 @@ use lsp_types::{Location, Position as LspPosition, Range};
 
 use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::lsp::manager::{LspManagerError, Manager};
+use crate::lsp::manager::{self, LspManagerError, Manager};
 use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
 
@@ -45,24 +45,48 @@ pub async fn find_references(
 ) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
-        info.start_position.path,
-        info.start_position.position.line,
-        info.start_position.position.character
+        info.identifier_position.path,
+        info.identifier_position.position.line,
+        info.identifier_position.position.character
     );
     let manager = data.manager.lock().unwrap();
     let references_result = manager
         .find_references(
-            &info.start_position.path,
+            &info.identifier_position.path,
             LspPosition {
-                line: info.start_position.position.line,
-                character: info.start_position.position.character,
+                line: info.identifier_position.position.line,
+                character: info.identifier_position.position.character,
             },
             info.include_declaration,
         )
         .await;
 
+    // We can get references outside the workspace so we want to filter those out
+    let filtered_reference_result = match references_result {
+        Ok(refs) => {
+            match manager.list_files().await {
+                Ok(files) => {
+                    let filtered_refs: Vec<_> = refs.into_iter()
+                        .filter(|reference| {
+                            let path = uri_to_relative_path_string(&reference.uri);
+                            files.contains(&path)
+                        })
+                        .collect();
+
+                    Ok(filtered_refs)
+                },
+                Err(_) => Err(LspManagerError::InternalError(
+                    "Failed to get workspace files".to_string(),
+                )),
+            }
+        },
+        Err(e) => Err(LspManagerError::InternalError(
+            format!("Failed to get references: {}", e)
+        )),
+    };
+
     let code_contexts_result = if let Some(lines) = info.include_code_context_lines {
-        match &references_result {
+        match &filtered_reference_result {
             Ok(refs) => fetch_code_context(&manager, refs.clone(), lines)
                 .await
                 .map(Some)
@@ -70,14 +94,14 @@ pub async fn find_references(
                     error!("Failed to fetch code context: {}", e);
                     e
                 }),
-            Err(_) => Err(LspManagerError::InternalError(
-                "Failed to get references".to_string(),
+            Err(e) => Err(LspManagerError::InternalError(
+                format!("Failed to get references: {}", e)
             )),
         }
     } else {
         Ok(None)
     };
-    match (references_result, code_contexts_result) {
+    match (filtered_reference_result, code_contexts_result) {
         (Ok(references), Ok(code_contexts)) => HttpResponse::Ok().json(ReferencesResponse::from((
             references,
             code_contexts,
@@ -173,7 +197,7 @@ mod test {
         let state = initialize_app_state().await?;
 
         let mock_request = Json(GetReferencesRequest {
-            start_position: FilePosition {
+            identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
                     line: 0,
