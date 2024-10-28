@@ -5,7 +5,7 @@ use lsp_types::{Location, Position as LspPosition, Range};
 
 use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::lsp::manager::{self, LspManagerError, Manager};
+use crate::lsp::manager::{LspManagerError, Manager};
 use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
 
@@ -63,26 +63,26 @@ pub async fn find_references(
 
     // We can get references outside the workspace so we want to filter those out
     let filtered_reference_result = match references_result {
-        Ok(refs) => {
-            match manager.list_files().await {
-                Ok(files) => {
-                    let filtered_refs: Vec<_> = refs.into_iter()
-                        .filter(|reference| {
-                            let path = uri_to_relative_path_string(&reference.uri);
-                            files.contains(&path)
-                        })
-                        .collect();
+        Ok(refs) => match manager.list_files().await {
+            Ok(files) => {
+                let filtered_refs: Vec<_> = refs
+                    .into_iter()
+                    .filter(|reference| {
+                        let path = uri_to_relative_path_string(&reference.uri);
+                        files.contains(&path)
+                    })
+                    .collect();
 
-                    Ok(filtered_refs)
-                },
-                Err(_) => Err(LspManagerError::InternalError(
-                    "Failed to get workspace files".to_string(),
-                )),
+                Ok(filtered_refs)
             }
+            Err(_) => Err(LspManagerError::InternalError(
+                "Failed to get workspace files".to_string(),
+            )),
         },
-        Err(e) => Err(LspManagerError::InternalError(
-            format!("Failed to get references: {}", e)
-        )),
+        Err(e) => Err(LspManagerError::InternalError(format!(
+            "Failed to get references: {}",
+            e
+        ))),
     };
 
     let code_contexts_result = if let Some(lines) = info.include_code_context_lines {
@@ -94,9 +94,10 @@ pub async fn find_references(
                     error!("Failed to fetch code context: {}", e);
                     e
                 }),
-            Err(e) => Err(LspManagerError::InternalError(
-                format!("Failed to get references: {}", e)
-            )),
+            Err(e) => Err(LspManagerError::InternalError(format!(
+                "Failed to get references: {}",
+                e
+            ))),
         }
     } else {
         Ok(None)

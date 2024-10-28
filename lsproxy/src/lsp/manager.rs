@@ -170,6 +170,10 @@ impl Manager {
         &self,
         file_path: &str,
     ) -> Result<Vec<Symbol>, LspManagerError> {
+        let workspace_files = self.list_files().await?;
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(LspManagerError::FileNotFound(file_path.to_string()));
+        }
         let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let ast_grep_result = self
