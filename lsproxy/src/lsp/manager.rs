@@ -170,10 +170,11 @@ impl Manager {
         &self,
         file_path: &str,
     ) -> Result<Vec<Symbol>, LspManagerError> {
-        // breaking abstraction :(
+        let full_path = get_mount_dir().join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default();
         let ast_grep_result = self
             .ast_grep
-            .get_file_symbols(file_path)
+            .get_file_symbols(full_path_str)
             .await
             .map_err(|e| {
                 LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e))
