@@ -99,17 +99,6 @@ mod test {
                         character: 0,
                     },
                 },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 5,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 6,
-                        character: 0,
-                    },
-                },
             },
             Symbol {
                 name: String::from("result"),
@@ -118,17 +107,6 @@ mod test {
                     path: String::from("main.py"),
                     position: Position {
                         line: 6,
-                        character: 0,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 6,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 7,
                         character: 0,
                     },
                 },
@@ -141,17 +119,6 @@ mod test {
                     position: Position {
                         line: 6,
                         character: 8,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 6,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 7,
-                        character: 0,
                     },
                 },
             },

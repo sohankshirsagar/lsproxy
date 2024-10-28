@@ -88,17 +88,6 @@ impl TagDatabase {
                         character: start_characters.get(i).expect("Row index out of bounds"),
                     },
                 },
-                range: FileRange {
-                    path: files.get(i).expect("Row index out of bounds").to_string(),
-                    start: Position {
-                        line: start_lines.get(i).expect("Row index out of bounds"),
-                        character: 0,
-                    },
-                    end: Position {
-                        line: end_lines.get(i).expect("Row index out of bounds"),
-                        character: 0,
-                    },
-                },
             });
         }
         Ok(results)

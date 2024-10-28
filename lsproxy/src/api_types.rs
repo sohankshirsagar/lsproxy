@@ -109,8 +109,6 @@ pub struct Symbol {
 
     /// The start position of the symbol's identifier.
     pub identifier_position: FilePosition,
-
-    pub range: FileRange,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -119,6 +117,7 @@ pub struct GetDefinitionRequest {
 
     /// Whether to include the source code around the symbol's identifier in the response.
     /// Defaults to false.
+    /// TODO: Implement this
     #[serde(default)]
     #[schema(example = false)]
     pub include_source_code: bool,
@@ -166,9 +165,10 @@ pub struct FileSymbolsRequest {
     pub include_raw_response: bool,
 
     /// Whether to include the source code of the symbols in the response.
-    /// Defaults to none.
+    /// Defaults to false. 
+    /// TODO: Implement this
     #[serde(default)]
-    #[schema(example = 5)]
+    #[schema(example = false)]
     pub include_source_code: bool,
 }
 

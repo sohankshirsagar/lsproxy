@@ -243,17 +243,6 @@ mod test {
                         character: 0,
                     },
                 },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 5,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 5,
-                        character: 0,
-                    },
-                },
             },
             Symbol {
                 name: String::from("result"),
@@ -265,17 +254,6 @@ mod test {
                         character: 0,
                     },
                 },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 6,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 6,
-                        character: 0,
-                    },
-                },
             },
             Symbol {
                 name: String::from("cost"),
@@ -283,17 +261,6 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 6,
-                        character: 8,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 6,
-                        character: 8,
-                    },
-                    end: Position {
                         line: 6,
                         character: 8,
                     },
@@ -321,17 +288,6 @@ mod test {
                         character: 11,
                     },
                 },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 1,
-                        character: 11,
-                    },
-                    end: Position {
-                        line: 1,
-                        character: 11,
-                    },
-                },
             },
             Symbol {
                 name: String::from("x"),
@@ -339,17 +295,6 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
-                        line: 2,
-                        character: 8,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 2,
-                        character: 8,
-                    },
-                    end: Position {
                         line: 2,
                         character: 8,
                     },
@@ -365,17 +310,6 @@ mod test {
                         character: 8,
                     },
                 },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 3,
-                        character: 8,
-                    },
-                    end: Position {
-                        line: 3,
-                        character: 8,
-                    },
-                },
             },
             Symbol {
                 name: String::from("Point"),
@@ -383,17 +317,6 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
-                        line: 6,
-                        character: 5,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 6,
-                        character: 5,
-                    },
-                    end: Position {
                         line: 6,
                         character: 5,
                     },
@@ -409,17 +332,6 @@ mod test {
                         character: 11,
                     },
                 },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 7,
-                        character: 11,
-                    },
-                    end: Position {
-                        line: 7,
-                        character: 11,
-                    },
-                },
             },
             Symbol {
                 name: String::from("Point"),
@@ -427,17 +339,6 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
-                        line: 12,
-                        character: 23,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 12,
-                        character: 23,
-                    },
-                    end: Position {
                         line: 12,
                         character: 23,
                     },
@@ -453,17 +354,6 @@ mod test {
                         character: 9,
                     },
                 },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 13,
-                        character: 9,
-                    },
-                    end: Position {
-                        line: 13,
-                        character: 9,
-                    },
-                },
             },
             Symbol {
                 name: String::from("add"),
@@ -471,17 +361,6 @@ mod test {
                 identifier_position: FilePosition {
                     path: String::from("src/point.rs"),
                     position: Position {
-                        line: 15,
-                        character: 7,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("src/point.rs"),
-                    start: Position {
-                        line: 15,
-                        character: 7,
-                    },
-                    end: Position {
                         line: 15,
                         character: 7,
                     },

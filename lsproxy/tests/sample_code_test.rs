@@ -109,17 +109,6 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                     character: 0,
                 },
             },
-            range: FileRange {
-                path: String::from("main.py"),
-                start: Position {
-                    line: 5,
-                    character: 0,
-                },
-                end: Position {
-                    line: 5,
-                    character: 0,
-                },
-            },
         },
         Symbol {
             name: String::from("result"),
@@ -127,17 +116,6 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
             identifier_position: FilePosition {
                 path: String::from("main.py"),
                 position: Position {
-                    line: 6,
-                    character: 0,
-                },
-            },
-            range: FileRange {
-                path: String::from("main.py"),
-                start: Position {
-                    line: 6,
-                    character: 0,
-                },
-                end: Position {
                     line: 6,
                     character: 0,
                 },
@@ -153,17 +131,6 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                     character: 8,
                 },
             },
-            range: FileRange {
-                path: String::from("main.py"),
-                start: Position {
-                    line: 6,
-                    character: 8,
-                },
-                end: Position {
-                    line: 6,
-                    character: 8,
-                },
-            },
         },
         Symbol {
             name: String::from("barrier"),
@@ -171,17 +138,6 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
             identifier_position: FilePosition {
                 path: String::from("main.py"),
                 position: Position {
-                    line: 10,
-                    character: 4,
-                },
-            },
-            range: FileRange {
-                path: String::from("main.py"),
-                start: Position {
-                    line: 10,
-                    character: 4,
-                },
-                end: Position {
                     line: 10,
                     character: 4,
                 },
