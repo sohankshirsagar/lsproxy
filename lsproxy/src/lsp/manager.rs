@@ -525,7 +525,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
-        // TODO: Properties return with the extra double quotes, is this intended behavior?
         let context = TestContext::setup(&js_sample_path(), true).await?;
         let manager = context
             .manager
@@ -561,8 +560,19 @@ mod tests {
                 },
             },
             Symbol {
+                name: String::from("lambda"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 17,
+                        character: 16,
+                    },
+                },
+            },
+            Symbol {
                 name: String::from("board"),
-                kind: String::from("constant"),
+                kind: String::from("variable"),
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {

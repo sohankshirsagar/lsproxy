@@ -28,8 +28,9 @@ impl AstGrepClient {
 
         let output = String::from_utf8(command_result.stdout)?;
 
-        let symbols: Vec<AstGrepMatch> = serde_json::from_str(&output)
+        let mut symbols: Vec<AstGrepMatch> = serde_json::from_str(&output)
             .map_err(|e| format!("Failed to parse sg output: {}", e))?;
+        symbols.sort_by_key(|s| s.range.start.line);
         Ok(symbols)
     }
 }

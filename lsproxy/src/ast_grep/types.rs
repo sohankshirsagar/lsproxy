@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{api_types::{FilePosition, Position, Symbol}, utils::file_utils::absolute_path_to_relative_path_string};
+use crate::{
+    api_types::{FilePosition, Position, Symbol},
+    utils::file_utils::absolute_path_to_relative_path_string,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

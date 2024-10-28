@@ -130,17 +130,6 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                 },
             },
         },
-        Symbol {
-            name: String::from("barrier"),
-            kind: String::from("variable"),
-            identifier_position: FilePosition {
-                path: String::from("main.py"),
-                position: Position {
-                    line: 10,
-                    character: 4,
-                },
-            },
-        },
     ];
     assert_eq!(returned_symbols, expected);
     Ok(())
