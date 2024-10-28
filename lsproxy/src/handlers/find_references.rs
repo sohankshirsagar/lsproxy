@@ -80,8 +80,8 @@ pub async fn find_references(
                 )),
             }
         },
-        Err(_) => Err(LspManagerError::InternalError(
-            "Failed to get references".to_string(),
+        Err(e) => Err(LspManagerError::InternalError(
+            format!("Failed to get references: {}", e)
         )),
     };
 
@@ -94,8 +94,8 @@ pub async fn find_references(
                     error!("Failed to fetch code context: {}", e);
                     e
                 }),
-            Err(_) => Err(LspManagerError::InternalError(
-                "Failed to get references".to_string(),
+            Err(e) => Err(LspManagerError::InternalError(
+                format!("Failed to get references: {}", e)
             )),
         }
     } else {
