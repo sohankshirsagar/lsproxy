@@ -6,5 +6,9 @@ rule:
         any:
             - kind: assignment
             - kind: pattern_list
-              inside: 
-                kind: assignment
+        inside:
+            kind: expression_statement
+            stopBy: end
+            inside:
+                kind: module
+
