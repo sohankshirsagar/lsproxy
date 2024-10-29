@@ -66,13 +66,22 @@ pub async fn find_references(
     let filtered_reference_result = match references_result {
         Ok(refs) => match manager.list_files().await {
             Ok(files) => {
-                let filtered_refs: Vec<_> = refs
+                let mut filtered_refs: Vec<_> = refs
                     .into_iter()
                     .filter(|reference| {
                         let path = uri_to_relative_path_string(&reference.uri);
                         files.contains(&path)
                     })
                     .collect();
+
+                filtered_refs.sort_by(|a, b| {
+                    let uri_cmp = a.uri.to_string().cmp(&b.uri.to_string());
+                    if uri_cmp.is_eq() {
+                        a.range.start.line.cmp(&b.range.start.line)
+                    } else {
+                        uri_cmp
+                    }
+                });
 
                 Ok(filtered_refs)
             }
@@ -287,20 +296,6 @@ mod test {
             raw_response: None,
             references: vec![
                 FilePosition {
-                    path: String::from("src/node.rs"),
-                    position: Position {
-                        line: 10,
-                        character: 20,
-                    },
-                },
-                FilePosition {
-                    path: String::from("src/node.rs"),
-                    position: Position {
-                        line: 11,
-                        character: 34,
-                    },
-                },
-                FilePosition {
                     path: String::from("src/astar.rs"),
                     position: Position {
                         line: 1,
@@ -340,6 +335,20 @@ mod test {
                     position: Position {
                         line: 93,
                         character: 23,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/node.rs"),
+                    position: Position {
+                        line: 10,
+                        character: 20,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/node.rs"),
+                    position: Position {
+                        line: 11,
+                        character: 34,
                     },
                 },
             ],
