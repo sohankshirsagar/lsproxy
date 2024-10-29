@@ -187,19 +187,6 @@ pub struct FileSymbolsRequest {
     /// The path to the file to get the symbols for, relative to the root of the workspace.
     #[schema(example = "src/main.py")]
     pub file_path: String,
-
-    /// Whether to include the raw response from the langserver in the response.
-    /// Defaults to false.
-    #[serde(default)]
-    #[schema(example = false)]
-    pub include_raw_response: bool,
-
-    /// Whether to include the source code of the symbols in the response.
-    /// Defaults to false.
-    /// TODO: Implement this
-    #[serde(default)]
-    #[schema(example = false)]
-    pub include_source_code: bool,
 }
 
 /// Request to get the symbols in the workspace.
