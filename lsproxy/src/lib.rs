@@ -14,6 +14,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod api_types;
+mod ast_grep;
 mod handlers;
 mod lsp;
 mod utils;
@@ -24,7 +25,7 @@ use crate::api_types::{
     SymbolResponse,
 };
 use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
-use crate::lsp::manager::LspManager;
+use crate::lsp::manager::Manager;
 // use crate::utils::doc_utils::make_code_sample;
 
 pub fn check_mount_dir() -> std::io::Result<()> {
@@ -75,7 +76,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 pub struct ApiDoc;
 
 pub struct AppState {
-    lsp_manager: Arc<Mutex<LspManager>>,
+    manager: Arc<Mutex<Manager>>,
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
@@ -93,13 +94,14 @@ pub async fn initialize_app_state_with_mount_dir(
     let mount_dir_path = get_mount_dir();
     let mount_dir = mount_dir_path.to_string_lossy();
 
-    let lsp_manager = Arc::new(Mutex::new(LspManager::new()));
-    lsp_manager
+    let manager = Arc::new(Mutex::new(Manager::new(&mount_dir).await?));
+    manager
         .lock()
         .unwrap()
         .start_langservers(&mount_dir)
         .await?;
-    Ok(Data::new(AppState { lsp_manager }))
+
+    Ok(Data::new(AppState { manager }))
 }
 
 // Helper enum for cleaner matching
@@ -148,13 +150,13 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
             };
 
             api_scope = match (path.as_str(), method) {
-                ("/symbol/find-definition", Some(Method::Post)) => 
+                ("/symbol/find-definition", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(find_definition))),
-                ("/symbol/find-references", Some(Method::Post)) => 
+                ("/symbol/find-references", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(find_references))),
-                ("/symbol/definitions-in-file", Some(Method::Get)) => 
+                ("/symbol/definitions-in-file", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(definitions_in_file))),
-                ("/workspace/list-files", Some(Method::Get)) => 
+                ("/workspace/list-files", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(list_files))),
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 

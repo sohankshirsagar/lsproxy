@@ -1,4 +1,6 @@
-use lsproxy::api_types::{set_global_mount_dir, FilePosition, Position, Symbol, SymbolResponse};
+use lsproxy::api_types::{
+    set_global_mount_dir, FilePosition, FileRange, Position, Symbol, SymbolResponse,
+};
 use lsproxy::{initialize_app_state, run_server};
 use reqwest;
 use std::net::TcpStream;
@@ -96,56 +98,74 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
 
     let returned_symbols: SymbolResponse =
         serde_json::from_value(response.json().expect("Failed to parse JSON"))?;
-    let expected = SymbolResponse {
-        raw_response: None,
-        source_code_context: None,
-        symbols: vec![
-            Symbol {
-                name: String::from("graph"),
-                kind: String::from("variable"),
-                start_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 5,
-                        character: 0,
-                    },
+    let expected = vec![
+        Symbol {
+            name: String::from("graph"),
+            kind: String::from("variable"),
+            identifier_position: FilePosition {
+                path: String::from("main.py"),
+                position: Position {
+                    line: 5,
+                    character: 0,
                 },
             },
-            Symbol {
-                name: String::from("result"),
-                kind: String::from("variable"),
-                start_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 6,
-                        character: 0,
-                    },
+            range: FileRange {
+                path: String::from("main.py"),
+                start: Position {
+                    line: 5,
+                    character: 0,
+                },
+                end: Position {
+                    line: 5,
+                    character: 5,
                 },
             },
-            Symbol {
-                name: String::from("cost"),
-                kind: String::from("variable"),
-                start_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 6,
-                        character: 8,
-                    },
+        },
+        Symbol {
+            name: String::from("result"),
+            kind: String::from("variable"),
+            identifier_position: FilePosition {
+                path: String::from("main.py"),
+                position: Position {
+                    line: 6,
+                    character: 0,
                 },
             },
-            Symbol {
-                name: String::from("barrier"),
-                kind: String::from("variable"),
-                start_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 10,
-                        character: 4,
-                    },
+            range: FileRange {
+                path: String::from("main.py"),
+                start: Position {
+                    line: 6,
+                    character: 0,
+                },
+                end: Position {
+                    line: 6,
+                    character: 6,
                 },
             },
-        ],
-    };
+        },
+        Symbol {
+            name: String::from("cost"),
+            kind: String::from("variable"),
+            identifier_position: FilePosition {
+                path: String::from("main.py"),
+                position: Position {
+                    line: 6,
+                    character: 8,
+                },
+            },
+            range: FileRange {
+                path: String::from("main.py"),
+                start: Position {
+                    line: 6,
+                    character: 0,
+                },
+                end: Position {
+                    line: 6,
+                    character: 12,
+                },
+            },
+        },
+    ];
     assert_eq!(returned_symbols, expected);
     Ok(())
 }

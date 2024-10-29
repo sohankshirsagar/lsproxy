@@ -19,18 +19,7 @@ use std::sync::Arc;
 use tokio::sync::oneshot::{channel, Sender};
 use tokio::sync::Mutex;
 
-use super::workspace_documents::WorkspaceDocumentsHandler;
-
-pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
-    "**/node_modules",
-    "**/__pycache__",
-    "**/.*",
-    "**/dist",
-    "**/target",
-    "**/build",
-    "**/public",
-    ".git",
-];
+use crate::utils::workspace_documents::{WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS};
 
 #[derive(Clone)]
 pub struct PendingRequests {

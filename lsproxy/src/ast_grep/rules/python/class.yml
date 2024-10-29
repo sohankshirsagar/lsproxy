@@ -1,0 +1,6 @@
+id: class
+language: python
+rule:
+    kind: identifier
+    inside:
+      kind: class_definition

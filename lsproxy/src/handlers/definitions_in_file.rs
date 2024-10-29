@@ -1,13 +1,11 @@
 use actix_web::web::{Data, Query};
 use actix_web::HttpResponse;
 use log::{error, info};
-use lsp_types::{DocumentSymbol, DocumentSymbolResponse, Range};
 
-use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
-use crate::api_types::{FileSymbolsRequest, SymbolResponse};
-use crate::lsp::manager::LspManagerError;
+use crate::api_types::{ErrorResponse, FileSymbolsRequest, Symbol};
 use crate::AppState;
-/// Get symbols in a specific file
+
+/// Get symbols in a specific file using ctags
 ///
 /// Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.
 ///
@@ -27,7 +25,7 @@ use crate::AppState;
     tag = "symbol",
     params(FileSymbolsRequest),
     responses(
-        (status = 200, description = "Symbols retrieved successfully", body = SymbolResponse),
+        (status = 200, description = "Symbols retrieved successfully", body = Vec<Symbol>),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     )
@@ -37,7 +35,7 @@ pub async fn definitions_in_file(
     info: Query<FileSymbolsRequest>,
 ) -> HttpResponse {
     info!("Received get_symbols request for file: {}", info.file_path);
-    let lsp_manager = match data.lsp_manager.lock() {
+    let manager = match data.manager.lock() {
         Ok(guard) => guard,
         Err(e) => {
             error!("Failed to acquire lock on LSP manager: {}", e);
@@ -46,88 +44,14 @@ pub async fn definitions_in_file(
             });
         }
     };
-    let result = lsp_manager.definitions_in_file(&info.file_path).await;
-
-    let source_code_context = if info.include_source_code {
-        match result {
-            Ok(DocumentSymbolResponse::Flat(ref _symbols)) => {
-                error!("Source code context not supported for flat response");
-                None
-            }
-            Ok(DocumentSymbolResponse::Nested(ref symbols)) => {
-                let ranges = collect_ranges(symbols);
-
-                let mut context = Vec::new();
-                for range in ranges {
-                    if let Ok(source_code) = lsp_manager
-                        .read_source_code(&info.file_path, Some(range.clone()))
-                        .await
-                    {
-                        context.push(CodeContext {
-                            range: FileRange {
-                                path: info.file_path.clone(),
-                                start: Position {
-                                    line: range.start.line,
-                                    character: range.start.character,
-                                },
-                                end: Position {
-                                    line: range.end.line,
-                                    character: range.end.character,
-                                },
-                            },
-                            source_code,
-                        });
-                    }
-                }
-                Some(context)
-            }
-            Err(_) => None,
-        }
-    } else {
-        None
-    };
+    let result = manager.definitions_in_file_ast_grep(&info.file_path).await;
 
     match result {
-        Ok(symbols) => HttpResponse::Ok().json(SymbolResponse::from((
-            symbols,
-            info.file_path.to_owned(),
-            info.include_raw_response,
-            source_code_context,
-        ))),
-        Err(e) => match e {
-            LspManagerError::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
-                error: format!("File not found: {}", path),
-            }),
-            LspManagerError::LspClientNotFound(lang) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: format!("LSP client not found for {:?}", lang),
-                })
-            }
-            LspManagerError::InternalError(msg) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: format!("Internal error: {}", msg),
-                })
-            }
-            LspManagerError::UnsupportedFileType(path) => {
-                HttpResponse::BadRequest().json(ErrorResponse {
-                    error: format!("Unsupported file type: {}", path),
-                })
-            }
-        },
+        Ok(symbols) => HttpResponse::Ok().json(symbols),
+        Err(e) => HttpResponse::BadRequest().json(ErrorResponse {
+            error: format!("Couldn't get symbols: {}", e),
+        }),
     }
-}
-
-fn collect_ranges(symbols: &[DocumentSymbol]) -> Vec<Range> {
-    symbols
-        .iter()
-        .flat_map(|s| {
-            let mut ranges = vec![s.range.clone()];
-            if let Some(children) = &s.children {
-                ranges.extend(collect_ranges(children));
-            }
-            ranges
-        })
-        .collect()
 }
 
 #[cfg(test)]
@@ -136,7 +60,7 @@ mod test {
 
     use actix_web::http::StatusCode;
 
-    use crate::api_types::{FilePosition, Position, Symbol};
+    use crate::api_types::{FilePosition, FileRange, Position, Symbol};
     use crate::initialize_app_state;
     use crate::test_utils::{python_sample_path, TestContext};
 
@@ -162,60 +86,78 @@ mod test {
         // Check the body
         let body = response.into_body();
         let bytes = actix_web::body::to_bytes(body).await.unwrap();
-        let file_symbols_response: SymbolResponse = serde_json::from_slice(&bytes).unwrap();
+        let file_symbols_response: Vec<Symbol> = serde_json::from_slice(&bytes).unwrap();
 
-        let expected_response = SymbolResponse {
-            raw_response: None,
-            symbols: vec![
-                Symbol {
-                    name: String::from("graph"),
-                    kind: String::from("variable"),
-                    start_position: FilePosition {
-                        path: String::from("main.py"),
-                        position: Position {
-                            line: 5,
-                            character: 0,
-                        },
+        let expected = vec![
+            Symbol {
+                name: String::from("graph"),
+                kind: String::from("variable"),
+                identifier_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 5,
+                        character: 0,
                     },
                 },
-                Symbol {
-                    name: String::from("result"),
-                    kind: String::from("variable"),
-                    start_position: FilePosition {
-                        path: String::from("main.py"),
-                        position: Position {
-                            line: 6,
-                            character: 0,
-                        },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 5,
+                        character: 5,
                     },
                 },
-                Symbol {
-                    name: String::from("cost"),
-                    kind: String::from("variable"),
-                    start_position: FilePosition {
-                        path: String::from("main.py"),
-                        position: Position {
-                            line: 6,
-                            character: 8,
-                        },
+            },
+            Symbol {
+                name: String::from("result"),
+                kind: String::from("variable"),
+                identifier_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 0,
                     },
                 },
-                Symbol {
-                    name: String::from("barrier"),
-                    kind: String::from("variable"),
-                    start_position: FilePosition {
-                        path: String::from("main.py"),
-                        position: Position {
-                            line: 10,
-                            character: 4,
-                        },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 6,
                     },
                 },
-            ],
-            source_code_context: None,
-        };
+            },
+            Symbol {
+                name: String::from("cost"),
+                kind: String::from("variable"),
+                identifier_position: FilePosition {
+                    path: String::from("main.py"),
+                    position: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 12,
+                    },
+                },
+            },
+        ];
 
-        assert_eq!(expected_response, file_symbols_response);
+        assert_eq!(expected, file_symbols_response);
         Ok(())
     }
 }

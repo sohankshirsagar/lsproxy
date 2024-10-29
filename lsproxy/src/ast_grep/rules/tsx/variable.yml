@@ -1,0 +1,12 @@
+id: variable
+language: tsx
+rule:
+  kind: identifier
+  inside:
+    kind: variable_declarator
+    inside:
+      kind: lexical_declaration 
+      inside:
+        any:
+          - kind: export_statement
+          - kind: program

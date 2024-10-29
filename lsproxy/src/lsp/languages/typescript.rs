@@ -3,13 +3,17 @@ use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
 use async_trait::async_trait;
 use log::debug;
 use lsp_types::TextDocumentItem;
+use notify_debouncer_mini::DebouncedEvent;
 use serde_json::{from_str, Value};
 use tokio::process::Command;
+use tokio::sync::broadcast::Receiver;
 use url::Url;
 
-use crate::lsp::{
-    workspace_documents::{WorkspaceDocuments, WorkspaceDocumentsHandler},
-    JsonRpcHandler, LspClient, PendingRequests, ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
+use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
+
+use crate::utils::workspace_documents::{
+    WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
+    TYPESCRIPT_FILE_PATTERNS, TYPESCRIPT_ROOT_FILES,
 };
 
 pub struct TypeScriptLanguageClient {
@@ -18,10 +22,6 @@ pub struct TypeScriptLanguageClient {
     workspace_documents: WorkspaceDocumentsHandler,
     pending_requests: PendingRequests,
 }
-
-pub const TYPESCRIPT_ROOT_FILES: &[&str] = &["tsconfig.json", "jsconfig.json", "package.json"];
-
-pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
 
 #[async_trait]
 impl LspClient for TypeScriptLanguageClient {
@@ -70,7 +70,10 @@ impl LspClient for TypeScriptLanguageClient {
 }
 
 impl TypeScriptLanguageClient {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("typescript-language-server")
             .arg("--stdio")
             .current_dir(root_path)
@@ -94,11 +97,12 @@ impl TypeScriptLanguageClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
+            watch_events_rx,
         );
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
-            workspace_documents: workspace_documents,
+            workspace_documents,
             pending_requests: PendingRequests::new(),
         })
     }

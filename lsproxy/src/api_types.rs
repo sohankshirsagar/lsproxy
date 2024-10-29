@@ -1,8 +1,5 @@
 use log::warn;
-use lsp_types::{
-    DocumentSymbol, DocumentSymbolResponse, GotoDefinitionResponse, Location, LocationLink,
-    SymbolInformation, SymbolKind, Url,
-};
+use lsp_types::{GotoDefinitionResponse, Location, LocationLink};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use std::cell::RefCell;
@@ -11,6 +8,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, RwLock};
 use strum_macros::{Display, EnumString};
 use utoipa::{IntoParams, ToSchema};
+
+use crate::utils::file_utils::uri_to_relative_path_string;
 
 static GLOBAL_MOUNT_DIR: LazyLock<Arc<RwLock<PathBuf>>> =
     LazyLock::new(|| Arc::new(RwLock::new(PathBuf::from("/mnt/workspace"))));
@@ -109,7 +108,10 @@ pub struct Symbol {
     pub kind: String,
 
     /// The start position of the symbol's identifier.
-    pub start_position: FilePosition,
+    pub identifier_position: FilePosition,
+
+    /// The full range of the symbol.
+    pub range: FileRange,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -118,6 +120,7 @@ pub struct GetDefinitionRequest {
 
     /// Whether to include the source code around the symbol's identifier in the response.
     /// Defaults to false.
+    /// TODO: Implement this
     #[serde(default)]
     #[schema(example = false)]
     pub include_source_code: bool,
@@ -131,7 +134,7 @@ pub struct GetDefinitionRequest {
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencesRequest {
-    pub start_position: FilePosition,
+    pub identifier_position: FilePosition,
 
     /// Whether to include the declaration (definition) of the symbol in the response.
     /// Defaults to false.
@@ -165,9 +168,10 @@ pub struct FileSymbolsRequest {
     pub include_raw_response: bool,
 
     /// Whether to include the source code of the symbols in the response.
-    /// Defaults to none.
+    /// Defaults to false.
+    /// TODO: Implement this
     #[serde(default)]
-    #[schema(example = 5)]
+    #[schema(example = false)]
     pub include_source_code: bool,
 }
 
@@ -248,17 +252,7 @@ pub struct ReferencesResponse {
     pub context: Option<Vec<CodeContext>>,
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
-pub struct SymbolResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    /// The raw response from the langserver.
-    ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#document_symbol
-    pub raw_response: Option<Value>,
-    pub symbols: Vec<Symbol>,
-    pub source_code_context: Option<Vec<CodeContext>>,
-}
+pub type SymbolResponse = Vec<Symbol>;
 
 impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
     fn from(
@@ -336,183 +330,5 @@ impl From<LocationLink> for FilePosition {
                 character: link.target_range.start.character,
             },
         }
-    }
-}
-
-impl From<SymbolInformation> for Symbol {
-    fn from(symbol: SymbolInformation) -> Self {
-        Symbol {
-            name: symbol.name,
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            start_position: FilePosition::from(symbol.location),
-        }
-    }
-}
-
-impl Symbol {
-    fn new(symbol: &DocumentSymbol, file_path: &str) -> Self {
-        Symbol {
-            name: symbol.name.to_string(),
-            kind: symbol_kind_to_string(symbol.kind).to_owned(),
-            start_position: FilePosition {
-                path: file_path.to_owned(),
-                position: Position {
-                    line: symbol.selection_range.start.line,
-                    character: symbol.selection_range.start.character,
-                },
-            },
-        }
-    }
-}
-impl
-    From<(
-        DocumentSymbolResponse,
-        String,
-        bool,
-        Option<Vec<CodeContext>>,
-    )> for SymbolResponse
-{
-    fn from(
-        (response, file_path, include_raw, source_code_context): (
-            DocumentSymbolResponse,
-            String,
-            bool,
-            Option<Vec<CodeContext>>,
-        ),
-    ) -> Self {
-        let raw_response = include_raw.then(|| to_value(&response).unwrap_or_default());
-        let symbols = match response {
-            DocumentSymbolResponse::Flat(symbols) => symbols
-                .into_iter()
-                .map(|symbol| Symbol {
-                    name: symbol.name,
-                    kind: symbol_kind_to_string(symbol.kind).to_owned(),
-                    start_position: FilePosition::from(symbol.location),
-                })
-                .collect(),
-            DocumentSymbolResponse::Nested(symbols) => flatten_nested_symbols(symbols, &file_path),
-        };
-        SymbolResponse {
-            raw_response,
-            symbols,
-            source_code_context,
-        }
-    }
-}
-
-pub fn uri_to_relative_path_string(uri: &Url) -> String {
-    let path = uri.to_file_path().unwrap_or_else(|e| {
-        warn!("Failed to convert URI to file path: {:?}", e);
-        PathBuf::from(uri.path())
-    });
-
-    absolute_path_to_relative_path_string(&path)
-}
-
-pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
-    let mount_dir = get_mount_dir();
-    path.strip_prefix(mount_dir)
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|e| {
-            warn!("Failed to strip prefix: {:?}", e);
-            path.to_string_lossy().into_owned()
-        })
-}
-
-fn flatten_nested_symbols(symbols: Vec<DocumentSymbol>, file_path: &str) -> Vec<Symbol> {
-    fn recursive_flatten(symbol: DocumentSymbol, file_path: &str, result: &mut Vec<Symbol>) {
-        result.push(Symbol::new(&symbol, file_path));
-
-        if let Some(children) = symbol.children {
-            for child in children {
-                recursive_flatten(child, file_path, result);
-            }
-        }
-    }
-
-    let mut flattened = Vec::new();
-
-    for symbol in symbols {
-        recursive_flatten(symbol, file_path, &mut flattened);
-    }
-    flattened
-}
-
-fn symbol_kind_to_string(kind: SymbolKind) -> &'static str {
-    match kind {
-        SymbolKind::FILE => "file",
-        SymbolKind::MODULE => "module",
-        SymbolKind::NAMESPACE => "namespace",
-        SymbolKind::PACKAGE => "package",
-        SymbolKind::CLASS => "class",
-        SymbolKind::METHOD => "method",
-        SymbolKind::PROPERTY => "property",
-        SymbolKind::FIELD => "field",
-        SymbolKind::CONSTRUCTOR => "constructor",
-        SymbolKind::ENUM => "enum",
-        SymbolKind::INTERFACE => "interface",
-        SymbolKind::FUNCTION => "function",
-        SymbolKind::VARIABLE => "variable",
-        SymbolKind::CONSTANT => "constant",
-        SymbolKind::STRING => "string",
-        SymbolKind::NUMBER => "number",
-        SymbolKind::BOOLEAN => "boolean",
-        SymbolKind::ARRAY => "array",
-        SymbolKind::OBJECT => "object",
-        SymbolKind::KEY => "key",
-        SymbolKind::NULL => "null",
-        SymbolKind::ENUM_MEMBER => "enum_member",
-        SymbolKind::STRUCT => "struct",
-        SymbolKind::EVENT => "event",
-        SymbolKind::OPERATOR => "operator",
-        SymbolKind::TYPE_PARAMETER => "type_parameter",
-        _ => "unknown",
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use lsp_types::{Range, SymbolKind};
-
-    #[test]
-    fn test_symbol_new_from_document_symbol() {
-        let document_symbol = DocumentSymbol {
-            name: "test_function".to_string(),
-            detail: None,
-            kind: SymbolKind::FUNCTION,
-            tags: None,
-            deprecated: None,
-            range: Range {
-                start: lsp_types::Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: lsp_types::Position {
-                    line: 15,
-                    character: 1,
-                },
-            },
-            selection_range: Range {
-                start: lsp_types::Position {
-                    line: 10,
-                    character: 4,
-                },
-                end: lsp_types::Position {
-                    line: 10,
-                    character: 17,
-                },
-            },
-            children: None,
-        };
-
-        let file_path = "src/main.rs";
-        let symbol = Symbol::new(&document_symbol, file_path);
-
-        assert_eq!(symbol.name, "test_function");
-        assert_eq!(symbol.kind, "function");
-        assert_eq!(symbol.start_position.path, file_path);
-        assert_eq!(symbol.start_position.position.line, 10);
-        assert_eq!(symbol.start_position.position.character, 4);
     }
 }

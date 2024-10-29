@@ -1,5 +1,8 @@
+use crate::api_types::get_mount_dir;
 use ignore::WalkBuilder;
+use log::warn;
 use std::path::{Path, PathBuf};
+use url::Url;
 
 pub fn search_files(
     path: &std::path::Path,
@@ -75,4 +78,23 @@ fn build_walk(path: &Path, exclude_patterns: Vec<String>) -> ignore::Walk {
         })
         .build();
     walk
+}
+
+pub fn uri_to_relative_path_string(uri: &Url) -> String {
+    let path = uri.to_file_path().unwrap_or_else(|e| {
+        warn!("Failed to convert URI to file path: {:?}", e);
+        PathBuf::from(uri.path())
+    });
+
+    absolute_path_to_relative_path_string(&path)
+}
+
+pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
+    let mount_dir = get_mount_dir();
+    path.strip_prefix(mount_dir)
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_else(|e| {
+            warn!("Failed to strip prefix: {:?}", e);
+            path.to_string_lossy().into_owned()
+        })
 }

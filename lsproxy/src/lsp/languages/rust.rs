@@ -1,11 +1,20 @@
 use std::{error::Error, path::Path, process::Stdio};
 
 use async_trait::async_trait;
+use log::debug;
+use lsp_types::{
+    ClientCapabilities, DocumentSymbolClientCapabilities, InitializeParams, InitializeResult,
+    TextDocumentClientCapabilities,
+};
+use notify_debouncer_mini::DebouncedEvent;
 use tokio::process::Command;
+use tokio::sync::broadcast::Receiver;
 
-use crate::lsp::{
-    workspace_documents::WorkspaceDocumentsHandler, JsonRpcHandler, LspClient, PendingRequests,
-    ProcessHandler, DEFAULT_EXCLUDE_PATTERNS,
+use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
+
+use crate::utils::workspace_documents::{
+    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
+    RUST_ANALYZER_ROOT_FILES,
 };
 
 pub struct RustAnalyzerClient {
@@ -15,11 +24,54 @@ pub struct RustAnalyzerClient {
     pending_requests: PendingRequests,
 }
 
-pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
-pub const RUST_ANALYZER_FILE_PATTERNS: &[&str] = &["**/*.rs"];
-
 #[async_trait]
 impl LspClient for RustAnalyzerClient {
+    async fn initialize(
+        &mut self,
+        root_path: String,
+    ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
+        debug!("Initializing LSP client with root path: {:?}", root_path);
+        self.start_response_listener().await?;
+
+        let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
+        debug!("Found workspace folders: {:?}", workspace_folders);
+        let mut capabilities = ClientCapabilities::default();
+        capabilities.text_document = Some(TextDocumentClientCapabilities {
+            document_symbol: Some(DocumentSymbolClientCapabilities {
+                hierarchical_document_symbol_support: Some(true),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+
+        capabilities.experimental = Some(serde_json::json!({
+            "serverStatusNotification": true
+        }));
+
+        let params = InitializeParams {
+            capabilities,
+            workspace_folders: Some(workspace_folders.clone()),
+            root_uri: Some(workspace_folders[0].uri.clone()),
+            // TODO THIS WILL CAUSE A BUNCH OF LINT ERRORS
+            // We are doing this because we want to avoid looking up defs and refs in cargo registry
+            // which is prohibitively slow
+            initialization_options: Some(serde_json::json!({
+                "cargo": {
+                "sysroot": serde_json::Value::Null
+                }
+            })),
+            ..Default::default()
+        };
+
+        let result = self
+            .send_request("initialize", Some(serde_json::to_value(params)?))
+            .await?;
+        let init_result: InitializeResult = serde_json::from_value(result)?;
+        debug!("Initialization successful: {:?}", init_result);
+        self.send_initialized().await?;
+        Ok(init_result)
+    }
+
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -55,7 +107,10 @@ impl LspClient for RustAnalyzerClient {
 }
 
 impl RustAnalyzerClient {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("rust-analyzer")
             .current_dir(root_path)
             .stdin(Stdio::piped())
@@ -79,6 +134,7 @@ impl RustAnalyzerClient {
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
+            watch_events_rx,
         );
 
         Ok(Self {

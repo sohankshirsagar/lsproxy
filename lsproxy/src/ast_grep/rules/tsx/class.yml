@@ -1,0 +1,8 @@
+id: class
+language: tsx
+rule:
+  kind: identifier
+  inside:
+    any:
+      - kind: class_declaration
+      - kind: class

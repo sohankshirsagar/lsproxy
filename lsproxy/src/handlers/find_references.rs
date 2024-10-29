@@ -3,11 +3,10 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Location, Position as LspPosition, Range};
 
-use crate::api_types::{
-    uri_to_relative_path_string, CodeContext, ErrorResponse, FileRange, Position,
-};
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
-use crate::lsp::manager::{LspManager, LspManagerError};
+use crate::lsp::manager::{LspManagerError, Manager};
+use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
 
 /// Find all references to a symbol
@@ -46,39 +45,74 @@ pub async fn find_references(
 ) -> HttpResponse {
     info!(
         "Received references request for file: {}, line: {}, character: {}",
-        info.start_position.path,
-        info.start_position.position.line,
-        info.start_position.position.character
+        info.identifier_position.path,
+        info.identifier_position.position.line,
+        info.identifier_position.position.character
     );
-    let lsp_manager = data.lsp_manager.lock().unwrap();
-    let references_result = lsp_manager
+    let manager = data.manager.lock().unwrap();
+
+    let references_result = manager
         .find_references(
-            &info.start_position.path,
+            &info.identifier_position.path,
             LspPosition {
-                line: info.start_position.position.line,
-                character: info.start_position.position.character,
+                line: info.identifier_position.position.line,
+                character: info.identifier_position.position.character,
             },
             info.include_declaration,
         )
         .await;
 
+    // We can get references outside the workspace so we want to filter those out as well
+    let filtered_reference_result = match references_result {
+        Ok(refs) => match manager.list_files().await {
+            Ok(files) => {
+                let mut filtered_refs: Vec<_> = refs
+                    .into_iter()
+                    .filter(|reference| {
+                        let path = uri_to_relative_path_string(&reference.uri);
+                        files.contains(&path)
+                    })
+                    .collect();
+
+                filtered_refs.sort_by(|a, b| {
+                    let uri_cmp = a.uri.to_string().cmp(&b.uri.to_string());
+                    if uri_cmp.is_eq() {
+                        a.range.start.line.cmp(&b.range.start.line)
+                    } else {
+                        uri_cmp
+                    }
+                });
+
+                Ok(filtered_refs)
+            }
+            Err(_) => Err(LspManagerError::InternalError(
+                "Failed to get workspace files".to_string(),
+            )),
+        },
+        Err(e) => Err(LspManagerError::InternalError(format!(
+            "Failed to get references: {}",
+            e
+        ))),
+    };
+
     let code_contexts_result = if let Some(lines) = info.include_code_context_lines {
-        match &references_result {
-            Ok(refs) => fetch_code_context(&lsp_manager, refs.clone(), lines)
+        match &filtered_reference_result {
+            Ok(refs) => fetch_code_context(&manager, refs.clone(), lines)
                 .await
                 .map(Some)
                 .map_err(|e| {
                     error!("Failed to fetch code context: {}", e);
                     e
                 }),
-            Err(_) => Err(LspManagerError::InternalError(
-                "Failed to get references".to_string(),
-            )),
+            Err(e) => Err(LspManagerError::InternalError(format!(
+                "Failed to get references: {}",
+                e
+            ))),
         }
     } else {
         Ok(None)
     };
-    match (references_result, code_contexts_result) {
+    match (filtered_reference_result, code_contexts_result) {
         (Ok(references), Ok(code_contexts)) => HttpResponse::Ok().json(ReferencesResponse::from((
             references,
             code_contexts,
@@ -116,7 +150,7 @@ pub async fn find_references(
 }
 
 async fn fetch_code_context(
-    lsp_manager: &LspManager,
+    manager: &Manager,
     references: Vec<Location>,
     context_lines: u32,
 ) -> Result<Vec<CodeContext>, LspManagerError> {
@@ -132,7 +166,7 @@ async fn fetch_code_context(
                 character: 0,
             },
         };
-        match lsp_manager
+        match manager
             .read_source_code(&uri_to_relative_path_string(&reference.uri), Some(range))
             .await
         {
@@ -163,10 +197,11 @@ mod test {
     use super::*;
 
     use actix_web::http::StatusCode;
+    use tokio::time::{sleep, Duration};
 
     use crate::api_types::{FilePosition, Position};
     use crate::initialize_app_state;
-    use crate::test_utils::{python_sample_path, TestContext};
+    use crate::test_utils::{python_sample_path, rust_sample_path, TestContext};
 
     #[tokio::test]
     async fn test_python_references() -> Result<(), Box<dyn std::error::Error>> {
@@ -174,7 +209,7 @@ mod test {
         let state = initialize_app_state().await?;
 
         let mock_request = Json(GetReferencesRequest {
-            start_position: FilePosition {
+            identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
                     line: 0,
@@ -214,6 +249,106 @@ mod test {
                     position: Position {
                         line: 5,
                         character: 8,
+                    },
+                },
+            ],
+            context: None,
+        };
+
+        assert_eq!(expected_response, reference_response);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_rust_references() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&rust_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencesRequest {
+            identifier_position: FilePosition {
+                path: String::from("src/node.rs"),
+                position: Position {
+                    line: 3,
+                    character: 11,
+                },
+            },
+            include_declaration: false,
+            include_code_context_lines: None,
+            include_raw_response: false,
+        });
+
+        sleep(Duration::from_secs(5)).await;
+
+        let response = find_references(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json"
+        );
+
+        // Check the body
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let reference_response: ReferencesResponse = serde_json::from_slice(&bytes).unwrap();
+
+        let expected_response = ReferencesResponse {
+            raw_response: None,
+            references: vec![
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 1,
+                        character: 17,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 6,
+                        character: 14,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 7,
+                        character: 16,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 59,
+                        character: 32,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 76,
+                        character: 35,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/astar.rs"),
+                    position: Position {
+                        line: 93,
+                        character: 23,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/node.rs"),
+                    position: Position {
+                        line: 10,
+                        character: 20,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/node.rs"),
+                    position: Position {
+                        line: 11,
+                        character: 34,
                     },
                 },
             ],
