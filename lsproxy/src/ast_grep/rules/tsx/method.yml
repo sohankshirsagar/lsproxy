@@ -1,6 +1,6 @@
 id: method
-language: javascript
+language: tsx
 rule:
-    kind: tsx
+    kind: identifier
     inside:
       kind: method_definition
