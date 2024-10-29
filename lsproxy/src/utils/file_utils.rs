@@ -94,7 +94,7 @@ pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
     path.strip_prefix(mount_dir)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|e| {
-            warn!("Failed to strip prefix: {:?}", e);
+            warn!("Failed to strip prefix from {:?}: {:?}", path, e);
             path.to_string_lossy().into_owned()
         })
 }
