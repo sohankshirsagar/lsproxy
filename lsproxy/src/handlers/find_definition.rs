@@ -7,9 +7,7 @@ use log::{error, info, warn};
 
 use crate::api_types::{DefinitionResponse, GetDefinitionRequest};
 use crate::AppState;
-use lsp_types::{
-    GotoDefinitionResponse, Location, Position as LspPosition,
-};
+use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition};
 /// Get the definition of a symbol at a specific position in a file
 ///
 /// Returns the location of the definition for the symbol at the given position.

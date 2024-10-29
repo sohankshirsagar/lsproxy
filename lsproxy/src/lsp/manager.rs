@@ -380,7 +380,7 @@ mod tests {
         let expected = vec![
             Symbol {
                 name: String::from("graph"),
-                kind: String::from("variable"), 
+                kind: String::from("variable"),
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
@@ -404,7 +404,7 @@ mod tests {
                 name: String::from("result"),
                 kind: String::from("variable"),
                 identifier_position: FilePosition {
-                    path: String::from("main.py"), 
+                    path: String::from("main.py"),
                     position: Position {
                         line: 6,
                         character: 0,
@@ -581,7 +581,7 @@ mod tests {
         let expected = vec![
             Symbol {
                 name: String::from("manhattan"),
-                kind: String::from("function"), 
+                kind: String::from("function"),
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
