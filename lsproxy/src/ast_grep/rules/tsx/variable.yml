@@ -7,4 +7,6 @@ rule:
     inside:
       kind: lexical_declaration 
       inside:
-        kind: program
+        any:
+          - kind: export_statement
+          - kind: program
