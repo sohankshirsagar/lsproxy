@@ -97,7 +97,7 @@ impl From<AstGrepMatch> for Symbol {
                         .multi
                         .secondary
                         .last()
-                        .unwrap()
+                        .expect("Expected at least one secondary variable")
                         .range
                         .start
                         .line as u32,
