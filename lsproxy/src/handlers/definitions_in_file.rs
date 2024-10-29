@@ -74,8 +74,6 @@ mod test {
 
         let mock_request = Query(FileSymbolsRequest {
             file_path: String::from("main.py"),
-            include_raw_response: false,
-            include_source_code: false,
         });
 
         let response = definitions_in_file(state, mock_request).await;
