@@ -5,9 +5,11 @@ use log::{error, info};
 use crate::api_types::{ErrorResponse, FileSymbolsRequest, Symbol};
 use crate::AppState;
 
-/// Get symbols in a specific file using ctags
+/// Get symbols in a specific file (uses ast-grep)
 ///
 /// Returns a list of symbols (functions, classes, variables, etc.) defined in the specified file.
+///
+/// Only the variabels defined at the file level are included.
 ///
 /// The returned positions point to the start of the symbol's identifier.
 ///
