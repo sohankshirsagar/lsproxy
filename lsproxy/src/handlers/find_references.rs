@@ -3,7 +3,7 @@ use actix_web::HttpResponse;
 use log::{debug, error, info};
 use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition, Range};
 
-use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use crate::api_types::{get_mount_dir, CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
 use crate::lsp::manager::{LspManagerError, Manager};
 use crate::utils::file_utils::uri_to_relative_path_string;
@@ -83,6 +83,18 @@ pub async fn find_references(
         });
     }
 
+    if !def_location
+        .uri
+        .to_file_path()
+        .unwrap()
+        .starts_with(&get_mount_dir())
+    {
+        return HttpResponse::Ok().json(ReferencesResponse {
+            raw_response: None,
+            references: vec![],
+            context: None,
+        });
+    }
     if !workspace_files
         .unwrap()
         .iter()
