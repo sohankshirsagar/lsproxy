@@ -658,7 +658,7 @@ mod tests {
                     path: String::from("astar_search.js"),
                     start: Position {
                         line: 60,
-                        character: 0,
+                        character: 6,
                     },
                     end: Position {
                         line: 60,
