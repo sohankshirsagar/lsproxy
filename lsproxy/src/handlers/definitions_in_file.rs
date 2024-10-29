@@ -44,10 +44,11 @@ pub async fn definitions_in_file(
             });
         }
     };
-    let result = manager.definitions_in_file_ast_grep(&info.file_path).await;
-
-    match result {
-        Ok(symbols) => HttpResponse::Ok().json(symbols),
+    match manager.definitions_in_file_ast_grep(&info.file_path).await {
+        Ok(symbols) => {
+            let symbol_response: Vec<Symbol> = symbols.into_iter().map(Symbol::from).collect();
+            HttpResponse::Ok().json(symbol_response)
+        }
         Err(e) => HttpResponse::BadRequest().json(ErrorResponse {
             error: format!("Couldn't get symbols: {}", e),
         }),

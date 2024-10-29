@@ -1,5 +1,6 @@
 use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
+use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
@@ -170,7 +171,7 @@ impl Manager {
     pub async fn definitions_in_file_ast_grep(
         &self,
         file_path: &str,
-    ) -> Result<Vec<Symbol>, LspManagerError> {
+    ) -> Result<Vec<AstGrepMatch>, LspManagerError> {
         let workspace_files = self.list_files().await?;
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
@@ -181,13 +182,8 @@ impl Manager {
             .ast_grep
             .get_file_symbols(full_path_str)
             .await
-            .map_err(|e| {
-                LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e))
-            })?;
-        Ok(ast_grep_result
-            .into_iter()
-            .map(|s| Symbol::from(s))
-            .collect())
+            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)));
+        ast_grep_result
     }
 
     pub async fn find_definition(
@@ -375,7 +371,8 @@ mod tests {
         let file_path = "main.py";
         let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
 
-        let symbol_response: SymbolResponse = file_symbols;
+        let symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
 
         let expected = vec![
             Symbol {
@@ -575,8 +572,9 @@ mod tests {
 
         let file_path = "astar_search.js";
         let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-
-        let symbol_response: SymbolResponse = file_symbols;
+        // TODO: include source code and update expected
+        let symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
 
         let expected = vec![
             Symbol {

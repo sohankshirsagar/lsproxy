@@ -112,18 +112,12 @@ async fn fetch_definition_source_code(
         let relative_path = uri_to_relative_path_string(&definition.uri);
         let file_symbols = manager.definitions_in_file_ast_grep(&relative_path).await?;
         let symbol = file_symbols.iter().find(|s| {
-            s.identifier_position.position.line == definition.range.start.line
-                && s.identifier_position.position.character == definition.range.start.character
+            s.range.start.line as u32 == definition.range.start.line
+                && s.range.start.column as u32 == definition.range.start.character
         });
+
         let source_code = match symbol {
-            Some(symbol) => {
-                manager
-                    .read_source_code(
-                        &relative_path,
-                        Some(lsp_types::Range::from(symbol.range.clone())),
-                    )
-                    .await?
-            }
+            Some(symbol) => symbol.get_source_code(),
             None => {
                 warn!("Symbol not found for definition: {:?}", definition);
                 return Err(LspManagerError::InternalError(format!(
@@ -138,15 +132,15 @@ async fn fetch_definition_source_code(
                 range: FileRange {
                     path: relative_path,
                     start: Position {
-                        line: symbol.range.start.line,
-                        character: symbol.range.start.character,
+                        line: symbol.range.start.line as u32,
+                        character: symbol.range.start.column as u32,
                     },
                     end: Position {
-                        line: symbol.range.end.line,
-                        character: symbol.range.end.character,
+                        line: symbol.range.end.line as u32,
+                        character: symbol.range.end.column as u32,
                     },
                 },
-                source_code,
+                source_code: source_code.unwrap(),
             });
         }
     }

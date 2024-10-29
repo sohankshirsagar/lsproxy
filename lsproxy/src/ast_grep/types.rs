@@ -21,6 +21,16 @@ pub struct AstGrepMatch {
     pub labels: Vec<Label>,
 }
 
+impl AstGrepMatch {
+    pub fn get_source_code(&self) -> Option<String> {
+        self.meta_variables
+            .multi
+            .secondary
+            .last()
+            .map(|s| s.text.clone())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AstGrepRange {
@@ -80,8 +90,8 @@ impl From<AstGrepMatch> for Symbol {
     fn from(ast_match: AstGrepMatch) -> Self {
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
         Symbol {
-            name: ast_match.text,
-            kind: ast_match.rule_id,
+            name: ast_match.text.clone(),
+            kind: ast_match.rule_id.clone(),
             identifier_position: FilePosition {
                 path: path.clone(),
                 position: Position {
