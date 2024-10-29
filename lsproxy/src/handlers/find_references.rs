@@ -1,9 +1,9 @@
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
-use log::{debug, error, info};
-use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition, Range};
+use log::{error, info};
+use lsp_types::{Location, Position as LspPosition, Range};
 
-use crate::api_types::{get_mount_dir, CodeContext, ErrorResponse, FileRange, Position};
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
 use crate::lsp::manager::{LspManagerError, Manager};
 use crate::utils::file_utils::uri_to_relative_path_string;
@@ -51,65 +51,6 @@ pub async fn find_references(
     );
     let manager = data.manager.lock().unwrap();
 
-    // // Check that the definition is in the workspace
-    // // This helps us to avoid finding references to stdlib that are super slow
-    // let def_result = manager
-    //     .find_definition(
-    //         &info.identifier_position.path,
-    //         LspPosition {
-    //             line: info.identifier_position.position.line,
-    //             character: info.identifier_position.position.character,
-    //         },
-    //     )
-    //     .await;
-    // let def_location = match def_result {
-    //     Ok(GotoDefinitionResponse::Scalar(location)) => location,
-    //     Ok(GotoDefinitionResponse::Array(locations)) => locations.first().unwrap().clone(),
-    //     Ok(GotoDefinitionResponse::Link(_links)) => {
-    //         return HttpResponse::InternalServerError().json(ErrorResponse {
-    //             error: "Links not supported".to_string(),
-    //         });
-    //     }
-    //     Err(e) => {
-    //         return HttpResponse::InternalServerError().json(ErrorResponse {
-    //             error: e.to_string(),
-    //         });
-    //     }
-    // };
-
-    // if !def_location
-    //     .uri
-    //     .to_file_path()
-    //     .unwrap()
-    //     .starts_with(&get_mount_dir())
-    // {
-    //     return HttpResponse::Ok().json(ReferencesResponse {
-    //         raw_response: None,
-    //         references: vec![],
-    //         context: None,
-    //     });
-    // }
-
-    // let workspace_files: Result<Vec<String>, LspManagerError> = manager.list_files().await;
-    // if let Err(e) = workspace_files {
-    //     return HttpResponse::InternalServerError().json(ErrorResponse {
-    //         error: e.to_string(),
-    //     });
-    // }
-
-    // if !workspace_files
-    //     .unwrap()
-    //     .iter()
-    //     .any(|f| *f == uri_to_relative_path_string(&def_location.uri))
-    // {
-    //     debug!("Definition not in workspace: {:?}", def_location.uri);
-    //     return HttpResponse::Ok().json(ReferencesResponse {
-    //         raw_response: None,
-    //         references: vec![],
-    //         context: None,
-    //     });
-    // }
-
     let references_result = manager
         .find_references(
             &info.identifier_position.path,
@@ -121,32 +62,32 @@ pub async fn find_references(
         )
         .await;
 
-    // // We can get references outside the workspace so we want to filter those out as well
-    // let filtered_reference_result = match references_result {
-    //     Ok(refs) => match manager.list_files().await {
-    //         Ok(files) => {
-    //             let filtered_refs: Vec<_> = refs
-    //                 .into_iter()
-    //                 .filter(|reference| {
-    //                     let path = uri_to_relative_path_string(&reference.uri);
-    //                     files.contains(&path)
-    //                 })
-    //                 .collect();
+    // We can get references outside the workspace so we want to filter those out as well
+    let filtered_reference_result = match references_result {
+        Ok(refs) => match manager.list_files().await {
+            Ok(files) => {
+                let filtered_refs: Vec<_> = refs
+                    .into_iter()
+                    .filter(|reference| {
+                        let path = uri_to_relative_path_string(&reference.uri);
+                        files.contains(&path)
+                    })
+                    .collect();
 
-    //             Ok(filtered_refs)
-    //         }
-    //         Err(_) => Err(LspManagerError::InternalError(
-    //             "Failed to get workspace files".to_string(),
-    //         )),
-    //     },
-    //     Err(e) => Err(LspManagerError::InternalError(format!(
-    //         "Failed to get references: {}",
-    //         e
-    //     ))),
-    // };
+                Ok(filtered_refs)
+            }
+            Err(_) => Err(LspManagerError::InternalError(
+                "Failed to get workspace files".to_string(),
+            )),
+        },
+        Err(e) => Err(LspManagerError::InternalError(format!(
+            "Failed to get references: {}",
+            e
+        ))),
+    };
 
     let code_contexts_result = if let Some(lines) = info.include_code_context_lines {
-        match &references_result {
+        match &filtered_reference_result {
             Ok(refs) => fetch_code_context(&manager, refs.clone(), lines)
                 .await
                 .map(Some)
@@ -162,7 +103,7 @@ pub async fn find_references(
     } else {
         Ok(None)
     };
-    match (references_result, code_contexts_result) {
+    match (filtered_reference_result, code_contexts_result) {
         (Ok(references), Ok(code_contexts)) => HttpResponse::Ok().json(ReferencesResponse::from((
             references,
             code_contexts,
