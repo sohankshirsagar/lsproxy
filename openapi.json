@@ -419,7 +419,8 @@
         "required": [
           "name",
           "kind",
-          "identifier_position"
+          "identifier_position",
+          "range"
         ],
         "properties": {
           "identifier_position": {
@@ -435,6 +436,10 @@
             "type": "string",
             "description": "The name of the symbol.",
             "example": "User"
+          },
+          "range": {
+            "$ref": "#/components/schemas/FileRange",
+            "description": "The full range of the symbol."
           }
         }
       },
@@ -445,7 +450,8 @@
           "required": [
             "name",
             "kind",
-            "identifier_position"
+            "identifier_position",
+            "range"
           ],
           "properties": {
             "identifier_position": {
@@ -461,6 +467,10 @@
               "type": "string",
               "description": "The name of the symbol.",
               "example": "User"
+            },
+            "range": {
+              "$ref": "#/components/schemas/FileRange",
+              "description": "The full range of the symbol."
             }
           }
         }

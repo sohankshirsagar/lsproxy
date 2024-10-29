@@ -109,6 +109,9 @@ pub struct Symbol {
 
     /// The start position of the symbol's identifier.
     pub identifier_position: FilePosition,
+
+    /// The full range of the symbol.
+    pub range: FileRange,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]

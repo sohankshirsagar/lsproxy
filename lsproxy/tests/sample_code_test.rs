@@ -1,4 +1,6 @@
-use lsproxy::api_types::{set_global_mount_dir, FilePosition, Position, Symbol, SymbolResponse};
+use lsproxy::api_types::{
+    set_global_mount_dir, FilePosition, FileRange, Position, Symbol, SymbolResponse,
+};
 use lsproxy::{initialize_app_state, run_server};
 use reqwest;
 use std::net::TcpStream;
@@ -107,6 +109,17 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                     character: 0,
                 },
             },
+            range: FileRange {
+                path: String::from("main.py"),
+                start: Position {
+                    line: 5,
+                    character: 0,
+                },
+                end: Position {
+                    line: 5,
+                    character: 1,
+                },
+            },
         },
         Symbol {
             name: String::from("result"),
@@ -118,6 +131,17 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                     character: 0,
                 },
             },
+            range: FileRange {
+                path: String::from("main.py"),
+                start: Position {
+                    line: 6,
+                    character: 0,
+                },
+                end: Position {
+                    line: 6,
+                    character: 1,
+                },
+            },
         },
         Symbol {
             name: String::from("cost"),
@@ -127,6 +151,17 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                 position: Position {
                     line: 6,
                     character: 8,
+                },
+            },
+            range: FileRange {
+                path: String::from("main.py"),
+                start: Position {
+                    line: 6,
+                    character: 8,
+                },
+                end: Position {
+                    line: 6,
+                    character: 9,
                 },
             },
         },

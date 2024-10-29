@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api_types::{FilePosition, Position, Symbol},
+    api_types::{FilePosition, FileRange, Position, Symbol},
     utils::file_utils::absolute_path_to_relative_path_string,
 };
 
@@ -78,14 +78,42 @@ pub struct Label {
 
 impl From<AstGrepMatch> for Symbol {
     fn from(ast_match: AstGrepMatch) -> Self {
+        let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
         Symbol {
             name: ast_match.text,
             kind: ast_match.rule_id,
             identifier_position: FilePosition {
-                path: absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file)),
+                path: path.clone(),
                 position: Position {
                     line: ast_match.range.start.line as u32,
                     character: ast_match.range.start.column as u32,
+                },
+            },
+            range: FileRange {
+                path: path.clone(),
+                start: Position {
+                    line: ast_match
+                        .meta_variables
+                        .multi
+                        .secondary
+                        .last()
+                        .unwrap()
+                        .range
+                        .start
+                        .line as u32,
+                    character: ast_match
+                        .meta_variables
+                        .multi
+                        .secondary
+                        .last()
+                        .unwrap()
+                        .range
+                        .start
+                        .column as u32,
+                },
+                end: Position {
+                    line: ast_match.range.end.line as u32,
+                    character: ast_match.range.end.column as u32,
                 },
             },
         }

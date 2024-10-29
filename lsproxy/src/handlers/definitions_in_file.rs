@@ -60,7 +60,7 @@ mod test {
 
     use actix_web::http::StatusCode;
 
-    use crate::api_types::{FilePosition, Position, Symbol};
+    use crate::api_types::{FilePosition, FileRange, Position, Symbol};
     use crate::initialize_app_state;
     use crate::test_utils::{python_sample_path, TestContext};
 
@@ -99,6 +99,17 @@ mod test {
                         character: 0,
                     },
                 },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 5,
+                        character: 5,
+                    },
+                },
             },
             Symbol {
                 name: String::from("result"),
@@ -110,6 +121,17 @@ mod test {
                         character: 0,
                     },
                 },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 6,
+                    },
+                },
             },
             Symbol {
                 name: String::from("cost"),
@@ -119,6 +141,17 @@ mod test {
                     position: Position {
                         line: 6,
                         character: 8,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.py"),
+                    start: Position {
+                        line: 6,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 12,
                     },
                 },
             },
