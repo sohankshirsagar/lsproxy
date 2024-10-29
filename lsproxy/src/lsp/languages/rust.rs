@@ -2,7 +2,10 @@ use std::{error::Error, path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use log::debug;
-use lsp_types::{ClientCapabilities, DocumentSymbolClientCapabilities, InitializeParams, InitializeResult, TextDocumentClientCapabilities};
+use lsp_types::{
+    ClientCapabilities, DocumentSymbolClientCapabilities, InitializeParams, InitializeResult,
+    TextDocumentClientCapabilities,
+};
 use notify_debouncer_mini::DebouncedEvent;
 use tokio::process::Command;
 use tokio::sync::broadcast::Receiver;
@@ -23,7 +26,6 @@ pub struct RustAnalyzerClient {
 
 #[async_trait]
 impl LspClient for RustAnalyzerClient {
-    
     async fn initialize(
         &mut self,
         root_path: String,
@@ -56,7 +58,7 @@ impl LspClient for RustAnalyzerClient {
             initialization_options: Some(serde_json::json!({
                 "rust-analyzer": {
                     "cargo": {
-                        "sysroot": serde_json::Value::Null 
+                        "sysroot": serde_json::Value::Null
                     }
                 }
             })),
