@@ -1,4 +1,4 @@
-use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
+use crate::api_types::{get_mount_dir, SupportedLanguages};
 use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
@@ -800,7 +800,7 @@ mod tests {
 
         sleep(Duration::from_secs(5)).await;
 
-        let references = manager
+        let mut references = manager
             .find_references(
                 file_path,
                 lsp_types::Position {
@@ -810,7 +810,17 @@ mod tests {
                 false,
             )
             .await?;
-        let expected = vec![
+
+        references.sort_by(|a, b| {
+            a.uri.to_string().cmp(&b.uri.to_string()).then_with(|| {
+                a.range
+                    .start
+                    .line
+                    .cmp(&b.range.start.line)
+                    .then_with(|| a.range.start.character.cmp(&b.range.start.character))
+            })
+        });
+        let mut expected = vec![
             Location {
                 uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/node.rs")?,
                 range: Range {
@@ -916,6 +926,15 @@ mod tests {
                 },
             },
         ];
+        expected.sort_by(|a, b| {
+            a.uri.to_string().cmp(&b.uri.to_string()).then_with(|| {
+                a.range
+                    .start
+                    .line
+                    .cmp(&b.range.start.line)
+                    .then_with(|| a.range.start.character.cmp(&b.range.start.character))
+            })
+        });
         assert_eq!(references, expected);
         Ok(())
     }
