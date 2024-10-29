@@ -147,7 +147,7 @@ mod test {
                     path: String::from("main.py"),
                     start: Position {
                         line: 6,
-                        character: 8,
+                        character: 0,
                     },
                     end: Position {
                         line: 6,

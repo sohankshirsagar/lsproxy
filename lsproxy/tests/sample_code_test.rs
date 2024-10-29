@@ -117,7 +117,7 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                 },
                 end: Position {
                     line: 5,
-                    character: 1,
+                    character: 5,
                 },
             },
         },
@@ -139,7 +139,7 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                 },
                 end: Position {
                     line: 6,
-                    character: 1,
+                    character: 6,
                 },
             },
         },
@@ -157,11 +157,11 @@ fn test_server_integration() -> Result<(), Box<dyn std::error::Error>> {
                 path: String::from("main.py"),
                 start: Position {
                     line: 6,
-                    character: 8,
+                    character: 0,
                 },
                 end: Position {
                     line: 6,
-                    character: 9,
+                    character: 12,
                 },
             },
         },
