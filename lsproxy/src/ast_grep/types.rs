@@ -112,8 +112,24 @@ impl From<AstGrepMatch> for Symbol {
                         .column as u32,
                 },
                 end: Position {
-                    line: ast_match.range.end.line as u32,
-                    character: ast_match.range.end.column as u32,
+                    line: ast_match
+                        .meta_variables
+                        .multi
+                        .secondary
+                        .last()
+                        .expect("Expected at least one secondary variable")
+                        .range
+                        .end
+                        .line as u32,
+                    character: ast_match
+                        .meta_variables
+                        .multi
+                        .secondary
+                        .last()
+                        .expect("Expected at least one secondary variable")
+                        .range
+                        .end
+                        .column as u32,
                 },
             },
         }

@@ -107,7 +107,7 @@ mod test {
                     },
                     end: Position {
                         line: 5,
-                        character: 5,
+                        character: 20,
                     },
                 },
             },
@@ -129,7 +129,7 @@ mod test {
                     },
                     end: Position {
                         line: 6,
-                        character: 6,
+                        character: 12,
                     },
                 },
             },

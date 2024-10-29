@@ -92,6 +92,33 @@ pub struct FileRange {
     pub end: Position,
 }
 
+impl From<Position> for lsp_types::Position {
+    fn from(position: Position) -> Self {
+        lsp_types::Position {
+            line: position.line,
+            character: position.character,
+        }
+    }
+}
+
+impl From<lsp_types::Position> for Position {
+    fn from(position: lsp_types::Position) -> Self {
+        Position {
+            line: position.line,
+            character: position.character,
+        }
+    }
+}
+
+impl From<FileRange> for lsp_types::Range {
+    fn from(range: FileRange) -> Self {
+        lsp_types::Range::new(
+            lsp_types::Position::from(range.start),
+            lsp_types::Position::from(range.end),
+        )
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CodeContext {
     pub range: FileRange,

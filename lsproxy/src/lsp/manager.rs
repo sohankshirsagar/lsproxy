@@ -144,6 +144,7 @@ impl Manager {
         Ok(())
     }
 
+    #[deprecated(note = "Use definitions_in_file_ast_grep instead")]
     pub async fn definitions_in_file(
         &self,
         file_path: &str,
@@ -379,7 +380,7 @@ mod tests {
         let expected = vec![
             Symbol {
                 name: String::from("graph"),
-                kind: String::from("variable"),
+                kind: String::from("variable"), 
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
@@ -395,7 +396,7 @@ mod tests {
                     },
                     end: Position {
                         line: 5,
-                        character: 5,
+                        character: 20,
                     },
                 },
             },
@@ -403,7 +404,7 @@ mod tests {
                 name: String::from("result"),
                 kind: String::from("variable"),
                 identifier_position: FilePosition {
-                    path: String::from("main.py"),
+                    path: String::from("main.py"), 
                     position: Position {
                         line: 6,
                         character: 0,
@@ -417,7 +418,7 @@ mod tests {
                     },
                     end: Position {
                         line: 6,
-                        character: 6,
+                        character: 12,
                     },
                 },
             },
@@ -580,7 +581,7 @@ mod tests {
         let expected = vec![
             Symbol {
                 name: String::from("manhattan"),
-                kind: String::from("function"),
+                kind: String::from("function"), 
                 identifier_position: FilePosition {
                     path: String::from("astar_search.js"),
                     position: Position {
@@ -595,8 +596,8 @@ mod tests {
                         character: 0,
                     },
                     end: Position {
-                        line: 0,
-                        character: 18,
+                        line: 2,
+                        character: 1,
                     },
                 },
             },
@@ -617,8 +618,8 @@ mod tests {
                         character: 0,
                     },
                     end: Position {
-                        line: 4,
-                        character: 14,
+                        line: 58,
+                        character: 1,
                     },
                 },
             },
@@ -639,8 +640,8 @@ mod tests {
                         character: 16,
                     },
                     end: Position {
-                        line: 17,
-                        character: 22,
+                        line: 26,
+                        character: 9,
                     },
                 },
             },
@@ -661,8 +662,8 @@ mod tests {
                         character: 6,
                     },
                     end: Position {
-                        line: 60,
-                        character: 11,
+                        line: 69,
+                        character: 1,
                     },
                 },
             },

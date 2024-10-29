@@ -8,7 +8,7 @@ use log::{error, info, warn};
 use crate::api_types::{DefinitionResponse, GetDefinitionRequest};
 use crate::AppState;
 use lsp_types::{
-    DocumentSymbolResponse, GotoDefinitionResponse, Location, Position as LspPosition,
+    GotoDefinitionResponse, Location, Position as LspPosition,
 };
 /// Get the definition of a symbol at a specific position in a file
 ///
@@ -112,21 +112,18 @@ async fn fetch_definition_source_code(
 
     for definition in definitions {
         let relative_path = uri_to_relative_path_string(&definition.uri);
-        let file_symbols = match manager.definitions_in_file(&relative_path).await? {
-            DocumentSymbolResponse::Nested(file_symbols) => file_symbols,
-            DocumentSymbolResponse::Flat(_) => {
-                return Err(LspManagerError::InternalError(
-                    "Flat document symbols are not supported".to_string(),
-                ))
-            }
-        };
-        let symbol = file_symbols
-            .iter()
-            .find(|s| s.selection_range == definition.range);
+        let file_symbols = manager.definitions_in_file_ast_grep(&relative_path).await?;
+        let symbol = file_symbols.iter().find(|s| {
+            s.identifier_position.position.line == definition.range.start.line
+                && s.identifier_position.position.character == definition.range.start.character
+        });
         let source_code = match symbol {
             Some(symbol) => {
                 manager
-                    .read_source_code(&relative_path, Some(symbol.range))
+                    .read_source_code(
+                        &relative_path,
+                        Some(lsp_types::Range::from(symbol.range.clone())),
+                    )
                     .await?
             }
             None => {
