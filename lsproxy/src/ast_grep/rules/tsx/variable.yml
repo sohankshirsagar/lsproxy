@@ -1,5 +1,5 @@
 id: variable
-language: javascript
+language: tsx
 rule:
   kind: identifier
   inside:
