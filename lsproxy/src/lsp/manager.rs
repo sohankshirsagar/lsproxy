@@ -2,9 +2,7 @@ use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
-use crate::utils::file_utils::{
-    absolute_path_to_relative_path_string, search_files, uri_to_relative_path_string,
-};
+use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
 use crate::utils::workspace_documents::{
     WorkspaceDocuments, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
     RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
