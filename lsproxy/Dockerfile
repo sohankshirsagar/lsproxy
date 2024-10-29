@@ -46,5 +46,6 @@ EXPOSE 4444
 # Set environment variables for logging and backtrace
 ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=1
+ENV RA_LOG="/tmp/rust-analyzer.log"
 
 CMD /bin/bash -c "touch Cargo.toml && cargo build --release"
