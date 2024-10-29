@@ -56,10 +56,8 @@ impl LspClient for RustAnalyzerClient {
             // We are doing this because we want to avoid looking up defs and refs in cargo registry
             // which is prohibitively slow
             initialization_options: Some(serde_json::json!({
-                "rust-analyzer": {
-                    "cargo": {
-                        "sysroot": serde_json::Value::Null
-                    }
+                "cargo": {
+                "sysroot": serde_json::Value::Null
                 }
             })),
             ..Default::default()
