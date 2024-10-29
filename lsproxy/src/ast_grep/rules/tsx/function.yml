@@ -1,5 +1,5 @@
 id: function
-language: typescript
+language: tsx
 rule:
   any:
     - kind: identifier

@@ -1,0 +1,9 @@
+id: variable
+language: tsx
+rule:
+  kind: identifier
+  inside:
+    kind: lexical_declaration 
+    stopBy: end
+    inside:
+      kind: program

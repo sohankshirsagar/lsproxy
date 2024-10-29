@@ -1,0 +1,6 @@
+id: method
+language: javascript
+rule:
+    kind: tsx
+    inside:
+      kind: method_definition
