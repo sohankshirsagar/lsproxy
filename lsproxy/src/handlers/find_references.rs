@@ -1,7 +1,7 @@
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
-use log::{error, info};
-use lsp_types::{Location, Position as LspPosition, Range};
+use log::{debug, error, info};
+use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition, Range};
 
 use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use crate::api_types::{GetReferencesRequest, ReferencesResponse};
@@ -50,6 +50,52 @@ pub async fn find_references(
         info.identifier_position.position.character
     );
     let manager = data.manager.lock().unwrap();
+
+    // Check that the definition is in the workspace
+    // This helps us to avoid finding references to stdlib that are super slow
+    let def_result = manager
+        .find_definition(
+            &info.identifier_position.path,
+            LspPosition {
+                line: info.identifier_position.position.line,
+                character: info.identifier_position.position.character,
+            },
+        )
+        .await;
+    let def_location = match def_result {
+        Ok(GotoDefinitionResponse::Scalar(location)) => location,
+        Ok(GotoDefinitionResponse::Array(locations)) => locations.first().unwrap().clone(),
+        Ok(GotoDefinitionResponse::Link(_links)) => {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "Links not supported".to_string(),
+            });
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: e.to_string(),
+            });
+        }
+    };
+    let workspace_files = manager.list_files().await;
+    if let Err(e) = workspace_files {
+        return HttpResponse::InternalServerError().json(ErrorResponse {
+            error: e.to_string(),
+        });
+    }
+
+    if !workspace_files
+        .unwrap()
+        .iter()
+        .any(|f| *f == uri_to_relative_path_string(&def_location.uri))
+    {
+        debug!("Definition not in workspace: {:?}", def_location.uri);
+        return HttpResponse::Ok().json(ReferencesResponse {
+            raw_response: None,
+            references: vec![],
+            context: None,
+        });
+    }
+
     let references_result = manager
         .find_references(
             &info.identifier_position.path,
@@ -61,7 +107,7 @@ pub async fn find_references(
         )
         .await;
 
-    // We can get references outside the workspace so we want to filter those out
+    // We can get references outside the workspace so we want to filter those out as well
     let filtered_reference_result = match references_result {
         Ok(refs) => match manager.list_files().await {
             Ok(files) => {

@@ -2,7 +2,9 @@ use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient};
-use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
+use crate::utils::file_utils::{
+    absolute_path_to_relative_path_string, search_files, uri_to_relative_path_string,
+};
 use crate::utils::workspace_documents::{
     WorkspaceDocuments, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
     RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
@@ -233,9 +235,11 @@ impl Manager {
         let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
+
         if !workspace_files.iter().any(|f| f == file_path) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
+
         let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = self.detect_language(full_path_str).map_err(|e| {
@@ -377,7 +381,7 @@ mod tests {
         let expected = vec![
             Symbol {
                 name: String::from("graph"),
-                kind: String::from("variable"), 
+                kind: String::from("variable"),
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
