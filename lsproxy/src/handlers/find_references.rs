@@ -76,12 +76,6 @@ pub async fn find_references(
             });
         }
     };
-    let workspace_files = manager.list_files().await;
-    if let Err(e) = workspace_files {
-        return HttpResponse::InternalServerError().json(ErrorResponse {
-            error: e.to_string(),
-        });
-    }
 
     if !def_location
         .uri
@@ -95,6 +89,14 @@ pub async fn find_references(
             context: None,
         });
     }
+
+    let workspace_files: Result<Vec<String>, LspManagerError> = manager.list_files().await;
+    if let Err(e) = workspace_files {
+        return HttpResponse::InternalServerError().json(ErrorResponse {
+            error: e.to_string(),
+        });
+    }
+
     if !workspace_files
         .unwrap()
         .iter()
