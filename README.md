@@ -14,7 +14,7 @@
    
 ## <a name="what-is-lsproxy">What is lsproxy?</a>
 
-`lsproxy` offers IDE-like functionality for project-wide code analysis and navigation, in a docker container with a REST API.
+`lsproxy` offers IDE-like functionality for code analysis and navigation, in a docker container with a REST API.
 
 It resolves relationships between code symbols anywhere in the project (functions, classes, variables) - which can be used to help AI assistants navigate a codebase or build custom code RAG systems.
 
