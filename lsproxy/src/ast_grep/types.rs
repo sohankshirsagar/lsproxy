@@ -111,15 +111,16 @@ impl From<AstGrepMatch> for Symbol {
                         .range
                         .start
                         .line as u32,
-                    character: ast_match
-                        .meta_variables
-                        .multi
-                        .secondary
-                        .last()
-                        .unwrap()
-                        .range
-                        .start
-                        .column as u32,
+                    // character: ast_match
+                    //     .meta_variables
+                    //     .multi
+                    //     .secondary
+                    //     .last()
+                    //     .unwrap()
+                    //     .range
+                    //     .start
+                    //     .column as u32,
+                    character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
                 },
                 end: Position {
                     line: ast_match
