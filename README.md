@@ -14,7 +14,7 @@
    
 ## <a name="what-is-lsproxy">What is lsproxy?</a>
 
-`lsproxy` is a container with an API that helps navigate and analyze code across large projects. It runs [Language Servers](https://microsoft.github.io/language-server-protocol/) and [ast-grep](https://github.com/ast-grep/ast-grep) to map relationships between code files - which can be used to help AI assistants navigate code or build custom code RAG systems.
+`lsproxy` is a container with an API that enables code analysis and navigation across large projects. It runs [Language Servers](https://microsoft.github.io/language-server-protocol/) and [ast-grep](https://github.com/ast-grep/ast-grep) to map relationships between code symbols (functions,  classes, variables) - which can be used to help AI assistants navigate code or build custom code RAG systems.
 
 ## Key Features
 
