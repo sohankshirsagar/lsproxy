@@ -1,10 +1,10 @@
-use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
-use json5::from_str as json5_from_str;
 use async_trait::async_trait;
+use json5::from_str as json5_from_str;
 use log::debug;
 use lsp_types::TextDocumentItem;
 use notify_debouncer_mini::DebouncedEvent;
 use serde_json::Value;
+use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
 use tokio::process::Command;
 use tokio::sync::broadcast::Receiver;
 use url::Url;
