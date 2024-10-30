@@ -4,15 +4,15 @@ rule:
   kind: identifier
   inside:
     kind: variable_declarator
+    not:
+        has:
+          any:
+            - kind: function_declaration
+            - kind: arrow_function
     inside:
       kind: lexical_declaration 
       inside:
         any:
           - kind: export_statement
           - kind: program
-      not:
-        has:
-          any:
-            - kind: function_declaration
-            - kind: arrow_function
-          stopBy: end
+    field: name

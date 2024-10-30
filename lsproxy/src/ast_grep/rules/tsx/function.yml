@@ -14,10 +14,11 @@ rule:
               kind: lexical_declaration
             has:
               kind: arrow_function
+              field: value
+
           - kind: assignment_expression
             has:
-              any:
-                - kind: arrow_function
+              kind: arrow_function
     - kind: property_identifier
       inside:
         kind: pair
