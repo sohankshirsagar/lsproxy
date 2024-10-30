@@ -14,7 +14,7 @@
    
 ## <a name="what-is-lsproxy">What is lsproxy?</a>
 
-`lsproxy` offers a simple containerized REST API for project-wide code analysis and navigation using Language Servers. It simplifies the integration of powerful language server capabilities into AI coding assistants, developer tools, and other non-IDE/editor applications.
+`lsproxy` is a container and an API that helps navigate and analyze code across large projects. It runs Language Servers and ast-grep to map relationships between code files - which can be used to help AI assistants navigate code or build custom code RAG systems.
 
 ## Key Features
 
