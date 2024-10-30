@@ -1,14 +1,24 @@
+utils:
+  top_level_left:
+    inside:
+      kind: assignment
+      field: left
+      inside:
+        kind: expression_statement
+        inside:
+          kind: module
+
+
 id: variable
 language: python
 rule:
-    kind: identifier
-    inside:
+  any:
+    - kind: identifier
+      matches: top_level_left
+    - kind: identifier
+      inside:
         any:
-            - kind: assignment
-            - kind: pattern_list
-        inside:
-            kind: expression_statement
-            stopBy: end
-            inside:
-                kind: module
-
+          - kind: pattern_list
+          - kind: tuple_pattern
+          - kind: list_pattern
+        matches: top_level_left
