@@ -1,10 +1,10 @@
 use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
-
+use json5::from_str as json5_from_str;
 use async_trait::async_trait;
 use log::debug;
 use lsp_types::TextDocumentItem;
 use notify_debouncer_mini::DebouncedEvent;
-use serde_json::{from_str, Value};
+use serde_json::Value;
 use tokio::process::Command;
 use tokio::sync::broadcast::Receiver;
 use url::Url;
@@ -113,7 +113,7 @@ impl TypeScriptLanguageClient {
     ) -> Result<Vec<TextDocumentItem>, Box<dyn Error + Send + Sync>> {
         let tsconfig_path = Path::new(workspace_path).join("tsconfig.json");
         let tsconfig_content = read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
-        let tsconfig: Value = from_str(&tsconfig_content)?;
+        let tsconfig: Value = json5_from_str(&tsconfig_content)?;
 
         let include_patterns = tsconfig["include"]
             .as_array()
