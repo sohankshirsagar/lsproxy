@@ -164,6 +164,44 @@
           }
         }
       }
+    },
+    "/workspace/read-source-code": {
+      "post": {
+        "tags": [
+          "workspace"
+        ],
+        "summary": "Read source code from a file in the workspace",
+        "description": "Returns the contents of the specified file.",
+        "operationId": "read_source_code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileRange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Source code retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadSourceCodeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -347,6 +385,17 @@
             "description": "0-indexed line number.",
             "example": 10,
             "minimum": 0
+          }
+        }
+      },
+      "ReadSourceCodeResponse": {
+        "type": "object",
+        "required": [
+          "source_code"
+        ],
+        "properties": {
+          "source_code": {
+            "type": "string"
           }
         }
       },

@@ -4,6 +4,7 @@ use actix_web::{
     App, HttpServer,
 };
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use handlers::read_source_code;
 use log::warn;
 use std::fs;
 use std::fs::File;
@@ -47,7 +48,8 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         crate::handlers::definitions_in_file,
         crate::handlers::find_definition,
         crate::handlers::find_references,
-        crate::handlers::list_files
+        crate::handlers::list_files,
+        crate::handlers::read_source_code,
     ),
     components(
         schemas(
@@ -158,6 +160,8 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
                     api_scope.service(resource(path).route(get().to(definitions_in_file))),
                 ("/workspace/list-files", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(list_files))),
+                ("/workspace/read-source-code", Some(Method::Post)) =>
+                    api_scope.service(resource(path).route(post().to(read_source_code))),
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
                     p,
