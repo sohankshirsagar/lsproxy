@@ -6,24 +6,30 @@ on:
 
 jobs:
   docker-publish:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          - arch: amd64
+            runner: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            runner: ubuntu-latest-arm64-4-core
+            platform: linux/arm64
+    runs-on: ${{ matrix.config.runner }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3  # Updated to v3
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3  # Updated to v3
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-${{ matrix.config.arch }}-buildx-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            ${{ runner.os }}-${{ matrix.config.arch }}-buildx-
 
       - name: Extract version from tag
         id: get_version
@@ -38,15 +44,14 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4  # Updated to v4
         with:
           context: ./lsproxy
           file: ./release/Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.config.platform }}
           tags: |
-            agenticlabs/lsproxy:${{ steps.get_version.outputs.VERSION }}
-            agenticlabs/lsproxy:latest
+            agenticlabs/lsproxy:${{ steps.get_version.outputs.VERSION }}-${{ matrix.config.arch }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -54,3 +59,37 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  merge-manifests:
+    needs: docker-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: agenticlabs
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create and push manifest list
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          
+          # Create and push the version-specific manifest
+          docker manifest create agenticlabs/lsproxy:${VERSION} \
+            agenticlabs/lsproxy:${VERSION}-amd64 \
+            agenticlabs/lsproxy:${VERSION}-arm64
+          
+          docker manifest push agenticlabs/lsproxy:${VERSION}
+          
+          # Create and push the latest manifest
+          docker manifest create agenticlabs/lsproxy:latest \
+            agenticlabs/lsproxy:${VERSION}-amd64 \
+            agenticlabs/lsproxy:${VERSION}-arm64
+          
+          docker manifest push agenticlabs/lsproxy:latest
