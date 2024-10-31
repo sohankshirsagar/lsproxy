@@ -1,4 +1,4 @@
-name: Upload OpenAPI spec to Stainless and (Mintlify) docs repo
+name: Upload OpenAPI spec to Mintlify
 
 on:
   push:

@@ -2,6 +2,8 @@ FROM rust:1.81.0-slim-bookworm as builder
 
 WORKDIR /usr/src/app
 
+RUN apt-get update && apt-get install -y curl
+
 COPY . .
 RUN cargo build --release
 
