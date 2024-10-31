@@ -34,7 +34,7 @@ It supports [multiple languages](#supported-languages) and resolves relationship
     
 
 ## <a name="getting-started">Getting started</a>
-The easiest way to get started is to run it yourself! We keep the latest version up to date on docker hub, and we have a python SDK available via `pip`. If you need additional inspiration for how this can be helpful to you, check out the [Examples](#examples) section.
+The easiest way to get started is to run it yourself! We keep the latest version up to date on docker hub, and we have a python SDK available via `pip`. If you need additional inspiration for how this can be helpful to you, check out the [Tutorial](#tutorial) section.
 
 ### Install the sdk
 
@@ -71,13 +71,8 @@ for symbol in symbols:
     print(f"{symbol.name} is defined in {file_path}")
 ```
 
-## <a name="examples">Examples</a>
-Most have you spin up a `lsproxy` docker container with your own code above and then just run the python script we provide, but we provide sample code for a few examples. See the README for each one for more info.
-
-|Name|Description|Bring your own code?|
-|:-|:-|:-|
-|Playground|We've implemented a sample project in different languages and a UI built with [marimo](https://github.com/marimo-team/marimo) for you to play around with|**No**|
-|Code Graph|Start from a single file and visualize how your code webs out|**Yes**|
+## <a name="tutorial">Tutorial</a>
+We've implemented a simple walkthrough UI built with [marimo](https://github.com/marimo-team/marimo) that covers a few examples to get you started with `lsproxy`. Check it out in our [SDK repo](https://github.com/agentic-labs/lsproxy-python-sdk)!
 
 ## <a name="contributing">Building products with lsproxy</a>
 
