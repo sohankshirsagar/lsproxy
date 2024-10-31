@@ -79,6 +79,10 @@ Most have you spin up a `lsproxy` docker container with your own code above and 
 |Playground|We've implemented a sample project in different languages and a UI built with [marimo](https://github.com/marimo-team/marimo) for you to play around with|**No**|
 |Code Graph|Start from a single file and visualize how your code webs out|**Yes**|
 
+## <a name="contributing">Building products with lsproxy</a>
+
+If you're building AI coding agents or code RAG, or would like to use `lsproxy` in a commercial product, please reach out!
+
 ## <a name="contributing">Contributing</a>
 
 We appreciate all contributions! You don't need to be an expert to help out.
@@ -99,7 +103,7 @@ We're building a community. Come hang out with us!
   
 ## <a name="supported-languages">Supported languages</a>
 
-We're constantly looking to add new language support or better language servers so let us know what you find!
+We're looking to add new language support or better language servers so let us know what you need!
 |Language|Server|URL|
 |:-|:-|:-|
 |Javascript|`typescript-language-server`|https://github.com/typescript-language-server/typescript-language-server|
