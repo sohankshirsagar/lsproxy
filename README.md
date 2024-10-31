@@ -28,7 +28,7 @@ It supports [multiple languages](#supported-languages) and resolves relationship
 - 🌐 **Unified API**: Access multiple language servers through a single API.
 - 🛠️ **Auto-Configuration**: Automatically detect and configure language servers based on your project files.
 - 📊 **Code Diagnostics**: (Coming Soon) Get language-specific lint output from an endpoint.
-- 🌳 **Call & Type Hierarchies**: (Coming Soon) Query multi-hop code relationships.
+- 🌳 **Call & Type Hierarchies**: (Coming Soon) Query multi-hop code relationships computed by the language servers.
 - 🔄 **Procedural Refactoring**: (Coming Soon) Perform symbol operations like `rename`, `extract`, `auto import` through the API.
 - 🧩 **SDKs**: Libraries to get started calling `lsproxy` in popular languages.
     
