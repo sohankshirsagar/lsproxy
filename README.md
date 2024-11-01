@@ -33,7 +33,7 @@ It supports [multiple languages](#supported-languages) and resolves relationship
     
 
 ## <a name="getting-started">Getting started</a>
-The easiest way to get started is to run our tutorial! Head over to our [SDK repo](https://github.com/agentic-labs/lsproxy-python-sdk), clone it and run:
+The easiest way to get started is to run our tutorial! Check out our [SDK repo](https://github.com/agentic-labs/lsproxy-python-sdk), clone it and run:
 
 ```
 ./examples/tutorial/run.sh
