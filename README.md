@@ -38,7 +38,7 @@ The easiest way to get started is to run our tutorial! Check out our [SDK repo](
 ```
 ./examples/tutorial/run.sh
 ```
-It's also super easy to run `lsproxy` on your own code! We keep the latest version up to date on Docker Hub, and we have a Python SDK available via `pip.`
+It's also super easy to run `lsproxy` on your code! We keep the latest version up to date on Docker Hub, and we have a Python SDK available via `pip.`
 
 ### Install the sdk
 
