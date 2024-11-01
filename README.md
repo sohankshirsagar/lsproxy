@@ -5,7 +5,7 @@
 
 # lsproxy - Unlocking language servers for AI agents
 <p align="center">
-  <img alt="discord" src="https://img.shields.io/discord/1296271531994775552">
+  <img alt="discord" src="https://img.shields.io/discord/1296271531994775552" />
 </p>
 </div>
 
