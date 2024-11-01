@@ -3,8 +3,7 @@
     <img src="https://raw.githubusercontent.com/agentic-labs/.github/main/assets/logo.png" alt="Agentic Labs" title="Agentic Labs" align="center" height="150px" />
 </a>
 
-# lsproxy - all your langauge servers are belong to us
-
+# lsproxy - Unlocking language servers for AI agents
 <p align="center">
   <img alt="discord" src="https://img.shields.io/discord/1296271531994775552">
 </p>
@@ -34,7 +33,12 @@ It supports [multiple languages](#supported-languages) and resolves relationship
     
 
 ## <a name="getting-started">Getting started</a>
-The easiest way to get started is to run it yourself! We keep the latest version up to date on docker hub, and we have a python SDK available via `pip`. If you need additional inspiration for how this can be helpful to you, check out the [Tutorial](#tutorial) section.
+The easiest way to get started is to run our tutorial! Head over to our [SDK repo](https://github.com/agentic-labs/lsproxy-python-sdk), clone it and run:
+
+```
+./examples/tutorial/run.sh
+```
+It's also super easy to run `lsproxy` on your own code! We keep the latest version up to date on Docker Hub, and we have a Python SDK available via `pip.`
 
 ### Install the sdk
 
@@ -70,9 +74,6 @@ symbols = client.file_symbols(file_path)
 for symbol in symbols:
     print(f"{symbol.name} is defined in {file_path}")
 ```
-
-## <a name="tutorial">Tutorial</a>
-We've implemented a simple walkthrough UI built with [marimo](https://github.com/marimo-team/marimo) that covers a few examples to get you started with `lsproxy`. Check it out in our [SDK repo](https://github.com/agentic-labs/lsproxy-python-sdk)!
 
 ## <a name="contributing">Building products with lsproxy</a>
 
