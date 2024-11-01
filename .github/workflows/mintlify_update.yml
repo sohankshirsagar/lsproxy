@@ -7,11 +7,10 @@ on:
       - 'README.md'
   workflow_dispatch:
 jobs:
-  stainless:
+  upload-openapi:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - name: Push documented spec to docs repo
         uses: dmnemec/copy_file_to_another_repo_action@main
         env:
@@ -23,6 +22,10 @@ jobs:
           user_name: 'robmck1995'
           commit_message: 'Updated openapi.json from lsproxy'
 
+  upload-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Push README to docs repo as introduction.mdx
         uses: dmnemec/copy_file_to_another_repo_action@main
         env:
