@@ -6,6 +6,8 @@
 # lsproxy - Unlocking language servers for AI agents
 <p align="center">
   <img alt="discord" src="https://img.shields.io/discord/1296271531994775552" />
+  <img alt="license" src="https://img.shields.io/github/license/agentic-labs/lsproxy" />
+  <img alt="pypi" src="https://img.shields.io/pypi/v/lsproxy-sdk" />
 </p>
 </div>
 
@@ -38,7 +40,6 @@ It's also super easy to run `lsproxy` on your code! We keep the latest version u
 
 ### Install the sdk
 
-You can find the documentation for the SDK [here](sdk.agenticlabs.com)
 ```bash
 pip install lsproxy-sdk
 ```
@@ -58,6 +59,8 @@ services:
     volumes:
       - ${WORKSPACE_PATH}:/mnt/workspace
 ```
+
+You can find the reference for the API that `lsproxy` exposes [here](https://docs.lsproxy.dev)
 
 ### Explore your workspace!
 
