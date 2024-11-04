@@ -5,7 +5,7 @@
 
 # lsproxy - Precise code navigation via an API
 <p align="center">
-  <a href="https://discord.gg/EUFGjSawyk">
+  <a href="https://discord.gg/EUFGjSawyk" style="text-decoration:none;">
       <img alt="discord" src="https://img.shields.io/discord/1296271531994775552" />
   </a>
   <img alt="license" src="https://img.shields.io/github/license/agentic-labs/lsproxy" />
