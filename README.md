@@ -70,7 +70,7 @@ from lsproxy_sdk import Lsproxy
 
 client = Lsproxy()
 file_path = "relative/path/from/project/root.cpp"
-symbols = client.file_symbols(file_path)
+symbols = client.definitions_in_file(file_path)
 for symbol in symbols:
     print(f"{symbol.name} is defined in {file_path}")
 ```
