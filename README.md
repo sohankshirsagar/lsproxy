@@ -33,18 +33,14 @@ It supports [multiple languages](#supported-languages) and resolves relationship
     
 
 ## <a name="getting-started">Getting started</a>
-The easiest way to get started is to run our tutorial! Check out our [SDK repo](https://github.com/agentic-labs/lsproxy-python-sdk), clone it and run:
-
-```
-./examples/tutorial/run.sh
-```
+The easiest way to get started is to run our tutorial! Check it out at [demo.lsproxy.dev](https://demo.lsproxy.dev)
 It's also super easy to run `lsproxy` on your code! We keep the latest version up to date on Docker Hub, and we have a Python SDK available via `pip.`
 
 ### Install the sdk
 
 You can find the documentation for the SDK [here](sdk.agenticlabs.com)
 ```bash
-pip install lsproxy
+pip install lsproxy-sdk
 ```
 
 ### Run a container or add to compose
@@ -66,7 +62,7 @@ services:
 ### Explore your workspace!
 
 ```python
-from lsproxy_sdk import Lsproxy
+from lsproxy import Lsproxy
 
 client = Lsproxy()
 file_path = "relative/path/from/project/root.cpp"
