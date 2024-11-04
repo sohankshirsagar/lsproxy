@@ -114,10 +114,18 @@ enum Method {
 }
 
 pub async fn run_server(app_state: Data<AppState>) -> std::io::Result<()> {
-    run_server_with_port(app_state, 4444).await
+    run_server_with_host(app_state, "0.0.0.0").await
+}
+
+pub async fn run_server_with_host(app_state: Data<AppState>, host: &str) -> std::io::Result<()> {
+    run_server_with_port_and_host(app_state, 4444, host).await
 }
 
 pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::io::Result<()> {
+    run_server_with_port_and_host(app_state, port, "0.0.0.0").await
+}
+
+pub async fn run_server_with_port_and_host(app_state: Data<AppState>, port: u16, host: &str) -> std::io::Result<()> {
     if let Err(e) = check_mount_dir() {
         eprintln!(
             "Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
@@ -179,7 +187,7 @@ pub async fn run_server_with_port(app_state: Data<AppState>, port: u16) -> std::
             )
             .service(api_scope)
     })
-    .bind(format!("0.0.0.0:{}", port))?
+    .bind(format!("{}:{}", host, port))?
     .run()
     .await
 }

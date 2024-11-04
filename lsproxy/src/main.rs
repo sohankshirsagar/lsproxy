@@ -1,7 +1,7 @@
 use clap::Parser;
 use env_logger::Env;
 use log::info;
-use lsproxy::{initialize_app_state, run_server, write_openapi_to_file};
+use lsproxy::{initialize_app_state, run_server_with_host, write_openapi_to_file};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -10,6 +10,10 @@ struct Cli {
     /// Write OpenAPI spec to file (openapi.json)
     #[arg(short, long)]
     write_openapi: bool,
+
+    /// Host address to bind to (default: 0.0.0.0)
+    #[arg(long, default_value = "0.0.0.0")]
+    host: String,
 }
 
 #[actix_web::main]
@@ -36,5 +40,5 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
-    run_server(app_state).await
+    run_server_with_host(app_state, &cli.host).await
 }
