@@ -60,7 +60,7 @@ services:
       - ${WORKSPACE_PATH}:/mnt/workspace
 ```
 
-You can find the reference for the API that `lsproxy` exposes [here](https://docs.lsproxy.dev)
+You can find the reference for the API that `lsproxy` exposes [here](https://docs.lsproxy.dev/api-reference)
 
 ### Explore your workspace!
 
