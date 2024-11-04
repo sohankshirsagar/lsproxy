@@ -17,7 +17,7 @@ jobs:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
           source_file: 'openapi.json'
-          destination_repo: 'robmck1995/mintlify-docs'
+          destination_repo: 'agentic-labs/mintlify-docs'
           user_email: 'rmcknight451@gmail.com'
           user_name: 'robmck1995'
           commit_message: 'Updated openapi.json from lsproxy'
@@ -33,7 +33,7 @@ jobs:
         with:
           source_file: 'README.md'
           destination_file: 'get-started/introduction.mdx'
-          destination_repo: 'robmck1995/mintlify-docs'
+          destination_repo: 'agentic-labs/mintlify-docs'
           user_email: 'rmcknight451@gmail.com'
           user_name: 'robmck1995'
           commit_message: 'Updated introduction.mdx from lsproxy README'
