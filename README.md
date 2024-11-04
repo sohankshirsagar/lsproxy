@@ -3,7 +3,7 @@
     <img src="https://raw.githubusercontent.com/agentic-labs/.github/main/assets/logo.png" alt="Agentic Labs" title="Agentic Labs" align="center" height="150px" />
 </a>
 
-# lsproxy - Unlocking language servers for AI agents
+# lsproxy - Precise code navigation via an API
 <p align="center">
   <img alt="discord" src="https://img.shields.io/discord/1296271531994775552" />
   <img alt="license" src="https://img.shields.io/github/license/agentic-labs/lsproxy" />
