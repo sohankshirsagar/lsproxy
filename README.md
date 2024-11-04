@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://discord.gg/EUFGjSawyk"a><img alt="discord" src="https://img.shields.io/discord/1296271531994775552" /></a>
   <img alt="license" src="https://img.shields.io/github/license/agentic-labs/lsproxy" />
-  <img alt="pypi" src="https://img.shields.io/pypi/v/lsproxy-sdk" />
+  <a href="https://pypi.org/project/lsproxy-sdk/" a><img alt="pypi" src="https://img.shields.io/pypi/v/lsproxy-sdk" /></a>
 </p>
 </div>
 
