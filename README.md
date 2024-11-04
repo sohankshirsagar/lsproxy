@@ -43,6 +43,7 @@ It's also super easy to run `lsproxy` on your code! We keep the latest version u
 ```bash
 pip install lsproxy-sdk
 ```
+You can find the source for the SDK [here](https://github.com/agentic-labs/lsproxy-python-sdk)
 
 ### Run a container or add to compose
 Make sure your `WORKSPACE_PATH` is an absolute path, otherwise docker will complain.
