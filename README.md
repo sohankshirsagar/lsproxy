@@ -5,7 +5,9 @@
 
 # lsproxy - Precise code navigation via an API
 <p align="center">
-  <img alt="discord" src="https://img.shields.io/discord/1296271531994775552" />
+  <a href="https://discord.gg/EUFGjSawyk">
+      <img alt="discord" src="https://img.shields.io/discord/1296271531994775552" />
+  </a>
   <img alt="license" src="https://img.shields.io/github/license/agentic-labs/lsproxy" />
   <img alt="pypi" src="https://img.shields.io/pypi/v/lsproxy-sdk" />
 </p>
@@ -92,7 +94,7 @@ started.
 We're building a community. Come hang out with us!
 
 - 🌟 [Star us on GitHub](https://github.com/agentic-labs/lsproxy)
-- 💬 [Chat with us on Discord](https://discord.gg/WafeS3jN)
+- 💬 [Chat with us on Discord](https://discord.gg/EUFGjSawyk)
 - ✏️ [Start a GitHub Discussion](https://github.com/agentic-labs/lsproxy/discussions)
 - 🐦 [Follow us on Twitter](https://twitter.com/agentic_labs)
 - 🕴️ [Follow us on LinkedIn](https://www.linkedin.com/company/agentic-labs)
