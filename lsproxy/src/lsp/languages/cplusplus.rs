@@ -1,10 +1,14 @@
-use std::path::Path;
 use std::process::Stdio;
+use std::{error::Error, path::Path};
 
 use async_trait::async_trait;
+use log::debug;
+use lsp_types::TextDocumentItem;
 use notify_debouncer_mini::DebouncedEvent;
 use tokio::{process::Command, sync::broadcast::Receiver};
+use url::Url;
 
+use crate::utils::workspace_documents::WorkspaceDocuments;
 use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
     utils::{
@@ -43,6 +47,19 @@ impl LspClient for ClangdClient {
     fn get_pending_requests(&mut self) -> &mut PendingRequests {
         &mut self.pending_requests
     }
+
+    async fn setup_workspace(
+        &mut self,
+        root_path: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let text_document_items = self
+            .get_text_document_items_to_open_with_config(root_path)
+            .await?;
+        for item in text_document_items {
+            self.text_document_did_open(item).await?;
+        }
+        Ok(())
+    }
 }
 
 impl ClangdClient {
@@ -75,13 +92,13 @@ impl ClangdClient {
                         match files[0].file_stem() {
                             Some(stem) => {
                                 println!("Using {:?}", stem.to_str());
-                                Command::new("compiledb")
+                                let _ = Command::new("compiledb")
                                     .arg("-n")
                                     .arg("make")
                                     .arg(stem)
                                     .current_dir(root_path)
-                                    .spawn()
-                                    .expect("Couldn't compiledb to generate compile_commands");
+                                    .output()
+                                    .await;
                             }
                             None => {
                                 println!("For some reason, the first file we found doesn't have a name. This will cause an error.")
@@ -94,6 +111,7 @@ impl ClangdClient {
         }
 
         let process = Command::new("clangd")
+            .arg("--log=error")
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -122,5 +140,35 @@ impl ClangdClient {
             workspace_documents,
             pending_requests,
         })
+    }
+
+    pub async fn get_text_document_items_to_open_with_config(
+        &mut self,
+        workspace_path: &str,
+    ) -> Result<Vec<TextDocumentItem>, Box<dyn Error + Send + Sync>> {
+        let workspace_documents = self.get_workspace_documents();
+        let file_paths = workspace_documents.list_files().await;
+        let mut items = Vec::with_capacity(file_paths.len());
+
+        for file_path in file_paths {
+            let content = match workspace_documents
+                .read_text_document(&file_path, None)
+                .await
+            {
+                Ok(content) => content,
+                Err(e) => {
+                    debug!("Failed to read document {}: {}", file_path.display(), e);
+                    return Err(e);
+                }
+            };
+            let item = TextDocumentItem {
+                uri: Url::from_file_path(file_path).map_err(|_| "Invalid file path")?,
+                language_id: "cpp".to_string(),
+                version: 1,
+                text: content,
+            };
+            items.push(item);
+        }
+        Ok(items)
     }
 }

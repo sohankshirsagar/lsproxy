@@ -12,7 +12,11 @@ RUN apt-get update && apt-get install -y \
     git \
     python3 \
     python3-pip \
+    pipx \
     curl \
+    build-essential \
+    gcc \
+    g++ \
     && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean \
@@ -27,24 +31,19 @@ RUN npm install -g pyright typescript-language-server typescript
 
 #Install Gopls
 WORKDIR /tmp
-RUN curl -O -L "https://go.dev/dl/go1.23.2.linux-amd64.tar.gz"
-RUN tar -C /usr/local -xzf go1.23.2.linux-amd64.tar.gz
-RUN rm go1.23.2.linux-amd64.tar.gz
+RUN curl -O -L "https://go.dev/dl/go1.23.3.linux-arm64.tar.gz"
+RUN tar -C /usr/local -xzf go1.23.3.linux-arm64.tar.gz
+RUN rm go1.23.3.linux-arm64.tar.gz
 RUN /usr/local/go/bin/go install golang.org/x/tools/gopls@latest
 RUN cp ~/go/bin/gopls /usr/local/bin/gopls
 
 #Install Clangd
-RUN apt-get install unzip
-RUN curl -O -L https://github.com/clangd/clangd/releases/download/18.1.3/clangd-linux-18.1.3.zip
-RUN unzip clangd-linux-18.1.3.zip
-RUN mv clangd_18.1.3 /usr/local/
-RUN ln -s /usr/local/clangd_18.1.3/bin/clangd /usr/local/bin/clangd
-RUN rm clangd-linux-18.1.3.zip
+RUN apt update && apt install -y clangd
 
 WORKDIR /usr/src/app
 
-#Install compiledb
-RUN python3 -m pip install compiledb
+# Install compiledb
+RUN pipx install compiledb && pipx ensurepath
 
 RUN cargo install cargo-llvm-cov
 RUN rustup component add llvm-tools-preview

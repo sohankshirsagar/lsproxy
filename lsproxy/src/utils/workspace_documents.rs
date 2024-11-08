@@ -41,7 +41,16 @@ pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js"
 pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
 pub const RUST_ANALYZER_FILE_PATTERNS: &[&str] = &["**/*.rs"];
 
-pub const CPP_ROOT_FILES: &[&str] = &["makefile"];
+pub const CPP_ROOT_FILES: &[&str] = &[
+    "makefile",
+    ".clangd",
+    ".clang-tidy",
+    ".clang-format",
+    "compile_commands.json",
+    "compile_flags.txt",
+    "configure.ac",
+    ".git",
+];
 pub const CPP_FILE_PATTERNS: &[&str] = &["**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx"];
 
 pub const GOLANG_ROOT_FILES: &[&str] = &["go.mod", "go.work"];

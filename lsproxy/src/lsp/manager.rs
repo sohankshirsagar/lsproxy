@@ -66,10 +66,10 @@ impl Manager {
     fn detect_languages_in_workspace(&self, root_path: &str) -> Vec<SupportedLanguages> {
         let mut lsps = Vec::new();
         for lsp in [
-            // SupportedLanguages::Python,
-            // SupportedLanguages::TypeScriptJavaScript,
-            // SupportedLanguages::Rust,
-            // SupportedLanguages::Golang,
+            SupportedLanguages::Python,
+            SupportedLanguages::TypeScriptJavaScript,
+            SupportedLanguages::Rust,
+            SupportedLanguages::Golang,
             SupportedLanguages::CPP,
         ] {
             let patterns = match lsp {

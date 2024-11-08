@@ -432,7 +432,9 @@
         "enum": [
           "python",
           "typescript_javascript",
-          "rust"
+          "rust",
+          "Golang",
+          "CPP"
         ]
       },
       "Symbol": {
