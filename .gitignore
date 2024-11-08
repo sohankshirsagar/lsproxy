@@ -21,12 +21,12 @@ Cargo.lock
 #.idea/
 .aider*
 
+.vscode*
+
 # Python ignores
 *.pyc
 **/__pycache__/
 
-**/.openapi-generator/
-
-.vscode
-
+tags
+.lsproxy_tags
 .vscode

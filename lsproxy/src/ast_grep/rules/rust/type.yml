@@ -1,0 +1,7 @@
+id: type
+language: rust
+rule:
+    kind: type_identifier
+    inside:
+      kind: type_item
+    nthChild: 1

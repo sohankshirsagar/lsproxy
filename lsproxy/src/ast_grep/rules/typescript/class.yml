@@ -1,0 +1,6 @@
+id: class
+language: typescript
+rule:
+    kind: type_identifier
+    inside:
+      kind: abstract_class_declaration

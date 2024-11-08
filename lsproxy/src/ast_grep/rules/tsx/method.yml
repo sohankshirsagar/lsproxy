@@ -1,0 +1,6 @@
+id: method
+language: tsx
+rule:
+    kind: identifier
+    inside:
+      kind: method_definition

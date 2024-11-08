@@ -1,0 +1,6 @@
+id: trait
+language: rust
+rule:
+    kind: type_identifier
+    inside:
+      kind: trait_item

@@ -1,0 +1,26 @@
+id: function
+language: tsx
+rule:
+  any:
+    - kind: identifier
+      inside:
+        any:
+          - kind: function_declaration
+          - kind: function_expression
+          - kind: generator_function
+          - kind: generator_function_declaration
+          - kind: variable_declarator
+            inside:
+              kind: lexical_declaration
+            has:
+              kind: arrow_function
+              field: value
+
+          - kind: assignment_expression
+            has:
+              kind: arrow_function
+    - kind: property_identifier
+      inside:
+        kind: pair
+        has:
+          kind: arrow_function

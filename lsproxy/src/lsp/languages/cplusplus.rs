@@ -2,20 +2,25 @@ use std::path::Path;
 use std::process::Stdio;
 
 use async_trait::async_trait;
-use tokio::process::Command;
+use notify_debouncer_mini::DebouncedEvent;
+use tokio::{process::Command, sync::broadcast::Receiver};
 
 use crate::{
-    lsp::{JsonRpcHandler, LspClient, ProcessHandler},
-    utils::file_utils::search_directory_for_string,
+    lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
+    utils::{
+        file_utils::search_directory_for_string,
+        workspace_documents::{
+            WorkspaceDocumentsHandler, CPP_FILE_PATTERNS, CPP_ROOT_FILES, DEFAULT_EXCLUDE_PATTERNS,
+        },
+    },
 };
 
 pub struct ClangdClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
+    workspace_documents: WorkspaceDocumentsHandler,
+    pending_requests: PendingRequests,
 }
-
-pub const CPP_ROOT_FILES: &[&str] = &["makefile"];
-pub const CPP_FILE_PATTERNS: &[&str] = &["**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx"];
 
 #[async_trait]
 impl LspClient for ClangdClient {
@@ -30,12 +35,23 @@ impl LspClient for ClangdClient {
     fn get_root_files(&mut self) -> Vec<String> {
         CPP_ROOT_FILES.iter().map(|&s| s.to_owned()).collect()
     }
+
+    fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
+        &mut self.workspace_documents
+    }
+
+    fn get_pending_requests(&mut self) -> &mut PendingRequests {
+        &mut self.pending_requests
+    }
 }
 
 impl ClangdClient {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        //Clangd requires a compile_commands.json to be present. On the one hand, this makes configuration easier,
-        //on the other hand, if there's no compile_commands.json present we need to create one.
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        // Clangd requires a compile_commands.json to be present. On the one hand, this makes configuration easier,
+        // on the other hand, if there's no compile_commands.json present we need to create one.
         if !Path::new(&format!("{}/compile_commands.json", root_path)).exists() {
             //if there's a makefile, run that.
             if Path::new(&format!("{}/makefile", root_path)).exists() {
@@ -58,7 +74,7 @@ impl ClangdClient {
                         println!("Found files for clangd: {:?}, just using the first one for main compilation",files);
                         match files[0].file_stem() {
                             Some(stem) => {
-                                println!("Using {:?}",stem.to_str());
+                                println!("Using {:?}", stem.to_str());
                                 Command::new("compiledb")
                                     .arg("-n")
                                     .arg("make")
@@ -89,10 +105,22 @@ impl ClangdClient {
             .await
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
         let json_rpc_handler = JsonRpcHandler::new();
+        let workspace_documents = WorkspaceDocumentsHandler::new(
+            Path::new(root_path),
+            CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
+            DEFAULT_EXCLUDE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+            watch_events_rx,
+        );
+        let pending_requests = PendingRequests::new();
 
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
+            workspace_documents,
+            pending_requests,
         })
     }
 }

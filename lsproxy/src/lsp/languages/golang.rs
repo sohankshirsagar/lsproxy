@@ -1,17 +1,23 @@
-use std::process::Stdio;
+use std::{path::Path, process::Stdio};
 
 use async_trait::async_trait;
-use tokio::process::Command;
+use notify_debouncer_mini::DebouncedEvent;
+use tokio::{process::Command, sync::broadcast::Receiver};
 
-use crate::lsp::{JsonRpcHandler, LspClient, ProcessHandler};
+use crate::{
+    lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
+    utils::workspace_documents::{
+        WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
+        GOLANG_ROOT_FILES,
+    },
+};
 
 pub struct GoplsClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
+    workspace_documents: WorkspaceDocumentsHandler,
+    pending_requests: PendingRequests,
 }
-
-pub const GOLANG_ROOT_FILES: &[&str] = &["go.mod","go.work"];
-pub const GOLANG_FILE_PATTERNS: &[&str] = &["**/*.go"];
 
 #[async_trait]
 impl LspClient for GoplsClient {
@@ -24,15 +30,23 @@ impl LspClient for GoplsClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        GOLANG_ROOT_FILES
-            .iter()
-            .map(|&s| s.to_owned())
-            .collect()
+        GOLANG_ROOT_FILES.iter().map(|&s| s.to_owned()).collect()
+    }
+
+    fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
+        &mut self.workspace_documents
+    }
+
+    fn get_pending_requests(&mut self) -> &mut PendingRequests {
+        &mut self.pending_requests
     }
 }
 
 impl GoplsClient {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(
+        root_path: &str,
+        watch_events_rx: Receiver<DebouncedEvent>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let process = Command::new("gopls")
             .arg("-mode=stdio")
             .arg("-vv")
@@ -48,9 +62,25 @@ impl GoplsClient {
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
         let json_rpc_handler = JsonRpcHandler::new();
 
+        let workspace_documents = WorkspaceDocumentsHandler::new(
+            Path::new(root_path),
+            GOLANG_FILE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+            DEFAULT_EXCLUDE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
+            watch_events_rx,
+        );
+        let pending_requests = PendingRequests::new();
+
         Ok(Self {
             process: process_handler,
             json_rpc: json_rpc_handler,
+            workspace_documents,
+            pending_requests,
         })
     }
 }
