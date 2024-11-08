@@ -31,9 +31,9 @@ RUN npm install -g pyright typescript-language-server typescript
 
 #Install Gopls
 WORKDIR /tmp
-RUN curl -O -L "https://go.dev/dl/go1.23.3.linux-arm64.tar.gz"
-RUN tar -C /usr/local -xzf go1.23.3.linux-arm64.tar.gz
-RUN rm go1.23.3.linux-arm64.tar.gz
+RUN curl -O -L "https://go.dev/dl/go1.23.3.linux-amd64.tar.gz"
+RUN tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
+RUN rm go1.23.3.linux-amd64.tar.gz
 RUN /usr/local/go/bin/go install golang.org/x/tools/gopls@latest
 RUN cp ~/go/bin/gopls /usr/local/bin/gopls
 
