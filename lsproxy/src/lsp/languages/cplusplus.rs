@@ -101,7 +101,7 @@ impl ClangdClient {
                                     .await;
                             }
                             None => {
-                                println!("For some reason, the first file we found doesn't have a name. This will cause an error.")
+                                eprintln!("For some reason, the first file we found doesn't have a name. This will cause an error.")
                             }
                         }
                     }
