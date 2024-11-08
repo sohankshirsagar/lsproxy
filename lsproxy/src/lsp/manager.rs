@@ -89,9 +89,10 @@ impl Manager {
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
-                SupportedLanguages::CPP => {
-                    C_AND_CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
-                }
+                SupportedLanguages::CPP => C_AND_CPP_FILE_PATTERNS
+                    .iter()
+                    .map(|&s| s.to_string())
+                    .collect(),
             };
             if search_files(
                 Path::new(root_path),
@@ -302,7 +303,8 @@ impl Manager {
             }
             Some("rs") => Ok(SupportedLanguages::Rust),
             Some("go") => Ok(SupportedLanguages::Golang),
-            Some("cpp") | Some("cc") | Some("cxx") | Some("h") | Some("hpp") | Some("hxx") | Some("hh") | Some("c") => Ok(SupportedLanguages::CPP),
+            Some("cpp") | Some("cc") | Some("cxx") | Some("h") | Some("hpp") | Some("hxx")
+            | Some("hh") | Some("c") => Ok(SupportedLanguages::CPP),
             _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
         }
     }

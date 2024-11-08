@@ -14,7 +14,8 @@ use crate::{
     utils::{
         file_utils::search_directory_for_string,
         workspace_documents::{
-            WorkspaceDocumentsHandler, C_AND_CPP_FILE_PATTERNS, CPP_ROOT_FILES, DEFAULT_EXCLUDE_PATTERNS,
+            WorkspaceDocumentsHandler, CPP_ROOT_FILES, C_AND_CPP_FILE_PATTERNS,
+            DEFAULT_EXCLUDE_PATTERNS,
         },
     },
 };
@@ -125,7 +126,10 @@ impl ClangdClient {
         let json_rpc_handler = JsonRpcHandler::new();
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            C_AND_CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
+            C_AND_CPP_FILE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
             DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
