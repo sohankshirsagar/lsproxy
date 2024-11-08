@@ -1,0 +1,11 @@
+id: function
+language: cpp
+rule:
+  any:
+    - kind: identifier
+    - kind: field_identifier
+    - kind: operator_name
+  inside:
+    kind: function_declarator
+    name: name
+  

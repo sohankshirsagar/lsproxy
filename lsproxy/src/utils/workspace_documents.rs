@@ -51,7 +51,9 @@ pub const CPP_ROOT_FILES: &[&str] = &[
     "configure.ac",
     ".git",
 ];
-pub const CPP_FILE_PATTERNS: &[&str] = &["**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx"];
+pub const CPP_FILE_PATTERNS: &[&str] = &[
+    "**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx", "**/*.h", "**/*.hpp", "**/*.hxx", "**/*.hh",
+];
 
 pub const GOLANG_ROOT_FILES: &[&str] = &["go.mod", "go.work"];
 pub const GOLANG_FILE_PATTERNS: &[&str] = &["**/*.go"];
