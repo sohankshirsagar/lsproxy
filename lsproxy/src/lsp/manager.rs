@@ -7,7 +7,7 @@ use crate::lsp::languages::{
 };
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
+    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
     PYRIGHT_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
 };
 use log::{debug, error, warn};
@@ -90,7 +90,7 @@ impl Manager {
                     .map(|&s| s.to_string())
                     .collect(),
                 SupportedLanguages::CPP => {
-                    CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
+                    C_AND_CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
                 }
             };
             if search_files(
@@ -302,9 +302,7 @@ impl Manager {
             }
             Some("rs") => Ok(SupportedLanguages::Rust),
             Some("go") => Ok(SupportedLanguages::Golang),
-            Some("cpp") => Ok(SupportedLanguages::CPP),
-            Some("cc") => Ok(SupportedLanguages::CPP),
-            Some("cxx") => Ok(SupportedLanguages::CPP),
+            Some("cpp") | Some("cc") | Some("cxx") | Some("h") | Some("hpp") | Some("hxx") | Some("hh") | Some("c") => Ok(SupportedLanguages::CPP),
             _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
         }
     }

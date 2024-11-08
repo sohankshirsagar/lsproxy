@@ -51,7 +51,7 @@ pub const CPP_ROOT_FILES: &[&str] = &[
     "configure.ac",
     ".git",
 ];
-pub const CPP_FILE_PATTERNS: &[&str] = &[
+pub const C_AND_CPP_FILE_PATTERNS: &[&str] = &[
     "**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx", "**/*.h", "**/*.hpp", "**/*.hxx", "**/*.hh",
 ];
 

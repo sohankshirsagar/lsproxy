@@ -14,7 +14,7 @@ use crate::{
     utils::{
         file_utils::search_directory_for_string,
         workspace_documents::{
-            WorkspaceDocumentsHandler, CPP_FILE_PATTERNS, CPP_ROOT_FILES, DEFAULT_EXCLUDE_PATTERNS,
+            WorkspaceDocumentsHandler, C_AND_CPP_FILE_PATTERNS, CPP_ROOT_FILES, DEFAULT_EXCLUDE_PATTERNS,
         },
     },
 };
@@ -82,7 +82,7 @@ impl ClangdClient {
                 //if there's not a makefile, try to detect main and use that for compile_commands generation
                 let rp = Path::new(root_path);
                 let mut inc_pats = Vec::new();
-                CPP_FILE_PATTERNS
+                C_AND_CPP_FILE_PATTERNS
                     .iter()
                     .for_each(|fp| inc_pats.push(fp.to_string()));
                 match search_directory_for_string(rp, inc_pats, Vec::new(), "int main".to_string())
@@ -125,7 +125,7 @@ impl ClangdClient {
         let json_rpc_handler = JsonRpcHandler::new();
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
+            C_AND_CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
             DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
