@@ -1,0 +1,7 @@
+id: method
+language: go
+rule:
+  kind: field_identifier
+  inside:
+    kind: method_declaration
+    name: name

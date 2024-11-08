@@ -1,0 +1,7 @@
+id: function
+language: go
+rule:
+  kind: identifier
+  inside:
+    kind: function_declaration
+    name: name

@@ -1,0 +1,7 @@
+id: type
+language: go
+rule:
+  kind: type_identifier
+  inside:
+    kind: type_spec
+    name: name
