@@ -55,7 +55,10 @@ impl GoplsClient {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+            .map_err(|e| {
+                eprintln!("Failed to start gopls process: {}", e);
+                Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+            })?;
 
         let process_handler = ProcessHandler::new(process)
             .await
