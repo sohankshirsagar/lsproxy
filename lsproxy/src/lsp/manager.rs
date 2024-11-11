@@ -15,6 +15,7 @@ use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Positi
 use notify::RecursiveMode;
 use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::collections::HashMap;
+use std::error::Error;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -29,7 +30,7 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(root_path: &str) -> Result<Self, Box<dyn Error>> {
         let (tx, _) = channel(100);
         let event_sender = tx.clone();
         let mut debouncer = new_debouncer(

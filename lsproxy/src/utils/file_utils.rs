@@ -62,7 +62,11 @@ pub fn search_directories(
             Err(err) => eprintln!("Error: {}", err),
         }
     }
-    Ok(dirs)
+    Ok(dirs
+        .into_iter()
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect())
 }
 
 fn build_walk(path: &Path, exclude_patterns: Vec<String>) -> ignore::Walk {
@@ -98,50 +102,4 @@ pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
             warn!("Failed to strip prefix from {:?}: {:?}", path, e);
             path.to_string_lossy().into_owned()
         })
-}
-
-pub fn search_directory_for_string(
-    path: &Path,
-    include_patterns: Vec<String>,
-    exclude_patterns: Vec<String>,
-    to_search: String,
-) -> std::io::Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
-    let walk = build_walk(path, exclude_patterns);
-    for result in walk {
-        match result.clone() {
-            Ok(entry) => {
-                let path = entry.path().to_path_buf();
-                if !include_patterns.iter().any(|pattern| {
-                    glob::Pattern::new(pattern)
-                        .map(|p| p.matches_path(&path))
-                        .unwrap_or(false)
-                }) {
-                    continue;
-                }
-                if path.is_dir() {
-                    continue;
-                } else {
-                    files.push(path)
-                }
-            }
-            Err(err) => eprintln!("Error: {}", err),
-        }
-    }
-    // println!("files to search: {:?}", files);
-    let mut files_with_str = Vec::new();
-    for result in files {
-        match fs::read_to_string(result.clone()) {
-            Ok(file_string) => {
-                println!("Reading: {:?}", result.to_str());
-                if file_string.contains(&to_search) {
-                    files_with_str.push(result.into());
-                }
-            }
-            Err(err) => {
-                println!("Error reading file in search: {:?}\n{:?}", err, path);
-            }
-        };
-    }
-    Ok(files_with_str)
 }
