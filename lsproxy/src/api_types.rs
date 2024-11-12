@@ -61,7 +61,7 @@ pub enum SupportedLanguages {
     TypeScriptJavaScript,
     #[serde(rename = "rust")]
     Rust,
-    Golang,
+    #[serde(rename = "cpp")]
     CPP,
 }
 

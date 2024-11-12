@@ -55,11 +55,6 @@ pub const C_AND_CPP_FILE_PATTERNS: &[&str] = &[
     "**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx", "**/*.h", "**/*.hpp", "**/*.hxx", "**/*.hh",
 ];
 
-pub const C_AND_CPP_HEADER_FILE_PATTERNS: &[&str] = &["**/*.h", "**/*.hpp", "**/*.hxx", "**/*.hh"];
-
-pub const GOLANG_ROOT_FILES: &[&str] = &["go.mod", "go.work"];
-pub const GOLANG_FILE_PATTERNS: &[&str] = &["**/*.go"];
-
 #[async_trait::async_trait]
 pub trait WorkspaceDocuments: Send + Sync {
     async fn read_text_document(

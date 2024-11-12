@@ -176,14 +176,6 @@ fn is_cpp_file(path: &Path) -> bool {
     matches!(ext, "hpp" | "hxx" | "cpp" | "cxx" | "cc")
 }
 
-fn get_compiler_for_file(path: &Path) -> &str {
-    if is_cpp_file(path) {
-        "c++"
-    } else {
-        "cc"
-    }
-}
-
 fn generate_compile_commands(
     project_root: String,
 ) -> Result<Vec<CompileCommand>, Box<dyn Error + Send + Sync>> {

@@ -3,12 +3,12 @@ use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
-    ClangdClient, GoplsClient, PyrightClient, RustAnalyzerClient, TypeScriptLanguageClient,
+    ClangdClient, JediClient, RustAnalyzerClient, TypeScriptLanguageClient,
 };
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
-    PYRIGHT_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
+    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS,
+    RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
 };
 use log::{debug, error, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range};
@@ -69,7 +69,6 @@ impl Manager {
             SupportedLanguages::Python,
             SupportedLanguages::TypeScriptJavaScript,
             SupportedLanguages::Rust,
-            SupportedLanguages::Golang,
             SupportedLanguages::CPP,
         ] {
             let patterns = match lsp {
@@ -82,10 +81,6 @@ impl Manager {
                     .map(|&s| s.to_string())
                     .collect(),
                 SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
-                SupportedLanguages::Golang => GOLANG_FILE_PATTERNS
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
@@ -126,7 +121,7 @@ impl Manager {
             debug!("Starting {:?} LSP", lsp);
             let mut client: Box<dyn LspClient> = match lsp {
                 SupportedLanguages::Python => Box::new(
-                    PyrightClient::new(workspace_path, self.watch_events_sender.subscribe())
+                    JediClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
@@ -140,11 +135,6 @@ impl Manager {
                 ),
                 SupportedLanguages::Rust => Box::new(
                     RustAnalyzerClient::new(workspace_path, self.watch_events_sender.subscribe())
-                        .await
-                        .map_err(|e| e.to_string())?,
-                ),
-                SupportedLanguages::Golang => Box::new(
-                    GoplsClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
@@ -301,7 +291,6 @@ impl Manager {
                 Ok(SupportedLanguages::TypeScriptJavaScript)
             }
             Some("rs") => Ok(SupportedLanguages::Rust),
-            Some("go") => Ok(SupportedLanguages::Golang),
             Some("cpp") | Some("cc") | Some("cxx") | Some("h") | Some("hpp") | Some("hxx")
             | Some("hh") | Some("c") => Ok(SupportedLanguages::CPP),
             _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
@@ -360,8 +349,8 @@ mod tests {
     use super::*;
     use crate::api_types::{FilePosition, FileRange, Position, Symbol, SymbolResponse};
     use crate::test_utils::{
-        c_sample_path, cpp_sample_path, go_sample_path, js_sample_path, python_sample_path,
-        rust_sample_path, TestContext,
+        c_sample_path, cpp_sample_path, js_sample_path, python_sample_path, rust_sample_path,
+        TestContext,
     };
     use lsp_types::{Range, Url};
 
@@ -666,112 +655,6 @@ mod tests {
             },
         ];
 
-        assert_eq!(symbol_response, expected);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_file_symbols_go() -> Result<(), Box<dyn std::error::Error>> {
-        let context = TestContext::setup(&go_sample_path(), true).await?;
-        let manager = context
-            .manager
-            .as_ref()
-            .ok_or("Manager is not initialized")?;
-        let file_path = "main.go";
-        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-        let symbol_response: SymbolResponse =
-            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
-
-        let expected = vec![
-            Symbol {
-                name: String::from("rcNode"),
-                kind: String::from("type"),
-                identifier_position: FilePosition {
-                    path: String::from("main.go"),
-                    position: Position {
-                        line: 9,
-                        character: 5,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.go"),
-                    start: Position {
-                        line: 9,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 9,
-                        character: 30,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("To"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("main.go"),
-                    position: Position {
-                        line: 17,
-                        character: 17,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.go"),
-                    start: Position {
-                        line: 17,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 32,
-                        character: 1,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("Heuristic"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("main.go"),
-                    position: Position {
-                        line: 36,
-                        character: 16,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.go"),
-                    start: Position {
-                        line: 36,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 49,
-                        character: 1,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("main"),
-                kind: String::from("function"),
-                identifier_position: FilePosition {
-                    path: String::from("main.go"),
-                    position: Position {
-                        line: 51,
-                        character: 5,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.go"),
-                    start: Position {
-                        line: 51,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 55,
-                        character: 1,
-                    },
-                },
-            },
-        ];
         assert_eq!(symbol_response, expected);
         Ok(())
     }

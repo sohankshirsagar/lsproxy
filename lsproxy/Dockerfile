@@ -37,14 +37,6 @@ RUN pip install jedi-language-server
 # Install global npm packages
 RUN npm install -g typescript-language-server typescript
 
-#Install Gopls
-WORKDIR /tmp
-RUN curl -O -L "https://go.dev/dl/go1.23.3.linux-arm64.tar.gz"
-RUN tar -C /usr/local -xzf go1.23.3.linux-arm64.tar.gz
-RUN rm go1.23.3.linux-arm64.tar.gz
-RUN /usr/local/go/bin/go install golang.org/x/tools/gopls@latest
-RUN cp ~/go/bin/gopls /usr/local/bin/gopls
-
 #Install Clangd
 RUN apt update && apt install -y clangd
 

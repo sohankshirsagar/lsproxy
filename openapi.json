@@ -429,8 +429,7 @@
           "python",
           "typescript_javascript",
           "rust",
-          "Golang",
-          "CPP"
+          "cpp"
         ]
       },
       "Symbol": {
