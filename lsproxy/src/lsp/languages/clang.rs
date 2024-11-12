@@ -189,9 +189,10 @@ fn generate_compile_commands(
 ) -> Result<Vec<CompileCommand>, Box<dyn Error + Send + Sync>> {
     let mut commands = Vec::new();
 
-    let header_files = search_files(
+    // Search for both header and source files
+    let all_files = search_files(
         Path::new(&project_root),
-        C_AND_CPP_HEADER_FILE_PATTERNS
+        C_AND_CPP_FILE_PATTERNS  // This includes both .c/.cpp and .h/.hpp patterns
             .iter()
             .map(|s| s.to_string())
             .collect(),
@@ -200,18 +201,24 @@ fn generate_compile_commands(
             .map(|s| s.to_string())
             .collect(),
     )?;
-    // Walk the directory tree
-    for path in header_files {
-        // Convert path to be relative to project root
-        let rel_path = absolute_path_to_relative_path_string(&path);
-        let compiler = get_compiler_for_file(&path);
 
+    for path in all_files {
+        let relative_path = absolute_path_to_relative_path_string(&path);
+        let compiler = if is_cpp_file(&path) { "/usr/bin/c++" } else { "/usr/bin/cc" };
+        
         commands.push(CompileCommand {
             directory: project_root.clone(),
-            command: format!("/usr/bin/{} -I. -Iinclude -c {}", compiler, rel_path),
-            file: rel_path,
+            // Add more comprehensive compiler flags
+            command: format!(
+                "{} -Wall -Wextra -I. -Iinclude -std={}11 -c {}", 
+                compiler,
+                if is_cpp_file(&path) { "c++" } else { "c" },
+                relative_path
+            ),
+            file: relative_path,
         });
     }
 
+    debug!("Generated compile commands for {} files", commands.len());
     Ok(commands)
 }

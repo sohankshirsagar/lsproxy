@@ -17,6 +17,10 @@ pub fn cpp_sample_path() -> String {
     "/mnt/lsproxy_root/sample_project/cpp".to_string()
 }
 
+pub fn c_sample_path() -> String {
+    "/mnt/lsproxy_root/sample_project/c".to_string()
+}
+
 pub struct TestContext {
     pub manager: Option<Manager>,
 }

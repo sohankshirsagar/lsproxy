@@ -31,3 +31,4 @@ tags
 .lsproxy_tags
 .vscode
 compile_commands.json
+**/*.idx
