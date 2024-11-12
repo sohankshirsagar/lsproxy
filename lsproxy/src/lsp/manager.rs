@@ -685,7 +685,6 @@ mod tests {
                     line: 30,
                     character: 5,
                 },
-                true,
             )
             .await?;
 
