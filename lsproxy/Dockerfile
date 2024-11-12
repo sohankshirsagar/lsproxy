@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     pipx \
+    python3-venv \
     curl \
     build-essential \
     gcc \
@@ -26,8 +27,15 @@ RUN apt-get update && apt-get install -y \
 RUN rustup component add rust-analyzer
 RUN rustup component add rustfmt
 
+# Angrily create a virtual environment
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Install pylsp
+RUN pip install jedi-language-server
+
 # Install global npm packages
-RUN npm install -g pyright typescript-language-server typescript
+RUN npm install -g typescript-language-server typescript
 
 #Install Gopls
 WORKDIR /tmp
