@@ -3,7 +3,6 @@ use tokio::process::Command;
 use super::types::AstGrepMatch;
 
 pub struct AstGrepClient {
-    pub root_path: String,
     pub config_path: String,
 }
 
