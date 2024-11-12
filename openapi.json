@@ -428,7 +428,8 @@
         "enum": [
           "python",
           "typescript_javascript",
-          "rust"
+          "rust",
+          "cpp"
         ]
       },
       "Symbol": {

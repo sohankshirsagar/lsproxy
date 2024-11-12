@@ -11,7 +11,7 @@ use crate::utils::workspace_documents::{
     WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, PYRIGHT_ROOT_FILES,
 };
 
-pub struct PyrightClient {
+pub struct JediClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
     workspace_documents: WorkspaceDocumentsHandler,
@@ -19,7 +19,7 @@ pub struct PyrightClient {
 }
 
 #[async_trait]
-impl LspClient for PyrightClient {
+impl LspClient for JediClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -41,7 +41,7 @@ impl LspClient for PyrightClient {
     }
 }
 
-impl PyrightClient {
+impl JediClient {
     pub async fn new(
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,

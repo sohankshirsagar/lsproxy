@@ -61,6 +61,8 @@ pub enum SupportedLanguages {
     TypeScriptJavaScript,
     #[serde(rename = "rust")]
     Rust,
+    #[serde(rename = "cpp")]
+    CPP,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]

@@ -13,16 +13,19 @@ pub fn rust_sample_path() -> String {
     "/mnt/lsproxy_root/sample_project/rust".to_string()
 }
 
+pub fn cpp_sample_path() -> String {
+    "/mnt/lsproxy_root/sample_project/cpp".to_string()
+}
+
+pub fn c_sample_path() -> String {
+    "/mnt/lsproxy_root/sample_project/c".to_string()
+}
+
 pub struct TestContext {
     pub manager: Option<Manager>,
 }
 
 impl TestContext {
-    pub fn setup_no_manager(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        set_thread_local_mount_dir(file_path);
-        Ok(Self { manager: None })
-    }
-
     pub async fn setup(file_path: &str, manager: bool) -> Result<Self, Box<dyn std::error::Error>> {
         set_thread_local_mount_dir(file_path);
         if manager {

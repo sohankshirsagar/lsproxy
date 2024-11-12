@@ -12,8 +12,12 @@ RUN apt-get update && apt-get install -y \
     git \
     python3 \
     python3-pip \
+    pipx \
     python3-venv \
     curl \
+    build-essential \
+    gcc \
+    g++ \
     && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean \
@@ -32,6 +36,14 @@ RUN pip install jedi-language-server
 
 # Install global npm packages
 RUN npm install -g typescript-language-server typescript
+
+#Install Clangd
+RUN apt update && apt install -y clangd
+
+WORKDIR /usr/src/app
+
+# Install compiledb
+RUN pipx install compiledb && pipx ensurepath
 
 RUN cargo install cargo-llvm-cov
 RUN rustup component add llvm-tools-preview

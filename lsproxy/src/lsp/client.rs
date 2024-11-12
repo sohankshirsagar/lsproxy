@@ -295,7 +295,7 @@ pub trait LspClient: Send {
             work_done_progress_params: WorkDoneProgressParams::default(),
             partial_result_params: PartialResultParams::default(),
             context: ReferenceContext {
-                include_declaration: true
+                include_declaration: true,
             },
         };
 

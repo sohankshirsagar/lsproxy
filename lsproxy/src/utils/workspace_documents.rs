@@ -41,6 +41,20 @@ pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js"
 pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
 pub const RUST_ANALYZER_FILE_PATTERNS: &[&str] = &["**/*.rs"];
 
+pub const CPP_ROOT_FILES: &[&str] = &[
+    "makefile",
+    ".clangd",
+    ".clang-tidy",
+    ".clang-format",
+    "compile_commands.json",
+    "compile_flags.txt",
+    "configure.ac",
+    ".git",
+];
+pub const C_AND_CPP_FILE_PATTERNS: &[&str] = &[
+    "**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx", "**/*.h", "**/*.hpp", "**/*.hxx", "**/*.hh",
+];
+
 #[async_trait::async_trait]
 pub trait WorkspaceDocuments: Send + Sync {
     async fn read_text_document(

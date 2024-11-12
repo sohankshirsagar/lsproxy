@@ -11,7 +11,7 @@ pub fn search_files(
 ) -> std::io::Result<Vec<std::path::PathBuf>> {
     let mut files = Vec::new();
     let walk = build_walk(path, exclude_patterns);
-
+    // println!("Searching for {:?}",include_patterns);
     for result in walk {
         match result {
             Ok(entry) => {
@@ -61,7 +61,11 @@ pub fn search_directories(
             Err(err) => eprintln!("Error: {}", err),
         }
     }
-    Ok(dirs)
+    Ok(dirs
+        .into_iter()
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect())
 }
 
 fn build_walk(path: &Path, exclude_patterns: Vec<String>) -> ignore::Walk {

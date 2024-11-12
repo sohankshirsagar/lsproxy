@@ -1,0 +1,8 @@
+id: type
+language: cpp
+rule:
+  kind: type_identifier
+  inside:
+    any:
+      - kind: type_definition
+      - kind: enum_specifier

@@ -31,7 +31,6 @@ impl ProcessHandler {
 #[async_trait::async_trait]
 impl Process for ProcessHandler {
     async fn send(&mut self, data: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        debug!("Sending data to process: {}", data);
         let mut stdin = self.stdin.lock().await;
         stdin.write_all(data.as_bytes()).await?;
         stdin.flush().await?;
