@@ -58,7 +58,6 @@ pub async fn find_references(
                 line: info.identifier_position.position.line,
                 character: info.identifier_position.position.character,
             },
-            info.include_declaration,
         )
         .await;
 
@@ -216,7 +215,6 @@ mod test {
                     character: 6,
                 },
             },
-            include_declaration: false,
             include_code_context_lines: None,
             include_raw_response: false,
         });
@@ -237,6 +235,13 @@ mod test {
         let expected_response = ReferencesResponse {
             raw_response: None,
             references: vec![
+                FilePosition {
+                    path: String::from("graph.py"),
+                    position: Position {
+                        line: 0,
+                        character: 6,
+                    },
+                },
                 FilePosition {
                     path: String::from("main.py"),
                     position: Position {
@@ -272,7 +277,6 @@ mod test {
                     character: 11,
                 },
             },
-            include_declaration: false,
             include_code_context_lines: None,
             include_raw_response: false,
         });
@@ -335,6 +339,13 @@ mod test {
                     position: Position {
                         line: 93,
                         character: 23,
+                    },
+                },
+                FilePosition {
+                    path: String::from("src/node.rs"),
+                    position: Position {
+                        line: 3,
+                        character: 11,
                     },
                 },
                 FilePosition {

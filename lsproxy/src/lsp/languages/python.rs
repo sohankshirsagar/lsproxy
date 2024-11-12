@@ -46,8 +46,7 @@ impl PyrightClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let process = Command::new("pyright-langserver")
-            .arg("--stdio")
+        let process = Command::new("jedi-language-server")
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

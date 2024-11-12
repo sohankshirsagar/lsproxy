@@ -248,7 +248,6 @@ impl Manager {
         &self,
         file_path: &str,
         position: Position,
-        include_declaration: bool,
     ) -> Result<Vec<Location>, LspManagerError> {
         let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
@@ -269,7 +268,7 @@ impl Manager {
         let mut locked_client = client.lock().await;
 
         locked_client
-            .text_document_reference(full_path_str, position, include_declaration)
+            .text_document_reference(full_path_str, position)
             .await
             .map_err(|e| {
                 LspManagerError::InternalError(format!("Reference retrieval failed: {}", e))
@@ -760,11 +759,23 @@ mod tests {
                     line: 0,
                     character: 6,
                 },
-                false,
             )
             .await?;
 
         let expected = vec![
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/graph.py").unwrap(),
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 0,
+                        character: 6,
+                    },
+                    end: lsp_types::Position {
+                        line: 0,
+                        character: 16,
+                    },
+                },
+            },
             Location {
                 uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
                 range: Range {
@@ -983,13 +994,25 @@ mod tests {
                 file_path,
                 lsp_types::Position {
                     line: 0,
-                    character: 6,
+                    character: 9,
                 },
-                false,
             )
             .await?;
 
         let expected = vec![
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 0,
+                        character: 9,
+                    },
+                    end: lsp_types::Position {
+                        line: 0,
+                        character: 18,
+                    },
+                },
+            },
             Location {
                 uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
                 range: Range {
@@ -1105,7 +1128,6 @@ mod tests {
                     line: 3,
                     character: 11,
                 },
-                false,
             )
             .await?;
 
@@ -1119,6 +1141,19 @@ mod tests {
             })
         });
         let mut expected = vec![
+            Location {
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/node.rs")?,
+                range: Range {
+                    start: lsp_types::Position {
+                        line: 3,
+                        character: 11,
+                    },
+                    end: lsp_types::Position {
+                        line: 3,
+                        character: 15,
+                    },
+                },
+            },
             Location {
                 uri: Url::parse("file:///mnt/lsproxy_root/sample_project/rust/src/node.rs")?,
                 range: Range {
