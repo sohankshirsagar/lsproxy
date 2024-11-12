@@ -210,9 +210,8 @@ fn generate_compile_commands(
             directory: project_root.clone(),
             // Add more comprehensive compiler flags
             command: format!(
-                "{} -Wall -Wextra -I. -Iinclude -std={}11 -c {}", 
+                "{} -Wall -Wextra -I. -Iinclude -c {}", 
                 compiler,
-                if is_cpp_file(&path) { "c++" } else { "c" },
                 relative_path
             ),
             file: relative_path,
