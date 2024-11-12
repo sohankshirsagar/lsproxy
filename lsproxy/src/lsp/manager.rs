@@ -360,8 +360,8 @@ mod tests {
     use super::*;
     use crate::api_types::{FilePosition, FileRange, Position, Symbol, SymbolResponse};
     use crate::test_utils::{
-        c_sample_path, cpp_sample_path, js_sample_path, python_sample_path, rust_sample_path,
-        TestContext,
+        c_sample_path, cpp_sample_path, go_sample_path, js_sample_path, python_sample_path,
+        rust_sample_path, TestContext,
     };
     use lsp_types::{Range, Url};
 
@@ -671,6 +671,112 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_file_symbols_go() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&go_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let file_path = "main.go";
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+        let symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+
+        let expected = vec![
+            Symbol {
+                name: String::from("rcNode"),
+                kind: String::from("type"),
+                identifier_position: FilePosition {
+                    path: String::from("main.go"),
+                    position: Position {
+                        line: 9,
+                        character: 5,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.go"),
+                    start: Position {
+                        line: 9,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 9,
+                        character: 30,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("To"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("main.go"),
+                    position: Position {
+                        line: 17,
+                        character: 17,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.go"),
+                    start: Position {
+                        line: 17,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 32,
+                        character: 1,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("Heuristic"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("main.go"),
+                    position: Position {
+                        line: 36,
+                        character: 16,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.go"),
+                    start: Position {
+                        line: 36,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 49,
+                        character: 1,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("main"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("main.go"),
+                    position: Position {
+                        line: 51,
+                        character: 5,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("main.go"),
+                    start: Position {
+                        line: 51,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 55,
+                        character: 1,
+                    },
+                },
+            },
+        ];
+        assert_eq!(symbol_response, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_references_c() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&c_sample_path(), true).await?;
         let manager = context
@@ -703,7 +809,7 @@ mod tests {
                 },
             },
             Location {
-                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/c/main.c").unwrap(), 
+                uri: Url::parse("file:///mnt/lsproxy_root/sample_project/c/main.c").unwrap(),
                 range: Range {
                     start: lsp_types::Position {
                         line: 15,
@@ -725,19 +831,18 @@ mod tests {
                     end: lsp_types::Position {
                         line: 11,
                         character: 14,
-                  
                     },
                 },
-            }
+            },
         ];
 
         // Sort locations before comparing
         let mut actual_locations = references;
         let mut expected_locations = expected;
-        
+
         actual_locations.sort_by(|a, b| a.uri.path().cmp(&b.uri.path()));
         expected_locations.sort_by(|a, b| a.uri.path().cmp(&b.uri.path()));
-        
+
         assert_eq!(actual_locations, expected_locations);
         Ok(())
     }

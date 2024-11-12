@@ -6,7 +6,7 @@ use std::path::Path;
 use std::process::Stdio;
 
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
-use crate::utils::workspace_documents::{WorkspaceDocuments, C_AND_CPP_HEADER_FILE_PATTERNS};
+use crate::utils::workspace_documents::WorkspaceDocuments;
 use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
     utils::workspace_documents::{
@@ -192,7 +192,7 @@ fn generate_compile_commands(
     // Search for both header and source files
     let all_files = search_files(
         Path::new(&project_root),
-        C_AND_CPP_FILE_PATTERNS  // This includes both .c/.cpp and .h/.hpp patterns
+        C_AND_CPP_FILE_PATTERNS // This includes both .c/.cpp and .h/.hpp patterns
             .iter()
             .map(|s| s.to_string())
             .collect(),
@@ -204,15 +204,18 @@ fn generate_compile_commands(
 
     for path in all_files {
         let relative_path = absolute_path_to_relative_path_string(&path);
-        let compiler = if is_cpp_file(&path) { "/usr/bin/c++" } else { "/usr/bin/cc" };
-        
+        let compiler = if is_cpp_file(&path) {
+            "/usr/bin/c++"
+        } else {
+            "/usr/bin/cc"
+        };
+
         commands.push(CompileCommand {
             directory: project_root.clone(),
             // Add more comprehensive compiler flags
             command: format!(
-                "{} -Wall -Wextra -I. -Iinclude -c {}", 
-                compiler,
-                relative_path
+                "{} -Wall -Wextra -I. -Iinclude -c {}",
+                compiler, relative_path
             ),
             file: relative_path,
         });
