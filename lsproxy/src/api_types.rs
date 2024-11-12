@@ -163,11 +163,6 @@ pub struct GetDefinitionRequest {
 pub struct GetReferencesRequest {
     pub identifier_position: FilePosition,
 
-    /// Whether to include the declaration (definition) of the symbol in the response.
-    /// Defaults to false.
-    #[serde(default)]
-    pub include_declaration: bool,
-
     /// Whether to include the source code of the symbol in the response.
     /// Defaults to none.
     #[serde(default)]

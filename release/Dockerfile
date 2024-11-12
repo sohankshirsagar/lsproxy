@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     git \
     python3 \
     python3-pip \
+    python3-venv \
     curl \
     && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs \
@@ -27,8 +28,15 @@ RUN apt-get update && apt-get install -y \
 # Add rust-analyzer
 RUN rustup component add rust-analyzer
 
+# Angrily create a virtual environment
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Install pylsp
+RUN pip install jedi-language-server
+
 # Install language servers
-RUN npm install -g pyright typescript-language-server typescript
+RUN npm install -g typescript-language-server typescript
 
 # Install ast grep
 RUN cargo install ast-grep --locked
