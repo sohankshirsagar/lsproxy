@@ -281,8 +281,10 @@ pub trait LspClient: Send {
         &mut self,
         file_path: &str,
         position: Position,
-        include_declaration: bool,
     ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
+        // TODO: the jedi language server doesn't appear to respect
+        // The "includeDeclaration" param so we'll just say we're
+        // always including it
         let params = ReferenceParams {
             text_document_position: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier {
@@ -293,7 +295,7 @@ pub trait LspClient: Send {
             work_done_progress_params: WorkDoneProgressParams::default(),
             partial_result_params: PartialResultParams::default(),
             context: ReferenceContext {
-                include_declaration,
+                include_declaration: true
             },
         };
 
