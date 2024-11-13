@@ -59,8 +59,18 @@ pub trait LspClient: Send {
         debug!("Initializing LSP client with root path: {:?}", root_path);
         self.start_response_listener().await?;
 
-        let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
-        debug!("Found workspace folders: {:?}", workspace_folders);
+        let params = self.get_initialize_params(root_path).await;
+
+        let result = self
+            .send_request("initialize", Some(serde_json::to_value(params)?))
+            .await?;
+        let init_result: InitializeResult = serde_json::from_value(result)?;
+        debug!("Initialization successful: {:?}", init_result);
+        self.send_initialized().await?;
+        Ok(init_result)
+    }
+
+    fn get_capabilities(&mut self) -> ClientCapabilities {
         let mut capabilities = ClientCapabilities::default();
         capabilities.text_document = Some(TextDocumentClientCapabilities {
             document_symbol: Some(DocumentSymbolClientCapabilities {
@@ -73,21 +83,20 @@ pub trait LspClient: Send {
         capabilities.experimental = Some(serde_json::json!({
             "serverStatusNotification": true
         }));
+        capabilities
+    }
 
-        let params = InitializeParams {
-            capabilities,
-            workspace_folders: Some(workspace_folders.clone()),
-            root_uri: Some(workspace_folders[0].uri.clone()),
+    async fn get_initialize_params(&mut self, root_path: String) -> InitializeParams {
+        InitializeParams {
+            capabilities: self.get_capabilities(),
+            workspace_folders: Some(
+                self.find_workspace_folders(root_path.clone())
+                    .await
+                    .unwrap(),
+            ),
+            root_uri: Some(Url::from_file_path(&root_path).unwrap()), // primarily for python
             ..Default::default()
-        };
-
-        let result = self
-            .send_request("initialize", Some(serde_json::to_value(params)?))
-            .await?;
-        let init_result: InitializeResult = serde_json::from_value(result)?;
-        debug!("Initialization successful: {:?}", init_result);
-        self.send_initialized().await?;
-        Ok(init_result)
+        }
     }
 
     async fn send_request(
