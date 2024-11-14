@@ -66,7 +66,7 @@ impl JdtlsClient {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+            .map_err(|e| Box::new(format!("Failed to spawn Java process: {}", e)) as Box<dyn std::error::Error + Send + Sync>)?;
 
         let process_handler = ProcessHandler::new(process)
             .await
