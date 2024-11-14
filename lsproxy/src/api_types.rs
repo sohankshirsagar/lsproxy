@@ -63,6 +63,8 @@ pub enum SupportedLanguages {
     Rust,
     #[serde(rename = "cpp")]
     CPP,
+    #[serde(rename = "java")]
+    Java,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]

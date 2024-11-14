@@ -8,7 +8,7 @@ use tokio::sync::broadcast::Receiver;
 use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
-    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYRIGHT_FILE_PATTERNS, PYRIGHT_ROOT_FILES,
+    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYTHON_FILE_PATTERNS, PYTHON_ROOT_FILES,
 };
 
 pub struct JediClient {
@@ -29,7 +29,7 @@ impl LspClient for JediClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        PYRIGHT_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
+        PYTHON_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
     }
 
     fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
@@ -60,7 +60,7 @@ impl JediClient {
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            PYRIGHT_FILE_PATTERNS
+            PYTHON_FILE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
