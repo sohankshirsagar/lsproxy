@@ -1,4 +1,4 @@
-use std::{path::Path, process::Stdio};
+use std::{os::unix::fs::PermissionsExt, path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use notify_debouncer_mini::DebouncedEvent;
@@ -46,6 +46,9 @@ impl JdtlsClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let workspace_dir = Path::new("/usr/src/app/jdtls_workspace");
+        tokio::fs::create_dir_all(&workspace_dir).await?;
+        tokio::fs::set_permissions(&workspace_dir, PermissionsExt::from_mode(0o777)).await?;
         let process = Command::new("java")
             .arg("-Declipse.application=org.eclipse.jdt.ls.core.id1")
             .arg("-Dosgi.bundles.defaultStartLevel=4")
@@ -59,10 +62,9 @@ impl JdtlsClient {
             .arg("-jar")
             .arg("/opt/jdtls/plugins/org.eclipse.equinox.launcher_1.6.900.v20240613-2009.jar")
             .arg("-configuration")
-            .arg("/opt/jdtls/config_linux_arm")
+            .arg("/opt/jdtls/config_linux")
             .arg("-data")
-            .arg(root_path)
-            .current_dir(root_path)
+            .arg(workspace_dir)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
