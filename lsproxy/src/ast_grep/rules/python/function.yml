@@ -1,6 +1,22 @@
 id: function
-language: python
-rule:
+utils:
+  is_funcdef:
     kind: identifier
     inside:
       kind: function_definition
+# this rule is written a little weirdly
+# it matches an identifier inside function_definition
+# but also matches an identifier inside decorated_definition 
+# returning the range with the decorator as the outer node so the range includes the decorator
+language: python
+rule:
+    any:
+      - matches: is_funcdef
+      - inside:
+          kind: decorated_definition
+          stopBy:
+            kind: function_definition
+        matches: is_funcdef
+
+
+
