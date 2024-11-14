@@ -66,14 +66,11 @@ impl JdtlsClient {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .map_err(|e| Box::new(format!("Failed to spawn Java process: {}", e)) as Box<dyn std::error::Error + Send + Sync>)?;
+            .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(format!("Failed to spawn Java process: {}", e)))?;
 
         let process_handler = ProcessHandler::new(process)
             .await
-            .map_err(|e| {
-                error!("Failed to create ProcessHandler: {:?}", e);
-                format!("Failed to create ProcessHandler: {}", e)
-            })?;
+            .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(format!("Failed to create ProcessHandler: {}", e)))?;
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
