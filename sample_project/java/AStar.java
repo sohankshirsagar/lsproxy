@@ -92,8 +92,8 @@ public class AStar {
                 
                                     
                                         private double distance(int x, int y) {
-                        // TODO Auto-generated method stub
-                        throw new UnsupportedOperationException("Unimplemented method 'distance'");
+                                            return Math.sqrt(Math.pow(x - this.xend, 2) + Math.pow(y - this.yend, 2));
+                                        }
                     }
                 
                                         public static void main(String[] args) {
