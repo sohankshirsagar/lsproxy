@@ -136,8 +136,8 @@ public class AStar {
         }
     }
 
-    private boolean findNeighborInList(List<Node> open2, Node node) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findNeighborInList'");
+    private boolean findNeighborInList(List<Node> list, Node node) {
+        return list.stream().anyMatch(n -> n.x == node.x && n.y == node.y);
+    }
     }
 } 
