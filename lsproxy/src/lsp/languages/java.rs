@@ -59,6 +59,8 @@ impl JdtlsClient {
             .arg("--add-modules=ALL-SYSTEM")
             .arg("--add-opens")
             .arg("java.base/java.util=ALL-UNNAMED")
+            .arg("--add-opens")
+            .arg("java.base/java.lang=ALL-UNNAMED")
             .arg("-jar")
             .arg("/opt/jdtls/plugins/org.eclipse.equinox.launcher_1.6.900.v20240613-2009.jar")
             .arg("-configuration")
