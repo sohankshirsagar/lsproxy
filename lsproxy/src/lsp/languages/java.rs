@@ -70,7 +70,10 @@ impl JdtlsClient {
 
         let process_handler = ProcessHandler::new(process)
             .await
-            .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
+            .map_err(|e| {
+                error!("Failed to create ProcessHandler: {:?}", e);
+                format!("Failed to create ProcessHandler: {}", e)
+            })?;
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
