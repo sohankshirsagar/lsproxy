@@ -898,8 +898,8 @@ mod tests {
                         character: 0,
                     },
                     end: Position {
-                        line: 142,
-                        character: 1,
+                        line: 96,
+                        character: 21,
                     },
                 },
             },
@@ -964,8 +964,8 @@ mod tests {
                         character: 0,
                     },
                     end: Position {
-                        line: 96,
-                        character: 21,
+                        line: 95,
+                        character: 41,
                     },
                 },
             },
@@ -1008,12 +1008,13 @@ mod tests {
                         character: 0,
                     },
                     end: Position {
-                        line: 141,
+                        line: 140,
                         character: 5,
                     },
                 },
             },
         ];
+
         // sort symbols by name
         symbol_response.sort_by_key(|s| s.name.clone());
         expected.sort_by_key(|s| s.name.clone());
