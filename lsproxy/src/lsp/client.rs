@@ -118,7 +118,11 @@ pub trait LspClient: Send {
 
         if let Some(result) = response.result {
             Ok(result)
-        } else if let Some(error) = response.error {
+        } else if let Some(error) = response.error.clone() {
+            error!("Recieved error: {:?}", response);
+            if error.message.starts_with("KeyError") {
+                return Ok(serde_json::Value::Array(vec![]));
+            }
             Err(error.into())
         } else {
             Ok(serde_json::Value::Null)
