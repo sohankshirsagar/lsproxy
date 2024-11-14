@@ -24,13 +24,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Java
-RUN apt-get update && apt-get install -y openjdk-17-jre
-
-# Install jdtls
-RUN curl -L -o /tmp/jdt-language-server.tar.gz https://www.eclipse.org/downloads/download.php?file=/jdtls/snapshots/jdt-language-server-1.42.0-202410312059.tar.gz \
-    && mkdir -p /opt/jdtls \
-    && tar -xzf /tmp/jdt-language-server.tar.gz -C /opt/jdtls \
-    && rm /tmp/jdt-language-server.tar.gz
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jre && \
+    curl -L -o /tmp/jdt-language-server.tar.gz https://www.eclipse.org/downloads/download.php?file=/jdtls/snapshots/jdt-language-server-1.42.0-202410312059.tar.gz && \
+    mkdir -p /opt/jdtls && \
+    tar -xzf /tmp/jdt-language-server.tar.gz -C /opt/jdtls && \
+    rm /tmp/jdt-language-server.tar.gz
 
 # Add jdtls to PATH
 ENV PATH="/opt/jdtls/bin:${PATH}"
