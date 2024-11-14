@@ -228,7 +228,13 @@ pub trait LspClient: Send {
             )
             .await?;
 
-        let goto_resp: GotoDefinitionResponse = serde_json::from_value(result)?;
+        // If result is null, default to an empty array response instead of failing deserialization
+        let goto_resp: GotoDefinitionResponse = if result.is_null() {
+            GotoDefinitionResponse::Array(Vec::new())
+        } else {
+            serde_json::from_value(result)?
+        };
+
         debug!("Received goto definition response");
         Ok(goto_resp)
     }
