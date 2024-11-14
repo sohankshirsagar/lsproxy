@@ -1,0 +1,8 @@
+id: class
+language: java
+
+rule:
+  kind: identifier
+  inside:
+    kind: class_declaration
+    field: name

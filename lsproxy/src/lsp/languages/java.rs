@@ -2,16 +2,16 @@ use std::{path::Path, process::Stdio};
 
 use async_trait::async_trait;
 use notify_debouncer_mini::DebouncedEvent;
-use tokio::process::Command;
-use tokio::sync::broadcast::Receiver;
+use tokio::{process::Command, sync::broadcast::Receiver};
 
-use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
-
-use crate::utils::workspace_documents::{
-    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, PYTHON_FILE_PATTERNS, PYTHON_ROOT_FILES,
+use crate::{
+    lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
+    utils::workspace_documents::{
+        WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, JAVA_FILE_PATTERNS, JAVA_ROOT_FILES,
+    },
 };
 
-pub struct JediClient {
+pub struct JdtlsClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
     workspace_documents: WorkspaceDocumentsHandler,
@@ -19,7 +19,7 @@ pub struct JediClient {
 }
 
 #[async_trait]
-impl LspClient for JediClient {
+impl LspClient for JdtlsClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -29,7 +29,7 @@ impl LspClient for JediClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        PYTHON_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
+        JAVA_ROOT_FILES.iter().map(|&s| s.to_string()).collect()
     }
 
     fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
@@ -41,16 +41,32 @@ impl LspClient for JediClient {
     }
 }
 
-impl JediClient {
+impl JdtlsClient {
     pub async fn new(
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let process = Command::new("jedi-language-server")
+        let process = Command::new("java")
+            .arg("-Declipse.application=org.eclipse.jdt.ls.core.id1")
+            .arg("-Dosgi.bundles.defaultStartLevel=4")
+            .arg("-Declipse.product=org.eclipse.jdt.ls.core.product")
+            .arg("-Dlog.protocol=true")
+            .arg("-Dlog.level=ALL")
+            .arg("-Xmx1g")
+            .arg("--add-modules=ALL-SYSTEM")
+            .arg("--add-opens")
+            .arg("java.base/java.util=ALL-UNNAMED")
+            .arg("--add-opens")
+            .arg("java.base/java.lang=ALL-UNNAMED")
+            .arg("-jar")
+            .arg("/opt/jdtls/plugins/org.eclipse.equinox.launcher_1.6.900.v20240613-2009.jar")
+            .arg("-configuration")
+            .arg("/opt/jdtls/config_linux_arm")
+            .arg("-data")
+            .arg(root_path)
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
             .spawn()
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
 
@@ -60,10 +76,7 @@ impl JediClient {
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            PYTHON_FILE_PATTERNS
-                .iter()
-                .map(|&s| s.to_string())
-                .collect(),
+            JAVA_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
             DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())

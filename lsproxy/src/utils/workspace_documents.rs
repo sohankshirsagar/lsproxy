@@ -23,7 +23,7 @@ pub const DEFAULT_EXCLUDE_PATTERNS: &[&str] = &[
     ".git",
 ];
 
-pub const PYRIGHT_ROOT_FILES: &[&str] = &[
+pub const PYTHON_ROOT_FILES: &[&str] = &[
     "pyproject.toml",
     "setup.py",
     "setup.cfg",
@@ -32,7 +32,7 @@ pub const PYRIGHT_ROOT_FILES: &[&str] = &[
     "pyrightconfig.json",
 ];
 
-pub const PYRIGHT_FILE_PATTERNS: &[&str] = &["**/*.py"];
+pub const PYTHON_FILE_PATTERNS: &[&str] = &["**/*.py"];
 
 pub const TYPESCRIPT_ROOT_FILES: &[&str] = &["tsconfig.json", "jsconfig.json", "package.json"];
 
@@ -54,6 +54,9 @@ pub const CPP_ROOT_FILES: &[&str] = &[
 pub const C_AND_CPP_FILE_PATTERNS: &[&str] = &[
     "**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx", "**/*.h", "**/*.hpp", "**/*.hxx", "**/*.hh",
 ];
+
+pub const JAVA_ROOT_FILES: &[&str] = &["gradlew", ".git", "mvnw"];
+pub const JAVA_FILE_PATTERNS: &[&str] = &["**/*.java"];
 
 #[async_trait::async_trait]
 pub trait WorkspaceDocuments: Send + Sync {

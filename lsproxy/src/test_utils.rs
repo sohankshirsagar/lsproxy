@@ -9,6 +9,10 @@ pub fn js_sample_path() -> String {
     "/mnt/lsproxy_root/sample_project/js".to_string()
 }
 
+pub fn java_sample_path() -> String {
+    "/mnt/lsproxy_root/sample_project/java".to_string()
+}
+
 pub fn rust_sample_path() -> String {
     "/mnt/lsproxy_root/sample_project/rust".to_string()
 }

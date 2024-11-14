@@ -429,7 +429,8 @@
           "python",
           "typescript_javascript",
           "rust",
-          "cpp"
+          "cpp",
+          "java"
         ]
       },
       "Symbol": {
