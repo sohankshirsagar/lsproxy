@@ -5,6 +5,9 @@ utils:
     inside:
       kind: function_definition
 
+# this rule is written a little weirdly
+# in both cases we want to match an identifier inside a function definition
+# but in the second case we want to return the range of the decorator as the outer node
 language: python
 rule:
     any:
