@@ -877,10 +877,10 @@ mod tests {
             .ok_or("Manager is not initialized")?;
         let file_path = "AStar.java";
         let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-        let symbol_response: SymbolResponse =
+        let mut symbol_response: SymbolResponse =
             file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
 
-        let expected = vec![
+        let mut expected = vec![
             Symbol {
                 name: String::from("AStar"),
                 kind: String::from("class"),
@@ -1014,6 +1014,9 @@ mod tests {
                 },
             },
         ];
+        // sort symbols by name
+        symbol_response.sort_by_key(|s| s.name.clone());
+        expected.sort_by_key(|s| s.name.clone());
         assert_eq!(symbol_response, expected);
         Ok(())
     }
@@ -1117,6 +1120,7 @@ mod tests {
                 },
             },
         }];
+
         assert_eq!(definitions, expected);
         Ok(())
     }
