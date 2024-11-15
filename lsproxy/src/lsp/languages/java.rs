@@ -1,11 +1,13 @@
-use std::{os::unix::fs::PermissionsExt, path::Path, process::Stdio};
+use std::{error::Error, os::unix::fs::PermissionsExt, path::Path, process::Stdio};
 
 use async_trait::async_trait;
+use log::debug;
+use lsp_types::InitializeResult;
 use notify_debouncer_mini::DebouncedEvent;
 use tokio::{process::Command, sync::broadcast::Receiver};
 
 use crate::{
-    lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
+    lsp::{JsonRpcHandler, LspClient, ExpectedMessageKey, PendingRequests, ProcessHandler},
     utils::workspace_documents::{
         WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, JAVA_FILE_PATTERNS, JAVA_ROOT_FILES,
     },
@@ -38,6 +40,33 @@ impl LspClient for JdtlsClient {
 
     fn get_pending_requests(&mut self) -> &mut PendingRequests {
         &mut self.pending_requests
+    }
+
+    async fn initialize(
+        &mut self,
+        root_path: String,
+    ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
+        debug!("Initializing LSP client with root path: {:?}", root_path);
+        self.start_response_listener().await?;
+
+        let params = self.get_initialize_params(root_path).await;
+
+        let result = self
+            .send_request("initialize", Some(serde_json::to_value(params)?))
+            .await?;
+        let init_result: InitializeResult = serde_json::from_value(result)?;
+        debug!("Initialization successful: {:?}", init_result);
+        self.send_initialized().await?;
+
+        let mut notification_rx = self
+            .get_pending_requests()
+            .add_notification(ExpectedMessageKey {
+                method: "language/status".to_string(),
+                message: "ServiceReady".to_string(),
+            })
+            .await?;
+        let _ = notification_rx.recv().await?;
+        Ok(init_result)
     }
 }
 
