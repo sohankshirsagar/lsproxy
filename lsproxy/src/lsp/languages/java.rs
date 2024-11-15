@@ -7,7 +7,7 @@ use notify_debouncer_mini::DebouncedEvent;
 use tokio::{process::Command, sync::broadcast::Receiver};
 
 use crate::{
-    lsp::{JsonRpcHandler, LspClient, ExpectedMessageKey, PendingRequests, ProcessHandler},
+    lsp::{ExpectedMessageKey, JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
     utils::workspace_documents::{
         WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, JAVA_FILE_PATTERNS, JAVA_ROOT_FILES,
     },
@@ -65,7 +65,8 @@ impl LspClient for JdtlsClient {
                 message: "ServiceReady".to_string(),
             })
             .await?;
-        let _ = notification_rx.recv().await?;
+
+        tokio::time::timeout(std::time::Duration::from_secs(180), notification_rx.recv()).await??;
         Ok(init_result)
     }
 }

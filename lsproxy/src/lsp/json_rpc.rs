@@ -129,7 +129,10 @@ impl PendingRequests {
         expected_message: ExpectedMessageKey,
     ) -> Result<Receiver<JsonRpcMessage>, Box<dyn Error + Send + Sync>> {
         let (tx, rx) = channel::<JsonRpcMessage>(16);
-        self.notification_channels.lock().await.insert(expected_message, tx);
+        self.notification_channels
+            .lock()
+            .await
+            .insert(expected_message, tx);
         Ok(rx)
     }
 

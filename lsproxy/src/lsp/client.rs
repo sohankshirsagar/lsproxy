@@ -1,6 +1,6 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
-use crate::lsp::{InnerMessage, JsonRpcHandler, ExpectedMessageKey, ProcessHandler};
+use crate::lsp::{ExpectedMessageKey, InnerMessage, JsonRpcHandler, ProcessHandler};
 use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
@@ -115,8 +115,6 @@ pub trait LspClient: Send {
             loop {
                 if let Ok(raw_response) = process.receive().await {
                     if let Ok(message) = json_rpc.parse_message(&raw_response) {
-                        debug!("Parsed message id: {:?}", message.id);
-
                         if let Some(id) = message.id {
                             debug!("Received response for request {}", id);
                             if let Ok(Some(sender)) = pending_requests.remove_request(id).await {

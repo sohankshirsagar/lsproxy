@@ -56,9 +56,6 @@ impl Process for ProcessHandler {
                 return Ok(String::from_utf8(content)?);
             } else if line.starts_with("Content-Length: ") {
                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
-                debug!("Content-Length found: {:?}", content_length);
-            } else {
-                debug!("Received non-content line: {}", line.trim());
             }
             buffer.clear();
         }
