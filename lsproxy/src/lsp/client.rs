@@ -1,54 +1,23 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
-use crate::lsp::{JsonRpcHandler, ProcessHandler};
+use crate::lsp::{ExpectedMessageKey, InnerMessage, JsonRpcHandler, ProcessHandler};
 use crate::utils::file_utils::search_directories;
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
     ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position, ReferenceContext,
-    ReferenceParams, TextDocumentClientCapabilities, TextDocumentIdentifier,
-    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
-    WorkspaceSymbolParams, WorkspaceSymbolResponse,
+    InitializeParams, InitializeResult, Location, PartialResultParams, Position,
+    PublishDiagnosticsClientCapabilities, ReferenceContext, ReferenceParams, TagSupport,
+    TextDocumentClientCapabilities, TextDocumentIdentifier, TextDocumentPositionParams, Url,
+    WorkDoneProgressParams, WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
-use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
-use std::sync::Arc;
-use tokio::sync::oneshot::{channel, Sender};
-use tokio::sync::Mutex;
 
 use crate::utils::workspace_documents::{WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS};
 
-#[derive(Clone)]
-pub struct PendingRequests {
-    channels: Arc<Mutex<HashMap<u64, Sender<JsonRpcMessage>>>>,
-}
-
-impl PendingRequests {
-    pub fn new() -> Self {
-        Self {
-            channels: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    async fn add(
-        &self,
-        id: u64,
-        sender: Sender<JsonRpcMessage>,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.channels.lock().await.insert(id, sender);
-        Ok(())
-    }
-
-    async fn remove(
-        &self,
-        id: u64,
-    ) -> Result<Option<Sender<JsonRpcMessage>>, Box<dyn Error + Send + Sync>> {
-        Ok(self.channels.lock().await.remove(&id))
-    }
-}
+use super::PendingRequests;
 
 #[async_trait]
 pub trait LspClient: Send {
@@ -76,6 +45,14 @@ pub trait LspClient: Send {
             document_symbol: Some(DocumentSymbolClientCapabilities {
                 hierarchical_document_symbol_support: Some(true),
                 ..Default::default()
+            }),
+            // Turn off diagnostics for performance, we don't use them at the moment
+            publish_diagnostics: Some(PublishDiagnosticsClientCapabilities {
+                related_information: Some(false),
+                tag_support: Some(TagSupport { value_set: vec![] }),
+                code_description_support: Some(false),
+                data_support: Some(false),
+                version_support: Some(false),
             }),
             ..Default::default()
         });
@@ -106,13 +83,13 @@ pub trait LspClient: Send {
     ) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
         let (id, request) = self.get_json_rpc().create_request(method, params);
 
-        let (response_sender, response_receiver) = channel::<JsonRpcMessage>();
-        self.get_pending_requests().add(id, response_sender).await?;
+        let mut response_receiver = self.get_pending_requests().add_request(id).await?;
 
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
 
         let response = response_receiver
+            .recv()
             .await
             .map_err(|e| format!("Failed to receive response: {}", e))?;
 
@@ -136,32 +113,36 @@ pub trait LspClient: Send {
 
         tokio::spawn(async move {
             loop {
-                match process.receive().await {
-                    Ok(raw_response) => {
-                        match json_rpc.parse_message(&raw_response) {
-                            Ok(message) => {
-                                debug!("Parsed message id: {:?}", message.id);
-                                if let Some(id) = message.id {
-                                    debug!("Received response for request {}", id);
-                                    if let Some(sender) = pending_requests.remove(id).await.unwrap()
-                                    {
-                                        let message_clone = message.clone();
-                                        if sender.send(message_clone).is_err() {
-                                            error!("Failed to send response for request {}", id);
-                                        }
-                                    } else {
-                                        error!("Failed to remove pending request for {}", id);
-                                        error!("Message: {:?}", message);
-                                    }
-                                } else {
-                                    // Handle notifications or other non-request messages
-                                    debug!("Received non-request message: {:?}", message);
+                if let Ok(raw_response) = process.receive().await {
+                    if let Ok(message) = json_rpc.parse_message(&raw_response) {
+                        if let Some(id) = message.id {
+                            debug!("Received response for request {}", id);
+                            if let Ok(Some(sender)) = pending_requests.remove_request(id).await {
+                                if sender.send(message.clone()).is_err() {
+                                    error!("Failed to send response for request {}", id);
                                 }
+                            } else {
+                                error!(
+                                    "Failed to remove pending request {} - Message: {:?}",
+                                    id, message
+                                );
                             }
-                            Err(e) => error!("Failed to parse message: {}", e),
+                        } else if let Some(params) = message
+                            .params
+                            .clone()
+                            .and_then(|p| serde_json::from_value::<InnerMessage>(p).ok())
+                        {
+                            let message_key = ExpectedMessageKey {
+                                method: message.method.clone().unwrap(),
+                                message: params.message,
+                            };
+                            if let Some(sender) =
+                                pending_requests.remove_notification(message_key).await
+                            {
+                                sender.send(message).unwrap();
+                            }
                         }
                     }
-                    Err(e) => error!("Error receiving message: {}", e),
                 }
             }
         });
