@@ -7,8 +7,9 @@ use crate::lsp::languages::{
 };
 use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, JAVA_FILE_PATTERNS,
-    PYTHON_FILE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS, TYPESCRIPT_FILE_PATTERNS,
+    WorkspaceDocuments, C_AND_CPP_EXTENSIONS, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS,
+    JAVA_EXTENSIONS, JAVA_FILE_PATTERNS, PYTHON_EXTENSIONS, PYTHON_FILE_PATTERNS, RUST_EXTENSIONS,
+    RUST_FILE_PATTERNS, TYPESCRIPT_EXTENSIONS, TYPESCRIPT_FILE_PATTERNS,
 };
 use log::{debug, error, warn};
 use lsp_types::{DocumentSymbolResponse, GotoDefinitionResponse, Location, Position, Range};
@@ -81,10 +82,9 @@ impl Manager {
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
-                SupportedLanguages::Rust => RUST_ANALYZER_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
+                SupportedLanguages::Rust => {
+                    RUST_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
+                }
                 SupportedLanguages::CPP => C_AND_CPP_FILE_PATTERNS
                     .iter()
                     .map(|&s| s.to_string())
@@ -293,16 +293,20 @@ impl Manager {
     }
 
     fn detect_language(&self, file_path: &str) -> Result<SupportedLanguages, LspManagerError> {
-        let path: PathBuf = PathBuf::from(file_path);
-        match path.extension().and_then(|ext| ext.to_str()) {
-            Some("py") => Ok(SupportedLanguages::Python),
-            Some("js") | Some("ts") | Some("jsx") | Some("tsx") => {
+        let path = PathBuf::from(file_path);
+        let extension = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .ok_or_else(|| LspManagerError::UnsupportedFileType(file_path.to_string()))?;
+
+        match extension {
+            ext if PYTHON_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Python),
+            ext if TYPESCRIPT_EXTENSIONS.contains(&ext) => {
                 Ok(SupportedLanguages::TypeScriptJavaScript)
             }
-            Some("rs") => Ok(SupportedLanguages::Rust),
-            Some("cpp") | Some("cc") | Some("cxx") | Some("h") | Some("hpp") | Some("hxx")
-            | Some("hh") | Some("c") => Ok(SupportedLanguages::CPP),
-            Some("java") => Ok(SupportedLanguages::Java),
+            ext if RUST_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Rust),
+            ext if C_AND_CPP_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::CPP),
+            ext if JAVA_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Java),
             _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
         }
     }

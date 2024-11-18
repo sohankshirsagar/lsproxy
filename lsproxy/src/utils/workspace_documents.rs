@@ -32,14 +32,17 @@ pub const PYTHON_ROOT_FILES: &[&str] = &[
     "pyrightconfig.json",
 ];
 
-pub const PYTHON_FILE_PATTERNS: &[&str] = &["**/*.py"];
+pub const PYTHON_FILE_PATTERNS: &[&str] = &["**/*.py", "**/*.pyx", "**/*.pyi"];
+pub const PYTHON_EXTENSIONS: &[&str] = &["py", "pyx", "pyi"];
 
 pub const TYPESCRIPT_ROOT_FILES: &[&str] = &["tsconfig.json", "jsconfig.json", "package.json"];
 
 pub const TYPESCRIPT_FILE_PATTERNS: &[&str] = &["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
+pub const TYPESCRIPT_EXTENSIONS: &[&str] = &["ts", "tsx", "js", "jsx"];
 
-pub const RUST_ANALYZER_ROOT_FILES: &[&str] = &["Cargo.toml"];
-pub const RUST_ANALYZER_FILE_PATTERNS: &[&str] = &["**/*.rs"];
+pub const RUST_ROOT_FILES: &[&str] = &["Cargo.toml"];
+pub const RUST_FILE_PATTERNS: &[&str] = &["**/*.rs"];
+pub const RUST_EXTENSIONS: &[&str] = &["rs"];
 
 pub const CPP_ROOT_FILES: &[&str] = &[
     "makefile",
@@ -54,9 +57,11 @@ pub const CPP_ROOT_FILES: &[&str] = &[
 pub const C_AND_CPP_FILE_PATTERNS: &[&str] = &[
     "**/*.cpp", "**/*.cc", "**/*.c", "**/*.cxx", "**/*.h", "**/*.hpp", "**/*.hxx", "**/*.hh",
 ];
+pub const C_AND_CPP_EXTENSIONS: &[&str] = &["cpp", "cc", "c", "cxx", "h", "hpp", "hxx", "hh"];
 
 pub const JAVA_ROOT_FILES: &[&str] = &["gradlew", ".git", "mvnw"];
 pub const JAVA_FILE_PATTERNS: &[&str] = &["**/*.java"];
+pub const JAVA_EXTENSIONS: &[&str] = &["java"];
 
 #[async_trait::async_trait]
 pub trait WorkspaceDocuments: Send + Sync {
