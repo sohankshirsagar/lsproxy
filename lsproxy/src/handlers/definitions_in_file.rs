@@ -36,7 +36,10 @@ pub async fn definitions_in_file(
     data: Data<AppState>,
     info: Query<FileSymbolsRequest>,
 ) -> HttpResponse {
-    info!("Received get_symbols request for file: {}", info.file_path);
+    info!(
+        "Received definitions in file request for file: {}",
+        info.file_path
+    );
     let manager = match data.manager.lock() {
         Ok(guard) => guard,
         Err(e) => {

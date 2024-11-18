@@ -14,5 +14,8 @@ rule:
       - inside:
           kind: decorated_definition
           stopBy: end
+          has:
+            kind:
+              function_definition
         matches: is_funcdef
       - matches: is_funcdef

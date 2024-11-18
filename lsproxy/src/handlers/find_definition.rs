@@ -191,7 +191,7 @@ mod test {
             definitions: vec![FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 0,
+                    line: 1,
                     character: 6,
                 },
             }],
