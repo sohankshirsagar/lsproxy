@@ -46,7 +46,7 @@ RUN rustup component add rustfmt
 RUN python3 -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
-# Install pylsp
+# Install jedi for python
 RUN pip install jedi-language-server
 
 # Install global npm packages
