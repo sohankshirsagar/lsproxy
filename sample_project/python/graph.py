@@ -1,3 +1,4 @@
+@setmodule("graph")
 class AStarGraph(object):
     # Define a class board like grid with two barriers
 
@@ -19,6 +20,10 @@ class AStarGraph(object):
                 (3, 2),
             ]
         )
+
+    @property
+    def barriers():
+        return self.barriers
 
     def heuristic(self, start, goal):
         # Use Chebyshev distance heuristic if we can move one square either

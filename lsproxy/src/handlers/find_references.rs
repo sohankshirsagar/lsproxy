@@ -211,7 +211,7 @@ mod test {
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 0,
+                    line: 1,
                     character: 6,
                 },
             },
@@ -238,7 +238,7 @@ mod test {
                 FilePosition {
                     path: String::from("graph.py"),
                     position: Position {
-                        line: 0,
+                        line: 1,
                         character: 6,
                     },
                 },

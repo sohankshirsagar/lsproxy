@@ -13,8 +13,7 @@ use tokio::sync::broadcast::Receiver;
 use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
-    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_ANALYZER_FILE_PATTERNS,
-    RUST_ANALYZER_ROOT_FILES,
+    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_FILE_PATTERNS, RUST_ROOT_FILES,
 };
 
 pub struct RustAnalyzerClient {
@@ -81,10 +80,7 @@ impl LspClient for RustAnalyzerClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        RUST_ANALYZER_ROOT_FILES
-            .iter()
-            .map(|&s| s.to_owned())
-            .collect()
+        RUST_ROOT_FILES.iter().map(|&s| s.to_owned()).collect()
     }
 
     fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
@@ -126,10 +122,7 @@ impl RustAnalyzerClient {
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            RUST_ANALYZER_FILE_PATTERNS
-                .iter()
-                .map(|&s| s.to_string())
-                .collect(),
+            RUST_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
             DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
