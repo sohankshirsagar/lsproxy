@@ -363,8 +363,8 @@ mod tests {
     use super::*;
     use crate::api_types::{FilePosition, FileRange, Position, Symbol, SymbolResponse};
     use crate::test_utils::{
-        c_sample_path, cpp_sample_path, java_sample_path, js_sample_path, python_sample_path, typescript_sample_path, go_sample_path,
-        rust_sample_path, TestContext,
+        c_sample_path, cpp_sample_path, go_sample_path, java_sample_path, js_sample_path,
+        python_sample_path, rust_sample_path, typescript_sample_path, TestContext,
     };
     use lsp_types::{Range, Url};
 
@@ -1103,30 +1103,28 @@ mod tests {
         let mut symbol_response: SymbolResponse =
             file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
 
-        let mut expected = vec![
-            Symbol {
-                name: String::from("findNeighborInList"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 138,
-                        character: 20,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 138,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 140,
-                        character: 5,
-                    },
+        let mut expected = vec![Symbol {
+            name: String::from("findNeighborInList"),
+            kind: String::from("method"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.java"),
+                position: Position {
+                    line: 138,
+                    character: 20,
                 },
             },
-        ];
+            range: FileRange {
+                path: String::from("AStar.java"),
+                start: Position {
+                    line: 138,
+                    character: 0,
+                },
+                end: Position {
+                    line: 140,
+                    character: 5,
+                },
+            },
+        }];
         // sort symbols by name
         symbol_response.sort_by_key(|s| s.name.clone());
         expected.sort_by_key(|s| s.name.clone());
@@ -1148,24 +1146,90 @@ mod tests {
 
         let mut expected = vec![
             Symbol {
-                name: String::from("findNeighborInList"),
-                kind: String::from("method"),
+                name: String::from("Node"),
+                kind: String::from("class"),
                 identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
+                    path: String::from("node.ts"),
                     position: Position {
-                        line: 138,
-                        character: 20,
+                        line: 0,
+                        character: 13,
                     },
                 },
                 range: FileRange {
-                    path: String::from("AStar.java"),
+                    path: String::from("node.ts"),
                     start: Position {
-                        line: 138,
+                        line: 0,
                         character: 0,
                     },
                     end: Position {
-                        line: 140,
-                        character: 5,
+                        line: 14,
+                        character: 1,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("constructor"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("node.ts"),
+                    position: Position {
+                        line: 1,
+                        character: 4,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("node.ts"),
+                    start: Position {
+                        line: 1,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 7,
+                        character: 8,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("f"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("node.ts"),
+                    position: Position {
+                        line: 10,
+                        character: 4,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("node.ts"),
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 37,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("toString"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("node.ts"),
+                    position: Position {
+                        line: 13,
+                        character: 4,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("node.ts"),
+                    start: Position {
+                        line: 13,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 13,
+                        character: 57,
                     },
                 },
             },
@@ -1191,23 +1255,111 @@ mod tests {
 
         let mut expected = vec![
             Symbol {
-                name: String::from("findNeighborInList"),
-                kind: String::from("method"),
+                name: String::from("PathfinderDisplay"),
+                kind: String::from("function"),
                 identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
+                    path: String::from("PathfinderDisplay.tsx"),
                     position: Position {
-                        line: 138,
-                        character: 20,
+                        line: 12,
+                        character: 13,
                     },
                 },
                 range: FileRange {
-                    path: String::from("AStar.java"),
+                    path: String::from("PathfinderDisplay.tsx"),
                     start: Position {
-                        line: 138,
+                        line: 12,
                         character: 0,
                     },
                     end: Position {
-                        line: 140,
+                        line: 125,
+                        character: 1,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("PathfinderDisplayProps"),
+                kind: String::from("interface"),
+                identifier_position: FilePosition {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    position: Position {
+                        line: 5,
+                        character: 10,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 1,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("findPath"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    position: Position {
+                        line: 32,
+                        character: 10,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    start: Position {
+                        line: 32,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 38,
+                        character: 5,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("getCellColor"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    position: Position {
+                        line: 52,
+                        character: 10,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    start: Position {
+                        line: 52,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 61,
+                        character: 5,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("toggleCell"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    position: Position {
+                        line: 63,
+                        character: 10,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("PathfinderDisplay.tsx"),
+                    start: Position {
+                        line: 63,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 71,
                         character: 5,
                     },
                 },
@@ -1232,30 +1384,28 @@ mod tests {
         let mut symbol_response: SymbolResponse =
             file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
 
-        let mut expected = vec![
-            Symbol {
-                name: String::from("findNeighborInList"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 138,
-                        character: 20,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 138,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 140,
-                        character: 5,
-                    },
+        let mut expected = vec![Symbol {
+            name: String::from("findNeighborInList"),
+            kind: String::from("method"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.java"),
+                position: Position {
+                    line: 138,
+                    character: 20,
                 },
             },
-        ];
+            range: FileRange {
+                path: String::from("AStar.java"),
+                start: Position {
+                    line: 138,
+                    character: 0,
+                },
+                end: Position {
+                    line: 140,
+                    character: 5,
+                },
+            },
+        }];
         // sort symbols by name
         symbol_response.sort_by_key(|s| s.name.clone());
         expected.sort_by_key(|s| s.name.clone());
@@ -1462,7 +1612,6 @@ mod tests {
         Ok(())
     }
 
-
     #[tokio::test]
     async fn test_references_java() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&java_sample_path(), true).await?;
@@ -1566,7 +1715,6 @@ mod tests {
         assert_eq!(definitions, expected);
         Ok(())
     }
-
 
     #[tokio::test]
     async fn test_references_js() -> Result<(), Box<dyn std::error::Error>> {

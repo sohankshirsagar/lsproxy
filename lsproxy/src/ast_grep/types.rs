@@ -23,11 +23,7 @@ pub struct AstGrepMatch {
 
 impl AstGrepMatch {
     pub fn get_source_code(&self) -> String {
-        self.meta_variables
-            .single
-            .code
-            .text
-            .clone()
+        self.meta_variables.single.code.text.clone()
     }
 }
 
@@ -109,13 +105,7 @@ impl From<AstGrepMatch> for Symbol {
             range: FileRange {
                 path: path.clone(),
                 start: Position {
-                    line: ast_match
-                        .meta_variables
-                        .single
-                        .code
-                        .range
-                        .start
-                        .line as u32,
+                    line: ast_match.meta_variables.single.code.range.start.line as u32,
                     // character: ast_match
                     //     .meta_variables
                     //     .single
@@ -126,20 +116,8 @@ impl From<AstGrepMatch> for Symbol {
                     character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
                 },
                 end: Position {
-                    line: ast_match
-                        .meta_variables
-                        .single
-                        .code
-                        .range
-                        .end
-                        .line as u32,
-                    character: ast_match
-                        .meta_variables
-                        .single
-                        .code
-                        .range
-                        .end
-                        .column as u32,
+                    line: ast_match.meta_variables.single.code.range.end.line as u32,
+                    character: ast_match.meta_variables.single.code.range.end.column as u32,
                 },
             },
         }
