@@ -4,3 +4,4 @@ rule:
     kind: identifier
     inside:
       kind: class_definition
+      pattern: $CODE

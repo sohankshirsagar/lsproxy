@@ -3,6 +3,7 @@ language: javascript
 rule:
   kind: identifier
   inside:
+    pattern: $CODE
     kind: variable_declarator
     not:
         has:

@@ -5,4 +5,4 @@ rule:
   kind: identifier
   inside:
     kind: method_declaration
-    field: name
+    pattern: $CODE

@@ -5,4 +5,4 @@ rule:
   kind: identifier
   inside:
     kind: interface_declaration
-    field: name
+    pattern: $CODE

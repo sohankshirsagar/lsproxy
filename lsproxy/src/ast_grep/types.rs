@@ -111,19 +111,15 @@ impl From<AstGrepMatch> for Symbol {
                 start: Position {
                     line: ast_match
                         .meta_variables
-                        .multi
-                        .secondary
-                        .last()
-                        .expect("Expected at least one secondary variable")
+                        .single
+                        .code
                         .range
                         .start
                         .line as u32,
                     // character: ast_match
                     //     .meta_variables
-                    //     .multi
-                    //     .secondary
-                    //     .last()
-                    //     .unwrap()
+                    //     .single
+                    //     .code
                     //     .range
                     //     .start
                     //     .column as u32,
@@ -132,19 +128,15 @@ impl From<AstGrepMatch> for Symbol {
                 end: Position {
                     line: ast_match
                         .meta_variables
-                        .multi
-                        .secondary
-                        .last()
-                        .expect("Expected at least one secondary variable")
+                        .single
+                        .code
                         .range
                         .end
                         .line as u32,
                     character: ast_match
                         .meta_variables
-                        .multi
-                        .secondary
-                        .last()
-                        .expect("Expected at least one secondary variable")
+                        .single
+                        .code
                         .range
                         .end
                         .column as u32,

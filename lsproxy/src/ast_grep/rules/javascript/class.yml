@@ -6,3 +6,4 @@ rule:
     any:
       - kind: class_declaration
       - kind: class
+    pattern: $CODE

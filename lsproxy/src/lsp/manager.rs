@@ -363,7 +363,7 @@ mod tests {
     use super::*;
     use crate::api_types::{FilePosition, FileRange, Position, Symbol, SymbolResponse};
     use crate::test_utils::{
-        c_sample_path, cpp_sample_path, java_sample_path, js_sample_path, python_sample_path,
+        c_sample_path, cpp_sample_path, java_sample_path, js_sample_path, python_sample_path, typescript_sample_path, go_sample_path,
         rust_sample_path, TestContext,
     };
     use lsp_types::{Range, Url};
@@ -446,7 +446,7 @@ mod tests {
                     },
                     end: Position {
                         line: 6,
-                        character: 12,
+                        character: 51,
                     },
                 },
             },
@@ -468,7 +468,7 @@ mod tests {
                     },
                     end: Position {
                         line: 6,
-                        character: 12,
+                        character: 51,
                     },
                 },
             },
@@ -667,7 +667,7 @@ mod tests {
             },
             Symbol {
                 name: String::from("aStar"),
-                kind: String::from("function"),
+                kind: String::from("function-definition"),
                 identifier_position: FilePosition {
                     path: String::from("cpp_classes/astar.cpp"),
                     position: Position {
@@ -689,7 +689,7 @@ mod tests {
             },
             Symbol {
                 name: String::from("calcDist"),
-                kind: String::from("function"),
+                kind: String::from("function-definition"),
                 identifier_position: FilePosition {
                     path: String::from("cpp_classes/astar.cpp"),
                     position: Position {
@@ -711,7 +711,7 @@ mod tests {
             },
             Symbol {
                 name: String::from("isValid"),
-                kind: String::from("function"),
+                kind: String::from("function-definition"),
                 identifier_position: FilePosition {
                     path: String::from("cpp_classes/astar.cpp"),
                     position: Position {
@@ -733,7 +733,7 @@ mod tests {
             },
             Symbol {
                 name: String::from("existPoint"),
-                kind: String::from("function"),
+                kind: String::from("function-definition"),
                 identifier_position: FilePosition {
                     path: String::from("cpp_classes/astar.cpp"),
                     position: Position {
@@ -755,7 +755,7 @@ mod tests {
             },
             Symbol {
                 name: String::from("fillOpen"),
-                kind: String::from("function"),
+                kind: String::from("function-definition"),
                 identifier_position: FilePosition {
                     path: String::from("cpp_classes/astar.cpp"),
                     position: Position {
@@ -777,7 +777,7 @@ mod tests {
             },
             Symbol {
                 name: String::from("search"),
-                kind: String::from("function"),
+                kind: String::from("function-definition"),
                 identifier_position: FilePosition {
                     path: String::from("cpp_classes/astar.cpp"),
                     position: Position {
@@ -799,7 +799,7 @@ mod tests {
             },
             Symbol {
                 name: String::from("path"),
-                kind: String::from("function"),
+                kind: String::from("function-definition"),
                 identifier_position: FilePosition {
                     path: String::from("cpp_classes/astar.cpp"),
                     position: Position {
@@ -821,6 +821,444 @@ mod tests {
             },
         ];
 
+        assert_eq!(symbol_response, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&js_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+
+        let file_path = "astar_search.js";
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+        // TODO: include source code and update expected
+        let mut symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+
+        let mut expected = vec![
+            Symbol {
+                name: String::from("manhattan"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 0,
+                        character: 9,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 2,
+                        character: 1,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("aStar"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 4,
+                        character: 9,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 4,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 58,
+                        character: 1,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("lambda"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 17,
+                        character: 16,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 17,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 26,
+                        character: 9,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("board"),
+                kind: String::from("variable"),
+                identifier_position: FilePosition {
+                    path: String::from("astar_search.js"),
+                    position: Position {
+                        line: 60,
+                        character: 6,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("astar_search.js"),
+                    start: Position {
+                        line: 60,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 69,
+                        character: 1,
+                    },
+                },
+            },
+        ];
+
+        // sort symbols by name
+        symbol_response.sort_by_key(|s| s.name.clone());
+        expected.sort_by_key(|s| s.name.clone());
+        assert_eq!(symbol_response, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_java() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&java_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let file_path = "AStar.java";
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+        let mut symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+
+        let mut expected = vec![
+            Symbol {
+                name: String::from("AStar"),
+                kind: String::from("class"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 10,
+                        character: 13,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 96,
+                        character: 21,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("findPathTo"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 39,
+                        character: 22,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 39,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 59,
+                        character: 5,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("addNeigborsToOpenList"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 61,
+                        character: 17,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 61,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 89,
+                        character: 41,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("distance"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 93,
+                        character: 55,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 93,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 95,
+                        character: 41,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("main"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 98,
+                        character: 59,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 98,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 136,
+                        character: 5,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("findNeighborInList"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 138,
+                        character: 20,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 138,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 140,
+                        character: 5,
+                    },
+                },
+            },
+        ];
+
+        // sort symbols by name
+        symbol_response.sort_by_key(|s| s.name.clone());
+        expected.sort_by_key(|s| s.name.clone());
+        assert_eq!(symbol_response, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_rust() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&rust_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let file_path = "src/map.rs";
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+        let mut symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+
+        let mut expected = vec![
+            Symbol {
+                name: String::from("findNeighborInList"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 138,
+                        character: 20,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 138,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 140,
+                        character: 5,
+                    },
+                },
+            },
+        ];
+        // sort symbols by name
+        symbol_response.sort_by_key(|s| s.name.clone());
+        expected.sort_by_key(|s| s.name.clone());
+        assert_eq!(symbol_response, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_typescript() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&typescript_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let file_path = "node.ts";
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+        let mut symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+
+        let mut expected = vec![
+            Symbol {
+                name: String::from("findNeighborInList"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 138,
+                        character: 20,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 138,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 140,
+                        character: 5,
+                    },
+                },
+            },
+        ];
+        // sort symbols by name
+        symbol_response.sort_by_key(|s| s.name.clone());
+        expected.sort_by_key(|s| s.name.clone());
+        assert_eq!(symbol_response, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_tsx() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&typescript_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let file_path = "PathfinderDisplay.tsx";
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+        let mut symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+
+        let mut expected = vec![
+            Symbol {
+                name: String::from("findNeighborInList"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 138,
+                        character: 20,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 138,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 140,
+                        character: 5,
+                    },
+                },
+            },
+        ];
+        // sort symbols by name
+        symbol_response.sort_by_key(|s| s.name.clone());
+        expected.sort_by_key(|s| s.name.clone());
+        assert_eq!(symbol_response, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_symbols_go() -> Result<(), Box<dyn std::error::Error>> {
+        let context = TestContext::setup(&go_sample_path(), true).await?;
+        let manager = context
+            .manager
+            .as_ref()
+            .ok_or("Manager is not initialized")?;
+        let file_path = "golang_astar/astar.go";
+        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+        let mut symbol_response: SymbolResponse =
+            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+
+        let mut expected = vec![
+            Symbol {
+                name: String::from("findNeighborInList"),
+                kind: String::from("method"),
+                identifier_position: FilePosition {
+                    path: String::from("AStar.java"),
+                    position: Position {
+                        line: 138,
+                        character: 20,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("AStar.java"),
+                    start: Position {
+                        line: 138,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 140,
+                        character: 5,
+                    },
+                },
+            },
+        ];
+        // sort symbols by name
+        symbol_response.sort_by_key(|s| s.name.clone());
+        expected.sort_by_key(|s| s.name.clone());
         assert_eq!(symbol_response, expected);
         Ok(())
     }
@@ -1024,159 +1462,6 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_file_symbols_java() -> Result<(), Box<dyn std::error::Error>> {
-        let context = TestContext::setup(&java_sample_path(), true).await?;
-        let manager = context
-            .manager
-            .as_ref()
-            .ok_or("Manager is not initialized")?;
-        let file_path = "AStar.java";
-        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-        let mut symbol_response: SymbolResponse =
-            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
-
-        let mut expected = vec![
-            Symbol {
-                name: String::from("AStar"),
-                kind: String::from("class"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 10,
-                        character: 13,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 10,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 96,
-                        character: 21,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("findPathTo"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 39,
-                        character: 22,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 39,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 59,
-                        character: 5,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("addNeigborsToOpenList"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 61,
-                        character: 17,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 61,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 89,
-                        character: 41,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("distance"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 93,
-                        character: 55,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 93,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 95,
-                        character: 41,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("main"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 98,
-                        character: 59,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 98,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 136,
-                        character: 5,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("findNeighborInList"),
-                kind: String::from("method"),
-                identifier_position: FilePosition {
-                    path: String::from("AStar.java"),
-                    position: Position {
-                        line: 138,
-                        character: 20,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("AStar.java"),
-                    start: Position {
-                        line: 138,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 140,
-                        character: 5,
-                    },
-                },
-            },
-        ];
-
-        // sort symbols by name
-        symbol_response.sort_by_key(|s| s.name.clone());
-        expected.sort_by_key(|s| s.name.clone());
-        assert_eq!(symbol_response, expected);
-        Ok(())
-    }
 
     #[tokio::test]
     async fn test_references_java() -> Result<(), Box<dyn std::error::Error>> {
@@ -1282,117 +1567,6 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_file_symbols_js() -> Result<(), Box<dyn std::error::Error>> {
-        let context = TestContext::setup(&js_sample_path(), true).await?;
-        let manager = context
-            .manager
-            .as_ref()
-            .ok_or("Manager is not initialized")?;
-
-        let file_path = "astar_search.js";
-        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-        // TODO: include source code and update expected
-        let mut symbol_response: SymbolResponse =
-            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
-
-        let mut expected = vec![
-            Symbol {
-                name: String::from("manhattan"),
-                kind: String::from("function"),
-                identifier_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 0,
-                        character: 9,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("astar_search.js"),
-                    start: Position {
-                        line: 0,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 2,
-                        character: 1,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("aStar"),
-                kind: String::from("function"),
-                identifier_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 4,
-                        character: 9,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("astar_search.js"),
-                    start: Position {
-                        line: 4,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 58,
-                        character: 1,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("lambda"),
-                kind: String::from("function"),
-                identifier_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 17,
-                        character: 16,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("astar_search.js"),
-                    start: Position {
-                        line: 17,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 26,
-                        character: 9,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("board"),
-                kind: String::from("variable"),
-                identifier_position: FilePosition {
-                    path: String::from("astar_search.js"),
-                    position: Position {
-                        line: 60,
-                        character: 6,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("astar_search.js"),
-                    start: Position {
-                        line: 60,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 69,
-                        character: 1,
-                    },
-                },
-            },
-        ];
-
-        // sort symbols by name
-        symbol_response.sort_by_key(|s| s.name.clone());
-        expected.sort_by_key(|s| s.name.clone());
-        assert_eq!(symbol_response, expected);
-        Ok(())
-    }
 
     #[tokio::test]
     async fn test_references_js() -> Result<(), Box<dyn std::error::Error>> {
