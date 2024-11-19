@@ -1,7 +1,12 @@
 import { Node } from './node';
 import { Grid, Point } from './types';
 
-export class AStar {
+// Interface definition
+interface IAStarPathfinder {
+    findPathTo(xend: number, yend: number): Node[] | null;
+}
+
+export class AStar implements IAStarPathfinder {
     private open: Node[] = [];
     private closed: Node[] = [];
     private path: Node[] = [];
@@ -16,28 +21,24 @@ export class AStar {
         this.now = new Node(null, xstart, ystart, 0, 0);
     }
 
-    // Arrow function method
+    // Arrow function method implementing interface method
     findPathTo = (xend: number, yend: number): Node[] | null => {
         this.closed.push(this.now);
         this.addNeighborsToOpenList(xend, yend);
-
         while (this.now.x !== xend || this.now.y !== yend) {
             if (this.open.length === 0) {
                 return null;
             }
-
             this.now = this.open[0];
             this.open.splice(0, 1);
             this.closed.push(this.now);
             this.addNeighborsToOpenList(xend, yend);
         }
-
         this.path = [this.now];
         while (this.now.x !== this.xstart || this.now.y !== this.ystart) {
             this.now = this.now.parent!;
             this.path.unshift(this.now);
         }
-
         return this.path;
     };
 
@@ -63,16 +64,13 @@ export class AStar {
                 if (!this.diag && x !== 0 && y !== 0) {
                     continue;
                 }
-
                 const newPoint = {
                     x: this.now.x + x,
                     y: this.now.y + y
                 };
-
                 if (x === 0 && y === 0) continue;
                 if (!this.isInBounds(newPoint)) continue;
                 if (!this.isWalkable(newPoint)) continue;
-
                 const node = new Node(
                     this.now,
                     newPoint.x,
@@ -80,19 +78,15 @@ export class AStar {
                     this.now.g,
                     this.distance(newPoint.x, newPoint.y, xend, yend)
                 );
-
                 if (
                     this.findNeighborInList(this.open, node) ||
                     this.findNeighborInList(this.closed, node)
                 ) continue;
-
                 node.g = node.parent!.g + 1;
                 node.g += this.maze[newPoint.y][newPoint.x];
-
                 this.open.push(node);
             }
         }
-
         this.open.sort((a, b) => a.f() - b.f());
     }
 

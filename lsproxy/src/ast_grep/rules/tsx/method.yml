@@ -1,6 +1,13 @@
 id: method
 language: tsx
 rule:
-    kind: identifier
+    kind: property_identifier
     inside:
-      kind: method_definition
+      any:
+      - kind: method_definition
+      - kind: public_field_definition
+        has:
+          any:
+            - kind: arrow_function
+            - kind: function_expression
+      pattern: $CODE

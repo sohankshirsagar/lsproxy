@@ -1,8 +1,9 @@
 id: class
 language: tsx
 rule:
-  kind: identifier
+  kind: type_identifier
   inside:
     any:
       - kind: class_declaration
       - kind: class
+    pattern: $CODE

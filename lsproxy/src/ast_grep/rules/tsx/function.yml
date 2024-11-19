@@ -19,8 +19,10 @@ rule:
           - kind: assignment_expression
             has:
               kind: arrow_function
+        pattern: $CODE
     - kind: property_identifier
       inside:
         kind: pair
         has:
           kind: arrow_function
+        pattern: $CODE

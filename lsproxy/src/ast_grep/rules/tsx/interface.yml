@@ -4,3 +4,4 @@ rule:
   kind: type_identifier
   inside:
     kind: interface_declaration
+    pattern: $CODE

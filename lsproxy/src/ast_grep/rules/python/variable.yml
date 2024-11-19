@@ -1,24 +1,30 @@
 id: variable
-language: python
+language: tsx
 utils:
-  variable_def:
-    kind: assignment
+  global_variable:
+    kind: variable_declarator
+    not:
+        has:
+          any:
+            - kind: function_declaration
+            - kind: arrow_function
     inside:
-      kind: expression_statement
-      pattern: $CODE
       any:
-      - inside:
-          kind: module
-      - inside:
-          kind: block
+        - kind: lexical_declaration 
           inside:
-            kind: class_definition
+            kind: export_statement
+            pattern: $CODE
+        - kind: lexical_declaration
+          pattern: $CODE
+          inside:
+            kind: program
 rule:
-    kind: identifier
-    any:
-      - inside:
-          matches: variable_def
-      - inside:
-          kind: pattern_list
-          inside:
-            matches: variable_def
+  any:
+    - kind: identifier
+      inside:
+        matches: global_variable
+    - kind: shorthand_property_identifier_pattern
+      inside:
+        kind: object_pattern
+        inside:
+          matches: global_variable
