@@ -22,12 +22,12 @@ pub struct AstGrepMatch {
 }
 
 impl AstGrepMatch {
-    pub fn get_source_code(&self) -> Option<String> {
+    pub fn get_source_code(&self) -> String {
         self.meta_variables
-            .multi
-            .secondary
-            .last()
-            .map(|s| s.text.clone())
+            .single
+            .code
+            .text
+            .clone()
     }
 }
 
@@ -63,18 +63,25 @@ pub struct CharCount {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaVariables {
+    pub single: SingleVariable,
     pub multi: MultiVariables,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SingleVariable {
+    #[serde(rename = "CODE")]
+    pub code: MetaVariable,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MultiVariables {
-    pub secondary: Vec<Secondary>,
+    pub secondary: Vec<MetaVariable>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Secondary {
+pub struct MetaVariable {
     pub text: String,
     pub range: AstGrepRange,
 }

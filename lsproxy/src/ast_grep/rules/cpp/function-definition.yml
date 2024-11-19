@@ -1,0 +1,11 @@
+id: function-definition
+language: cpp
+rule:
+  any:
+    - kind: identifier
+    - kind: field_identifier
+  inside:
+    kind: function_declarator
+    inside:
+      kind: function_definition
+      pattern: $CODE

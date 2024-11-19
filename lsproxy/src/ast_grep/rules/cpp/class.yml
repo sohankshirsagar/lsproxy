@@ -7,12 +7,10 @@ rule:
         any:
           - kind: struct_specifier
           - kind: class_specifier
-        name: name
+        pattern: $CODE
     - kind: type_identifier
       inside:
         kind: union_specifier
-        name: name
         inside:
           kind: declaration
-          name: type
-      
+          pattern: $CODE

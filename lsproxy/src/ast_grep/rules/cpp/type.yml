@@ -6,3 +6,4 @@ rule:
     any:
       - kind: type_definition
       - kind: enum_specifier
+    pattern: $CODE
