@@ -1103,28 +1103,96 @@ mod tests {
         let mut symbol_response: SymbolResponse =
             file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
 
-        let mut expected = vec![Symbol {
-            name: String::from("findNeighborInList"),
-            kind: String::from("method"),
-            identifier_position: FilePosition {
-                path: String::from("AStar.java"),
-                position: Position {
-                    line: 138,
-                    character: 20,
+        let mut expected = vec![
+            Symbol {
+                name: String::from("Map"),
+                kind: String::from("struct"),
+                identifier_position: FilePosition {
+                    path: String::from("src/map.rs"),
+                    position: Position {
+                        line: 0,
+                        character: 11,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("src/map.rs"),
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 4,
+                        character: 1,
+                    },
                 },
             },
-            range: FileRange {
-                path: String::from("AStar.java"),
-                start: Position {
-                    line: 138,
-                    character: 0,
+            Symbol {
+                name: String::from("Map"),
+                kind: String::from("implementation"),
+                identifier_position: FilePosition {
+                    path: String::from("src/map.rs"),
+                    position: Position {
+                        line: 6,
+                        character: 5,
+                    },
                 },
-                end: Position {
-                    line: 140,
-                    character: 5,
+                range: FileRange {
+                    path: String::from("src/map.rs"),
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 24,
+                        character: 1,
+                    },
                 },
             },
-        }];
+            Symbol {
+                name: String::from("get"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("src/map.rs"),
+                    position: Position {
+                        line: 21,
+                        character: 11,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("src/map.rs"),
+                    start: Position {
+                        line: 21,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 23,
+                        character: 5,
+                    },
+                },
+            },
+            Symbol {
+                name: String::from("new"),
+                kind: String::from("function"),
+                identifier_position: FilePosition {
+                    path: String::from("src/map.rs"),
+                    position: Position {
+                        line: 7,
+                        character: 11,
+                    },
+                },
+                range: FileRange {
+                    path: String::from("src/map.rs"),
+                    start: Position {
+                        line: 7,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 19,
+                        character: 5,
+                    },
+                },
+            },
+        ];
         // sort symbols by name
         symbol_response.sort_by_key(|s| s.name.clone());
         expected.sort_by_key(|s| s.name.clone());
