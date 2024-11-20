@@ -1,6 +1,7 @@
 id: method
 language: tsx
 rule:
+    pattern: $NAME
     kind: property_identifier
     inside:
       any:
@@ -10,4 +11,4 @@ rule:
           any:
             - kind: arrow_function
             - kind: function_expression
-      pattern: $CODE
+      pattern: $CONTEXT

@@ -13,12 +13,13 @@ utils:
         - kind: lexical_declaration 
           inside:
             kind: export_statement
-            pattern: $CODE
+            pattern: $CONTEXT
         - kind: lexical_declaration
-          pattern: $CODE
+          pattern: $CONTEXT
           inside:
             kind: program
 rule:
+  pattern: $NAME
   any:
     - kind: identifier
       inside:

@@ -2,8 +2,9 @@ id: variable
 language: javascript
 rule:
   kind: identifier
+  pattern: $NAME
   inside:
-    pattern: $CODE
+    pattern: $CONTEXT
     kind: variable_declarator
     not:
         has:

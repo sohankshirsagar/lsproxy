@@ -4,8 +4,9 @@ rule:
   any:
     - kind: identifier
     - kind: field_identifier
+  pattern: $NAME
   inside:
     kind: function_declarator
     inside:
       kind: function_definition
-      pattern: $CODE
+      pattern: $CONTEXT
