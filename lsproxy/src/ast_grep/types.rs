@@ -22,12 +22,8 @@ pub struct AstGrepMatch {
 }
 
 impl AstGrepMatch {
-    pub fn get_source_code(&self) -> Option<String> {
-        self.meta_variables
-            .multi
-            .secondary
-            .last()
-            .map(|s| s.text.clone())
+    pub fn get_source_code(&self) -> String {
+        self.meta_variables.single.context.text.clone()
     }
 }
 
@@ -63,18 +59,27 @@ pub struct CharCount {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaVariables {
+    pub single: SingleVariable,
     pub multi: MultiVariables,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SingleVariable {
+    #[serde(rename = "NAME")]
+    pub name: MetaVariable,
+    #[serde(rename = "CONTEXT")]
+    pub context: MetaVariable,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MultiVariables {
-    pub secondary: Vec<Secondary>,
+    pub secondary: Vec<MetaVariable>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Secondary {
+pub struct MetaVariable {
     pub text: String,
     pub range: AstGrepRange,
 }
@@ -90,7 +95,7 @@ impl From<AstGrepMatch> for Symbol {
     fn from(ast_match: AstGrepMatch) -> Self {
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
         Symbol {
-            name: ast_match.text.clone(),
+            name: ast_match.meta_variables.single.name.text.clone(),
             kind: ast_match.rule_id.clone(),
             identifier_position: FilePosition {
                 path: path.clone(),
@@ -102,45 +107,19 @@ impl From<AstGrepMatch> for Symbol {
             range: FileRange {
                 path: path.clone(),
                 start: Position {
-                    line: ast_match
-                        .meta_variables
-                        .multi
-                        .secondary
-                        .last()
-                        .expect("Expected at least one secondary variable")
-                        .range
-                        .start
-                        .line as u32,
+                    line: ast_match.meta_variables.single.context.range.start.line as u32,
                     // character: ast_match
                     //     .meta_variables
-                    //     .multi
-                    //     .secondary
-                    //     .last()
-                    //     .unwrap()
+                    //     .single
+                    //     .context
                     //     .range
                     //     .start
                     //     .column as u32,
                     character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
                 },
                 end: Position {
-                    line: ast_match
-                        .meta_variables
-                        .multi
-                        .secondary
-                        .last()
-                        .expect("Expected at least one secondary variable")
-                        .range
-                        .end
-                        .line as u32,
-                    character: ast_match
-                        .meta_variables
-                        .multi
-                        .secondary
-                        .last()
-                        .expect("Expected at least one secondary variable")
-                        .range
-                        .end
-                        .column as u32,
+                    line: ast_match.meta_variables.single.context.range.end.line as u32,
+                    character: ast_match.meta_variables.single.context.range.end.column as u32,
                 },
             },
         }
