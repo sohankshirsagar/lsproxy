@@ -1373,47 +1373,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_file_symbols_go() -> Result<(), Box<dyn std::error::Error>> {
-        let context = TestContext::setup(&go_sample_path(), true).await?;
-        let manager = context
-            .manager
-            .as_ref()
-            .ok_or("Manager is not initialized")?;
-        let file_path = "golang_astar/astar.go";
-        let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-        let mut symbol_response: SymbolResponse =
-            file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
-
-        let mut expected = vec![Symbol {
-            name: String::from("findNeighborInList"),
-            kind: String::from("method"),
-            identifier_position: FilePosition {
-                path: String::from("AStar.java"),
-                position: Position {
-                    line: 138,
-                    character: 20,
-                },
-            },
-            range: FileRange {
-                path: String::from("AStar.java"),
-                start: Position {
-                    line: 138,
-                    character: 0,
-                },
-                end: Position {
-                    line: 140,
-                    character: 5,
-                },
-            },
-        }];
-        // sort symbols by name
-        symbol_response.sort_by_key(|s| s.name.clone());
-        expected.sort_by_key(|s| s.name.clone());
-        assert_eq!(symbol_response, expected);
-        Ok(())
-    }
-
-    #[tokio::test]
     async fn test_references_c() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&c_sample_path(), true).await?;
         let manager = context
