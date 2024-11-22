@@ -1,6 +1,6 @@
 use crate::api_types::get_mount_dir;
 use ignore::WalkBuilder;
-use log::warn;
+use log::{debug, warn};
 use std::path::{Path, PathBuf};
 use url::Url;
 
@@ -8,9 +8,10 @@ pub fn search_files(
     path: &std::path::Path,
     include_patterns: Vec<String>,
     exclude_patterns: Vec<String>,
+    respect_gitignore: bool,
 ) -> std::io::Result<Vec<std::path::PathBuf>> {
     let mut files = Vec::new();
-    let walk = build_walk(path, exclude_patterns);
+    let walk = build_walk(path, exclude_patterns, respect_gitignore);
     // println!("Searching for {:?}",include_patterns);
     for result in walk {
         match result {
@@ -40,7 +41,7 @@ pub fn search_directories(
     exclude_patterns: Vec<String>,
 ) -> std::io::Result<Vec<PathBuf>> {
     let mut dirs = Vec::new();
-    let walk = build_walk(root_path, exclude_patterns);
+    let walk = build_walk(root_path, exclude_patterns, true);
     for result in walk {
         match result {
             Ok(entry) => {
@@ -68,8 +69,8 @@ pub fn search_directories(
         .collect())
 }
 
-fn build_walk(path: &Path, exclude_patterns: Vec<String>) -> ignore::Walk {
-    let walk = WalkBuilder::new(path)
+fn build_walk(path: &Path, exclude_patterns: Vec<String>, respect_gitignore: bool) -> ignore::Walk {
+    let walk = WalkBuilder::new(path).git_ignore(respect_gitignore)
         .filter_entry(move |entry| {
             let path = entry.path();
             let is_excluded = exclude_patterns.iter().any(|pattern| {
