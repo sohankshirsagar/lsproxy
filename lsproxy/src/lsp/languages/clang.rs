@@ -2,10 +2,11 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use std::error::Error;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::collections::HashSet;
 
-use crate::utils::file_utils::{absolute_path_to_relative_path_string, search_files};
+use crate::utils::file_utils::{search_files, search_directories};
 use crate::utils::workspace_documents::WorkspaceDocuments;
 use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
@@ -58,14 +59,13 @@ impl LspClient for ClangdClient {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let compile_db_files = search_files(
             Path::new(root_path),
-            vec!["**/compile_commands.json".to_string()],
-            DEFAULT_EXCLUDE_PATTERNS
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            vec![String::from("**/compile_commands.json")],
+            vec![String::from("**/.git")],
+            false
         )?;
 
         if compile_db_files.is_empty() {
+            debug!("Couldn't find compile comands json, falling back to generation");
             // this is a workaround to avoid building the entire project
             let commands = generate_compile_commands(root_path.to_string())?;
 
@@ -170,49 +170,125 @@ struct CompileCommand {
     file: String,
 }
 
-fn is_cpp_file(path: &Path) -> bool {
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+fn find_include_dirs(project_root: &Path, cmakelists_files: &[PathBuf]) -> Vec<String> {
+    let mut include_dirs = HashSet::new();
 
-    matches!(ext, "hpp" | "hxx" | "cpp" | "cxx" | "cc")
+    // Use search_directories to find all directories (including "include")
+    let include_patterns = vec!["**/*include*".to_string()]; // Matches any directory with "include" as a substring
+    let exclude_patterns: Vec<String> = DEFAULT_EXCLUDE_PATTERNS.iter().map(|&s| s.to_string()).collect();
+
+    if let Ok(dirs) = search_directories(project_root, include_patterns, exclude_patterns) {
+        for dir in dirs {
+            // Only add the directory itself, not its subdirectories
+            if dir.is_dir() {
+                include_dirs.insert(dir.to_string_lossy().to_string());
+            }
+        }
+    }
+
+    // Add directories containing CMakeLists.txt files
+    for cmake_file in cmakelists_files {
+        if let Some(parent_dir) = cmake_file.parent() {
+            include_dirs.insert(parent_dir.to_string_lossy().into_owned());
+        }
+    }
+
+    include_dirs.into_iter().collect()
+}
+
+fn find_source_files(project_root: &Path) -> Vec<String> {
+    let include_patterns = vec![
+        "**/*.cpp".to_string(),
+        "**/*.cc".to_string(),
+        "**/*.cxx".to_string(),
+        "**/*.c".to_string(),
+    ];
+    let exclude_patterns: Vec<String> = DEFAULT_EXCLUDE_PATTERNS.iter().map(|&s| s.to_string()).collect();
+
+    match search_files(project_root, include_patterns, exclude_patterns, true) {
+        Ok(files) => files
+            .into_iter()
+            .map(|file| file.to_string_lossy().into_owned())
+            .collect(),
+        Err(err) => {
+            debug!("Error finding source files: {}", err);
+            vec![]
+        }
+    }
 }
 
 fn generate_compile_commands(
     project_root: String,
-) -> Result<Vec<CompileCommand>, Box<dyn Error + Send + Sync>> {
-    let mut commands = Vec::new();
+) -> Result<Vec<CompileCommand>, Box<dyn std::error::Error + Send + Sync>> {
+    let project_path = Path::new(&project_root);
 
-    // Search for both header and source files
-    let all_files = search_files(
-        Path::new(&project_root),
-        C_AND_CPP_FILE_PATTERNS // This includes both .c/.cpp and .h/.hpp patterns
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-        DEFAULT_EXCLUDE_PATTERNS
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
+    // Find CMakeLists.txt files
+    debug!("Finding CMakeLists.txt files...");
+    let cmakelists_files = search_files(
+        project_path,
+        vec!["**/CMakeLists.txt".to_string()],
+        DEFAULT_EXCLUDE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
+        true,
     )?;
 
-    for path in all_files {
-        let relative_path = absolute_path_to_relative_path_string(&path);
-        let compiler = if is_cpp_file(&path) {
-            "/usr/bin/c++"
-        } else {
-            "/usr/bin/cc"
-        };
+    // Parse CMakeLists.txt for compiler flags and C++ standard
+    debug!("Parsing CMakeLists.txt files...");
+    let flags = parse_cmakelists(&cmakelists_files);
 
-        commands.push(CompileCommand {
+    // Find inferred include directories
+    debug!("Finding inferred include directories...");
+    let include_dirs = find_include_dirs(project_path, &cmakelists_files);
+
+    // Find source files
+    debug!("Finding source files...");
+    let source_files = find_source_files(project_path);
+
+    debug!("Found {} source files", source_files.len());
+    debug!("Using include paths: {:?}", include_dirs);
+    debug!("Using compiler flags: {:?}", flags);
+
+    // Generate compile commands
+    let compiler = "/usr/bin/c++";
+    let include_flags: Vec<String> = include_dirs.iter().map(|inc| format!("-I{}", inc)).collect();
+
+    let compile_commands = source_files
+        .iter()
+        .map(|file| CompileCommand {
             directory: project_root.clone(),
-            // Add more comprehensive compiler flags
             command: format!(
-                "{} -Wall -Wextra -I. -Iinclude -c {}",
-                compiler, relative_path
+                "{} {} {} -c {}",
+                compiler,
+                include_flags.join(" "),
+                flags.join(" "),
+                file
             ),
-            file: relative_path,
-        });
-    }
+            file: file.clone(),
+        })
+        .collect();
 
-    debug!("Generated compile commands for {} files", commands.len());
-    Ok(commands)
+    Ok(compile_commands)
+}
+
+fn parse_cmakelists(cmake_files: &[PathBuf]) -> Vec<String> {
+    let mut flags = Vec::new();
+    for cmake_path in cmake_files {
+        if let Ok(content) = std::fs::read_to_string(cmake_path) {
+            // Extract C++ standard
+            if let Some(capture) = regex::Regex::new(r"set\s*\(\s*CMAKE_CXX_STANDARD\s+(\d+)\s*\)")
+                .unwrap()
+                .captures(&content)
+            {
+                flags.push(format!("-std=c++{}", &capture[1]));
+            }
+
+            // Extract compile options
+            for caps in regex::Regex::new(r"add_compile_options\s*\((.*?)\)")
+                .unwrap()
+                .captures_iter(&content)
+            {
+                flags.extend(caps[1].split_whitespace().map(String::from));
+            }
+        }
+    }
+    flags
 }
