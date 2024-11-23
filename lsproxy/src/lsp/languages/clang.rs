@@ -94,12 +94,14 @@ impl ClangdClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        let debug_file = std::fs::File::create("/tmp/clangd.log")?;
+
         let process = Command::new("clangd")
             .arg("--log=error")
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stderr(debug_file)
             .spawn()
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
 
@@ -148,7 +150,6 @@ impl ClangdClient {
                     _ => "cpp",
                 }
                 .to_string();
-                info!("Processed file: {}", file_path.display());
                 Ok::<TextDocumentItem, Box<dyn std::error::Error + Send + Sync>>(TextDocumentItem {
                     uri,
                     language_id: language_id.to_string(),

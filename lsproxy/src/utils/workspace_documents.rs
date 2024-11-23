@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 use tokio::{
-    fs::read_to_string,
+    fs::read,
     sync::{broadcast::Receiver, RwLock},
 };
 
@@ -136,8 +136,13 @@ impl WorkspaceDocumentsHandler {
         match cache.get(full_file_path) {
             Some(Some(content)) => Ok(content.clone()),
             _ => {
-                debug!("Cache miss for {:?}", full_file_path);
-                let content = read_to_string(full_file_path).await?;
+                let bytes = read(full_file_path).await?;
+
+                if String::from_utf8(bytes.clone()).is_err() {
+                    warn!("File {:?} contains invalid UTF-8", full_file_path);
+                }
+
+                let content = String::from_utf8_lossy(&bytes).into_owned();
                 cache.insert(full_file_path.clone(), Some(content.clone()));
                 Ok(content)
             }

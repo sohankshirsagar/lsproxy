@@ -167,7 +167,6 @@ pub trait LspClient: Send {
         &mut self,
         item: lsp_types::TextDocumentItem,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        debug!("Sending 'didOpen' notification for document: {}", item.uri);
         let params = DidOpenTextDocumentParams {
             text_document: item,
         };
