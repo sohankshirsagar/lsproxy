@@ -80,6 +80,7 @@ jobs:
 
       - name: Prepare ast-grep rules
         run: |
+          VERSION=${GITHUB_REF#refs/tags/}
           mkdir -p release-binaries
           cd lsproxy/src
           find ast_grep -type f -print0 | tar -czvf ../../release-binaries/lsproxy-${VERSION}-ast-grep-rules.tar.gz --null -T -
