@@ -100,7 +100,7 @@ install_lsproxy() {
 
 # Function to install ast_grep configuration
 install_ast_grep_config() {
-    local config_url="https://github.com/agentic-labs/lsproxy/releases/download/${LSPROXY_VERSION}/lsproxy_${LSPROXY_VERSION}_ast_grep_rules.tar.gz"
+    local config_url="https://github.com/agentic-labs/lsproxy/releases/download/${LSPROXY_VERSION}/lsproxy-${LSPROXY_VERSION}-ast-grep-rules.tar.gz"
     local dest_dir="/usr/src/ast_grep"
 
     echo "Downloading ast_grep configuration and rules..."
