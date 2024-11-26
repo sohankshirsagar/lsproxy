@@ -16,7 +16,7 @@ jobs:
       - name: Validate script version
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          SCRIPT_VERSION=$(grep "SCRIPT_VERSION=" release/install-lsproxy.sh | cut -d'"' -f2)
+          SCRIPT_VERSION=$(grep "LSPROXY_VERSION=" release/install-lsproxy.sh | cut -d'"' -f2)
           if [ "$VERSION" != "$SCRIPT_VERSION" ]; then
             echo "Error: Script version ($SCRIPT_VERSION) does not match release tag ($VERSION)"
             exit 1
