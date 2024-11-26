@@ -84,14 +84,32 @@ jobs:
           cd lsproxy/src
           find ast_grep -type f -print0 | tar -czvf ../../release-binaries/lsproxy-${VERSION}-ast-grep-rules.tar.gz --null -T -
 
+      - name: Validate release files
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          REQUIRED_FILES=(
+            "release-binaries/lsproxy-${VERSION}-linux-arm64"
+            "release-binaries/lsproxy-${VERSION}-linux-amd64"
+            "release-binaries/install-lsproxy.sh"
+            "release-binaries/lsproxy-${VERSION}-ast-grep-rules.tar.gz"
+          )
+
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "Error: Required file $file is missing"
+              exit 1
+            fi
+          done
+          echo "All required files are present"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release-binaries/lsproxy-${VERSION}-linux-arm64
-            release-binaries/lsproxy-${VERSION}-linux-amd64
+            release-binaries/lsproxy-${{ github.ref_name }}-linux-arm64
+            release-binaries/lsproxy-${{ github.ref_name }}-linux-amd64
             release-binaries/install-lsproxy.sh
-            release-binaries/ast-grep-rules.tar.gz
+            release-binaries/lsproxy-${{ github.ref_name }}-ast-grep-rules.tar.gz
           generate_release_notes: true
 
       - name: Move cache
