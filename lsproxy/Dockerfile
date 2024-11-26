@@ -6,15 +6,14 @@ WORKDIR /usr/src/app
 # Install runtime dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
     pkg-config \
-    libssl-dev \
     libssl3 \
     ca-certificates \
     git \
     python3 \
     python3-pip \
-    pipx \
     python3-venv \
     curl \
+    clangd \
     build-essential \
     gcc \
     g++ \
@@ -42,22 +41,17 @@ ENV PATH="/opt/jdtls/bin:${PATH}"
 RUN rustup component add rust-analyzer
 RUN rustup component add rustfmt
 
-# Angrily create a virtual environment
+# Create a virtual environment
 RUN python3 -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
-# Install jedi for python
-RUN pip install jedi-language-server
+# Install jedi python language server, ast grep for tree sitter
+RUN pip install jedi-language-server ast-grep-cli
 
 # Install global npm packages
 RUN npm install -g typescript-language-server typescript
 
-#Install Clangd
-RUN apt update && apt install -y clangd
-
-# Install compiledb
-RUN pipx install compiledb && pipx ensurepath
-
+# Install coverage tools
 RUN cargo install cargo-llvm-cov
 RUN rustup component add llvm-tools-preview
 

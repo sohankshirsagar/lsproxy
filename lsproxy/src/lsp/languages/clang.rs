@@ -97,7 +97,7 @@ impl ClangdClient {
         let debug_file = std::fs::File::create("/tmp/clangd.log")?;
 
         let process = Command::new("clangd")
-            .arg("--log=error")
+            .arg("--log=info")
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -274,7 +274,7 @@ fn parse_cmakelists(cmake_files: &[PathBuf]) -> Vec<String> {
     let mut flags = Vec::new();
     for cmake_path in cmake_files {
         if let Ok(content) = std::fs::read_to_string(cmake_path) {
-            // Extract C++ standard
+            // Extract C++ standard (this part is fine)
             if let Some(capture) = regex::Regex::new(r"set\s*\(\s*CMAKE_CXX_STANDARD\s+(\d+)\s*\)")
                 .unwrap()
                 .captures(&content)
@@ -282,12 +282,18 @@ fn parse_cmakelists(cmake_files: &[PathBuf]) -> Vec<String> {
                 flags.push(format!("-std=c++{}", &capture[1]));
             }
 
-            // Extract compile options
+            // Extract compile options but skip generator expressions and variables
             for caps in regex::Regex::new(r"add_compile_options\s*\((.*?)\)")
                 .unwrap()
                 .captures_iter(&content)
             {
-                flags.extend(caps[1].split_whitespace().map(String::from));
+                // Only take literal flags, skip anything with ${...} or $<...>
+                flags.extend(
+                    caps[1]
+                        .split_whitespace()
+                        .filter(|arg| !arg.contains("${") && !arg.contains("$<"))
+                        .map(String::from)
+                );
             }
         }
     }
