@@ -59,6 +59,9 @@ RUN npm install -g typescript-language-server typescript
 # Copy the binary
 COPY --from=builder /usr/src/app/target/release/lsproxy .
 
+# Copy ast-grep rules
+COPY ./src/ast_grep /usr/src/ast_grep
+
 EXPOSE 4444
 ENV RUST_LOG=info
 ENV RA_LOG="/tmp/rust-analyzer.log"

@@ -39,7 +39,6 @@ install_system_deps() {
         git \
         python3 \
         python3-pip \
-        python3-venv \
         curl \
         clangd \
         build-essential \
@@ -71,11 +70,7 @@ install_java() {
 # Function to install Python dependencies
 install_python_deps() {
     echo "Installing Python dependencies..."
-    python3 -m venv /app/venv
-    # Add venv to PATH
-    echo 'export PATH="/app/venv/bin:${PATH}"' >> /etc/profile.d/venv.sh
-    source /app/venv/bin/activate
-    pip install jedi-language-server ast-grep-cli
+    pip3 install --prefix=/usr jedi-language-server ast-grep-cli
 }
 
 # Function to install Node.js dependencies
@@ -97,11 +92,24 @@ install_rust_tools() {
 install_lsproxy() {
     local arch=$(detect_arch)
     local binary_url="https://github.com/agentic-labs/lsproxy/releases/download/${LSPROXY_VERSION}/lsproxy-${LSPROXY_VERSION}-linux-${arch}"
-    echo $binary_url
     
     echo "Downloading LSProxy binary for Linux ${arch}..."
     curl -L -o /usr/local/bin/lsproxy "${binary_url}"
     chmod +x /usr/local/bin/lsproxy
+}
+
+# Function to install ast_grep configuration
+install_ast_grep_config() {
+    local config_url="https://github.com/agentic-labs/lsproxy/releases/download/${LSPROXY_VERSION}/lsproxy_${LSPROXY_VERSION}_ast_grep_rules.tar.gz"
+    local dest_dir="/usr/src/ast_grep"
+
+    echo "Downloading ast_grep configuration and rules..."
+    mkdir -p "$dest_dir"
+    curl -L -o /tmp/ast_grep.tar.gz "$config_url"
+
+    echo "Extracting ast_grep configuration and rules..."
+    tar -xzf /tmp/ast_grep.tar.gz -C "$dest_dir"
+    rm /tmp/ast_grep.tar.gz
 }
 
 # Function to clean up
@@ -123,10 +131,10 @@ main() {
     install_node_deps
     install_rust_tools
     install_lsproxy
+    install_ast_grep_config
     cleanup
     
     echo "LSProxy installation complete!"
-    echo "Please restart your shell or source your profile to use the updated PATH"
 }
 
 main
