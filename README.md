@@ -58,8 +58,11 @@ services:
     volumes:
       - ${WORKSPACE_PATH}:/mnt/workspace
 ```
-
-You can find the reference for the API that `lsproxy` exposes [here](https://docs.lsproxy.dev/api-reference)
+### Configure an existing system
+You can also configure an existing system to run `lsproxy`. Add the following line in your dockerfile or run it as part of a startup script
+```bash
+curl -sSL https://github.com/agentic-labs/lsproxy/releases/latest/download/install-lsproxy.sh | sh
+```
 
 ### Explore your workspace!
 
