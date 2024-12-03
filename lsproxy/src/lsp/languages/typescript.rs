@@ -119,14 +119,13 @@ impl TypeScriptLanguageClient {
             .as_array()
             .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
             .unwrap_or_else(|| TYPESCRIPT_FILE_PATTERNS.to_vec());
-        let exclude_patterns: Vec<&str> = DEFAULT_EXCLUDE_PATTERNS
-            .to_vec()
-            .into_iter()
-            .chain(tsconfig["exclude"]
+        let mut exclude_patterns: Vec<&str> = DEFAULT_EXCLUDE_PATTERNS.to_vec();
+        exclude_patterns.extend(
+            tsconfig["exclude"]
                 .as_array()
                 .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
-                .unwrap_or_else(|| vec![]))
-            .collect();
+                .unwrap_or_else(|| vec![]),
+        );
         let workspace_documents = self.get_workspace_documents();
         workspace_documents
             .update_patterns(

@@ -18,7 +18,7 @@ use crate::{
 use async_trait::async_trait;
 use fs::write;
 use futures::future::try_join_all;
-use log::{debug, info};
+use log::debug;
 use lsp_types::TextDocumentItem;
 use notify_debouncer_mini::DebouncedEvent;
 use tokio::{process::Command, sync::broadcast::Receiver};

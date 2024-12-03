@@ -1,6 +1,6 @@
 use crate::api_types::get_mount_dir;
 use ignore::WalkBuilder;
-use log::{debug, warn};
+use log::warn;
 use std::path::{Path, PathBuf};
 use url::Url;
 
