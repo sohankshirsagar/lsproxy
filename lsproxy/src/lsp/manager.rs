@@ -100,7 +100,7 @@ impl Manager {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                true
+                true,
             )
             .map_err(|e| warn!("Error searching files: {}", e))
             .unwrap_or_default()

@@ -70,7 +70,8 @@ pub fn search_directories(
 }
 
 fn build_walk(path: &Path, exclude_patterns: Vec<String>, respect_gitignore: bool) -> ignore::Walk {
-    let walk = WalkBuilder::new(path).git_ignore(respect_gitignore)
+    let walk = WalkBuilder::new(path)
+        .git_ignore(respect_gitignore)
         .filter_entry(move |entry| {
             let path = entry.path();
             let is_excluded = exclude_patterns.iter().any(|pattern| {
