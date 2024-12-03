@@ -12,6 +12,7 @@ FROM rust:1.81.0-slim-bookworm
 # Install runtime dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
     pkg-config \
+    libssl-dev \
     libssl3 \
     ca-certificates \
     git \

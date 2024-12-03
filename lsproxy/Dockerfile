@@ -3,9 +3,10 @@ FROM rust:1.81.0-slim-bookworm
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Install runtime dependencies, Python, Node.js, and npm
+# Install runtime and development dependencies, Python, Node.js, and npm
 RUN apt-get update && apt-get install -y \
     pkg-config \
+    libssl-dev \
     libssl3 \
     ca-certificates \
     git \
@@ -36,8 +37,7 @@ RUN apt-get update && \
 # Add jdtls to PATH
 ENV PATH="/opt/jdtls/bin:${PATH}"
 
-
-# Install rust-analyzer
+# Install rust-analyzer and rustfmt
 RUN rustup component add rust-analyzer
 RUN rustup component add rustfmt
 
@@ -60,7 +60,6 @@ COPY Cargo.toml .
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN touch src/lib.rs
 RUN cargo build --release
-
 
 RUN cargo install ast-grep --locked
 COPY ./src/ast_grep /usr/src/ast_grep
