@@ -1,10 +1,14 @@
+use std::error::Error;
+use std::path::Path;
+use std::process::Stdio;
+
 use async_trait::async_trait;
 use json5::from_str as json5_from_str;
 use log::debug;
 use lsp_types::TextDocumentItem;
 use notify_debouncer_mini::DebouncedEvent;
 use serde_json::Value;
-use std::{error::Error, fs::read_to_string, path::Path, process::Stdio};
+use tokio::fs::read_to_string;
 use tokio::process::Command;
 use tokio::sync::broadcast::Receiver;
 use url::Url;
@@ -12,8 +16,8 @@ use url::Url;
 use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
-    TYPESCRIPT_FILE_PATTERNS, TYPESCRIPT_ROOT_FILES,
+    DidOpenConfiguration, WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
+    TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS, TYPESCRIPT_AND_JAVASCRIPT_ROOT_FILES,
 };
 
 pub struct TypeScriptLanguageClient {
@@ -34,7 +38,7 @@ impl LspClient for TypeScriptLanguageClient {
     }
 
     fn get_root_files(&mut self) -> Vec<String> {
-        TYPESCRIPT_ROOT_FILES
+        TYPESCRIPT_AND_JAVASCRIPT_ROOT_FILES
             .iter()
             .map(|&s| s.to_owned())
             .collect()
@@ -46,26 +50,6 @@ impl LspClient for TypeScriptLanguageClient {
 
     fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
         &mut self.workspace_documents
-    }
-
-    async fn setup_workspace(
-        &mut self,
-        root_path: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        /*
-        The server needs to know about all the files in the workspace to provide features like go to definition.
-        This is a limitation of the tsserver    .
-         */
-        debug!("Setting up workspace for TypeScript client");
-
-        let text_document_items = self
-            .get_text_document_items_to_open_with_config(root_path)
-            .await?;
-        for item in text_document_items {
-            self.text_document_did_open(item).await?;
-        }
-        debug!("Workspace setup completed for TypeScript client");
-        Ok(())
     }
 }
 
@@ -89,7 +73,7 @@ impl TypeScriptLanguageClient {
         let json_rpc_handler = JsonRpcHandler::new();
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            TYPESCRIPT_FILE_PATTERNS
+            TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
                 .collect(),
@@ -98,6 +82,7 @@ impl TypeScriptLanguageClient {
                 .map(|&s| s.to_string())
                 .collect(),
             watch_events_rx,
+            DidOpenConfiguration::Lazy,
         );
         Ok(Self {
             process: process_handler,
@@ -112,7 +97,9 @@ impl TypeScriptLanguageClient {
         workspace_path: &str,
     ) -> Result<Vec<TextDocumentItem>, Box<dyn Error + Send + Sync>> {
         let tsconfig_path = Path::new(workspace_path).join("tsconfig.json");
-        let tsconfig_content = read_to_string(tsconfig_path).unwrap_or_else(|_| "{}".to_string());
+        let tsconfig_content = read_to_string(tsconfig_path)
+            .await
+            .unwrap_or_else(|_| "{}".to_string());
         let tsconfig: Value = json5_from_str(&tsconfig_content)?;
 
         let mut include_patterns = tsconfig["include"]
@@ -120,7 +107,7 @@ impl TypeScriptLanguageClient {
             .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
             .unwrap_or_else(|| vec![]);
         if include_patterns.is_empty() {
-            include_patterns = TYPESCRIPT_FILE_PATTERNS.to_vec();
+            include_patterns = TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS.to_vec();
         }
 
         let mut exclude_patterns: Vec<&str> = DEFAULT_EXCLUDE_PATTERNS.to_vec();

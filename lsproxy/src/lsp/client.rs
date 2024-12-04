@@ -1,7 +1,7 @@
 use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
 use crate::lsp::process::Process;
 use crate::lsp::{ExpectedMessageKey, InnerMessage, JsonRpcHandler, ProcessHandler};
-use crate::utils::file_utils::search_directories;
+use crate::utils::file_utils::{detect_language_string, search_directories};
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
@@ -9,13 +9,16 @@ use lsp_types::{
     DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
     InitializeParams, InitializeResult, Location, PartialResultParams, Position,
     PublishDiagnosticsClientCapabilities, ReferenceContext, ReferenceParams, TagSupport,
-    TextDocumentClientCapabilities, TextDocumentIdentifier, TextDocumentPositionParams, Url,
-    WorkDoneProgressParams, WorkspaceFolder, WorkspaceSymbolParams, WorkspaceSymbolResponse,
+    TextDocumentClientCapabilities, TextDocumentIdentifier, TextDocumentItem,
+    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
+    WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use crate::utils::workspace_documents::{WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS};
+use crate::utils::workspace_documents::{
+    DidOpenConfiguration, WorkspaceDocuments, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
+};
 
 use super::PendingRequests;
 
@@ -190,6 +193,32 @@ pub trait LspClient: Send {
             "Requesting goto definition for {}, line {}, character {}",
             file_path, position.line, position.character
         );
+
+        let needs_open = {
+            let workspace_documents = self.get_workspace_documents();
+            workspace_documents.get_did_open_configuration() == DidOpenConfiguration::Lazy
+                && !workspace_documents.is_did_open_document(file_path)
+        };
+
+        // If needed, read the document text and send didOpen
+        if needs_open {
+            let document_text = self
+                .get_workspace_documents()
+                .read_text_document(&PathBuf::from(file_path), None)
+                .await?;
+
+            self.text_document_did_open(TextDocumentItem {
+                uri: Url::from_file_path(file_path).unwrap(),
+                language_id: detect_language_string(file_path)?,
+                version: 1,
+                text: document_text,
+            })
+            .await?;
+
+            self.get_workspace_documents()
+                .add_did_open_document(file_path);
+        }
+
         let params = GotoDefinitionParams {
             text_document_position_params: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier {
@@ -281,9 +310,32 @@ pub trait LspClient: Send {
         file_path: &str,
         position: Position,
     ) -> Result<Vec<Location>, Box<dyn Error + Send + Sync>> {
-        // TODO: the jedi language server doesn't appear to respect
-        // The "includeDeclaration" param so we'll just say we're
-        // always including it
+        // Get the configuration and check if document is opened first
+        let needs_open = {
+            let workspace_documents = self.get_workspace_documents();
+            workspace_documents.get_did_open_configuration() == DidOpenConfiguration::Lazy
+                && !workspace_documents.is_did_open_document(file_path)
+        };
+
+        // If needed, read the document text and send didOpen
+        if needs_open {
+            let document_text = self
+                .get_workspace_documents()
+                .read_text_document(&PathBuf::from(file_path), None)
+                .await?;
+
+            self.text_document_did_open(TextDocumentItem {
+                uri: Url::from_file_path(file_path).unwrap(),
+                language_id: detect_language_string(file_path)?,
+                version: 1,
+                text: document_text,
+            })
+            .await?;
+
+            self.get_workspace_documents()
+                .add_did_open_document(file_path);
+        }
+
         let params = ReferenceParams {
             text_document_position: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier {

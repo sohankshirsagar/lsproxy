@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Stdio;
 
 use crate::utils::file_utils::{search_directories, search_files};
-use crate::utils::workspace_documents::WorkspaceDocuments;
+use crate::utils::workspace_documents::{DidOpenConfiguration, WorkspaceDocuments};
 use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
     utils::workspace_documents::{
@@ -78,13 +78,6 @@ impl LspClient for ClangdClient {
                 commands.len()
             );
         }
-
-        let text_document_items = self
-            .get_text_document_items_to_open_with_config(root_path)
-            .await?;
-        for item in text_document_items {
-            self.text_document_did_open(item).await?;
-        }
         Ok(())
     }
 }
@@ -120,6 +113,7 @@ impl ClangdClient {
                 .map(|s| s.to_string())
                 .collect(),
             watch_events_rx,
+            DidOpenConfiguration::Lazy,
         );
         let pending_requests = PendingRequests::new();
 
