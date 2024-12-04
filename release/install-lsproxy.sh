@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.1.9"
+LSPROXY_VERSION="0.1.10"
 
 # Function to detect architecture
 detect_arch() {
@@ -37,13 +37,32 @@ install_system_deps() {
         libssl3 \
         ca-certificates \
         git \
-        python3 \
-        python3-pip \
         curl \
         clangd \
         build-essential \
         gcc \
         g++
+}
+
+# Function to install python
+install_python() {
+   echo "Installing python and packages..."
+   DEBIAN_FRONTEND=noninteractive apt-get install -y \
+       python3 \
+       python3-pip
+
+   ln -sf /usr/bin/python3 /usr/bin/python
+
+   PY_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+   MANAGED_FILE="/usr/lib/python${PY_VERSION}/EXTERNALLY-MANAGED"
+
+   if [ -f "$MANAGED_FILE" ]; then
+       rm "$MANAGED_FILE"
+   else
+       echo "Warning: EXTERNALLY-MANAGED file not found at $MANAGED_FILE"
+   fi
+
+   pip3 install jedi-language-server ast-grep-cli
 }
 
 # Function to install Node.js
@@ -65,12 +84,6 @@ install_java() {
     
     # Add jdtls to PATH
     echo 'export PATH="/opt/jdtls/bin:${PATH}"' >> /etc/profile.d/jdtls.sh
-}
-
-# Function to install Python dependencies
-install_python_deps() {
-    echo "Installing Python dependencies..."
-    pip3 install --prefix=/usr jedi-language-server ast-grep-cli
 }
 
 # Function to install Node.js dependencies
@@ -125,9 +138,9 @@ main() {
     check_root
     
     install_system_deps
+    install_python
     install_nodejs
     install_java
-    install_python_deps
     install_node_deps
     install_rust_tools
     install_lsproxy

@@ -23,6 +23,10 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Config Python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
+
 # Install Java
 RUN apt-get update && \
     apt-get install -y openjdk-17-jdk \
@@ -40,10 +44,6 @@ ENV PATH="/opt/jdtls/bin:${PATH}"
 # Install rust-analyzer and rustfmt
 RUN rustup component add rust-analyzer
 RUN rustup component add rustfmt
-
-# Create a virtual environment
-RUN python3 -m venv /app/venv
-ENV PATH="/app/venv/bin:$PATH"
 
 # Install jedi python language server, ast grep for tree sitter
 RUN pip install jedi-language-server ast-grep-cli
