@@ -83,7 +83,7 @@ install_node_deps() {
 install_rust_tools() {
     echo "Installing Rust analysis tools..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source $HOME/.cargo/env
+    . $HOME/.cargo/env
     rustup component add rust-analyzer
     rustup component add rustfmt
 }
