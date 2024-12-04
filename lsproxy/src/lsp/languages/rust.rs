@@ -13,7 +13,8 @@ use tokio::sync::broadcast::Receiver;
 use crate::lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler};
 
 use crate::utils::workspace_documents::{
-    WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_FILE_PATTERNS, RUST_ROOT_FILES,
+    DidOpenConfiguration, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS, RUST_FILE_PATTERNS,
+    RUST_ROOT_FILES,
 };
 
 pub struct RustAnalyzerClient {
@@ -128,6 +129,7 @@ impl RustAnalyzerClient {
                 .map(|&s| s.to_string())
                 .collect(),
             watch_events_rx,
+            DidOpenConfiguration::None,
         );
 
         Ok(Self {
