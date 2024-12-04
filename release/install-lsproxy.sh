@@ -79,7 +79,7 @@ install_java() {
     curl -L -o /tmp/jdt-language-server.tar.gz \
         "https://www.eclipse.org/downloads/download.php?file=/jdtls/snapshots/jdt-language-server-latest.tar.gz"
     mkdir -p /opt/jdtls
-    tar -xzf /tmp/jdt-language-server.tar.gz -C /opt/jdtls
+    tar -xzf /tmp/jdt-language-server.tar.gz -C /opt/jdtls --no-same-owner
     rm /tmp/jdt-language-server.tar.gz
     
     # Add jdtls to PATH
@@ -121,7 +121,7 @@ install_ast_grep_config() {
     curl -L -o /tmp/ast_grep.tar.gz "$config_url"
 
     echo "Extracting ast_grep configuration and rules..."
-    tar -xzf /tmp/ast_grep.tar.gz -C "$dest_dir"
+    tar -xzf /tmp/ast_grep.tar.gz -C "$dest_dir" --no-same-owner
     rm /tmp/ast_grep.tar.gz
 }
 
