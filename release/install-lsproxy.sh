@@ -58,7 +58,7 @@ install_java() {
     echo "Installing Java and JDT..."
     DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk gradle maven
     curl -L -o /tmp/jdt-language-server.tar.gz \
-        "https://www.eclipse.org/downloads/download.php?file=/jdtls/snapshots/jdt-language-server-1.42.0-202410312059.tar.gz"
+        "https://www.eclipse.org/downloads/download.php?file=/jdtls/snapshots/jdt-language-server-latest.tar.gz"
     mkdir -p /opt/jdtls
     tar -xzf /tmp/jdt-language-server.tar.gz -C /opt/jdtls
     rm /tmp/jdt-language-server.tar.gz
