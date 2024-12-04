@@ -11,7 +11,6 @@ use lsp_types::{
     PublishDiagnosticsClientCapabilities, ReferenceContext, ReferenceParams, TagSupport,
     TextDocumentClientCapabilities, TextDocumentIdentifier, TextDocumentItem,
     TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
-    WorkspaceSymbolParams, WorkspaceSymbolResponse,
 };
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -248,38 +247,6 @@ pub trait LspClient: Send {
         Ok(goto_resp)
     }
 
-    // TODO re-implement using textDocument/symbol
-    #[allow(unused)]
-    async fn workspace_symbols(
-        &mut self,
-        query: &str,
-    ) -> Result<WorkspaceSymbolResponse, Box<dyn Error + Send + Sync>> {
-        debug!("Requesting workspace symbols with query: {}", query);
-        let params = WorkspaceSymbolParams {
-            query: query.to_string(),
-            ..Default::default()
-        };
-        let (id, request) = self
-            .get_json_rpc()
-            .create_request("workspace/symbol", Some(serde_json::to_value(params)?));
-        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.get_process().send(&message).await?;
-
-        let response = self
-            .receive_response()
-            .await?
-            .ok_or("No response received")?;
-        if let Some(result) = response.result {
-            let symbols: WorkspaceSymbolResponse = serde_json::from_value(result)?;
-            Ok(symbols)
-        } else if let Some(error) = response.error {
-            error!("Workspace symbols error: {:?}", error);
-            Err(error.into())
-        } else {
-            Err("Unexpected workspace symbols response".into())
-        }
-    }
-
     async fn text_document_symbols(
         &mut self,
         file_path: &str,
@@ -360,29 +327,6 @@ pub trait LspClient: Send {
         let references: Vec<Location> = serde_json::from_value(result)?;
         debug!("Received references response");
         Ok(references)
-    }
-
-    async fn receive_response(
-        &mut self,
-    ) -> Result<Option<JsonRpcMessage>, Box<dyn Error + Send + Sync>> {
-        debug!("Awaiting response from LSP server");
-        // TODO this could be an inf loop, though timeout in receive will break it
-        loop {
-            let raw_response = self.get_process().receive().await?;
-            let message = self.get_json_rpc().parse_message(&raw_response)?;
-            debug!("Received response: {:?}", message);
-
-            if let Some(msg_type) = &message.method {
-                if msg_type == "window/logMessage" {
-                    debug!("Captured log message, continuing to next message");
-                    continue;
-                }
-            }
-
-            if message.id.is_some() {
-                return Ok(Some(message));
-            }
-        }
     }
 
     fn get_process(&mut self) -> &mut ProcessHandler;

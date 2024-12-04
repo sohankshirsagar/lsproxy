@@ -5,7 +5,7 @@ use std::process::Stdio;
 use async_trait::async_trait;
 use json5::from_str as json5_from_str;
 use log::debug;
-use lsp_types::TextDocumentItem;
+use lsp_types::{InitializeParams, TextDocumentItem};
 use notify_debouncer_mini::DebouncedEvent;
 use serde_json::Value;
 use tokio::fs::read_to_string;
@@ -50,6 +50,20 @@ impl LspClient for TypeScriptLanguageClient {
 
     fn get_workspace_documents(&mut self) -> &mut WorkspaceDocumentsHandler {
         &mut self.workspace_documents
+    }
+
+    async fn get_initialize_params(&mut self, root_path: String) -> InitializeParams {
+        let capabilities = self.get_capabilities();
+        InitializeParams {
+            capabilities,
+            root_uri: Some(Url::from_file_path(root_path).unwrap()),
+            initialization_options: Some(serde_json::json!({
+                "tsserver": {
+                    "useSyntaxServer": "never"
+                }
+            })),
+            ..Default::default()
+        }
     }
 }
 
