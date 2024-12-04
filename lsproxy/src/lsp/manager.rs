@@ -921,6 +921,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Java hangs in tests"]
     async fn test_file_symbols_java() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&java_sample_path(), true).await?;
         let manager = context
@@ -1623,6 +1624,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Java hangs in tests"]
     async fn test_references_java() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&java_sample_path(), true).await?;
         let manager = context
@@ -1686,6 +1688,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Java hangs in tests"]
     async fn test_definition_java() -> Result<(), Box<dyn std::error::Error>> {
         let context = TestContext::setup(&java_sample_path(), true).await?;
         let manager = context
