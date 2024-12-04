@@ -1,9 +1,8 @@
 use std::{error::Error, path::Path, process::Stdio};
 
 use async_trait::async_trait;
-use log::debug;
 use lsp_types::{
-    ClientCapabilities, DocumentSymbolClientCapabilities, InitializeParams, InitializeResult,
+    ClientCapabilities, DocumentSymbolClientCapabilities, InitializeParams,
     TextDocumentClientCapabilities,
 };
 use notify_debouncer_mini::DebouncedEvent;

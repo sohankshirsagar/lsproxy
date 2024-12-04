@@ -1,4 +1,4 @@
-use crate::lsp::json_rpc::{JsonRpc, JsonRpcMessage};
+use crate::lsp::json_rpc::JsonRpc;
 use crate::lsp::process::Process;
 use crate::lsp::{ExpectedMessageKey, InnerMessage, JsonRpcHandler, ProcessHandler};
 use crate::utils::file_utils::{detect_language_string, search_directories};
