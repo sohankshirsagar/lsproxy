@@ -1,4 +1,3 @@
-use log::debug;
 use std::error::Error;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
@@ -53,7 +52,6 @@ impl Process for ProcessHandler {
                 let length = content_length.unwrap();
                 let mut content = vec![0; length];
                 stdout.read_exact(&mut content).await?;
-                debug!("> {}", String::from_utf8(content.clone())?);
                 return Ok(String::from_utf8(content)?);
             } else if line.starts_with("Content-Length: ") {
                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
