@@ -30,9 +30,8 @@ async fn main() -> std::io::Result<()> {
         eprintln!("Server panicked: {:?}", panic_info);
     }));
 
-    // Initialize logging with debug level as default
-    env_logger::init_from_env(Env::default().default_filter_or("debug"));
-    info!("Logger initialized");
+    // Initialize logging with info level as default
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     // Parse command line arguments
     let cli = Cli::parse();
