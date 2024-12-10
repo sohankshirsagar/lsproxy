@@ -1,4 +1,6 @@
 use actix_cors::Cors;
+mod middleware;
+use middleware::JwtMiddleware;
 use actix_web::{
     web::{get, post, resource, scope, Data},
     App, HttpServer,
@@ -185,6 +187,11 @@ pub async fn run_server_with_port_and_host(
         App::new()
             .wrap(Cors::permissive())
             .app_data(app_state.clone())
+            .configure(|cfg: &mut actix_web::web::ServiceConfig| {
+                if middleware::is_auth_enabled() {
+                    cfg.service(actix_web::web::scope("").wrap(JwtMiddleware));
+                }
+            })
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-docs/openapi.json", openapi.clone())
