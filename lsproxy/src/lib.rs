@@ -46,6 +46,14 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             url = "https://www.apache.org/licenses/LICENSE-2.0"
         )
     ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    components(
+        security_schemes(
+            ("bearer_auth" = ("type" = "http", "scheme" = "bearer", "bearer_format" = "JWT"))
+        )
+    ),
     paths(
         crate::handlers::definitions_in_file,
         crate::handlers::find_definition,
