@@ -50,6 +50,21 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         ("bearer_auth" = [])
     ),
     components(
+        schemas(
+            FileSymbolsRequest,
+            GetDefinitionRequest,
+            GetReferencesRequest,
+            SupportedLanguages,
+            DefinitionResponse,
+            ReferencesResponse,
+            SymbolResponse,
+            FilePosition,
+            Position,
+            Symbol,
+            ErrorResponse,
+            CodeContext,
+            FileRange,
+        ),
         security_schemes(
             ("bearer_auth" = ("type" = "http", "scheme" = "bearer", "bearer_format" = "JWT"))
         )
