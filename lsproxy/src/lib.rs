@@ -7,7 +7,7 @@ use actix_web::{
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use handlers::read_source_code;
 use log::warn;
-use middleware::JwtMiddleware;
+use middleware::{JwtMiddleware, jwt::Claims};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -187,16 +187,17 @@ pub async fn run_server_with_port_and_host(
         App::new()
             .wrap(Cors::permissive())
             .app_data(app_state.clone())
-            .configure(|cfg: &mut actix_web::web::ServiceConfig| {
+            .configure(|cfg| {
                 if middleware::is_auth_enabled() {
-                    cfg.service(actix_web::web::scope("").wrap(JwtMiddleware));
+                    cfg.service(api_scope.wrap(JwtMiddleware));
+                } else {
+                    cfg.service(api_scope);
                 }
             })
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-docs/openapi.json", openapi.clone())
             )
-            .service(api_scope)
     })
     .bind(format!("{}:{}", host, port))?
     .run()
