@@ -7,7 +7,7 @@ use actix_web::{
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use handlers::read_source_code;
 use log::warn;
-use middleware::{JwtMiddleware, jwt::Claims};
+use middleware::{jwt::Claims, JwtMiddleware};
 use std::fs;
 use std::fs::File;
 use std::io::Write;

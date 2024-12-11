@@ -3,8 +3,8 @@ use actix_web::Error;
 use futures_util::future::LocalBoxFuture;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
-use std::future::{ready, Ready};
 use std::env;
+use std::future::{ready, Ready};
 
 pub fn is_auth_enabled() -> bool {
     env::var("USE_AUTH").map(|v| v == "true").unwrap_or(false)

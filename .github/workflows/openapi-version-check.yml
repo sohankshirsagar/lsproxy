@@ -18,13 +18,13 @@ jobs:
         run: |
           # Get the base branch version
           BASE_VERSION=$(git show "origin/${{ github.base_ref }}:openapi.json" | jq -r '.info.version')
-          
+
           # Get the PR version
           PR_VERSION=$(jq -r '.info.version' openapi.json)
-          
+
           echo "Base version: $BASE_VERSION"
           echo "PR version: $PR_VERSION"
-          
+
           if [ "$BASE_VERSION" = "$PR_VERSION" ]; then
             echo "Error: OpenAPI version must be updated when modifying the spec"
             echo "Please update the version number in openapi.json"
@@ -36,7 +36,7 @@ jobs:
       - name: Check version format
         run: |
           PR_VERSION=$(jq -r '.info.version' openapi.json)
-          
+
           # Check if version matches format x.y.za[n] where x,y,z are numbers, a is alpha/beta/rc, n is optional number
           if ! [[ $PR_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(alpha|beta|rc)[0-9]*$ ]]; then
             echo "Error: Version format must be x.y.z(alpha|beta|rc)[n], e.g. 0.1.0alpha6"

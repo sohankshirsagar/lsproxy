@@ -1,4 +1,4 @@
-use super::jwt::{JwtMiddleware, Claims};
+use super::jwt::{Claims, JwtMiddleware};
 use actix_web::test::{self, TestRequest};
 use actix_web::{web, App, HttpResponse};
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -99,4 +99,3 @@ async fn test_missing_jwt_secret() {
     let resp = err.error_response();
     assert_eq!(resp.status().as_u16(), 500);
 }
-
