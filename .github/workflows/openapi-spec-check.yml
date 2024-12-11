@@ -38,7 +38,7 @@ jobs:
       - name: Generate fresh OpenAPI spec
         run: |
           mkdir -p temp_spec
-          docker run --name temp_lsp_box -v "$(pwd)/temp_spec":/usr/src/app lsproxy-dev ./lsproxy -w
+          docker run -v "${PWD}/lsproxy:/usr/src/app" lsproxy-dev cargo run -w
           docker rm temp_lsp_box
 
       - name: Compare specs

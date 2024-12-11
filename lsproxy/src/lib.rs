@@ -64,9 +64,6 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             ErrorResponse,
             CodeContext,
             FileRange,
-        ),
-        security_schemes(
-            ("bearer_auth" = ("type" = "http", "scheme" = "bearer", "bearer_format" = "JWT"))
         )
     ),
     paths(
@@ -75,23 +72,6 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         crate::handlers::find_references,
         crate::handlers::list_files,
         crate::handlers::read_source_code,
-    ),
-    components(
-        schemas(
-            FileSymbolsRequest,
-            GetDefinitionRequest,
-            GetReferencesRequest,
-            SupportedLanguages,
-            DefinitionResponse,
-            ReferencesResponse,
-            SymbolResponse,
-            FilePosition,
-            Position,
-            Symbol,
-            ErrorResponse,
-            CodeContext,
-            FileRange,
-        )
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
@@ -163,7 +143,25 @@ pub async fn run_server_with_port_and_host(
     port: u16,
     host: &str,
 ) -> std::io::Result<()> {
-    let openapi = ApiDoc::openapi();
+    let mut openapi = ApiDoc::openapi();
+
+    // Create components if none exist
+    if openapi.components.is_none() {
+        openapi.components = Some(utoipa::openapi::Components::default());
+    }
+
+    // Now we can safely unwrap and modify
+    if let Some(components) = openapi.components.as_mut() {
+        components.add_security_scheme(
+            "bearer_auth",
+            utoipa::openapi::security::SecurityScheme::Http(
+                utoipa::openapi::security::HttpBuilder::new()
+                    .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
+                    .bearer_format("JWT")
+                    .build()
+            )
+        );
+    }
 
     // Parse the full server URL to get just the path component
     let server_path = openapi
@@ -238,7 +236,7 @@ pub async fn run_server_with_port_and_host(
 pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
     // We use a clone since we're just adding the docs and writing it to the file. We don't need
     // this for runtime
-    let openapi = ApiDoc::openapi().clone();
+    let mut openapi = ApiDoc::openapi().clone();
     // if let Some(path_item) = openapi.paths.paths.get_mut("/symbol/find-definition") {
     //     if let Some(post_op) = &mut path_item.post {
     //         let mut extensions = Extensions::default();
@@ -249,6 +247,24 @@ pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
     //         post_op.extensions = Some(extensions);
     //     }
     // }
+
+    // Create components if none exist
+    if openapi.components.is_none() {
+        openapi.components = Some(utoipa::openapi::Components::default());
+    }
+
+    // Now we can safely unwrap and modify
+    if let Some(components) = openapi.components.as_mut() {
+        components.add_security_scheme(
+            "bearer_auth",
+            utoipa::openapi::security::SecurityScheme::Http(
+                utoipa::openapi::security::HttpBuilder::new()
+                    .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
+                    .bearer_format("JWT")
+                    .build()
+            )
+        );
+    }
     let openapi_json =
         serde_json::to_string_pretty(&openapi).expect("Failed to serialize OpenAPI to JSON");
     let mut file = File::create(file_path)?;
