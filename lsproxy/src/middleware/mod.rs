@@ -52,13 +52,22 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let auth_header = req.headers().get("Authorization");
-        
+
         if let Some(auth_header) = auth_header {
             if let Ok(auth_str) = auth_header.to_str() {
                 if auth_str.starts_with("Bearer ") {
                     let token = auth_str.trim_start_matches("Bearer ");
-                    let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "default_secret".to_string());
-                    
+                    let secret = match std::env::var("JWT_SECRET") {
+                        Ok(secret) => secret,
+                        Err(_) => {
+                            return Box::pin(async move {
+                                Err(actix_web::error::ErrorInternalServerError(
+                                    "JWT_SECRET environment variable not set",
+                                ))
+                            });
+                        }
+                    };
+
                     match decode::<Claims>(
                         token,
                         &DecodingKey::from_secret(secret.as_bytes()),
@@ -80,9 +89,11 @@ where
                 }
             }
         }
-        
+
         Box::pin(async move {
-            Err(actix_web::error::ErrorUnauthorized("Missing or invalid authorization header"))
+            Err(actix_web::error::ErrorUnauthorized(
+                "Missing or invalid authorization header",
+            ))
         })
     }
 }
@@ -102,12 +113,13 @@ mod tests {
     #[actix_web::test]
     async fn test_valid_token() {
         std::env::set_var("JWT_SECRET", "test_secret");
-        
+
         let claims = Claims {
             exp: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .as_secs() as usize + 3600,
+                .as_secs() as usize
+                + 3600,
         };
 
         let token = encode(
@@ -136,7 +148,7 @@ mod tests {
     #[actix_web::test]
     async fn test_invalid_token() {
         std::env::set_var("JWT_SECRET", "test_secret");
-        
+
         let app = test::init_service(
             App::new()
                 .wrap(JwtMiddleware)
@@ -167,5 +179,26 @@ mod tests {
         let err = test::try_call_service(&app, req).await.unwrap_err();
         let resp = err.error_response();
         assert_eq!(resp.status().as_u16(), 401);
+    }
+
+    #[actix_web::test]
+    async fn test_missing_jwt_secret() {
+        std::env::remove_var("JWT_SECRET");
+
+        let app = test::init_service(
+            App::new()
+                .wrap(JwtMiddleware)
+                .route("/", web::get().to(test_handler)),
+        )
+        .await;
+
+        let req = TestRequest::get()
+            .uri("/")
+            .insert_header(("Authorization", "Bearer some_token"))
+            .to_request();
+
+        let err = test::try_call_service(&app, req).await.unwrap_err();
+        let resp = err.error_response();
+        assert_eq!(resp.status().as_u16(), 500);
     }
 }

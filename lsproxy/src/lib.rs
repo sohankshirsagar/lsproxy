@@ -1,6 +1,5 @@
 use actix_cors::Cors;
 mod middleware;
-use middleware::JwtMiddleware;
 use actix_web::{
     web::{get, post, resource, scope, Data},
     App, HttpServer,
@@ -8,6 +7,7 @@ use actix_web::{
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use handlers::read_source_code;
 use log::warn;
+use middleware::JwtMiddleware;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
