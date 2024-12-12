@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install \
     libssl3 \
     ca-certificates \
     git \
+    procps \
     python3 \
     python3-pip \
     python3-venv \
@@ -66,6 +67,8 @@ COPY --from=builder /usr/src/app/target/release/lsproxy /usr/local/bin/lsproxy
 
 # Copy ast-grep rules
 COPY ./src/ast_grep /usr/src/ast_grep
+
+COPY scripts/process_monitor.sh /usr/local/bin/process_monitor
 
 EXPOSE 4444
 ENV RUST_LOG=info
