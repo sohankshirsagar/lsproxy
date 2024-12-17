@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.1.11"
+LSPROXY_VERSION="0.1.12"
 
 # Function to detect architecture
 detect_arch() {
@@ -125,6 +125,29 @@ install_ast_grep_config() {
     rm /tmp/ast_grep.tar.gz
 }
 
+# Function to install Go and Gopls
+install_go() {
+    echo "Installing Go and Gopls..."
+    local arch=$(detect_arch)
+    curl -O -L "https://go.dev/dl/go1.21.4.linux-${arch}.tar.gz"
+    tar -C /usr/local -xzf go1.21.4.linux-${arch}.tar.gz
+    rm go1.21.4.linux-${arch}.tar.gz
+
+    # Set up Go environment
+    export GOROOT=/usr/local/go
+    export GOPATH=/root/go
+    export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+    # Install Gopls
+    /usr/local/go/bin/go install golang.org/x/tools/gopls@latest
+    cp ~/go/bin/gopls /usr/local/bin/gopls
+
+    # Add Go environment to profile
+    echo 'export GOROOT=/usr/local/go' >> /etc/profile.d/go.sh
+    echo 'export GOPATH=/root/go' >> /etc/profile.d/go.sh
+    echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> /etc/profile.d/go.sh
+}
+
 # Function to clean up
 cleanup() {
     echo "Cleaning up..."
@@ -143,6 +166,7 @@ main() {
     install_java
     install_node_deps
     install_rust_tools
+    install_go
     install_lsproxy
     install_ast_grep_config
     cleanup
