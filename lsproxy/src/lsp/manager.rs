@@ -1,6 +1,4 @@
-use crate::api_types::{
-    get_mount_dir, SupportedLanguages,
-};
+use crate::api_types::{get_mount_dir, SupportedLanguages};
 use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
