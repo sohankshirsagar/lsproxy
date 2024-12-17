@@ -430,7 +430,8 @@
           "typescript_javascript",
           "rust",
           "cpp",
-          "java"
+          "java",
+          "golang"
         ]
       },
       "Symbol": {
