@@ -71,6 +71,10 @@ pub const JAVA_ROOT_FILES: &[&str] = &["gradlew", ".git", "mvnw"];
 pub const JAVA_FILE_PATTERNS: &[&str] = &["**/*.java"];
 pub const JAVA_EXTENSIONS: &[&str] = &["java"];
 
+pub const GOLANG_ROOT_FILES: &[&str] = &["go.mod", "go.work"];
+pub const GOLANG_FILE_PATTERNS: &[&str] = &["**/*.go", "**/*.gomod", "**/*.gowork", "**/*.gotmpl"];
+pub const GOLANG_EXTENSIONS: &[&str] = &["go"];
+
 #[derive(Clone, PartialEq)]
 pub enum DidOpenConfiguration {
     Lazy,
