@@ -1,13 +1,24 @@
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::Error;
 use futures_util::future::LocalBoxFuture;
+use futures_util::future::{ready, Ready};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::future::{ready, Ready};
 
 pub fn is_auth_enabled() -> bool {
-    env::var("USE_AUTH").map(|v| v == "true").unwrap_or(false)
+    env::var("USE_AUTH").map(|v| v == "true").unwrap_or(true)
+}
+
+pub fn validate_jwt_config() -> Result<String, String> {
+    if !is_auth_enabled() {
+        return Ok("Authentication disabled".to_string());
+    }
+
+    match env::var("JWT_SECRET") {
+        Ok(secret) => Ok(secret),
+        Err(_) => Err("JWT_SECRET environment variable not set. To use authentication you need to set this variable. If you want to turn off authentication you can set USE_AUTH=false.".to_string())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

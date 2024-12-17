@@ -7,7 +7,7 @@ use actix_web::{
 use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use handlers::read_source_code;
 use log::warn;
-use middleware::{jwt::Claims, JwtMiddleware};
+use middleware::{validate_jwt_config, JwtMiddleware};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -158,8 +158,8 @@ pub async fn run_server_with_port_and_host(
                 utoipa::openapi::security::HttpBuilder::new()
                     .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
                     .bearer_format("JWT")
-                    .build()
-            )
+                    .build(),
+            ),
         );
     }
 
@@ -172,6 +172,14 @@ pub async fn run_server_with_port_and_host(
         .map(|url| url.path().to_string()) // Convert path to owned String
         .and_then(|path| path.strip_prefix('/').map(|s| s.to_string())) // Convert stripped result to String
         .unwrap_or_else(|| String::new()); // Use empty string as default
+
+    let jwt_secret = match validate_jwt_config() {
+        Ok(secret) => secret,
+        Err(e) => {
+            eprintln!("Configuration error: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     HttpServer::new(move || {
         let mut api_scope = scope(format!("/{}", server_path).as_str());
@@ -261,8 +269,8 @@ pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
                 utoipa::openapi::security::HttpBuilder::new()
                     .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
                     .bearer_format("JWT")
-                    .build()
-            )
+                    .build(),
+            ),
         );
     }
     let openapi_json =
