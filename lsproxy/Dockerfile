@@ -56,6 +56,18 @@ RUN pip install jedi-language-server ast-grep-cli
 # Install global npm packages
 RUN npm install -g typescript-language-server typescript
 
+# Install go and Gopls
+
+ARG TARGETARCH
+RUN curl -O -L "https://go.dev/dl/go1.21.4.linux-${TARGETARCH}.tar.gz" && \
+    tar -C /usr/local -xzf go1.21.4.linux-${TARGETARCH}.tar.gz && \
+    rm go1.21.4.linux-${TARGETARCH}.tar.gz && \
+    /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
+    cp ~/go/bin/gopls /usr/local/bin/gopls
+
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/root/go
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 # Install coverage tools
 RUN cargo install cargo-llvm-cov
 RUN rustup component add llvm-tools-preview

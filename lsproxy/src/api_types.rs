@@ -65,6 +65,8 @@ pub enum SupportedLanguages {
     CPP,
     #[serde(rename = "java")]
     Java,
+    #[serde(rename = "golang")]
+    Golang,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
