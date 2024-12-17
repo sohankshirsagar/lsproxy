@@ -59,11 +59,11 @@ RUN npm install -g typescript-language-server typescript
 # Install go and Gopls
 
 
-RUN curl -O -L "https://go.dev/dl/go1.21.4.linux-arm64.tar.gz" && \
-    tar -C /usr/local -xzf go1.21.4.linux-arm64.tar.gz && \
-    rm go1.21.4.linux-arm64.tar.gz && \
+RUN curl -O -L "https://go.dev/dl/go1.21.4.linux-amd64.tar.gz" && \
+    tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz && \
+    rm go1.21.4.linux-amd64.tar.gz && \
     /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
-    cp ~/go/bin/gopls /usr/local/bin/gopls 
+    cp ~/go/bin/gopls /usr/local/bin/gopls
 
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/root/go
