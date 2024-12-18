@@ -103,10 +103,12 @@ We're building a community. Come hang out with us!
 We're looking to add new language support or better language servers so let us know what you need!
 |Language|Server|URL|
 |:-|:-|:-|
+|C/C++|`clangd`|https://clangd.llvm.org/|
+|Golang|`gopls`|https://github.com/golang/tools/tree/master/gopls|
+|Java|`jdtls`|https://github.com/eclipse-jdtls/eclipse.jdt.ls|
 |Javascript|`typescript-language-server`|https://github.com/typescript-language-server/typescript-language-server|
+|PHP (Coming soon)|`phpactor`|https://github.com/phpactor/phpactor|
 |Python|`jedi-language-server`|https://github.com/pappasam/jedi-language-server|
 |Rust|`rust-analyzer`|https://github.com/rust-lang/rust-analyzer|
 |Typescript|`typescript-language-server`|https://github.com/typescript-language-server/typescript-language-server|
-|C/C++|`clangd`|https://clangd.llvm.org/|
-|Java|`jdtls`|https://github.com/eclipse-jdtls/eclipse.jdt.ls|
 |Your Favorite Language | Awesome Language Server | https://github.com/agentic-labs/lsproxy/issues/new |
