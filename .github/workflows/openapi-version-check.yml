@@ -37,9 +37,9 @@ jobs:
         run: |
           PR_VERSION=$(jq -r '.info.version' openapi.json)
 
-          # Check if version matches format x.y.za[n] where x,y,z are numbers, a is alpha/beta/rc, n is optional number
-          if ! [[ $PR_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(alpha|beta|rc)[0-9]*$ ]]; then
-            echo "Error: Version format must be x.y.z(alpha|beta|rc)[n], e.g. 0.1.0alpha6"
+          # Check if version matches format x.y.z[alpha|beta|rc][n] where x,y,z are numbers
+          if ! [[ $PR_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+((alpha|beta|rc)[0-9]*)?$ ]]; then
+            echo "Error: Version format must be x.y.z or x.y.zalpha[n], e.g. 0.1.0 or 0.1.0alpha6"
             exit 1
           else
             echo "✅ Version format is correct"
