@@ -70,11 +70,11 @@ jobs:
           # Extract AMD64 binary
           docker pull agenticlabs/lsproxy:${VERSION}
           docker create --name amd64-container --platform linux/amd64 agenticlabs/lsproxy:${VERSION}
-          docker cp amd64-container:/lsproxy release-binaries/lsproxy-${VERSION}-linux-amd64
+          docker cp amd64-container:/usr/local/bin/lsproxy release-binaries/lsproxy-${VERSION}-linux-amd64
           docker rm amd64-container
           # Extract ARM64 binary
           docker create --name arm64-container --platform linux/arm64 agenticlabs/lsproxy:${VERSION}
-          docker cp arm64-container:/lsproxy release-binaries/lsproxy-${VERSION}-linux-arm64
+          docker cp arm64-container:/usr/local/bin/lsproxy release-binaries/lsproxy-${VERSION}-linux-arm64
           docker rm arm64-container
           chmod +x release-binaries/*
 
