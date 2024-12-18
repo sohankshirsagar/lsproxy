@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install \
     libssl3 \
     ca-certificates \
     git \
+    procps \
     python3 \
     python3-pip \
     python3-venv \
