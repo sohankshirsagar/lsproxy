@@ -87,13 +87,6 @@ ENV RA_LOG="/tmp/rust-analyzer.log"
 RUN mkdir -p /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user/go \
     && chown -R 1000:1000 /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user /usr/local/bin
 
-RUN apt-get update && apt-get install \
-    -y --no-install-recommends \
-    procps \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-
 # Create the wrapper script with all current env vars
 RUN echo '#!/bin/bash' > /usr/local/bin/lsproxy \
     && env | while read -r line; do \
