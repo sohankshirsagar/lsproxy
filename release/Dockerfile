@@ -69,12 +69,13 @@ RUN curl -O -L "https://go.dev/dl/go1.21.4.linux-${TARGETARCH}.tar.gz" && \
     /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
     cp ~/go/bin/gopls /usr/local/bin/gopls
 
+ENV HOME=/home/user
 ENV GOROOT=/usr/local/go
-ENV GOPATH=/root/go
+ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
-# Copy the binary
-COPY --from=builder /usr/src/app/target/release/lsproxy /usr/local/bin/lsproxy
+# Copy binary with -bin suffix
+COPY --from=builder /usr/src/app/target/release/lsproxy /usr/local/bin/lsproxy-bin
 
 # Copy ast-grep rules
 COPY ./src/ast_grep /usr/src/ast_grep
@@ -82,4 +83,23 @@ COPY ./src/ast_grep /usr/src/ast_grep
 EXPOSE 4444
 ENV RUST_LOG=info
 ENV RA_LOG="/tmp/rust-analyzer.log"
+
+RUN mkdir -p /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user/go \
+    && chown -R 1000:1000 /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user /usr/local/bin
+
+RUN apt-get update && apt-get install \
+    -y --no-install-recommends \
+    procps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Create the wrapper script with all current env vars
+RUN echo '#!/bin/bash' > /usr/local/bin/lsproxy \
+    && env | while read -r line; do \
+    echo "export $line" >> /usr/local/bin/lsproxy; \
+    done \
+    && echo 'exec /usr/local/bin/lsproxy-bin "$@"' >> /usr/local/bin/lsproxy \
+    && chmod +x /usr/local/bin/lsproxy
+
 CMD ["lsproxy"]

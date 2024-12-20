@@ -55,6 +55,8 @@ impl GoplsClient {
         let process = Command::new("gopls")
             .arg("-mode=stdio")
             .arg("-vv")
+            .arg("-logfile=/tmp/gopls.log")
+            .arg("-rpc.trace")
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
