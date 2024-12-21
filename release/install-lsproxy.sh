@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.1.12"
+LSPROXY_VERSION="0.1.13"
 
 # Function to detect architecture
 detect_arch() {
@@ -101,6 +101,29 @@ install_rust_tools() {
     rustup component add rustfmt
 }
 
+# Function to install Go and Gopls
+install_go() {
+    echo "Installing Go and Gopls..."
+    local arch=$(detect_arch)
+    curl -O -L "https://go.dev/dl/go1.21.4.linux-${arch}.tar.gz"
+    tar -C /usr/local -xzf go1.21.4.linux-${arch}.tar.gz
+    rm go1.21.4.linux-${arch}.tar.gz
+
+    # Install Gopls
+    /usr/local/go/bin/go install golang.org/x/tools/gopls@latest
+    cp ~/go/bin/gopls /usr/local/bin/gopls
+
+    # Set up Go environment
+    export GOROOT=/usr/local/go
+    export GOPATH=/home/user/go
+    export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+    # Add Go environment to profile
+    echo 'export GOROOT=/usr/local/go' >> /etc/profile.d/go.sh
+    echo 'export GOPATH=/home/user/go' >> /etc/profile.d/go.sh
+    echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> /etc/profile.d/go.sh
+}
+
 # Function to download and install LSProxy binary
 install_lsproxy() {
     local arch=$(detect_arch)
@@ -123,29 +146,6 @@ install_ast_grep_config() {
     echo "Extracting ast_grep configuration and rules..."
     tar -xzf /tmp/ast_grep.tar.gz -C "$dest_dir" --no-same-owner
     rm /tmp/ast_grep.tar.gz
-}
-
-# Function to install Go and Gopls
-install_go() {
-    echo "Installing Go and Gopls..."
-    local arch=$(detect_arch)
-    curl -O -L "https://go.dev/dl/go1.21.4.linux-${arch}.tar.gz"
-    tar -C /usr/local -xzf go1.21.4.linux-${arch}.tar.gz
-    rm go1.21.4.linux-${arch}.tar.gz
-
-    # Set up Go environment
-    export GOROOT=/usr/local/go
-    export GOPATH=/root/go
-    export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-
-    # Install Gopls
-    /usr/local/go/bin/go install golang.org/x/tools/gopls@latest
-    cp ~/go/bin/gopls /usr/local/bin/gopls
-
-    # Add Go environment to profile
-    echo 'export GOROOT=/usr/local/go' >> /etc/profile.d/go.sh
-    echo 'export GOPATH=/root/go' >> /etc/profile.d/go.sh
-    echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> /etc/profile.d/go.sh
 }
 
 # Function to clean up
