@@ -13,12 +13,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate script version
+      - name: Validate versions
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
+          
+          # Check install script version
           SCRIPT_VERSION=$(grep "LSPROXY_VERSION=" release/install-lsproxy.sh | cut -d'"' -f2)
           if [ "$VERSION" != "$SCRIPT_VERSION" ]; then
             echo "Error: Script version ($SCRIPT_VERSION) does not match release tag ($VERSION)"
+            exit 1
+          fi
+          
+          # Check Cargo.toml version
+          CARGO_VERSION=$(grep '^version = ' lsproxy/Cargo.toml | cut -d'"' -f2)
+          if [ "$VERSION" != "$CARGO_VERSION" ]; then
+            echo "Error: Cargo.toml version ($CARGO_VERSION) does not match release tag ($VERSION)"
             exit 1
           fi
 
