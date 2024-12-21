@@ -4,7 +4,6 @@ use actix_web::{
     web::{get, post, resource, scope, Data},
     App, HttpServer,
 };
-use api_types::{CodeContext, ErrorResponse, FileRange, Position};
 use handlers::read_source_code;
 use log::warn;
 use middleware::{validate_jwt_config, JwtMiddleware};
@@ -23,11 +22,13 @@ mod lsp;
 mod utils;
 
 use crate::api_types::{
-    get_mount_dir, set_global_mount_dir, DefinitionResponse, FilePosition, FileSymbolsRequest,
-    GetDefinitionRequest, GetReferencesRequest, ReferencesResponse, SupportedLanguages, Symbol,
-    SymbolResponse,
+    get_mount_dir, set_global_mount_dir, CodeContext, DefinitionResponse, ErrorResponse,
+    FilePosition, FileRange, FileSymbolsRequest, GetDefinitionRequest, GetReferencesRequest,
+    HealthResponse, Position, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
 };
-use crate::handlers::{definitions_in_file, find_definition, find_references, list_files};
+use crate::handlers::{
+    definitions_in_file, find_definition, find_references, health_check, list_files,
+};
 use crate::lsp::manager::Manager;
 // use crate::utils::doc_utils::make_code_sample;
 
@@ -40,7 +41,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 #[openapi(
     info(
         title = "lsproxy",
-        version = "0.1.1",
+        version = "0.1.2",
         license(
             name = "Apache-2.0",
             url = "https://www.apache.org/licenses/LICENSE-2.0"
@@ -64,12 +65,14 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             ErrorResponse,
             CodeContext,
             FileRange,
+            HealthResponse,
         )
     ),
     paths(
         crate::handlers::definitions_in_file,
         crate::handlers::find_definition,
         crate::handlers::find_references,
+        crate::handlers::health_check,
         crate::handlers::list_files,
         crate::handlers::read_source_code,
     ),
@@ -173,7 +176,7 @@ pub async fn run_server_with_port_and_host(
         .and_then(|path| path.strip_prefix('/').map(|s| s.to_string())) // Convert stripped result to String
         .unwrap_or_else(|| String::new()); // Use empty string as default
 
-    let jwt_secret = match validate_jwt_config() {
+    match validate_jwt_config() {
         Ok(secret) => secret,
         Err(e) => {
             eprintln!("Configuration error: {}", e);
@@ -205,6 +208,8 @@ pub async fn run_server_with_port_and_host(
                     api_scope.service(resource(path).route(get().to(list_files))),
                 ("/workspace/read-source-code", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(read_source_code))),
+                ("/system/health", Some(Method::Get)) =>
+                    api_scope.service(resource(path).route(get().to(health_check))),
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
                     p,
