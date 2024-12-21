@@ -3,7 +3,7 @@ use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
-    ClangdClient, GoplsClient, JdtlsClient, JediClient, RustAnalyzerClient,
+    ClangdClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RustAnalyzerClient,
     TypeScriptLanguageClient,
 };
 #[cfg(test)]
