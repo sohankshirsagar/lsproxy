@@ -11,7 +11,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Returns the service status, version and language server availability
 #[utoipa::path(
     get,
-    path = "/health",
+    path = "/system/health",
     tag = "system",
     responses(
         (status = 200, description = "Health check successful", body = HealthResponse),

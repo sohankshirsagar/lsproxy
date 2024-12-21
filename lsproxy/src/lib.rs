@@ -41,7 +41,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 #[openapi(
     info(
         title = "lsproxy",
-        version = "0.1.1",
+        version = "0.1.2",
         license(
             name = "Apache-2.0",
             url = "https://www.apache.org/licenses/LICENSE-2.0"
@@ -209,7 +209,7 @@ pub async fn run_server_with_port_and_host(
                 ("/workspace/read-source-code", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(read_source_code))),
                 ("/system/health", Some(Method::Get)) =>
-                    api_scope.service(resource(path).route(post().to(health_check))),
+                    api_scope.service(resource(path).route(get().to(health_check))),
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
                     p,

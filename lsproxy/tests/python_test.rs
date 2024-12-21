@@ -9,7 +9,7 @@ use std::time::Duration;
 
 fn wait_for_server(base_url: &str) {
     let client = reqwest::blocking::Client::new();
-    let health_url = format!("{}/system/health", base_url);
+    let health_url = format!("{}/v1/system/health", base_url);
     
     for _ in 0..30 {
         // Try for 30 seconds
