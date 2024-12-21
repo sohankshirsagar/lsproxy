@@ -2,7 +2,7 @@ use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
     utils::workspace_documents::{
         DidOpenConfiguration, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
-        PHP_ROOT_FILES, PHP_FILE_PATTERNS
+        PHP_FILE_PATTERNS, PHP_ROOT_FILES,
     },
 };
 use async_trait::async_trait;
@@ -71,10 +71,7 @@ impl PhpactorClient {
 
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            PHP_FILE_PATTERNS
-                .iter()
-                .map(|&s| s.to_string())
-                .collect(),
+            PHP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
             DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())

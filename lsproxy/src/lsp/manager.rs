@@ -12,7 +12,9 @@ use crate::utils::file_utils::{
     absolute_path_to_relative_path_string, detect_language, search_files,
 };
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS, JAVA_FILE_PATTERNS, PHP_FILE_PATTERNS, PYTHON_FILE_PATTERNS, RUST_FILE_PATTERNS, TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS
+    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
+    JAVA_FILE_PATTERNS, PHP_FILE_PATTERNS, PYTHON_FILE_PATTERNS, RUST_FILE_PATTERNS,
+    TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS,
 };
 use log::{debug, error, warn};
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range};
@@ -101,10 +103,9 @@ impl Manager {
                     .iter()
                     .map(|&s| s.to_string())
                     .collect(),
-                SupportedLanguages::PHP => PHP_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
+                SupportedLanguages::PHP => {
+                    PHP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
+                }
             };
             if search_files(
                 Path::new(root_path),

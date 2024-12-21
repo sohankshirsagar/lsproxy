@@ -1,5 +1,5 @@
 use lsproxy::api_types::{
-    set_global_mount_dir, FilePosition, FileRange, Position, Symbol, SymbolResponse, HealthResponse,
+    set_global_mount_dir, FilePosition, FileRange, HealthResponse, Position, Symbol, SymbolResponse,
 };
 use lsproxy::{initialize_app_state, run_server};
 use reqwest;
@@ -10,7 +10,7 @@ use std::time::Duration;
 fn wait_for_server(base_url: &str) {
     let client = reqwest::blocking::Client::new();
     let health_url = format!("{}/v1/system/health", base_url);
-    
+
     for _ in 0..30 {
         // Try for 30 seconds
         if let Ok(response) = client.get(&health_url).send() {
