@@ -1,9 +1,9 @@
 <?php
+namespace AStar;
+
 require_once __DIR__ . '/Comparable.php';
 require_once __DIR__ . '/Node.php';
 require_once __DIR__ . '/AStar.php';
-
-use AStar\AStar;
 
 // -1 = blocked
 // 0+ = additional movement cost

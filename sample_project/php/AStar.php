@@ -1,6 +1,9 @@
 <?php
 namespace AStar;
 
+/**
+ * A* pathfinding implementation
+ */
 class AStar {
     private array $open = [];
     private array $closed = [];
