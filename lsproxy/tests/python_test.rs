@@ -34,6 +34,7 @@ fn test_server_integration_python() -> Result<(), Box<dyn std::error::Error>> {
 
     // Spawn the server in a separate thread
     let _server_thread = thread::spawn(move || {
+        std::env::set_var("USE_AUTH", "false");
         set_global_mount_dir(&mount_dir);
 
         let system = actix_web::rt::System::new();
