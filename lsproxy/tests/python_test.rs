@@ -3,7 +3,6 @@ use lsproxy::api_types::{
 };
 use lsproxy::{initialize_app_state, run_server};
 use reqwest;
-use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
