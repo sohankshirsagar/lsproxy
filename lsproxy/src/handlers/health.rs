@@ -22,7 +22,8 @@ pub async fn health_check(data: Data<AppState>) -> HttpResponse {
     let manager = match data.manager.lock() {
         Ok(manager) => manager,
         Err(e) => {
-            return HttpResponse::InternalServerError().json(format!("Failed to lock manager: {}", e))
+            return HttpResponse::InternalServerError()
+                .json(format!("Failed to lock manager: {}", e))
         }
     };
 

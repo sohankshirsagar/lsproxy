@@ -1,9 +1,9 @@
 use log::warn;
 use lsp_types::{GotoDefinitionResponse, Location, LocationLink};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use serde_json::{to_value, Value};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, RwLock};
