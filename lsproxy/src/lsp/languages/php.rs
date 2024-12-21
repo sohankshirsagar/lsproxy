@@ -77,7 +77,7 @@ impl PhpactorClient {
                 .map(|&s| s.to_string())
                 .collect(),
             watch_events_rx,
-            DidOpenConfiguration::None,
+            DidOpenConfiguration::Lazy,
         );
 
         let json_rpc_handler = JsonRpcHandler::new();
