@@ -3,13 +3,15 @@ FROM rust:1.81.0-slim-bookworm
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Install runtime dependencies, Python, Node.js, PHP, and npm
+# Install runtime and development dependencies, Python, Node.js, PHP, and npm
 RUN apt-get update && apt-get install \
     -y --no-install-recommends \
     pkg-config \
+    libssl-dev \
     libssl3 \
     ca-certificates \
     git \
+    procps \
     python3 \
     python3-pip \
     python3-venv \
