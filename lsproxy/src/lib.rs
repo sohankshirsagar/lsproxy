@@ -64,12 +64,14 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             ErrorResponse,
             CodeContext,
             FileRange,
+            HealthResponse,
         )
     ),
     paths(
         crate::handlers::definitions_in_file,
         crate::handlers::find_definition,
         crate::handlers::find_references,
+        crate::handlers::health_check,
         crate::handlers::list_files,
         crate::handlers::read_source_code,
     ),

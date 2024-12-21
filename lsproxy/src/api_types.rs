@@ -1,6 +1,7 @@
 use log::warn;
 use lsp_types::{GotoDefinitionResponse, Location, LocationLink};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use serde_json::{to_value, Value};
 use std::cell::RefCell;
 use std::hash::Hash;
@@ -47,6 +48,13 @@ pub fn set_global_mount_dir(path: impl AsRef<Path>) {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ErrorResponse {
     pub error: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HealthResponse {
+    pub status: String,
+    pub version: String,
+    pub languages: HashMap<SupportedLanguages, bool>,
 }
 
 #[derive(
