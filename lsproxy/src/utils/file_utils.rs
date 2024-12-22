@@ -9,8 +9,8 @@ use url::Url;
 
 use super::workspace_documents::{
     CPP_EXTENSIONS, C_AND_CPP_EXTENSIONS, C_EXTENSIONS, GOLANG_EXTENSIONS, JAVASCRIPT_EXTENSIONS,
-    JAVA_EXTENSIONS, PYTHON_EXTENSIONS, RUST_EXTENSIONS, TYPESCRIPT_AND_JAVASCRIPT_EXTENSIONS,
-    TYPESCRIPT_EXTENSIONS,
+    JAVA_EXTENSIONS, PHP_EXTENSIONS, PYTHON_EXTENSIONS, RUST_EXTENSIONS,
+    TYPESCRIPT_AND_JAVASCRIPT_EXTENSIONS, TYPESCRIPT_EXTENSIONS,
 };
 
 pub fn search_files(
@@ -130,6 +130,7 @@ pub fn detect_language(file_path: &str) -> Result<SupportedLanguages, LspManager
         ext if C_AND_CPP_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::CPP),
         ext if JAVA_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Java),
         ext if GOLANG_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Golang),
+        ext if PHP_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::PHP),
         _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
     }
 }
@@ -150,6 +151,7 @@ pub fn detect_language_string(file_path: &str) -> Result<String, LspManagerError
         ext if CPP_EXTENSIONS.contains(&ext) => Ok("cpp".to_string()),
         ext if JAVA_EXTENSIONS.contains(&ext) => Ok("java".to_string()),
         ext if GOLANG_EXTENSIONS.contains(&ext) => Ok("golang".to_string()),
+        ext if PHP_EXTENSIONS.contains(&ext) => Ok("php".to_string()),
         _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
     }
 }

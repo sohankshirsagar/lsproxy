@@ -75,6 +75,8 @@ pub enum SupportedLanguages {
     Java,
     #[serde(rename = "golang")]
     Golang,
+    #[serde(rename = "php")]
+    PHP,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]

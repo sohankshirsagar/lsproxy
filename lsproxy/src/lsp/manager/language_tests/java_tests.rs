@@ -1,102 +1,19 @@
-use lsproxy::api_types::{
-    set_global_mount_dir, FilePosition, FileRange, HealthResponse, Position, Symbol, SymbolResponse,
-};
-use lsproxy::{initialize_app_state, run_server};
-use reqwest;
-use std::sync::mpsc;
-use std::thread;
-use std::time::Duration;
+use super::*;
 
-fn wait_for_server(base_url: &str) {
-    let client = reqwest::blocking::Client::new();
-    let health_url = format!("{}/v1/system/health", base_url);
-
-    for _ in 0..30 {
-        // Try for 30 seconds
-        if let Ok(response) = client.get(&health_url).send() {
-            if let Ok(health) = response.json::<HealthResponse>() {
-                if health.status == "ok" {
-                    return;
-                }
-            }
-        }
-        thread::sleep(Duration::from_secs(1));
-    }
-    panic!("Server did not respond with healthy status within 30 seconds");
-}
-
-#[test]
+#[tokio::test]
 #[ignore = "Java hangs in tests"]
-fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
-    // Use the sample project directory directly as the mount directory
-    let mount_dir = "/mnt/lsproxy_root/sample_project/java";
+async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
+    let context = TestContext::setup(&java_sample_path(), true).await?;
+    let manager = context
+        .manager
+        .as_ref()
+        .ok_or("Manager is not initialized")?;
+    let file_path = "AStar.java";
+    let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
+    let mut symbol_response: SymbolResponse =
+        file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
 
-    let (tx, rx) = mpsc::channel();
-
-    // Spawn the server in a separate thread
-    let _server_thread = thread::spawn(move || {
-        set_global_mount_dir(&mount_dir);
-
-        let system = actix_web::rt::System::new();
-        if let Err(e) = system.block_on(async {
-            match initialize_app_state().await {
-                Ok(app_state) => run_server(app_state).await,
-                Err(e) => {
-                    tx.send(format!("Failed to initialize app state: {}", e))
-                        .unwrap();
-                    Ok(())
-                }
-            }
-        }) {
-            tx.send(format!("System error: {}", e)).unwrap();
-        }
-    });
-
-    // Give the server some time to start
-    thread::sleep(Duration::from_secs(5));
-
-    // Check for any errors from the server thread
-    if let Ok(error_msg) = rx.try_recv() {
-        return Err(error_msg.into());
-    }
-
-    let base_url = "http://localhost:4444";
-    wait_for_server(base_url);
-
-    let client = reqwest::blocking::Client::new();
-    // Test workspace/list-files endpoint
-    let response = client
-        .get(&format!("{}/v1/workspace/list-files", base_url))
-        .send()
-        .expect("Failed to send request");
-    assert_eq!(response.status(), 200);
-
-    let mut workspace_files: Vec<String> = response.json().expect("Failed to parse JSON");
-
-    // Check if the expected files are present
-    let mut expected_files = vec!["AStar.java", "Main.java", "Node.java"];
-    assert_eq!(
-        workspace_files.len(),
-        expected_files.len(),
-        "Unexpected number of files"
-    );
-
-    workspace_files.sort();
-    expected_files.sort();
-    assert_eq!(workspace_files, expected_files, "File lists do not match");
-
-    // Test file_symbols endpoint
-    let response = client
-        .get(&format!("{}/v1/symbol/definitions-in-file", base_url))
-        .query(&[("file_path", "AStar.java")])
-        .send()
-        .expect("Failed to send request");
-
-    assert_eq!(response.status(), 200);
-
-    let returned_symbols: SymbolResponse =
-        serde_json::from_value(response.json().expect("Failed to parse JSON"))?;
-    let expected = vec![
+    let mut expected = vec![
         Symbol {
             name: String::from("AStar"),
             kind: String::from("class"),
@@ -231,6 +148,115 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
         },
     ];
 
-    assert_eq!(returned_symbols, expected);
+    // sort symbols by name
+    symbol_response.sort_by_key(|s| s.name.clone());
+    expected.sort_by_key(|s| s.name.clone());
+    assert_eq!(symbol_response, expected);
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "Java hangs in tests"]
+async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
+    let context = TestContext::setup(&java_sample_path(), true).await?;
+    let manager = context
+        .manager
+        .as_ref()
+        .ok_or("Manager is not initialized")?;
+    let file_path = "AStar.java";
+    let references = manager
+        .find_references(
+            file_path,
+            lsp_types::Position {
+                line: 10,
+                character: 13,
+            },
+        )
+        .await?;
+
+    let expected = vec![
+        Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
+            range: Range {
+                start: lsp_types::Position {
+                    line: 10,
+                    character: 13,
+                },
+                end: lsp_types::Position {
+                    line: 10,
+                    character: 18,
+                },
+            },
+        },
+        Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
+            range: Range {
+                start: lsp_types::Position {
+                    line: 111,
+                    character: 8,
+                },
+                end: lsp_types::Position {
+                    line: 111,
+                    character: 13,
+                },
+            },
+        },
+        Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
+            range: Range {
+                start: lsp_types::Position {
+                    line: 111,
+                    character: 23,
+                },
+                end: lsp_types::Position {
+                    line: 111,
+                    character: 28,
+                },
+            },
+        },
+    ];
+    assert_eq!(references, expected);
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "Java hangs in tests"]
+async fn test_definition() -> Result<(), Box<dyn std::error::Error>> {
+    let context = TestContext::setup(&java_sample_path(), true).await?;
+    let manager = context
+        .manager
+        .as_ref()
+        .ok_or("Manager is not initialized")?;
+
+    let definition_response = manager
+        .find_definition(
+            "AStar.java",
+            lsp_types::Position {
+                line: 111,
+                character: 8,
+            },
+        )
+        .await?;
+
+    let definitions = match definition_response {
+        GotoDefinitionResponse::Scalar(location) => vec![location],
+        GotoDefinitionResponse::Array(locations) => locations,
+        GotoDefinitionResponse::Link(_links) => Vec::new(),
+    };
+    let expected = vec![Location {
+        uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
+        range: Range {
+            start: lsp_types::Position {
+                line: 10,
+                character: 13,
+            },
+            end: lsp_types::Position {
+                line: 10,
+                character: 18,
+            },
+        },
+    }];
+
+    assert_eq!(definitions, expected);
     Ok(())
 }
