@@ -107,7 +107,7 @@ We're looking to add new language support or better language servers so let us k
 |Golang|`gopls`|https://github.com/golang/tools/tree/master/gopls|
 |Java|`jdtls`|https://github.com/eclipse-jdtls/eclipse.jdt.ls|
 |Javascript|`typescript-language-server`|https://github.com/typescript-language-server/typescript-language-server|
-|PHP (Coming soon)|`phpactor`|https://github.com/phpactor/phpactor|
+|PHP|`phpactor`|https://github.com/phpactor/phpactor|
 |Python|`jedi-language-server`|https://github.com/pappasam/jedi-language-server|
 |Rust|`rust-analyzer`|https://github.com/rust-lang/rust-analyzer|
 |Typescript|`typescript-language-server`|https://github.com/typescript-language-server/typescript-language-server|
