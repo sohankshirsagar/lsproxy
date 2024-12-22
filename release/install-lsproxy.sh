@@ -86,6 +86,28 @@ install_java() {
     echo 'export PATH="/opt/jdtls/bin:${PATH}"' >> /etc/profile.d/jdtls.sh
 }
 
+# Function to install PHP and related tools
+install_php() {
+    echo "Installing PHP and related tools..."
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        php \
+        php-xml \
+        php-mbstring \
+        php-curl \
+        php-zip \
+        unzip
+
+    # Install Composer
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+    # Install PHPActor
+    mkdir -p /usr/local/share/phpactor
+    cd /usr/local/share/phpactor
+    curl -L https://github.com/phpactor/phpactor/releases/latest/download/phpactor.phar -o phpactor
+    chmod +x phpactor
+    ln -s /usr/local/share/phpactor/phpactor /usr/local/bin/phpactor
+}
+
 # Function to install Node.js dependencies
 install_node_deps() {
     echo "Installing Node.js dependencies..."
@@ -164,6 +186,7 @@ main() {
     install_python
     install_nodejs
     install_java
+    install_php
     install_node_deps
     install_rust_tools
     install_go
