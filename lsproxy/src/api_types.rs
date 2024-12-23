@@ -108,6 +108,26 @@ pub struct FileRange {
     pub end: Position,
 }
 
+impl FileRange {
+    /// Returns true if the given position is contained within this range
+    pub fn contains(&self, position: &Position) -> bool {
+        // Check if paths match and position is within bounds
+        if position.line < self.start.line || position.line > self.end.line {
+            return false;
+        }
+        
+        if position.line == self.start.line && position.character < self.start.character {
+            return false;
+        }
+        
+        if position.line == self.end.line && position.character > self.end.character {
+            return false;
+        }
+        
+        true
+    }
+}
+
 impl From<Position> for lsp_types::Position {
     fn from(position: Position) -> Self {
         lsp_types::Position {
