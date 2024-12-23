@@ -45,8 +45,8 @@ pub struct ByteOffset {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AstGrepPosition {
-    pub line: usize,
-    pub column: usize,
+    pub line: u32,
+    pub column: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

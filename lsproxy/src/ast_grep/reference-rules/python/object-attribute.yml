@@ -1,0 +1,15 @@
+id: object-attribute
+language: python
+rule:
+  kind: identifier
+  pattern: $NAME
+  inside:
+    kind: attribute
+    field: attribute
+    pattern: $CONTEXT
+    nthChild: 
+      reverse: true
+      position: 1
+    not:
+      inside:
+        kind: call

@@ -1,0 +1,17 @@
+id: function-call
+language: python
+rule:
+  any:
+  - kind: identifier
+    pattern: $NAME
+    inside:
+      kind: call
+      pattern: $CONTEXT
+  - kind: identifier
+    pattern: $NAME
+    inside:
+      kind: attribute
+      field: attribute
+      inside:
+        kind: call
+        pattern: $CONTEXT

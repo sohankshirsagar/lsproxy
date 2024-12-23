@@ -1,0 +1,41 @@
+id: inheritance
+language: python
+rule:
+  any:
+  - kind: identifier
+    pattern: $NAME
+    inside:
+      kind: argument_list
+      inside:
+        kind: class_definition
+        pattern: $CONTEXT
+  - kind: identifier
+    pattern: $NAME
+    inside:
+      kind: keyword_argument
+      field: value
+      inside:
+        kind: argument_list
+        inside:
+          kind: class_definition
+          pattern: $CONTEXT
+  - kind: identifier
+    pattern: $NAME
+    inside:
+      kind: subscript
+      field: value
+      inside:
+        kind: argument_list
+        inside:
+          kind: class_definition
+          pattern: $CONTEXT
+  - kind: identifier
+    pattern: $NAME
+    inside:
+      kind: subscript
+      field: subscript
+      inside:
+        kind: argument_list
+        inside:
+          kind: class_definition
+          pattern: $CONTEXT
