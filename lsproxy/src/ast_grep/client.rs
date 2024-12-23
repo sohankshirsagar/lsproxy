@@ -3,18 +3,28 @@ use tokio::process::Command;
 use super::types::AstGrepMatch;
 
 pub struct AstGrepClient {
-    pub config_path: String,
+    pub symbol_config_path: String,
+    pub reference_config_path: String,
 }
 
 impl AstGrepClient {
+
     pub async fn get_file_symbols(
         &self,
+        file_name: &str,
+    ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
+        self.scan_file(&self.symbol_config_path, file_name).await
+    }
+
+    async fn scan_file(
+        &self,
+        config_path: &str,
         file_name: &str,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
         let command_result = Command::new("ast-grep")
             .arg("scan")
             .arg("--config")
-            .arg(&self.config_path)
+            .arg(config_path)
             .arg("--json")
             .arg(file_name)
             .output()

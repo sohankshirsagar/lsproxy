@@ -57,7 +57,8 @@ impl Manager {
             .expect("Failed to watch path");
 
         let ast_grep = AstGrepClient {
-            config_path: String::from("/usr/src/ast_grep/sgconfig.yml"),
+            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
         };
         Ok(Self {
             lsp_clients: HashMap::new(),
