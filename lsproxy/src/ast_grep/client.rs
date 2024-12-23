@@ -22,11 +22,48 @@ impl AstGrepClient {
         identifier_position: FilePosition,
         file_name: &str,
     ) -> Result<Vec<FilePosition>, Box<dyn std::error::Error>> {
-        let file_symbols = self.scan_file(&self.symbol_config_path, file_name);
+        // Get all symbols in the file
+        let file_symbols = self.scan_file(&self.symbol_config_path, file_name).await?;
+        
+        // Find the symbol that contains our identifier position
+        let containing_symbol = file_symbols.iter().find(|symbol| {
+            symbol.range.start.line == identifier_position.position.line 
+            && symbol.range.start.column == identifier_position.position.character
+        });
+
+        // Get all references
         let matches = self.scan_file(&self.reference_config_path, file_name).await?;
-        // Replace with code that finds the symbol that has a matching identifier position of the
-        // one passed in and and then gets all the matches that are within that symbol's range
-        Ok(Vec::new())
+
+        // If we found a containing symbol, filter references to only those within its range
+        if let Some(symbol) = containing_symbol {
+            let symbol_range = FileRange {
+                path: symbol.file.clone(),
+                start: Position {
+                    line: symbol.meta_variables.single.context.range.start.line as u32,
+                    character: symbol.meta_variables.single.context.range.start.column as u32,
+                },
+                end: Position {
+                    line: symbol.meta_variables.single.context.range.end.line as u32,
+                    character: symbol.meta_variables.single.context.range.end.column as u32,
+                },
+            };
+
+            // Convert matches to FilePositions and filter to those within the symbol's range
+            let contained_references = matches.into_iter()
+                .map(|m| FilePosition {
+                    path: m.file,
+                    position: Position {
+                        line: m.range.start.line as u32,
+                        character: m.range.start.column as u32,
+                    },
+                })
+                .filter(|pos| symbol_range.contains(&pos.position))
+                .collect();
+
+            Ok(contained_references)
+        } else {
+            Ok(Vec::new())
+        }
     }
 
     async fn scan_file(
