@@ -1,30 +1,21 @@
-@setmodule("graph")
-class AStarGraph(object):
-    # Define a class board like grid with two barriers
+from typing import List, Tuple
+from decorators import log_execution_time
 
+class AStarGraph:
     def __init__(self):
-        self.barriers = []
-        self.barriers.append(
-            [
-                (2, 4),
-                (2, 5),
-                (2, 6),
-                (3, 6),
-                (4, 6),
-                (5, 6),
-                (5, 5),
-                (5, 4),
-                (5, 3),
-                (5, 2),
-                (4, 2),
-                (3, 2),
-            ]
-        )
+        self._barriers: List[List[Tuple[int, int]]] = []
+        self._barriers.append([
+            (2, 4), (2, 5), (2, 6),
+            (3, 6), (4, 6), (5, 6),
+            (5, 5), (5, 4), (5, 3),
+            (5, 2), (4, 2), (3, 2),
+        ])
 
     @property
     def barriers(self):
-        return self.barriers
+        return self._barriers
 
+    @log_execution_time
     def heuristic(self, start, goal):
         # Use Chebyshev distance heuristic if we can move one square either
         # adjacent or diagonal
@@ -34,6 +25,7 @@ class AStarGraph(object):
         dy = abs(start[1] - goal[1])
         return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
 
+    @log_execution_time
     def get_vertex_neighbours(self, pos):
         n = []
         # Moves allow link a chess king

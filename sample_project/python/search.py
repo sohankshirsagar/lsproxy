@@ -1,4 +1,9 @@
-def initialize_search(start, end, graph):
+from typing import Dict, Set, Tuple, List
+from graph import AStarGraph
+from decorators import log_execution_time
+
+@log_execution_time
+def initialize_search(start, end, graph: AStarGraph):
     G = {start: 0}  # Actual movement cost to each position from the start position
     F = {
         start: graph.heuristic(start, end)
@@ -9,7 +14,8 @@ def initialize_search(start, end, graph):
     return G, F, closed_vertices, open_vertices, came_from
 
 
-def a_star_search(start, end, graph):
+@log_execution_time
+def a_star_search(start, end, graph: AStarGraph):
     G, F, closed_vertices, open_vertices, came_from = initialize_search(
         start, end, graph
     )
