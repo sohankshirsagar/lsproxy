@@ -92,4 +92,89 @@ impl AstGrepClient {
         symbols.sort_by_key(|s| s.range.start.line);
         Ok(symbols)
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn test_decorator_references() {
+            let client = AstGrepClient {
+                symbol_config_path: "src/ast_grep/reference-rules/python/decorator.yml".to_string(),
+                reference_config_path: "src/ast_grep/reference-rules/python/decorator.yml".to_string(),
+            };
+
+            let position = FilePosition {
+                path: "sample_project/python/graph.py".to_string(),
+                position: Position {
+                    line: 17,  // Line with @log_execution_time decorator
+                    character: 1,
+                },
+            };
+
+            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
+            let expected = vec![]; // TODO: Fill with expected positions
+            assert_eq!(references, expected);
+        }
+
+        #[tokio::test]
+        async fn test_class_definition_references() {
+            let client = AstGrepClient {
+                symbol_config_path: "src/ast_grep/reference-rules/python/inheritance.yml".to_string(),
+                reference_config_path: "src/ast_grep/reference-rules/python/inheritance.yml".to_string(),
+            };
+
+            let position = FilePosition {
+                path: "sample_project/python/graph.py".to_string(),
+                position: Position {
+                    line: 4,  // Line with class AStarGraph definition
+                    character: 6,
+                },
+            };
+
+            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
+            let expected = vec![]; // TODO: Fill with expected positions
+            assert_eq!(references, expected);
+        }
+
+        #[tokio::test]
+        async fn test_function_call_references() {
+            let client = AstGrepClient {
+                symbol_config_path: "src/ast_grep/reference-rules/python/function-call.yml".to_string(),
+                reference_config_path: "src/ast_grep/reference-rules/python/function-call.yml".to_string(),
+            };
+
+            let position = FilePosition {
+                path: "sample_project/python/search.py".to_string(),
+                position: Position {
+                    line: 7,  // Line with initialize_search function definition
+                    character: 4,
+                },
+            };
+
+            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
+            let expected = vec![]; // TODO: Fill with expected positions
+            assert_eq!(references, expected);
+        }
+
+        #[tokio::test]
+        async fn test_object_attribute_references() {
+            let client = AstGrepClient {
+                symbol_config_path: "src/ast_grep/reference-rules/python/object-attribute.yml".to_string(),
+                reference_config_path: "src/ast_grep/reference-rules/python/object-attribute.yml".to_string(),
+            };
+
+            let position = FilePosition {
+                path: "sample_project/python/graph.py".to_string(),
+                position: Position {
+                    line: 13,  // Line with barriers property definition
+                    character: 4,
+                },
+            };
+
+            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
+            let expected = vec![]; // TODO: Fill with expected positions
+            assert_eq!(references, expected);
+        }
+    }
 }
