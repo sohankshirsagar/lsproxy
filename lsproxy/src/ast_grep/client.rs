@@ -1,5 +1,6 @@
 use tokio::process::Command;
 
+use crate::api_types::FilePosition;
 use super::types::AstGrepMatch;
 
 pub struct AstGrepClient {
@@ -14,6 +15,18 @@ impl AstGrepClient {
         file_name: &str,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
         self.scan_file(&self.symbol_config_path, file_name).await
+    }
+
+    pub async fn get_references_contained_in_symbol(
+        &self,
+        identifier_position: FilePosition,
+        file_name: &str,
+    ) -> Result<Vec<FilePosition>, Box<dyn std::error::Error>> {
+        let file_symbols = self.scan_file(&self.symbol_config_path, file_name);
+        let matches = self.scan_file(&self.reference_config_path, file_name).await?;
+        // Replace with code that finds the symbol that has a matching identifier position of the
+        // one passed in and and then gets all the matches that are within that symbol's range
+        Ok(Vec::new())
     }
 
     async fn scan_file(
