@@ -275,6 +275,40 @@ impl Manager {
             })
     }
 
+    pub async fn find_referenced_symbols(
+        &self,
+        file_path: &str,
+        position: Position,
+    ) -> Result<Vec<Location>, LspManagerError> {
+        let workspace_files = self.list_files().await.map_err(|e| {
+            LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
+        })?;
+
+        if !workspace_files.iter().any(|f| f == file_path) {
+            return Err(LspManagerError::FileNotFound(file_path.to_string()));
+        }
+
+        // First we find all the positions we need to find the definition of
+        let referenced_symbols = match self.ast_grep.get_references_contained_in_symbol(&position, file_path).await {
+            Ok(referenced_symbols) => referenced_symbols,
+            Err(e) => {
+                return Err(LspManagerError::InternalError(String::from("Failed to find referenced symbols")));
+            }
+        };
+
+
+        let full_path = get_mount_dir().join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default();
+        let lsp_type = detect_language(full_path_str).map_err(|e| {
+            LspManagerError::InternalError(format!("Language detection failed: {}", e))
+        })?;
+        let client = self
+            .get_client(lsp_type)
+            .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
+        let mut locked_client = client.lock().await;
+        Ok(Vec::new())
+    }
+
     pub async fn list_files(&self) -> Result<Vec<String>, LspManagerError> {
         let mut files = Vec::new();
         for client in self.lsp_clients.values() {

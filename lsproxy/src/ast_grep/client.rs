@@ -18,7 +18,7 @@ impl AstGrepClient {
 
     pub async fn get_references_contained_in_symbol(
         &self,
-        identifier_position: &FilePosition,
+        identifier_position: &lsp_types::Position,
         file_name: &str,
     ) -> Result<Vec<FilePosition>, Box<dyn std::error::Error>> {
         // Get all symbols in the file
@@ -26,8 +26,8 @@ impl AstGrepClient {
 
         // Find the symbol that contains our identifier position
         let containing_symbol = file_symbols.iter().find(|symbol| {
-            symbol.range.start.line == identifier_position.position.line
-                && symbol.range.start.column == identifier_position.position.character
+            symbol.range.start.line == identifier_position.line
+                && symbol.range.start.column == identifier_position.character
         });
 
         // Get all references
@@ -107,16 +107,14 @@ mod tests {
             reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
         };
 
-        let position = FilePosition {
-            path: "/mnt/lsproxy_root/sample_project/python/graph.py".to_string(),
-            position: Position {
-                line: 6, // Line with @log_execution_time decorator
-                character: 6,
-            },
+        let path = "/mnt/lsproxy_root/sample_project/python/graph.py";
+        let position = lsp_types::Position {
+            line: 6, // Line with @log_execution_time decorator
+            character: 6,
         };
 
         let references = client
-            .get_references_contained_in_symbol(&position, &position.path)
+            .get_references_contained_in_symbol(&position, path)
             .await
             .unwrap();
         let expected = vec![
@@ -244,16 +242,14 @@ mod tests {
             reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
         };
 
-        let position = FilePosition {
-            path: "/mnt/lsproxy_root/sample_project/python/graph.py".to_string(),
-            position: Position {
-                line: 51, // Line with @log_execution_time decorator
-                character: 8,
-            },
+        let path = "/mnt/lsproxy_root/sample_project/python/graph.py";
+        let position = lsp_types::Position {
+            line: 51, // Line with @log_execution_time decorator
+            character: 8,
         };
 
         let references = client
-            .get_references_contained_in_symbol(&position, &position.path)
+            .get_references_contained_in_symbol(&position, path)
             .await
             .unwrap();
         let expected = vec![FilePosition { path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"), position: Position { line: 52, character: 28 } }];
