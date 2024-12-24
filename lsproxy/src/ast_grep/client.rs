@@ -1,7 +1,7 @@
 use tokio::process::Command;
 
 use super::types::AstGrepMatch;
-use crate::api_types::{FilePosition, FileRange, Position};
+use crate::api_types::{FileRange, Position};
 
 pub struct AstGrepClient {
     pub symbol_config_path: String,
