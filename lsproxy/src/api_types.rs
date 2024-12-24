@@ -115,15 +115,15 @@ impl FileRange {
         if position.line < self.start.line || position.line > self.end.line {
             return false;
         }
-        
+
         if position.line == self.start.line && position.character < self.start.character {
             return false;
         }
-        
+
         if position.line == self.end.line && position.character > self.end.character {
             return false;
         }
-        
+
         true
     }
 }
@@ -386,66 +386,155 @@ mod tests {
     fn test_contains_multi_line_range() {
         let range = FileRange {
             path: "test.rs".to_string(),
-            start: Position { line: 10, character: 5 },
-            end: Position { line: 12, character: 10 },
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 12,
+                character: 10,
+            },
         };
 
         // Test positions within the range
-        assert!(range.contains(&Position { line: 11, character: 0 }), 
-            "middle line should be contained");
-        assert!(range.contains(&Position { line: 10, character: 5 }), 
-            "start position should be contained");
-        assert!(range.contains(&Position { line: 12, character: 10 }), 
-            "end position should be contained");
+        assert!(
+            range.contains(&Position {
+                line: 11,
+                character: 0
+            }),
+            "middle line should be contained"
+        );
+        assert!(
+            range.contains(&Position {
+                line: 10,
+                character: 5
+            }),
+            "start position should be contained"
+        );
+        assert!(
+            range.contains(&Position {
+                line: 12,
+                character: 10
+            }),
+            "end position should be contained"
+        );
     }
 
     #[test]
     fn test_contains_multi_line_range_outside_positions() {
         let range = FileRange {
             path: "test.rs".to_string(),
-            start: Position { line: 10, character: 5 },
-            end: Position { line: 12, character: 10 },
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 12,
+                character: 10,
+            },
         };
-        
-        assert!(!range.contains(&Position { line: 9, character: 0 }), 
-            "line before start should not be contained");
-        assert!(!range.contains(&Position { line: 13, character: 0 }), 
-            "line after end should not be contained");
-        assert!(!range.contains(&Position { line: 10, character: 4 }), 
-            "position before start on first line should not be contained");
-        assert!(!range.contains(&Position { line: 12, character: 11 }), 
-            "position after end on last line should not be contained");
+
+        assert!(
+            !range.contains(&Position {
+                line: 9,
+                character: 0
+            }),
+            "line before start should not be contained"
+        );
+        assert!(
+            !range.contains(&Position {
+                line: 13,
+                character: 0
+            }),
+            "line after end should not be contained"
+        );
+        assert!(
+            !range.contains(&Position {
+                line: 10,
+                character: 4
+            }),
+            "position before start on first line should not be contained"
+        );
+        assert!(
+            !range.contains(&Position {
+                line: 12,
+                character: 11
+            }),
+            "position after end on last line should not be contained"
+        );
     }
 
     #[test]
     fn test_contains_single_line_range() {
         let single_line_range = FileRange {
             path: "test.rs".to_string(),
-            start: Position { line: 10, character: 5 },
-            end: Position { line: 10, character: 10 },
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 10,
+                character: 10,
+            },
         };
 
-        assert!(single_line_range.contains(&Position { line: 10, character: 7 }), 
-            "position within single line range should be contained");
-        assert!(!single_line_range.contains(&Position { line: 10, character: 4 }), 
-            "position before single line range should not be contained");
-        assert!(!single_line_range.contains(&Position { line: 10, character: 11 }), 
-            "position after single line range should not be contained");
+        assert!(
+            single_line_range.contains(&Position {
+                line: 10,
+                character: 7
+            }),
+            "position within single line range should be contained"
+        );
+        assert!(
+            !single_line_range.contains(&Position {
+                line: 10,
+                character: 4
+            }),
+            "position before single line range should not be contained"
+        );
+        assert!(
+            !single_line_range.contains(&Position {
+                line: 10,
+                character: 11
+            }),
+            "position after single line range should not be contained"
+        );
     }
 
     #[test]
     fn test_contains_zero_width_range() {
         let zero_width_range = FileRange {
             path: "test.rs".to_string(),
-            start: Position { line: 10, character: 5 },
-            end: Position { line: 10, character: 5 },
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 10,
+                character: 5,
+            },
         };
 
-        assert!(zero_width_range.contains(&Position { line: 10, character: 5 }), 
-            "position at zero-width range should be contained");
-        assert!(!zero_width_range.contains(&Position { line: 10, character: 4 }), 
-            "position before zero-width range should not be contained");
-        assert!(!zero_width_range.contains(&Position { line: 10, character: 6 }), 
-            "position after zero-width range should not be contained");
+        assert!(
+            zero_width_range.contains(&Position {
+                line: 10,
+                character: 5
+            }),
+            "position at zero-width range should be contained"
+        );
+        assert!(
+            !zero_width_range.contains(&Position {
+                line: 10,
+                character: 4
+            }),
+            "position before zero-width range should not be contained"
+        );
+        assert!(
+            !zero_width_range.contains(&Position {
+                line: 10,
+                character: 6
+            }),
+            "position after zero-width range should not be contained"
+        );
     }
 }

@@ -1,7 +1,7 @@
 use tokio::process::Command;
 
-use crate::api_types::{FilePosition, Position, FileRange};
 use super::types::AstGrepMatch;
+use crate::api_types::{FilePosition, FileRange, Position};
 
 pub struct AstGrepClient {
     pub symbol_config_path: String,
@@ -9,7 +9,6 @@ pub struct AstGrepClient {
 }
 
 impl AstGrepClient {
-
     pub async fn get_file_symbols(
         &self,
         file_name: &str,
@@ -19,20 +18,22 @@ impl AstGrepClient {
 
     pub async fn get_references_contained_in_symbol(
         &self,
-        identifier_position: FilePosition,
+        identifier_position: &FilePosition,
         file_name: &str,
     ) -> Result<Vec<FilePosition>, Box<dyn std::error::Error>> {
         // Get all symbols in the file
         let file_symbols = self.scan_file(&self.symbol_config_path, file_name).await?;
-        
+
         // Find the symbol that contains our identifier position
         let containing_symbol = file_symbols.iter().find(|symbol| {
-            symbol.range.start.line == identifier_position.position.line 
-            && symbol.range.start.column == identifier_position.position.character
+            symbol.range.start.line == identifier_position.position.line
+                && symbol.range.start.column == identifier_position.position.character
         });
 
         // Get all references
-        let matches = self.scan_file(&self.reference_config_path, file_name).await?;
+        let matches = self
+            .scan_file(&self.reference_config_path, file_name)
+            .await?;
 
         // If we found a containing symbol, filter references to only those within its range
         if let Some(symbol) = containing_symbol {
@@ -49,7 +50,8 @@ impl AstGrepClient {
             };
 
             // Convert matches to FilePositions and filter to those within the symbol's range
-            let contained_references = matches.into_iter()
+            let contained_references = matches
+                .into_iter()
                 .map(|m| FilePosition {
                     path: m.file,
                     position: Position {
@@ -92,89 +94,170 @@ impl AstGrepClient {
         symbols.sort_by_key(|s| s.range.start.line);
         Ok(symbols)
     }
+}
 
-    #[cfg(test)]
-    mod tests {
-        use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        #[tokio::test]
-        async fn test_decorator_references() {
-            let client = AstGrepClient {
-                symbol_config_path: "src/ast_grep/reference-rules/python/decorator.yml".to_string(),
-                reference_config_path: "src/ast_grep/reference-rules/python/decorator.yml".to_string(),
-            };
+    #[tokio::test]
+    async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
+        let client = AstGrepClient {
+            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
+        };
 
-            let position = FilePosition {
-                path: "sample_project/python/graph.py".to_string(),
+        let position = FilePosition {
+            path: "/mnt/lsproxy_root/sample_project/python/graph.py".to_string(),
+            position: Position {
+                line: 6, // Line with @log_execution_time decorator
+                character: 6,
+            },
+        };
+
+        let references = client
+            .get_references_contained_in_symbol(&position, &position.path)
+            .await
+            .unwrap();
+        let expected = vec![
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
                 position: Position {
-                    line: 17,  // Line with @log_execution_time decorator
-                    character: 1,
+                    line: 6,
+                    character: 17,
                 },
-            };
-
-            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
-            let expected = vec![]; // TODO: Fill with expected positions
-            assert_eq!(references, expected);
-        }
-
-        #[tokio::test]
-        async fn test_class_definition_references() {
-            let client = AstGrepClient {
-                symbol_config_path: "src/ast_grep/reference-rules/python/inheritance.yml".to_string(),
-                reference_config_path: "src/ast_grep/reference-rules/python/inheritance.yml".to_string(),
-            };
-
-            let position = FilePosition {
-                path: "sample_project/python/graph.py".to_string(),
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
                 position: Position {
-                    line: 4,  // Line with class AStarGraph definition
-                    character: 6,
+                    line: 8,
+                    character: 24,
                 },
-            };
-
-            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
-            let expected = vec![]; // TODO: Fill with expected positions
-            assert_eq!(references, expected);
-        }
-
-        #[tokio::test]
-        async fn test_function_call_references() {
-            let client = AstGrepClient {
-                symbol_config_path: "src/ast_grep/reference-rules/python/function-call.yml".to_string(),
-                reference_config_path: "src/ast_grep/reference-rules/python/function-call.yml".to_string(),
-            };
-
-            let position = FilePosition {
-                path: "sample_project/python/search.py".to_string(),
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
                 position: Position {
-                    line: 7,  // Line with initialize_search function definition
-                    character: 4,
+                    line: 8,
+                    character: 29,
                 },
-            };
-
-            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
-            let expected = vec![]; // TODO: Fill with expected positions
-            assert_eq!(references, expected);
-        }
-
-        #[tokio::test]
-        async fn test_object_attribute_references() {
-            let client = AstGrepClient {
-                symbol_config_path: "src/ast_grep/reference-rules/python/object-attribute.yml".to_string(),
-                reference_config_path: "src/ast_grep/reference-rules/python/object-attribute.yml".to_string(),
-            };
-
-            let position = FilePosition {
-                path: "sample_project/python/graph.py".to_string(),
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
                 position: Position {
-                    line: 13,  // Line with barriers property definition
-                    character: 4,
+                    line: 8,
+                    character: 34,
                 },
-            };
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 8,
+                    character: 40,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 8,
+                    character: 45,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 9,
+                    character: 23,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 16,
+                    character: 5,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 18,
+                    character: 20,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 20,
+                    character: 5,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 26,
+                    character: 13,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 27,
+                    character: 13,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 28,
+                    character: 46,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 30,
+                    character: 5,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 48,
+                    character: 14,
+                },
+            },
+            FilePosition {
+                path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"),
+                position: Position {
+                    line: 52,
+                    character: 28,
+                },
+            },
+        ];
+        assert_eq!(references, expected);
+        Ok(())
+    }
 
-            let references = client.get_references_contained_in_symbol(position, &position.path).await.unwrap();
-            let expected = vec![]; // TODO: Fill with expected positions
-            assert_eq!(references, expected);
-        }
+    #[tokio::test]
+    async fn test_contained_references() -> Result<(), Box<dyn std::error::Error>> {
+        let client = AstGrepClient {
+            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
+        };
+
+        let position = FilePosition {
+            path: "/mnt/lsproxy_root/sample_project/python/graph.py".to_string(),
+            position: Position {
+                line: 51, // Line with @log_execution_time decorator
+                character: 8,
+            },
+        };
+
+        let references = client
+            .get_references_contained_in_symbol(&position, &position.path)
+            .await
+            .unwrap();
+        let expected = vec![FilePosition { path: String::from("/mnt/lsproxy_root/sample_project/python/graph.py"), position: Position { line: 52, character: 28 } }];
+        assert_eq!(references, expected);
+        Ok(())
     }
 }

@@ -1,7 +1,10 @@
 from typing import List, Tuple
 from decorators import log_execution_time
 
-class AStarGraph:
+class GraphBase:
+    pass
+
+class AStarGraph(GraphBase):
     def __init__(self):
         self._barriers: List[List[Tuple[int, int]]] = []
         self._barriers.append([

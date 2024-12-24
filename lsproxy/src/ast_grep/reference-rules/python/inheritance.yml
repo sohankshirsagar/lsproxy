@@ -1,17 +1,15 @@
 id: inheritance
 language: python
 rule:
+  kind: identifier
+  pattern: $NAME
   any:
-  - kind: identifier
-    pattern: $NAME
-    inside:
+  - inside:
       kind: argument_list
       inside:
         kind: class_definition
         pattern: $CONTEXT
-  - kind: identifier
-    pattern: $NAME
-    inside:
+  - inside:
       kind: keyword_argument
       field: value
       inside:
@@ -19,9 +17,7 @@ rule:
         inside:
           kind: class_definition
           pattern: $CONTEXT
-  - kind: identifier
-    pattern: $NAME
-    inside:
+  - inside:
       kind: subscript
       field: value
       inside:
@@ -29,9 +25,7 @@ rule:
         inside:
           kind: class_definition
           pattern: $CONTEXT
-  - kind: identifier
-    pattern: $NAME
-    inside:
+  - inside:
       kind: subscript
       field: subscript
       inside:

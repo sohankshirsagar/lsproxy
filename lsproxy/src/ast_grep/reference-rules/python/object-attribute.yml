@@ -3,13 +3,24 @@ language: python
 rule:
   kind: identifier
   pattern: $NAME
-  inside:
-    kind: attribute
-    field: attribute
-    pattern: $CONTEXT
-    nthChild: 
-      reverse: true
-      position: 1
-    not:
+  any:
+  - inside:
+      kind: attribute
+      field: attribute
       inside:
-        kind: call
+        kind: return_statement
+        pattern: $CONTEXT
+  - inside:
+      kind: attribute
+      field: attribute
+      inside:
+        kind: assignment
+        field: right
+        pattern: $CONTEXT
+  - inside:
+      kind: attribute
+      field: attribute
+      inside:
+        kind: for_statement
+        field: right
+        pattern: $CONTEXT
