@@ -20,7 +20,7 @@ impl AstGrepClient {
         &self,
         identifier_position: &lsp_types::Position,
         file_name: &str,
-    ) -> Result<Vec<FilePosition>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
         // Get all symbols in the file
         let file_symbols = self.scan_file(&self.symbol_config_path, file_name).await?;
 
@@ -49,17 +49,15 @@ impl AstGrepClient {
                 },
             };
 
-            // Convert matches to FilePositions and filter to those within the symbol's range
+            // Filter matches to those within the symbol's range
             let contained_references = matches
                 .into_iter()
-                .map(|m| FilePosition {
-                    path: m.file,
-                    position: Position {
+                .filter(|m| {
+                    symbol_range.contains(&Position {
                         line: m.range.start.line as u32,
                         character: m.range.start.column as u32,
-                    },
+                    })
                 })
-                .filter(|pos| symbol_range.contains(&pos.position))
                 .collect();
 
             Ok(contained_references)
