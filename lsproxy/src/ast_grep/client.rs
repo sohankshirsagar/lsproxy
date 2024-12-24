@@ -93,3 +93,134 @@ impl AstGrepClient {
         Ok(symbols)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
+        let client = AstGrepClient {
+            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
+        };
+
+        let path = "/mnt/lsproxy_root/sample_project/python/graph.py";
+        let position = lsp_types::Position {
+            line: 6, // Line with @log_execution_time decorator
+            character: 6,
+        };
+
+        let references = client
+            .get_references_contained_in_symbol(&position, path)
+            .await
+            .unwrap();
+        let match_positions: Vec<lsp_types::Position> = references
+            .iter()
+            .map(|ast_match: &AstGrepMatch| lsp_types::Position {
+                line: ast_match.range.start.line as u32,
+                character: ast_match.range.start.column as u32,
+            })
+            .collect();
+        let expected = vec![
+            lsp_types::Position {
+                line: 6,
+                character: 17,
+            },
+            lsp_types::Position {
+                line: 8,
+                character: 24,
+            },
+            lsp_types::Position {
+                line: 8,
+                character: 29,
+            },
+            lsp_types::Position {
+                line: 8,
+                character: 34,
+            },
+            lsp_types::Position {
+                line: 8,
+                character: 40,
+            },
+            lsp_types::Position {
+                line: 8,
+                character: 45,
+            },
+            lsp_types::Position {
+                line: 9,
+                character: 23,
+            },
+            lsp_types::Position {
+                line: 16,
+                character: 5,
+            },
+            lsp_types::Position {
+                line: 18,
+                character: 20,
+            },
+            lsp_types::Position {
+                line: 20,
+                character: 5,
+            },
+            lsp_types::Position {
+                line: 26,
+                character: 13,
+            },
+            lsp_types::Position {
+                line: 27,
+                character: 13,
+            },
+            lsp_types::Position {
+                line: 28,
+                character: 46,
+            },
+            lsp_types::Position {
+                line: 30,
+                character: 5,
+            },
+            lsp_types::Position {
+                line: 48,
+                character: 14,
+            },
+            lsp_types::Position {
+                line: 52,
+                character: 28,
+            },
+        ];
+        assert_eq!(match_positions, expected);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_contained_references() -> Result<(), Box<dyn std::error::Error>> {
+        let client = AstGrepClient {
+            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
+        };
+
+        let path = "/mnt/lsproxy_root/sample_project/python/graph.py";
+        let position = lsp_types::Position {
+            line: 51, // Line with @log_execution_time decorator
+            character: 8,
+        };
+
+        let references = client
+            .get_references_contained_in_symbol(&position, path)
+            .await
+            .unwrap();
+        let match_positions: Vec<lsp_types::Position> = references
+            .iter()
+            .map(|ast_match: &AstGrepMatch| lsp_types::Position {
+                line: ast_match.range.start.line as u32,
+                character: ast_match.range.start.column as u32,
+            })
+            .collect();
+        let expected = vec![lsp_types::Position {
+            line: 52,
+            character: 28,
+        }];
+        assert_eq!(match_positions, expected);
+        Ok(())
+    }
+}

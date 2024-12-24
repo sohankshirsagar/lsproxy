@@ -289,13 +289,18 @@ impl Manager {
         }
 
         // First we find all the positions we need to find the definition of
-        let referenced_symbols = match self.ast_grep.get_references_contained_in_symbol(&position, file_path).await {
+        let references_to_symbols = match self
+            .ast_grep
+            .get_references_contained_in_symbol(&position, file_path)
+            .await
+        {
             Ok(referenced_symbols) => referenced_symbols,
             Err(e) => {
-                return Err(LspManagerError::InternalError(String::from("Failed to find referenced symbols")));
+                return Err(LspManagerError::InternalError(String::from(
+                    "Failed to find referenced symbols",
+                )));
             }
         };
-
 
         let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
