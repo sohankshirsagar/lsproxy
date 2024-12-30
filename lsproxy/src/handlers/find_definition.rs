@@ -76,8 +76,6 @@ pub async fn find_definition(
         }
     };
 
-    info!("Definitions: {:?}", definitions);
-
     let source_code_context = if info.include_source_code {
         match fetch_definition_source_code(&manager, &definitions).await {
             Ok(context) => Some(context),

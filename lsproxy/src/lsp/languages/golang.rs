@@ -38,9 +38,7 @@ impl LspClient for GoplsClient {
         &mut self,
         root_path: String,
     ) -> Result<InitializeParams, Box<dyn Error + Send + Sync>> {
-        let workspace_folders = self
-            .find_workspace_folders(root_path.clone())
-            .await?;
+        let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
         Ok(InitializeParams {
             capabilities: self.get_capabilities(),
             workspace_folders: Some(workspace_folders.clone()),
