@@ -49,7 +49,10 @@ impl Process for ProcessHandler {
 
             let line = String::from_utf8_lossy(&buffer[buffer.len() - n..]);
             if line.trim().is_empty() && content_length.is_some() {
-                let length = content_length.unwrap();
+                let length = content_length.unwrap_or_else(|| {
+                    log::warn!("Content length is 0, this may indicate a protocol error");
+                    0
+                });
                 let mut content = vec![0; length];
                 stdout.read_exact(&mut content).await?;
                 return Ok(String::from_utf8(content)?);

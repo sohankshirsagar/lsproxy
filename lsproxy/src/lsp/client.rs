@@ -70,7 +70,7 @@ pub trait LspClient: Send {
             workspace_folders: Some(
                 self.find_workspace_folders(root_path.clone())
                     .await
-                    .unwrap(),
+                    .unwrap_or_default(),
             ),
             root_uri: Some(Url::from_file_path(&root_path).unwrap()), // primarily for python
             ..Default::default()

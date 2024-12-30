@@ -47,18 +47,17 @@ pub async fn find_definition(
         info.position.path, info.position.position.line, info.position.position.character
     );
 
-    let manager = data
-        .manager
-        .lock()
-        .map_err(|e| {
+    let manager = match data.manager.lock() {
+        Ok(manager) => manager,
+        Err(e) => {
             error!("Failed to lock manager: {:?}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
                 error: format!("Failed to lock manager: {}", e),
-            })
-        })
-        .unwrap();
+            });
+        }
+    };
 
-    let definitions = manager
+    let definitions = match manager
         .find_definition(
             &info.position.path,
             LspPosition {
@@ -67,13 +66,17 @@ pub async fn find_definition(
             },
         )
         .await
-        .map_err(|e| {
+    {
+        Ok(definitions) => definitions,
+        Err(e) => {
             error!("Definition error: {:?}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
                 error: format!("Definition retrieval failed: {}", e),
-            })
-        })
-        .unwrap();
+            });
+        }
+    };
+
+    info!("Definitions: {:?}", definitions);
 
     let source_code_context = if info.include_source_code {
         match fetch_definition_source_code(&manager, &definitions).await {
