@@ -7,7 +7,7 @@ use log::{error, info, warn};
 
 use crate::api_types::{DefinitionResponse, GetDefinitionRequest};
 use crate::AppState;
-use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition};
+use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition, Range};
 /// Get the definition of a symbol at a specific position in a file
 ///
 /// Returns the location of the definition for the symbol at the given position.
@@ -47,18 +47,17 @@ pub async fn find_definition(
         info.position.path, info.position.position.line, info.position.position.character
     );
 
-    let manager = data
-        .manager
-        .lock()
-        .map_err(|e| {
+    let manager = match data.manager.lock() {
+        Ok(manager) => manager,
+        Err(e) => {
             error!("Failed to lock manager: {:?}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
                 error: format!("Failed to lock manager: {}", e),
-            })
-        })
-        .unwrap();
+            });
+        }
+    };
 
-    let definitions = manager
+    let definitions = match manager
         .find_definition(
             &info.position.path,
             LspPosition {
@@ -67,13 +66,15 @@ pub async fn find_definition(
             },
         )
         .await
-        .map_err(|e| {
+    {
+        Ok(definitions) => definitions,
+        Err(e) => {
             error!("Definition error: {:?}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
                 error: format!("Definition retrieval failed: {}", e),
-            })
-        })
-        .unwrap();
+            });
+        }
+    };
 
     let source_code_context = if info.include_source_code {
         match fetch_definition_source_code(&manager, &definitions).await {
@@ -116,19 +117,8 @@ async fn fetch_definition_source_code(
                 && s.range.start.column as u32 == definition.range.start.character
         });
 
-        let source_code = match symbol {
-            Some(symbol) => symbol.get_source_code(),
-            None => {
-                warn!("Symbol not found for definition: {:?}", definition);
-                return Err(LspManagerError::InternalError(format!(
-                    "Symbol not found for definition at {:?}",
-                    definition
-                )));
-            }
-        };
-
-        if let Some(symbol) = symbol {
-            code_contexts.push(CodeContext {
+        let source_code_context = match symbol {
+            Some(symbol) => CodeContext {
                 range: FileRange {
                     path: relative_path,
                     start: Position {
@@ -140,9 +130,42 @@ async fn fetch_definition_source_code(
                         character: symbol.meta_variables.single.context.range.end.column as u32,
                     },
                 },
-                source_code,
-            });
-        }
+                source_code: symbol.get_source_code(),
+            },
+            None => {
+                warn!("Symbol not found for definition: {:?}", definition);
+                warn!("No exact match in file symbols (likely filtered out). Returning an approximate range instead.");
+                let range = Range {
+                    start: LspPosition {
+                        line: definition.range.start.line.saturating_sub(3),
+                        character: 0,
+                    },
+                    end: LspPosition {
+                        line: definition.range.end.line as u32 + 3,
+                        character: 0,
+                    },
+                };
+                let source_code = manager
+                    .read_source_code(&relative_path, Some(range))
+                    .await?;
+                CodeContext {
+                    range: FileRange {
+                        path: relative_path,
+                        start: Position {
+                            line: definition.range.start.line.saturating_sub(3),
+                            character: 0,
+                        },
+                        end: Position {
+                            line: definition.range.end.line as u32 + 3,
+                            character: 0,
+                        },
+                    },
+                    source_code,
+                }
+            }
+        };
+
+        code_contexts.push(source_code_context);
     }
     Ok(code_contexts)
 }

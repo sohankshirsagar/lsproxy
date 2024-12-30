@@ -29,7 +29,7 @@ pub trait LspClient: Send {
         debug!("Initializing LSP client with root path: {:?}", root_path);
         self.start_response_listener().await?;
 
-        let params = self.get_initialize_params(root_path).await;
+        let params = self.get_initialize_params(root_path).await?;
 
         let result = self
             .send_request("initialize", Some(serde_json::to_value(params)?))
@@ -64,17 +64,17 @@ pub trait LspClient: Send {
         capabilities
     }
 
-    async fn get_initialize_params(&mut self, root_path: String) -> InitializeParams {
-        InitializeParams {
+    async fn get_initialize_params(
+        &mut self,
+        root_path: String,
+    ) -> Result<InitializeParams, Box<dyn Error + Send + Sync>> {
+        let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
+        Ok(InitializeParams {
             capabilities: self.get_capabilities(),
-            workspace_folders: Some(
-                self.find_workspace_folders(root_path.clone())
-                    .await
-                    .unwrap(),
-            ),
+            workspace_folders: Some(workspace_folders),
             root_uri: Some(Url::from_file_path(&root_path).unwrap()), // primarily for python
             ..Default::default()
-        }
+        })
     }
 
     async fn send_request(
