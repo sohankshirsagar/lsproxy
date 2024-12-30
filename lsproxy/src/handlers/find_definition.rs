@@ -139,7 +139,7 @@ async fn fetch_definition_source_code(
                 warn!("No exact match in file symbols (likely filtered out). Returning an approximate range instead.");
                 let range = Range {
                     start: LspPosition {
-                        line: definition.range.start.line as u32,
+                        line: definition.range.start.line.saturating_sub(3),
                         character: 0,
                     },
                     end: LspPosition {
@@ -154,7 +154,7 @@ async fn fetch_definition_source_code(
                     range: FileRange {
                         path: relative_path,
                         start: Position {
-                            line: definition.range.start.line as u32,
+                            line: definition.range.start.line.saturating_sub(3),
                             character: 0,
                         },
                         end: Position {
