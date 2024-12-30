@@ -8,7 +8,7 @@ use crate::{
 use async_trait::async_trait;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
-use std::{path::Path, process::Stdio};
+use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
 pub struct GoplsClient {
     process: ProcessHandler,
@@ -34,17 +34,20 @@ impl LspClient for GoplsClient {
         &mut self.pending_requests
     }
 
-    async fn get_initialize_params(&mut self, root_path: String) -> InitializeParams {
+    async fn get_initialize_params(
+        &mut self,
+        root_path: String,
+    ) -> Result<InitializeParams, Box<dyn Error + Send + Sync>> {
         let workspace_folders = self
             .find_workspace_folders(root_path.clone())
             .await
             .unwrap();
-        InitializeParams {
+        Ok(InitializeParams {
             capabilities: self.get_capabilities(),
             workspace_folders: Some(workspace_folders.clone()),
             root_uri: workspace_folders.first().map(|f| f.uri.clone()), // <--------- Not default behavior
             ..Default::default()
-        }
+        })
     }
 }
 impl GoplsClient {
