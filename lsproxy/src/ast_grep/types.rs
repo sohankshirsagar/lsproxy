@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api_types::{FilePosition, FileRange, Position, Symbol},
+    api_types::{FilePosition, FileRange, Identifier, Position, Symbol},
     utils::file_utils::absolute_path_to_relative_path_string,
 };
 
@@ -105,6 +105,7 @@ pub struct Label {
 
 impl From<AstGrepMatch> for Symbol {
     fn from(ast_match: AstGrepMatch) -> Self {
+        assert!(ast_match.rule_id != "all-identifiers");
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
         let match_range = ast_match.get_range();
         Symbol {
@@ -117,6 +118,28 @@ impl From<AstGrepMatch> for Symbol {
                     character: ast_match.range.start.column as u32,
                 },
             },
+            range: FileRange {
+                path: path.clone(),
+                start: Position {
+                    line: match_range.start.line as u32,
+                    character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
+                },
+                end: Position {
+                    line: match_range.end.line as u32,
+                    character: match_range.end.column as u32,
+                },
+            },
+        }
+    }
+}
+
+impl From<AstGrepMatch> for Identifier {
+    fn from(ast_match: AstGrepMatch) -> Self {
+        assert!(ast_match.rule_id == "all-identifiers");
+        let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
+        let match_range = ast_match.get_range();
+        Identifier {
+            name: ast_match.meta_variables.single.name.text.clone(),
             range: FileRange {
                 path: path.clone(),
                 start: Position {
