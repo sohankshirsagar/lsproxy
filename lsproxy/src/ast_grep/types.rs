@@ -144,7 +144,7 @@ impl From<AstGrepMatch> for Identifier {
                 path: path.clone(),
                 start: Position {
                     line: match_range.start.line as u32,
-                    character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
+                    character: match_range.start.column as u32,
                 },
                 end: Position {
                     line: match_range.end.line as u32,

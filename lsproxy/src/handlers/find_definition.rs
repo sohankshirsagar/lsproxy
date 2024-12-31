@@ -70,9 +70,9 @@ pub async fn find_definition(
         match utils::find_identifier_at_position(file_identifiers, &info.position).await {
             Ok(identifier) => identifier,
             Err(e) => {
-                error!("Failed to find identifier at position: {:?}", e);
+                error!("Failed to find definition from position: {:?}", e);
                 return HttpResponse::BadRequest().json(ErrorResponse {
-                    error: format!("Failed to find identifier at position: {}", e),
+                    error: format!("Failed to find definition from position: {}", e),
                 });
             }
         };
@@ -230,7 +230,12 @@ mod test {
 
         let response = find_definition(state, mock_request).await;
 
-        assert_eq!(response.status(), StatusCode::OK, "{}", format!("{:?}", response.body()));
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "{}",
+            format!("{:?}", response.body())
+        );
         assert_eq!(
             response.headers().get("content-type").unwrap(),
             "application/json"
@@ -269,7 +274,7 @@ mod test {
                     path: String::from("main.py"),
                     start: Position {
                         line: 1,
-                        character: 0,
+                        character: 18,
                     },
                     end: Position {
                         line: 1,
@@ -280,6 +285,42 @@ mod test {
         };
 
         assert_eq!(definition_response, expected_response);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_invalid_position() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetDefinitionRequest {
+            position: FilePosition {
+                path: String::from("main.py"),
+                position: Position {
+                    line: 0, // Invalid line number
+                    character: 999,
+                },
+            },
+            include_source_code: false,
+            include_raw_response: false,
+        });
+
+        let response = find_definition(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json"
+        );
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let error_response: ErrorResponse = serde_json::from_slice(&bytes).unwrap();
+
+        assert_eq!(
+            error_response.error,
+            "Failed to find definition from position: No identifier found at position. Closest matches: [Identifier { name: \"plt\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 28 }, end: Position { line: 0, character: 31 } } }, Identifier { name: \"pyplot\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 18 }, end: Position { line: 0, character: 24 } } }, Identifier { name: \"matplotlib\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 7 }, end: Position { line: 0, character: 17 } } }]"
+        );
         Ok(())
     }
 }

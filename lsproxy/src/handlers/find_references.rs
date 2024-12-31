@@ -79,9 +79,9 @@ pub async fn find_references(
         {
             Ok(identifier) => identifier,
             Err(e) => {
-                error!("Failed to find identifier at position: {:?}", e);
+                error!("Failed to find references from position: {:?}", e);
                 return HttpResponse::BadRequest().json(ErrorResponse {
-                    error: format!("Failed to find identifier at position: {}", e),
+                    error: format!("Failed to find references from position: {}", e),
                 });
             }
         };
@@ -345,7 +345,12 @@ mod test {
 
         let response = find_references(state, mock_request).await;
 
-        assert_eq!(response.status(), StatusCode::OK, "{}", format!("{:?}", response.body()));
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "{}",
+            format!("{:?}", response.body())
+        );
         let content_type = response
             .headers()
             .get("content-type")
@@ -430,6 +435,37 @@ mod test {
         };
 
         assert_eq!(expected_response, reference_response);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_invalid_position() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencesRequest {
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 999, // Invalid line number
+                    character: 0,
+                },
+            },
+            include_code_context_lines: None,
+            include_raw_response: false,
+        });
+
+        let response = find_references(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await?;
+        let error_response: ErrorResponse = serde_json::from_slice(&bytes)?;
+        assert_eq!(
+            error_response.error,
+            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"b\", range: FileRange { path: \"graph.py\", start: Position { line: 58, character: 15 }, end: Position { line: 58, character: 16 } } }, Identifier { name: \"barrier\", range: FileRange { path: \"graph.py\", start: Position { line: 58, character: 20 }, end: Position { line: 58, character: 27 } } }, Identifier { name: \"barrier\", range: FileRange { path: \"graph.py\", start: Position { line: 57, character: 12 }, end: Position { line: 57, character: 19 } } }]"
+        );
+
         Ok(())
     }
 }

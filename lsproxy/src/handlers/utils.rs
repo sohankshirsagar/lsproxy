@@ -36,10 +36,18 @@ pub(crate) async fn find_identifier_at_position<'a>(
     let mut with_distances: Vec<_> = identifiers
         .iter()
         .map(|id| {
-            let distance = ((id.range.start.line as i32 - position.position.line as i32).pow(2)
-                + (id.range.start.character as i32 - position.position.character as i32).pow(2))
-                as f64;
-            (id.clone(), distance)
+            let start_line_diff =
+                (id.range.start.line as i32 - position.position.line as i32).abs();
+            let start_char_diff =
+                (id.range.start.character as i32 - position.position.character as i32).abs();
+            let start_distance = start_line_diff * 100 + start_char_diff;
+
+            let end_line_diff = (id.range.end.line as i32 - position.position.line as i32).abs();
+            let end_char_diff =
+                (id.range.end.character as i32 - position.position.character as i32).abs();
+            let end_distance = end_line_diff * 100 + end_char_diff;
+
+            (id.clone(), (start_distance.min(end_distance)) as f64)
         })
         .collect();
 
