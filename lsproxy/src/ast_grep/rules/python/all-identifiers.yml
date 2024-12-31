@@ -1,0 +1,6 @@
+id: all-identifiers
+language: python
+rule:
+    pattern: $NAME
+    any:
+     - kind: identifier

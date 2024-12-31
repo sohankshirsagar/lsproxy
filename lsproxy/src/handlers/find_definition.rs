@@ -118,19 +118,19 @@ async fn fetch_definition_source_code(
         });
 
         let source_code_context = match symbol {
-            Some(symbol) => CodeContext {
+            Some(ast_grep_match) => CodeContext {
                 range: FileRange {
                     path: relative_path,
                     start: Position {
-                        line: symbol.meta_variables.single.context.range.start.line as u32,
-                        character: symbol.meta_variables.single.context.range.start.column as u32,
+                        line: ast_grep_match.get_range().start.line as u32,
+                        character: ast_grep_match.get_range().start.column as u32,
                     },
                     end: Position {
-                        line: symbol.meta_variables.single.context.range.end.line as u32,
-                        character: symbol.meta_variables.single.context.range.end.column as u32,
+                        line: ast_grep_match.get_range().end.line as u32,
+                        character: ast_grep_match.get_range().end.column as u32,
                     },
                 },
-                source_code: symbol.get_source_code(),
+                source_code: ast_grep_match.get_source_code(),
             },
             None => {
                 warn!("Symbol not found for definition: {:?}", definition);
