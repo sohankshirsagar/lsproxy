@@ -1,4 +1,4 @@
-use crate::api_types::{get_mount_dir, SupportedLanguages};
+use crate::api_types::{get_mount_dir, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
@@ -209,6 +209,17 @@ impl Manager {
         ast_grep_result
     }
 
+    pub async fn get_symbol_from_position(
+        &self,
+        file_path: &str,
+        identifier_position: &lsp_types::Position
+    ) -> Result<Symbol, LspManagerError> {
+        match self.ast_grep.get_symbol_from_position(file_path, identifier_position).await {
+            Ok(ast_grep_symbol) => Ok(Symbol::from(ast_grep_symbol)),
+            Err(e) => Err(LspManagerError::InternalError(e.to_string()))
+        }
+    }
+
     pub async fn find_definition(
         &self,
         file_path: &str,
@@ -279,7 +290,7 @@ impl Manager {
         &self,
         file_path: &str,
         position: Position,
-    ) -> Result<Vec<Location>, LspManagerError> {
+    ) -> Result<Vec<(AstGrepMatch, GotoDefinitionResponse)>, LspManagerError> {
         let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
@@ -291,14 +302,12 @@ impl Manager {
         // First we find all the positions we need to find the definition of
         let references_to_symbols = match self
             .ast_grep
-            .get_references_contained_in_symbol(&position, file_path)
+            .get_references_contained_in_symbol(file_path, &position)
             .await
         {
             Ok(referenced_symbols) => referenced_symbols,
             Err(e) => {
-                return Err(LspManagerError::InternalError(String::from(
-                    "Failed to find referenced symbols",
-                )));
+                return Err(LspManagerError::InternalError(format!("Failed to find referenced symbols, {}", e)));
             }
         };
 
@@ -311,7 +320,17 @@ impl Manager {
             .get_client(lsp_type)
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
-        Ok(Vec::new())
+        let mut definitions = Vec::new();
+        for ast_match in references_to_symbols.into_iter() {
+            let definition = locked_client
+                .text_document_definition(full_path_str, lsp_types::Position::from(&ast_match))
+                .await
+                .map_err(|e| {
+                    LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
+                })?;
+            definitions.push((ast_match, definition));
+        }
+        Ok(definitions)
     }
 
     pub async fn list_files(&self) -> Result<Vec<String>, LspManagerError> {

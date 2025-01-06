@@ -91,6 +91,15 @@ pub struct Label {
     pub range: AstGrepRange,
 }
 
+impl From<&AstGrepMatch> for lsp_types::Position {
+    fn from(ast_match: &AstGrepMatch) -> Self {
+        Self {
+            line: ast_match.range.start.line as u32,
+            character: ast_match.range.start.column as u32,
+        }
+    }
+}
+
 impl From<AstGrepMatch> for Symbol {
     fn from(ast_match: AstGrepMatch) -> Self {
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));

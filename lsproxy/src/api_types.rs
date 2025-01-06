@@ -212,6 +212,12 @@ pub struct GetReferencesRequest {
     pub include_raw_response: bool,
 }
 
+/// Request to get the symbols that are referenced from the symbol at the given position
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct GetReferencedSymbolsRequest {
+    pub identifier_position: FilePosition
+}
+
 /// Request to get the symbols in a file.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct FileSymbolsRequest {
@@ -295,6 +301,11 @@ pub struct ReferencesResponse {
     /// The source code around the references.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Vec<CodeContext>>,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ReferencedSymbolsResponse {
+    pub symbols: Vec<Symbol>,
 }
 
 pub type SymbolResponse = Vec<Symbol>;

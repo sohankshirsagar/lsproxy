@@ -1,4 +1,5 @@
 use tokio::process::Command;
+use std::io::{Error, ErrorKind};
 
 use super::types::AstGrepMatch;
 use crate::api_types::{FileRange, Position};
@@ -9,6 +10,26 @@ pub struct AstGrepClient {
 }
 
 impl AstGrepClient {
+    pub async fn get_symbol_from_position(
+        &self,
+        file_name: &str,
+        identifier_position: &lsp_types::Position,
+    ) -> Result<AstGrepMatch, Box<dyn std::error::Error>> {
+        // Get all symbols in the file
+        let file_symbols = self.scan_file(&self.symbol_config_path, file_name).await?;
+
+        // Find the symbol that matches our identifier position
+        let symbol_result = file_symbols.into_iter().find(|symbol| {
+            symbol.range.start.line == identifier_position.line
+                && symbol.range.start.column == identifier_position.character
+        });
+        match symbol_result {
+            Some(matched_symbol) => Ok(matched_symbol),
+            None => Err(Box::new(Error::new(ErrorKind::NotFound, "No symbol found for position"))),
+
+        }
+    }
+
     pub async fn get_file_symbols(
         &self,
         file_name: &str,
@@ -18,52 +39,42 @@ impl AstGrepClient {
 
     pub async fn get_references_contained_in_symbol(
         &self,
-        identifier_position: &lsp_types::Position,
         file_name: &str,
+        identifier_position: &lsp_types::Position,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
-        // Get all symbols in the file
-        let file_symbols = self.scan_file(&self.symbol_config_path, file_name).await?;
-
-        // Find the symbol that contains our identifier position
-        let containing_symbol = file_symbols.iter().find(|symbol| {
-            symbol.range.start.line == identifier_position.line
-                && symbol.range.start.column == identifier_position.character
-        });
 
         // Get all references
         let matches = self
             .scan_file(&self.reference_config_path, file_name)
             .await?;
 
-        // If we found a containing symbol, filter references to only those within its range
-        if let Some(symbol) = containing_symbol {
-            let symbol_range = FileRange {
-                path: symbol.file.clone(),
-                start: Position {
-                    line: symbol.meta_variables.single.context.range.start.line as u32,
-                    character: symbol.meta_variables.single.context.range.start.column as u32,
-                },
-                end: Position {
-                    line: symbol.meta_variables.single.context.range.end.line as u32,
-                    character: symbol.meta_variables.single.context.range.end.column as u32,
-                },
-            };
+        let symbol = self.get_symbol_from_position(file_name, identifier_position).await?;
 
-            // Filter matches to those within the symbol's range
-            let contained_references = matches
-                .into_iter()
-                .filter(|m| {
-                    symbol_range.contains(&Position {
-                        line: m.range.start.line as u32,
-                        character: m.range.start.column as u32,
-                    })
+        // Filter references to only those within its range
+        let symbol_range = FileRange {
+            path: symbol.file.clone(),
+            start: Position {
+                line: symbol.meta_variables.single.context.range.start.line as u32,
+                character: symbol.meta_variables.single.context.range.start.column as u32,
+            },
+            end: Position {
+                line: symbol.meta_variables.single.context.range.end.line as u32,
+                character: symbol.meta_variables.single.context.range.end.column as u32,
+            },
+        };
+
+        // Filter matches to those within the symbol's range
+        let contained_references = matches
+            .into_iter()
+            .filter(|m| {
+                symbol_range.contains(&Position {
+                    line: m.range.start.line as u32,
+                    character: m.range.start.column as u32,
                 })
-                .collect();
+            })
+            .collect();
 
             Ok(contained_references)
-        } else {
-            Ok(Vec::new())
-        }
     }
 
     async fn scan_file(
@@ -112,15 +123,11 @@ mod tests {
         };
 
         let references = client
-            .get_references_contained_in_symbol(&position, path)
-            .await
-            .unwrap();
+            .get_references_contained_in_symbol(path, &position)
+            .await?;
         let match_positions: Vec<lsp_types::Position> = references
             .iter()
-            .map(|ast_match: &AstGrepMatch| lsp_types::Position {
-                line: ast_match.range.start.line as u32,
-                character: ast_match.range.start.column as u32,
-            })
+            .map(lsp_types::Position::from)
             .collect();
         let expected = vec![
             lsp_types::Position {
@@ -206,7 +213,7 @@ mod tests {
         };
 
         let references = client
-            .get_references_contained_in_symbol(&position, path)
+            .get_references_contained_in_symbol(path, &position)
             .await
             .unwrap();
         let match_positions: Vec<lsp_types::Position> = references

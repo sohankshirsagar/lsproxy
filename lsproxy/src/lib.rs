@@ -23,11 +23,11 @@ mod utils;
 
 use crate::api_types::{
     get_mount_dir, set_global_mount_dir, CodeContext, DefinitionResponse, ErrorResponse,
-    FilePosition, FileRange, FileSymbolsRequest, GetDefinitionRequest, GetReferencesRequest,
+    FilePosition, FileRange, FileSymbolsRequest, GetDefinitionRequest, GetReferencesRequest, GetReferencedSymbolsRequest, ReferencedSymbolsResponse,
     HealthResponse, Position, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
 };
 use crate::handlers::{
-    definitions_in_file, find_definition, find_references, health_check, list_files,
+    definitions_in_file, find_definition, find_references, health_check, list_files, find_referenced_symbols,
 };
 use crate::lsp::manager::Manager;
 // use crate::utils::doc_utils::make_code_sample;
@@ -55,9 +55,11 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             FileSymbolsRequest,
             GetDefinitionRequest,
             GetReferencesRequest,
+            GetReferencedSymbolsRequest,
             SupportedLanguages,
             DefinitionResponse,
             ReferencesResponse,
+            ReferencedSymbolsResponse,
             SymbolResponse,
             FilePosition,
             Position,
@@ -75,6 +77,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         crate::handlers::health_check,
         crate::handlers::list_files,
         crate::handlers::read_source_code,
+        crate::handlers::find_referenced_symbols,
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
@@ -202,6 +205,8 @@ pub async fn run_server_with_port_and_host(
                     api_scope.service(resource(path).route(post().to(find_definition))),
                 ("/symbol/find-references", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(find_references))),
+                ("/symbol/find-referenced-symbols", Some(Method::Post)) =>
+                    api_scope.service(resource(path).route(post().to(find_referenced_symbols))),
                 ("/symbol/definitions-in-file", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(definitions_in_file))),
                 ("/workspace/list-files", Some(Method::Get)) =>
