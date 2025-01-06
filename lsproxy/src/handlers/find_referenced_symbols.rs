@@ -41,9 +41,9 @@ pub async fn find_referenced_symbols(
         .await {
             Ok(ast_symbols) => ast_symbols,
             Err(e) => {
-                error!("Failed to get file identifiers: {:?}", e);
+                error!("Failed to get referenced symbols: {:?}", e);
                 return HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: format!("Failed to get file identifiers: {}", e),
+                    error: format!("Failed to get referenced symbols: {}", e),
                 });
             }
         };

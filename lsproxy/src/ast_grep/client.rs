@@ -2,7 +2,7 @@ use tokio::process::Command;
 use std::io::{Error, ErrorKind};
 
 use super::types::AstGrepMatch;
-use crate::api_types::{Position, Symbol, FilePosition};
+use crate::api_types::{get_mount_dir, Position, Symbol, FilePosition};
 
 pub struct AstGrepClient {
     pub symbol_config_path: String,
@@ -17,7 +17,9 @@ impl AstGrepClient {
         identifier_position: &lsp_types::Position,
     ) -> Result<AstGrepMatch, Box<dyn std::error::Error>> {
         // Get all symbols in the file
-        let file_symbols = self.scan_file(&self.symbol_config_path, file_name).await?;
+        let full_path = get_mount_dir().join(&file_name);
+        let full_path_str = full_path.to_str().unwrap_or_default();
+        let file_symbols = self.scan_file(&self.symbol_config_path, full_path_str).await?;
 
         // Find the symbol that matches our identifier position
         let symbol_result = file_symbols.into_iter().find(|symbol| {
@@ -50,10 +52,12 @@ impl AstGrepClient {
         file_name: &str,
         identifier_position: &lsp_types::Position,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
+        let full_path = get_mount_dir().join(&file_name);
+        let full_path_str = full_path.to_str().unwrap_or_default();
 
         // Get all references
         let matches = self
-            .scan_file(&self.reference_config_path, file_name)
+            .scan_file(&self.reference_config_path, full_path_str)
             .await?;
 
         let symbol = Symbol::from(self.get_symbol_from_position(file_name, identifier_position).await?);
