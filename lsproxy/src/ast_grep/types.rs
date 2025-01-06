@@ -144,7 +144,6 @@ impl From<AstGrepMatch> for Symbol {
 
 impl From<AstGrepMatch> for Identifier {
     fn from(ast_match: AstGrepMatch) -> Self {
-        assert!(ast_match.rule_id == "all-identifiers");
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
         let match_range = ast_match.get_range();
         Identifier {
