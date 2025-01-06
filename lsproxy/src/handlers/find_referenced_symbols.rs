@@ -62,6 +62,48 @@ pub async fn find_referenced_symbols(
     }).collect();
 
 
-    HttpResponse::Ok().json(unwrapped_definition_responses)
+    // First get the workspace files
+    let files = match manager.list_files().await {
+        Ok(files) => files,
+        Err(e) => {
+            error!("Failed to list workspace files: {:?}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: format!("Failed to list workspace files: {}", e),
+            });
+        }
+    };
+
+    // Then categorize the definitions
+    let mut internals = Vec::new();
+    let mut builtins = Vec::new();
+    let mut not_found = Vec::new();
+
+    for (identifier, definitions) in unwrapped_definition_responses {
+        if definitions.is_empty() {
+            not_found.push(identifier);
+        } else {
+            // Check if any definition is in workspace files
+            let has_internal_definition = definitions.iter().any(|def| files.contains(&def.path));
+            
+            if has_internal_definition {
+                internals.push(DefinitionWithIdentifier {
+                    identifier: identifier.clone(),
+                    definitions,
+                });
+            } else {
+                builtins.push(DefinitionWithIdentifier {
+                    identifier: identifier.clone(),
+                    definitions,
+                });
+            }
+        }
+    }
+
+    // Return the categorized response
+    HttpResponse::Ok().json(ReferencedSymbolsResponse {
+        internals,
+        builtins,
+        not_found,
+    })
 
 }
