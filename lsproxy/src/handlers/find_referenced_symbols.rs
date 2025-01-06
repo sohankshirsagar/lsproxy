@@ -74,8 +74,8 @@ pub async fn find_referenced_symbols(
     };
 
     // Then categorize the definitions
-    let mut internals = Vec::new();
-    let mut builtins = Vec::new();
+    let mut workspace_symbols = Vec::new();
+    let mut external_symbols = Vec::new();
     let mut not_found = Vec::new();
 
     for (identifier, definitions) in unwrapped_definition_responses {
@@ -86,12 +86,12 @@ pub async fn find_referenced_symbols(
             let has_internal_definition = definitions.iter().any(|def| files.contains(&def.path));
             
             if has_internal_definition {
-                internals.push(DefinitionWithIdentifier {
+                workspace_symbols.push(DefinitionWithIdentifier {
                     identifier: identifier.clone(),
                     definitions,
                 });
             } else {
-                builtins.push(DefinitionWithIdentifier {
+                external_symbols.push(DefinitionWithIdentifier {
                     identifier: identifier.clone(),
                     definitions,
                 });
@@ -101,8 +101,8 @@ pub async fn find_referenced_symbols(
 
     // Return the categorized response
     HttpResponse::Ok().json(ReferencedSymbolsResponse {
-        internals,
-        builtins,
+        workspace_symbols,
+        external_symbols,
         not_found,
     })
 
