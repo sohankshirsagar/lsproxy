@@ -2,7 +2,7 @@ use tokio::process::Command;
 use std::io::{Error, ErrorKind};
 
 use super::types::AstGrepMatch;
-use crate::api_types::{FileRange, Position};
+use crate::api_types::{Position, Symbol, FilePosition};
 
 pub struct AstGrepClient {
     pub symbol_config_path: String,
@@ -56,28 +56,18 @@ impl AstGrepClient {
             .scan_file(&self.reference_config_path, file_name)
             .await?;
 
-        let symbol = self.get_symbol_from_position(file_name, identifier_position).await?;
-
-        // Filter references to only those within its range
-        let symbol_range = FileRange {
-            path: symbol.file.clone(),
-            start: Position {
-                line: symbol.meta_variables.single.context.range.start.line as u32,
-                character: symbol.meta_variables.single.context.range.start.column as u32,
-            },
-            end: Position {
-                line: symbol.meta_variables.single.context.range.end.line as u32,
-                character: symbol.meta_variables.single.context.range.end.column as u32,
-            },
-        };
+        let symbol = Symbol::from(self.get_symbol_from_position(file_name, identifier_position).await?);
 
         // Filter matches to those within the symbol's range
         let contained_references = matches
             .into_iter()
             .filter(|m| {
-                symbol_range.contains(&Position {
-                    line: m.range.start.line as u32,
-                    character: m.range.start.column as u32,
+                symbol.range.contains(FilePosition {
+                    path: String::from(file_name),
+                    position: Position {
+                        line: m.range.start.line as u32,
+                        character: m.range.start.column as u32,
+                    }
                 })
             })
             .collect();
@@ -116,35 +106,6 @@ impl AstGrepClient {
         Ok(symbols)
     }
 
-    pub async fn get_file_identifiers(
-        &self,
-        file_name: &str,
-    ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
-        let command_result = Command::new("ast-grep")
-            .arg("scan")
-            .arg("--config")
-            .arg(&self.config_path)
-            .arg("--json")
-            .arg(file_name)
-            .output()
-            .await?;
-
-        if !command_result.status.success() {
-            let error = String::from_utf8_lossy(&command_result.stderr);
-            return Err(format!("sg command failed: {}", error).into());
-        }
-
-        let output = String::from_utf8(command_result.stdout)?;
-        let mut identifiers: Vec<AstGrepMatch> =
-            serde_json::from_str(&output).map_err(|e| format!("Failed to parse JSON: {}", e))?;
-        identifiers = identifiers
-            .into_iter()
-            .filter(|s| s.rule_id == "all-identifiers")
-            .collect();
-
-        identifiers.sort_by_key(|s| s.range.start.line);
-        Ok(identifiers)
-    }
 }
 
 #[cfg(test)]
@@ -155,6 +116,7 @@ mod tests {
     async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
         let client = AstGrepClient {
             symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            identifier_config_path: String::from("/usr/src/ast_grep/identifier-config.yml"),
             reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
         };
 
@@ -245,6 +207,7 @@ mod tests {
     async fn test_contained_references() -> Result<(), Box<dyn std::error::Error>> {
         let client = AstGrepClient {
             symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            identifier_config_path: String::from("/usr/src/ast_grep/identifier-config.yml"),
             reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
         };
 

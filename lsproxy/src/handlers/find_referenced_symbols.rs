@@ -2,8 +2,8 @@ use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Position as LspPosition, GotoDefinitionResponse};
-use crate::api_types::{ErrorResponse, FileRange, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Symbol, Position, FilePosition};
-use crate::{ast_grep, AppState};
+use crate::api_types::{ErrorResponse, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Position, FilePosition};
+use crate::AppState;
 use crate::utils::file_utils::uri_to_relative_path_string;
 
 #[utoipa::path(
@@ -30,7 +30,7 @@ pub async fn find_referenced_symbols(
 
     let manager = data.manager.lock().unwrap();
 
-    let referenecd_ast_symbols = manager
+    let referenecd_ast_symbols = match manager
         .find_referenced_symbols(
             &info.identifier_position.path,
             LspPosition {
@@ -38,33 +38,30 @@ pub async fn find_referenced_symbols(
                 character: info.identifier_position.position.character,
             },
         )
-        .await
-        .map_err(|e| {
-            error!("Referenced symbols error: {:?}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("Finding referenced symbols failed: {}", e),
-            })
-        })
-        .unwrap();
-    let referenced_symbols = referenecd_ast_symbols.into_iter().map(|(ast_grep_result, definition_response)| async {
-        let definitions = match definition_response {
-            GotoDefinitionResponse::Scalar(location) => vec![(uri_to_relative_path_string(&location.uri), LspPosition { line: location.range.start.line, character: location.range.start.character })],
-            GotoDefinitionResponse::Array(locations) => {
-                locations.into_iter().map(|location| (uri_to_relative_path_string(&location.uri), LspPosition { line: location.range.start.line, character: location.range.start.character })).collect()
-            }
-            GotoDefinitionResponse::Link(links) => {
-                links.into_iter().map(|link| (uri_to_relative_path_string(&link.target_uri), LspPosition { line: link.target_range.start.line, character: link.target_range.start.character })).collect()
+        .await {
+            Ok(ast_symbols) => ast_symbols,
+            Err(e) => {
+                error!("Failed to get file identifiers: {:?}", e);
+                return HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("Failed to get file identifiers: {}", e),
+                });
             }
         };
-        match definitions.first() {
-            Some(def_item) => Some(manager.get_symbol_from_position(&def_item.0, &def_item.1).await
-            .map_err(|e| Symbol {name: ast_grep_result.meta_variables.single.name.text.clone(), kind: ast_grep_result.rule_id.clone(), identifier_position: FilePosition { path: String::from("NOTFOUND"), position: Position {line: 0, character: 0}}, range: FileRange {path: String::from("NOTFOUND"), start: Position {line: 0, character: 0}, end: Position {line: 0, character: 0}}})
-        ),
-            None => None
-        }
 
+    let unwrapped_definition_response: Vec<(String, Vec<FilePosition>)> = referenecd_ast_symbols.into_iter().map(|(ast_grep_result, definition_response)| {
+        let definitions = match definition_response {
+            GotoDefinitionResponse::Scalar(location) => vec![FilePosition { path: uri_to_relative_path_string(&location.uri), position: Position { line: location.range.start.line, character: location.range.start.character }}],
+            GotoDefinitionResponse::Array(locations) => {
+                locations.into_iter().map(|location| FilePosition { path: uri_to_relative_path_string(&location.uri), position: Position { line: location.range.start.line, character: location.range.start.character }}).collect()
+            }
+            GotoDefinitionResponse::Link(links) => {
+                links.into_iter().map(|link| FilePosition { path: uri_to_relative_path_string(&link.target_uri), position: Position { line: link.target_range.start.line, character: link.target_range.start.character }}).collect()
+            }
+        };
+        (ast_grep_result.meta_variables.single.name.text.clone(), definitions)
     }).collect();
 
-    HttpResponse::Ok().json("")
+
+    HttpResponse::Ok().json(unwrapped_definition_response)
 
 }

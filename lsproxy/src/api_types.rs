@@ -305,7 +305,7 @@ pub struct ReferencesResponse {
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencedSymbolsResponse {
-    pub symbols: Vec<Symbol>,
+    pub symbols: Vec<(String, Vec<FilePosition>)>,
 }
 
 pub type SymbolResponse = Vec<Symbol>;
