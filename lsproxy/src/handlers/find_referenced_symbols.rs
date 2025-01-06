@@ -2,7 +2,7 @@ use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Position as LspPosition, GotoDefinitionResponse};
-use crate::api_types::{Identifier, ErrorResponse, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Position, FilePosition};
+use crate::api_types::{Identifier, ErrorResponse, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Position, FilePosition, DefinitionWithIdentifier};
 use crate::AppState;
 use crate::utils::file_utils::uri_to_relative_path_string;
 

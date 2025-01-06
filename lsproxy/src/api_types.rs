@@ -146,6 +146,12 @@ impl From<FileRange> for lsp_types::Range {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct DefinitionWithIdentifier {
+    pub identifier: Identifier,
+    pub definitions: Vec<FilePosition>,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CodeContext {
     pub range: FileRange,
     pub source_code: String,
@@ -305,7 +311,9 @@ pub struct ReferencesResponse {
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencedSymbolsResponse {
-    pub symbols: Vec<(String, Vec<FilePosition>)>,
+    pub internals: Vec<DefinitionWithIdentifier>,
+    pub builtins: Vec<DefinitionWithIdentifier>,
+    pub not_found: Vec<Identifier>,
 }
 
 pub type SymbolResponse = Vec<Symbol>;
