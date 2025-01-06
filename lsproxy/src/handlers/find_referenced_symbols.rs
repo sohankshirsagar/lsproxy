@@ -104,7 +104,7 @@ pub async fn find_referenced_symbols(
 
                 workspace_symbols.push(SymbolWithIdentifier {
                     identifier: identifier.clone(),
-                    definitions: symbols_with_definitions,
+                    symbols: symbols_with_definitions,
                 });
             } else {
                 builtin_symbols.push(identifier.clone());
