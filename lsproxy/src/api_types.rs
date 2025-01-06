@@ -322,3 +322,20 @@ impl From<LocationLink> for FilePosition {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FindIdentifierRequest {
+    /// The name of the identifier to search for.
+    pub name: String,
+    /// The path to the file to search for identifiers.
+    pub path: String,
+    /// The position hint to search for identifiers. If not provided.
+    pub position: Option<Position>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentifierResponse {
+    pub identifiers: Vec<Identifier>,
+}

@@ -4,8 +4,9 @@ use actix_web::{
 };
 
 use crate::{
-    api_types::{ErrorResponse, FilePosition, Identifier},
-    ast_grep::types::{FindIdentifierRequest, IdentifierResponse},
+    api_types::{
+        ErrorResponse, FilePosition, FindIdentifierRequest, Identifier, IdentifierResponse,
+    },
     handlers::utils::{self, PositionError},
     AppState,
 };
@@ -100,5 +101,175 @@ pub async fn find_identifier(
         HttpResponse::Ok().json(IdentifierResponse {
             identifiers: name_matched_identifiers,
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::api_types::Position;
+    use crate::initialize_app_state;
+    use crate::test_utils::{python_sample_path, typescript_sample_path, TestContext};
+    use actix_web::http::StatusCode;
+
+    #[tokio::test]
+    async fn test_python_find_all_identifiers() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        // Test finding all occurrences of 'graph' without position
+        let mock_request = Json(FindIdentifierRequest {
+            path: String::from("main.py"),
+            name: String::from("graph"),
+            position: None,
+        });
+
+        let response = find_identifier(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let identifier_response: IdentifierResponse = serde_json::from_slice(&bytes).unwrap();
+
+        // Should find at least two occurrences: declaration and usage
+        assert!(identifier_response.identifiers.len() >= 2);
+        assert!(identifier_response
+            .identifiers
+            .iter()
+            .all(|id| id.name == "graph"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_python_find_exact_identifier() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        // Test finding exact occurrence of 'AStarGraph' at its definition
+        let mock_request = Json(FindIdentifierRequest {
+            path: String::from("graph.py"),
+            name: String::from("AStarGraph"),
+            position: Some(Position {
+                line: 1,
+                character: 6,
+            }),
+        });
+
+        let response = find_identifier(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let identifier_response: IdentifierResponse = serde_json::from_slice(&bytes).unwrap();
+
+        assert_eq!(identifier_response.identifiers.len(), 1);
+        assert_eq!(identifier_response.identifiers[0].name, "AStarGraph");
+        assert_eq!(identifier_response.identifiers[0].range.start.line, 1);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_typescript_find_all_identifiers() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&typescript_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        // Test finding all occurrences of 'path' in PathfinderDisplay.tsx
+        let mock_request = Json(FindIdentifierRequest {
+            path: String::from("PathfinderDisplay.tsx"),
+            name: String::from("path"),
+            position: None,
+        });
+
+        let response = find_identifier(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let identifier_response: IdentifierResponse = serde_json::from_slice(&bytes).unwrap();
+
+        // Should find multiple occurrences in state and JSX
+        assert!(identifier_response.identifiers.len() >= 2);
+        assert!(identifier_response
+            .identifiers
+            .iter()
+            .all(|id| id.name == "path"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_typescript_find_closest_matches() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&typescript_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        // Test finding closest matches for 'maze' near but not exactly at a position
+        let mock_request = Json(FindIdentifierRequest {
+            path: String::from("PathfinderDisplay.tsx"),
+            name: String::from("maze"),
+            position: Some(Position {
+                line: 25, // Near maze usage but not exact
+                character: 10,
+            }),
+        });
+
+        let response = find_identifier(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let identifier_response: IdentifierResponse = serde_json::from_slice(&bytes).unwrap();
+
+        // Should return up to 3 closest matches
+        assert!(identifier_response.identifiers.len() <= 3);
+        assert!(identifier_response
+            .identifiers
+            .iter()
+            .all(|id| id.name == "maze"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_invalid_file() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(FindIdentifierRequest {
+            path: String::from("nonexistent.py"),
+            name: String::from("identifier"),
+            position: None,
+        });
+
+        let response = find_identifier(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let error_response: ErrorResponse = serde_json::from_slice(&bytes).unwrap();
+
+        assert!(error_response
+            .error
+            .contains("Failed to get file identifiers"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_no_matches_found() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(FindIdentifierRequest {
+            path: String::from("main.py"),
+            name: String::from("nonexistent_identifier"),
+            position: None,
+        });
+
+        let response = find_identifier(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await.unwrap();
+        let identifier_response: IdentifierResponse = serde_json::from_slice(&bytes).unwrap();
+
+        assert_eq!(identifier_response.identifiers.len(), 0);
+        Ok(())
     }
 }

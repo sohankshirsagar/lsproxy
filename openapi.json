@@ -96,6 +96,44 @@
         }
       }
     },
+    "/symbol/find-identifier": {
+      "post": {
+        "tags": [
+          "symbol"
+        ],
+        "summary": "Finds all occurrences of an identifier by name in a file",
+        "description": "Given a file path and identifier name, returns:\n- Without position: All matching identifiers in the file\n- With position: The exact identifier with that name at that position, or 3 closest identifiers with that name\n\nExample finding all occurrences of \"user_name\":\n```\nlet user_name = \"John\";  // First occurrence\nprintln!(\"{}\", user_name); // Second occurrence\n```\n\nWhen a position is provided, it searches for an exact match at that location.\nIf no exact match exists, returns the 3 identifiers closest to the position\nbased on line and character distance, prioritizing lines.",
+        "operationId": "find_identifier",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindIdentifierRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Identifier retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentifierResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/symbol/find-references": {
       "post": {
         "tags": [
@@ -344,6 +382,34 @@
           }
         }
       },
+      "FindIdentifierRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "path"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the identifier to search for."
+          },
+          "path": {
+            "type": "string",
+            "description": "The path to the file to search for identifiers."
+          },
+          "position": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Position",
+                "description": "The position hint to search for identifiers. If not provided."
+              }
+            ]
+          }
+        }
+      },
       "GetDefinitionRequest": {
         "type": "object",
         "required": [
@@ -437,6 +503,20 @@
           },
           "range": {
             "$ref": "#/components/schemas/FileRange"
+          }
+        }
+      },
+      "IdentifierResponse": {
+        "type": "object",
+        "required": [
+          "identifiers"
+        ],
+        "properties": {
+          "identifiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Identifier"
+            }
           }
         }
       },
