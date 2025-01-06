@@ -12,7 +12,7 @@ use crate::{
 };
 use log::{error, info};
 
-/// Finds all occurrences of an identifier by name in a file
+/// Finds occurrences of an identifier by name in a file
 ///
 /// Given a file path and identifier name, returns:
 /// - Without position: All matching identifiers in the file
