@@ -2,7 +2,7 @@ use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Position as LspPosition, GotoDefinitionResponse};
-use crate::api_types::{Identifier, ErrorResponse, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Position, FilePosition, DefinitionWithIdentifier};
+use crate::api_types::{Identifier, ErrorResponse, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Position, FilePosition, SymbolWithIdentifier};
 use crate::AppState;
 use crate::utils::file_utils::uri_to_relative_path_string;
 
@@ -75,7 +75,7 @@ pub async fn find_referenced_symbols(
 
     // Then categorize the definitions
     let mut workspace_symbols = Vec::new();
-    let mut external_symbols = Vec::new();
+    let mut builtin_symbols = Vec::new();
     let mut not_found = Vec::new();
 
     for (identifier, definitions) in unwrapped_definition_responses {
@@ -86,15 +86,17 @@ pub async fn find_referenced_symbols(
             let has_internal_definition = definitions.iter().any(|def| files.contains(&def.path));
             
             if has_internal_definition {
-                workspace_symbols.push(DefinitionWithIdentifier {
+                let internal_definitions = definitions
+                    .iter()
+                    .filter(|def| files.contains(&def.path))
+                    .collect();
+
+                workspace_symbols.push(SymbolWithIdentifier {
                     identifier: identifier.clone(),
                     definitions,
                 });
             } else {
-                external_symbols.push(DefinitionWithIdentifier {
-                    identifier: identifier.clone(),
-                    definitions,
-                });
+                builtin_symbols.push(identifier.clone());
             }
         }
     }
@@ -102,7 +104,7 @@ pub async fn find_referenced_symbols(
     // Return the categorized response
     HttpResponse::Ok().json(ReferencedSymbolsResponse {
         workspace_symbols,
-        external_symbols,
+        builtin_symbols,
         not_found,
     })
 
