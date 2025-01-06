@@ -217,7 +217,7 @@ pub struct GetReferencesRequest {
 /// Request to get the symbols that are referenced from the symbol at the given position
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencedSymbolsRequest {
-    pub identifier_position: FilePosition
+    pub identifier_position: FilePosition,
 }
 
 /// Request to get the symbols in a file.

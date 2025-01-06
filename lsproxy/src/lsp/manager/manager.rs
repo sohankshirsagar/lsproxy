@@ -213,11 +213,15 @@ impl Manager {
     pub async fn get_symbol_from_position(
         &self,
         file_path: &str,
-        identifier_position: &lsp_types::Position
+        identifier_position: &lsp_types::Position,
     ) -> Result<Symbol, LspManagerError> {
-        match self.ast_grep.get_symbol_from_position(file_path, identifier_position).await {
+        match self
+            .ast_grep
+            .get_symbol_from_position(file_path, identifier_position)
+            .await
+        {
             Ok(ast_grep_symbol) => Ok(Symbol::from(ast_grep_symbol)),
-            Err(e) => Err(LspManagerError::InternalError(e.to_string()))
+            Err(e) => Err(LspManagerError::InternalError(e.to_string())),
         }
     }
 
@@ -308,10 +312,12 @@ impl Manager {
         {
             Ok(referenced_symbols) => referenced_symbols,
             Err(e) => {
-                return Err(LspManagerError::InternalError(format!("Failed to find referenced symbols, {}", e)));
+                return Err(LspManagerError::InternalError(format!(
+                    "Failed to find referenced symbols, {}",
+                    e
+                )));
             }
         };
-
 
         let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();

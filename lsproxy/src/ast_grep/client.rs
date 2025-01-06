@@ -1,8 +1,8 @@
-use tokio::process::Command;
 use std::io::{Error, ErrorKind};
+use tokio::process::Command;
 
 use super::types::AstGrepMatch;
-use crate::api_types::{get_mount_dir, Position, Symbol, FilePosition};
+use crate::api_types::{get_mount_dir, FilePosition, Position, Symbol};
 
 pub struct AstGrepClient {
     pub symbol_config_path: String,
@@ -19,7 +19,9 @@ impl AstGrepClient {
         // Get all symbols in the file
         let full_path = get_mount_dir().join(&file_name);
         let full_path_str = full_path.to_str().unwrap_or_default();
-        let file_symbols = self.scan_file(&self.symbol_config_path, full_path_str).await?;
+        let file_symbols = self
+            .scan_file(&self.symbol_config_path, full_path_str)
+            .await?;
 
         // Find the symbol that matches our identifier position
         let symbol_result = file_symbols.into_iter().find(|symbol| {
@@ -28,8 +30,10 @@ impl AstGrepClient {
         });
         match symbol_result {
             Some(matched_symbol) => Ok(matched_symbol),
-            None => Err(Box::new(Error::new(ErrorKind::NotFound, "No symbol found for position"))),
-
+            None => Err(Box::new(Error::new(
+                ErrorKind::NotFound,
+                "No symbol found for position",
+            ))),
         }
     }
 
@@ -44,7 +48,8 @@ impl AstGrepClient {
         &self,
         file_name: &str,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
-        self.scan_file(&self.identifier_config_path, file_name).await
+        self.scan_file(&self.identifier_config_path, file_name)
+            .await
     }
 
     pub async fn get_references_contained_in_symbol(
@@ -60,7 +65,10 @@ impl AstGrepClient {
             .scan_file(&self.reference_config_path, full_path_str)
             .await?;
 
-        let symbol = Symbol::from(self.get_symbol_from_position(file_name, identifier_position).await?);
+        let symbol = Symbol::from(
+            self.get_symbol_from_position(file_name, identifier_position)
+                .await?,
+        );
 
         // Filter matches to those within the symbol's range
         let contained_references = matches
@@ -71,12 +79,12 @@ impl AstGrepClient {
                     position: Position {
                         line: m.range.start.line as u32,
                         character: m.range.start.column as u32,
-                    }
+                    },
                 })
             })
             .collect();
 
-            Ok(contained_references)
+        Ok(contained_references)
     }
 
     async fn scan_file(
@@ -109,7 +117,6 @@ impl AstGrepClient {
         symbols.sort_by_key(|s| s.range.start.line);
         Ok(symbols)
     }
-
 }
 
 #[cfg(test)]
@@ -133,10 +140,8 @@ mod tests {
         let references = client
             .get_references_contained_in_symbol(path, &position)
             .await?;
-        let match_positions: Vec<lsp_types::Position> = references
-            .iter()
-            .map(lsp_types::Position::from)
-            .collect();
+        let match_positions: Vec<lsp_types::Position> =
+            references.iter().map(lsp_types::Position::from).collect();
         let expected = vec![
             lsp_types::Position {
                 line: 6,
