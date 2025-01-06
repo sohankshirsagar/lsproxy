@@ -146,8 +146,8 @@ impl From<FileRange> for lsp_types::Range {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
-pub struct SymbolWithIdentifier {
-    pub identifier: Identifier,
+pub struct ReferenceWithSymbolDefinition {
+    pub reference: Identifier,
     pub symbols: Vec<Symbol>,
 }
 
@@ -311,7 +311,7 @@ pub struct ReferencesResponse {
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencedSymbolsResponse {
-    pub workspace_symbols: Vec<SymbolWithIdentifier>,
+    pub workspace_symbols: Vec<ReferenceWithSymbolDefinition>,
     pub builtin_symbols: Vec<Identifier>,
     pub not_found: Vec<Identifier>,
 }

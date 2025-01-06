@@ -6,7 +6,6 @@ rule:
     pattern: $NAME
     inside:
       kind: call
-      pattern: $CONTEXT
   - kind: identifier
     pattern: $NAME
     inside:
@@ -14,4 +13,3 @@ rule:
       field: attribute
       inside:
         kind: call
-        pattern: $CONTEXT

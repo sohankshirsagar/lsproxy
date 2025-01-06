@@ -8,7 +8,6 @@ rule:
       kind: argument_list
       inside:
         kind: class_definition
-        pattern: $CONTEXT
   - inside:
       kind: keyword_argument
       field: value
@@ -16,7 +15,6 @@ rule:
         kind: argument_list
         inside:
           kind: class_definition
-          pattern: $CONTEXT
   - inside:
       kind: subscript
       field: value
@@ -24,7 +22,6 @@ rule:
         kind: argument_list
         inside:
           kind: class_definition
-          pattern: $CONTEXT
   - inside:
       kind: subscript
       field: subscript
@@ -32,4 +29,3 @@ rule:
         kind: argument_list
         inside:
           kind: class_definition
-          pattern: $CONTEXT

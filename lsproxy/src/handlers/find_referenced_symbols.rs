@@ -2,7 +2,7 @@ use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Position as LspPosition, GotoDefinitionResponse};
-use crate::api_types::{Identifier, ErrorResponse, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Position, FilePosition, SymbolWithIdentifier};
+use crate::api_types::{Identifier, ErrorResponse, GetReferencedSymbolsRequest, ReferencedSymbolsResponse, Position, FilePosition, ReferenceWithSymbolDefinition};
 use crate::AppState;
 use crate::utils::file_utils::uri_to_relative_path_string;
 
@@ -102,8 +102,8 @@ pub async fn find_referenced_symbols(
                     }
                 }
 
-                workspace_symbols.push(SymbolWithIdentifier {
-                    identifier: identifier.clone(),
+                workspace_symbols.push(ReferenceWithSymbolDefinition {
+                    reference: identifier.clone(),
                     symbols: symbols_with_definitions,
                 });
             } else {

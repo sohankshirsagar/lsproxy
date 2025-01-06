@@ -9,18 +9,15 @@ rule:
       field: attribute
       inside:
         kind: return_statement
-        pattern: $CONTEXT
   - inside:
       kind: attribute
       field: attribute
       inside:
         kind: assignment
         field: right
-        pattern: $CONTEXT
   - inside:
       kind: attribute
       field: attribute
       inside:
         kind: for_statement
         field: right
-        pattern: $CONTEXT
