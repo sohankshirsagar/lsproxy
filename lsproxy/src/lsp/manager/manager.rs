@@ -58,6 +58,7 @@ impl Manager {
 
         let ast_grep = AstGrepClient {
             symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
+            identifier_config_path: String::from("/usr/src/ast_grep/identifier-config.yml"),
             reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
         };
         Ok(Self {

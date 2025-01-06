@@ -6,6 +6,7 @@ use crate::api_types::{FileRange, Position};
 
 pub struct AstGrepClient {
     pub symbol_config_path: String,
+    pub identifier_config_path: String,
     pub reference_config_path: String,
 }
 
@@ -35,6 +36,13 @@ impl AstGrepClient {
         file_name: &str,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
         self.scan_file(&self.symbol_config_path, file_name).await
+    }
+
+    pub async fn get_file_identifiers(
+        &self,
+        file_name: &str,
+    ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
+        self.scan_file(&self.identifier_config_path, file_name).await
     }
 
     pub async fn get_references_contained_in_symbol(
