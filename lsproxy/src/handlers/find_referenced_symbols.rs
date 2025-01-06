@@ -86,14 +86,25 @@ pub async fn find_referenced_symbols(
             let has_internal_definition = definitions.iter().any(|def| files.contains(&def.path));
             
             if has_internal_definition {
-                let internal_definitions = definitions
-                    .iter()
-                    .filter(|def| files.contains(&def.path))
-                    .collect();
+                let mut symbols_with_definitions = Vec::new();
+                for def in definitions.iter().filter(|def| files.contains(&def.path)) {
+                    if let Ok(symbol) = manager
+                        .get_symbol_from_position(
+                            &def.path,
+                            &lsp_types::Position {
+                                line: def.position.line,
+                                character: def.position.character,
+                            },
+                        )
+                        .await
+                    {
+                        symbols_with_definitions.push(symbol);
+                    }
+                }
 
                 workspace_symbols.push(SymbolWithIdentifier {
                     identifier: identifier.clone(),
-                    definitions,
+                    definitions: symbols_with_definitions,
                 });
             } else {
                 builtin_symbols.push(identifier.clone());
