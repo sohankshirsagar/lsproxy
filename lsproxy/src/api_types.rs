@@ -1,7 +1,6 @@
-use log::warn;
-use lsp_types::{GotoDefinitionResponse, Location, LocationLink};
+use lsp_types::{Location, LocationLink};
 use serde::{Deserialize, Serialize};
-use serde_json::{to_value, Value};
+use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -109,22 +108,13 @@ pub struct FileRange {
 }
 
 impl FileRange {
-    /// Returns true if the given position is contained within this range
-    pub fn contains(&self, position: &Position) -> bool {
-        // Check if paths match and position is within bounds
-        if position.line < self.start.line || position.line > self.end.line {
-            return false;
-        }
-
-        if position.line == self.start.line && position.character < self.start.character {
-            return false;
-        }
-
-        if position.line == self.end.line && position.character > self.end.character {
-            return false;
-        }
-
-        true
+    pub fn contains(&self, position: FilePosition) -> bool {
+        let pos = &position.position;
+        self.path == position.path
+            && self.start.line <= pos.line
+            && self.end.line >= pos.line
+            && (self.start.line != pos.line || self.start.character <= pos.character)
+            && (self.end.line != pos.line || self.end.character >= pos.character)
     }
 }
 
@@ -174,6 +164,12 @@ pub struct Symbol {
     pub identifier_position: FilePosition,
 
     /// The full range of the symbol.
+    pub range: FileRange,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Identifier {
+    pub name: String,
     pub range: FileRange,
 }
 
@@ -269,6 +265,8 @@ pub struct DefinitionResponse {
     /// The source code of symbol definitions.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_code_context: Option<Vec<CodeContext>>,
+    /// The identifier that was "clicked-on" to get the definition.
+    pub selected_identifier: Identifier,
 }
 
 /// Response to a references request.
@@ -301,6 +299,8 @@ pub struct ReferencesResponse {
     /// The source code around the references.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Vec<CodeContext>>,
+    /// The identifier that was "clicked-on" to get the references.
+    pub selected_identifier: Identifier,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
@@ -309,61 +309,6 @@ pub struct ReferencedSymbolsResponse {
 }
 
 pub type SymbolResponse = Vec<Symbol>;
-
-impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
-    fn from(
-        (response, source_code_context, include_raw): (
-            GotoDefinitionResponse,
-            Option<Vec<CodeContext>>,
-            bool,
-        ),
-    ) -> Self {
-        let raw_response = if include_raw {
-            Some(to_value(&response).unwrap_or_else(|e| {
-                warn!("Serialization failed: {:?}", e);
-                Value::Null
-            }))
-        } else {
-            None
-        };
-        let definitions = match response {
-            GotoDefinitionResponse::Scalar(location) => vec![FilePosition::from(location)],
-            GotoDefinitionResponse::Array(locations) => {
-                locations.into_iter().map(FilePosition::from).collect()
-            }
-            GotoDefinitionResponse::Link(links) => {
-                links.into_iter().map(FilePosition::from).collect()
-            }
-        };
-        DefinitionResponse {
-            raw_response,
-            definitions,
-            source_code_context,
-        }
-    }
-}
-
-impl From<(Vec<Location>, Option<Vec<CodeContext>>, bool)> for ReferencesResponse {
-    fn from(
-        (locations, source_code_context, include_raw): (
-            Vec<Location>,
-            Option<Vec<CodeContext>>,
-            bool,
-        ),
-    ) -> Self {
-        let raw_response = if include_raw {
-            Some(to_value(&locations).unwrap_or_default())
-        } else {
-            None
-        };
-        let references = locations.into_iter().map(FilePosition::from).collect();
-        ReferencesResponse {
-            raw_response,
-            references,
-            context: source_code_context,
-        }
-    }
-}
 
 impl From<Location> for FilePosition {
     fn from(location: Location) -> Self {
@@ -387,6 +332,25 @@ impl From<LocationLink> for FilePosition {
             },
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FindIdentifierRequest {
+    /// The name of the identifier to search for.
+    #[schema(example = "User")]
+    pub name: String,
+    /// The path to the file to search for identifiers.
+    #[schema(example = "src/main.py")]
+    pub path: String,
+    /// The position hint to search for identifiers. If not provided.
+    pub position: Option<Position>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentifierResponse {
+    pub identifiers: Vec<Identifier>,
 }
 
 #[cfg(test)]

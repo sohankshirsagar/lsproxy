@@ -8,7 +8,7 @@ use crate::{
 use async_trait::async_trait;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
-use std::{path::Path, process::Stdio};
+use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
 use url::Url;
 
@@ -37,17 +37,20 @@ impl LspClient for PhpactorClient {
         &mut self.pending_requests
     }
 
-    async fn get_initialize_params(&mut self, root_path: String) -> InitializeParams {
+    async fn get_initialize_params(
+        &mut self,
+        root_path: String,
+    ) -> Result<InitializeParams, Box<dyn Error + Send + Sync>> {
         let workspace_folders = self
             .find_workspace_folders(root_path.clone())
             .await
             .unwrap();
-        InitializeParams {
+        Ok(InitializeParams {
             capabilities: self.get_capabilities(),
             workspace_folders: Some(workspace_folders.clone()),
-            root_uri: Some(Url::from_file_path(&root_path).unwrap()),
+            root_uri: Some(Url::from_file_path(&root_path).map_err(|_| "Invalid root path")?),
             ..Default::default()
-        }
+        })
     }
 }
 

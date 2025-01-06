@@ -4,7 +4,8 @@ use actix_web::{
     web::{get, post, resource, scope, Data},
     App, HttpServer,
 };
-use handlers::read_source_code;
+use api_types::{FindIdentifierRequest, IdentifierResponse};
+use handlers::{find_identifier, read_source_code};
 use log::warn;
 use middleware::{validate_jwt_config, JwtMiddleware};
 use std::fs;
@@ -41,7 +42,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 #[openapi(
     info(
         title = "lsproxy",
-        version = "0.1.3",
+        version = "0.1.4",
         license(
             name = "Apache-2.0",
             url = "https://www.apache.org/licenses/LICENSE-2.0"
@@ -68,6 +69,8 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             CodeContext,
             FileRange,
             HealthResponse,
+            FindIdentifierRequest,
+            IdentifierResponse,
         )
     ),
     paths(
@@ -78,6 +81,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         crate::handlers::list_files,
         crate::handlers::read_source_code,
         crate::handlers::find_referenced_symbols,
+        crate::handlers::find_identifier,
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
@@ -207,6 +211,8 @@ pub async fn run_server_with_port_and_host(
                     api_scope.service(resource(path).route(post().to(find_references))),
                 ("/symbol/find-referenced-symbols", Some(Method::Post)) =>
                     api_scope.service(resource(path).route(post().to(find_referenced_symbols))),
+                ("/symbol/find-identifier", Some(Method::Post)) =>
+                    api_scope.service(resource(path).route(post().to(find_identifier))),
                 ("/symbol/definitions-in-file", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(definitions_in_file))),
                 ("/workspace/list-files", Some(Method::Get)) =>

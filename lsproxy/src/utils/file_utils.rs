@@ -8,8 +8,9 @@ use std::path::{Path, PathBuf};
 use url::Url;
 
 use super::workspace_documents::{
-    CPP_EXTENSIONS, C_AND_CPP_EXTENSIONS, C_EXTENSIONS, GOLANG_EXTENSIONS, JAVASCRIPT_EXTENSIONS,
-    JAVA_EXTENSIONS, PHP_EXTENSIONS, PYTHON_EXTENSIONS, RUST_EXTENSIONS,
+    CPP_EXTENSIONS, C_AND_CPP_EXTENSIONS, C_EXTENSIONS, GOLANG_EXTENSIONS,
+    JAVASCRIPTREACT_EXTENSIONS, JAVASCRIPT_EXTENSIONS, JAVA_EXTENSIONS, PHP_EXTENSIONS,
+    PYTHON_EXTENSIONS, RUST_EXTENSIONS, TYPESCRIPTREACT_EXTENSIONS,
     TYPESCRIPT_AND_JAVASCRIPT_EXTENSIONS, TYPESCRIPT_EXTENSIONS,
 };
 
@@ -145,7 +146,9 @@ pub fn detect_language_string(file_path: &str) -> Result<String, LspManagerError
     match extension {
         ext if PYTHON_EXTENSIONS.contains(&ext) => Ok("python".to_string()),
         ext if TYPESCRIPT_EXTENSIONS.contains(&ext) => Ok("typescript".to_string()),
+        ext if TYPESCRIPTREACT_EXTENSIONS.contains(&ext) => Ok("typescriptreact".to_string()),
         ext if JAVASCRIPT_EXTENSIONS.contains(&ext) => Ok("javascript".to_string()),
+        ext if JAVASCRIPTREACT_EXTENSIONS.contains(&ext) => Ok("javascriptreact".to_string()),
         ext if RUST_EXTENSIONS.contains(&ext) => Ok("rust".to_string()),
         ext if C_EXTENSIONS.contains(&ext) => Ok("c".to_string()),
         ext if CPP_EXTENSIONS.contains(&ext) => Ok("cpp".to_string()),
