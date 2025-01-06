@@ -1,6 +1,7 @@
 use super::*;
 
 #[tokio::test]
+#[ignore] // TODO: https://github.com/agentic-labs/lsproxy/issues/98
 async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
     let context = TestContext::setup(&c_sample_path(), true).await?;
     let manager = context

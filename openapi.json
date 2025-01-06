@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
     },
-    "version": "0.1.3"
+    "version": "0.1.4"
   },
   "servers": [
     {
@@ -83,6 +83,44 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DefinitionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/symbol/find-identifier": {
+      "post": {
+        "tags": [
+          "symbol"
+        ],
+        "summary": "Finds occurrences of an identifier by name in a file",
+        "description": "Given a file path and identifier name, returns:\n- Without position: All matching identifiers in the file\n- With position: The exact identifier with that name at that position, or 3 closest identifiers with that name\n\nExample finding all occurrences of \"user_name\":\n```\nlet user_name = \"John\";  // First occurrence\nprintln!(\"{}\", user_name); // Second occurrence\n```\n\nWhen a position is provided, it searches for an exact match at that location.\nIf no exact match exists, returns the 3 identifiers closest to the position\nbased on line and character distance, prioritizing lines.",
+        "operationId": "find_identifier",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindIdentifierRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Identifier retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentifierResponse"
                 }
               }
             }
@@ -250,7 +288,8 @@
         "type": "object",
         "description": "Response to a definition request.\n\nThe definition(s) of the symbol.\nPoints to the start position of the symbol's identifier.\n\ne.g. for the definition of `User` on line 5 of `src/main.py` with the code:\n```\n0: class User:\n_________^\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\n__________^\n```\nThe definition(s) will be `[{\"path\": \"src/main.py\", \"line\": 0, \"character\": 6}]`.",
         "required": [
-          "definitions"
+          "definitions",
+          "selected_identifier"
         ],
         "properties": {
           "definitions": {
@@ -261,6 +300,10 @@
           },
           "raw_response": {
             "description": "The raw response from the langserver.\n\nhttps://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition"
+          },
+          "selected_identifier": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "The identifier that was \"clicked-on\" to get the definition."
           },
           "source_code_context": {
             "type": [
@@ -336,6 +379,36 @@
             "type": "string",
             "description": "The path to the file to get the symbols for, relative to the root of the workspace.",
             "example": "src/main.py"
+          }
+        }
+      },
+      "FindIdentifierRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "path"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the identifier to search for.",
+            "example": "User"
+          },
+          "path": {
+            "type": "string",
+            "description": "The path to the file to search for identifiers.",
+            "example": "src/main.py"
+          },
+          "position": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Position",
+                "description": "The position hint to search for identifiers. If not provided."
+              }
+            ]
           }
         }
       },
@@ -420,6 +493,35 @@
           }
         }
       },
+      "Identifier": {
+        "type": "object",
+        "required": [
+          "name",
+          "range"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "range": {
+            "$ref": "#/components/schemas/FileRange"
+          }
+        }
+      },
+      "IdentifierResponse": {
+        "type": "object",
+        "required": [
+          "identifiers"
+        ],
+        "properties": {
+          "identifiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Identifier"
+            }
+          }
+        }
+      },
       "Position": {
         "type": "object",
         "required": [
@@ -458,7 +560,8 @@
         "type": "object",
         "description": "Response to a references request.\n\nPoints to the start position of the symbol's identifier.\n\ne.g. for the references of `User` on line 0 character 6 of `src/main.py` with the code:\n```\n0: class User:\n1:     def __init__(self, name, age):\n2:         self.name = name\n3:         self.age = age\n4:\n5: user = User(\"John\", 30)\n_________^\n6:\n7: print(user.name)\n```\nThe references will be `[{\"path\": \"src/main.py\", \"line\": 5, \"character\": 7}]`.",
         "required": [
-          "references"
+          "references",
+          "selected_identifier"
         ],
         "properties": {
           "context": {
@@ -479,6 +582,10 @@
             "items": {
               "$ref": "#/components/schemas/FilePosition"
             }
+          },
+          "selected_identifier": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "The identifier that was \"clicked-on\" to get the references."
           }
         }
       },

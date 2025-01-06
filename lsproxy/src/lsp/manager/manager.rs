@@ -1,4 +1,4 @@
-use crate::api_types::{get_mount_dir, SupportedLanguages};
+use crate::api_types::{get_mount_dir, Identifier, SupportedLanguages};
 use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
@@ -195,7 +195,7 @@ impl Manager {
         file_path: &str,
     ) -> Result<Vec<AstGrepMatch>, LspManagerError> {
         let workspace_files = self.list_files().await?;
-        if !workspace_files.iter().any(|f| f == file_path) {
+        if !workspace_files.contains(&file_path.to_string()) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
         let full_path = get_mount_dir().join(&file_path);
@@ -216,7 +216,7 @@ impl Manager {
         let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
-        if !workspace_files.iter().any(|f| f == file_path) {
+        if !workspace_files.contains(&file_path.to_string()) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()).into());
         }
         let full_path = get_mount_dir().join(&file_path);
@@ -252,7 +252,7 @@ impl Manager {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
 
-        if !workspace_files.iter().any(|f| f == file_path) {
+        if !workspace_files.contains(&file_path.to_string()) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
 
@@ -309,6 +309,28 @@ impl Manager {
             .map_err(|e| {
                 LspManagerError::InternalError(format!("Source code retrieval failed: {}", e))
             })
+    }
+
+    pub async fn get_file_identifiers(
+        &self,
+        file_path: &str,
+    ) -> Result<Vec<Identifier>, LspManagerError> {
+        let full_path = get_mount_dir().join(&file_path);
+        let workspace_files = self.list_files().await.map_err(|e| {
+            LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
+        })?;
+        if !workspace_files.contains(&file_path.to_string()) {
+            return Err(LspManagerError::FileNotFound(file_path.to_string()));
+        }
+        let full_path_str = full_path.to_str().unwrap_or_default();
+        let ast_grep_result = self
+            .ast_grep
+            .get_file_identifiers(full_path_str)
+            .await
+            .map_err(|e| {
+                LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e))
+            })?;
+        Ok(ast_grep_result.into_iter().map(|s| s.into()).collect())
     }
 }
 
