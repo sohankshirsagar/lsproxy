@@ -381,23 +381,32 @@ mod tests {
 
         // Test positions within the range
         assert!(
-            range.contains(&Position {
-                line: 11,
-                character: 0
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 11,
+                    character: 0
+                }
             }),
             "middle line should be contained"
         );
         assert!(
-            range.contains(&Position {
-                line: 10,
-                character: 5
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 5
+                }
             }),
             "start position should be contained"
         );
         assert!(
-            range.contains(&Position {
-                line: 12,
-                character: 10
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 12,
+                    character: 10
+                }
             }),
             "end position should be contained"
         );
@@ -418,30 +427,42 @@ mod tests {
         };
 
         assert!(
-            !range.contains(&Position {
-                line: 9,
-                character: 0
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 9,
+                    character: 0
+                }
             }),
             "line before start should not be contained"
         );
         assert!(
-            !range.contains(&Position {
-                line: 13,
-                character: 0
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 13,
+                    character: 0
+                }
             }),
             "line after end should not be contained"
         );
         assert!(
-            !range.contains(&Position {
-                line: 10,
-                character: 4
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
             }),
             "position before start on first line should not be contained"
         );
         assert!(
-            !range.contains(&Position {
-                line: 12,
-                character: 11
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 12,
+                    character: 11
+                }
             }),
             "position after end on last line should not be contained"
         );
@@ -462,23 +483,32 @@ mod tests {
         };
 
         assert!(
-            single_line_range.contains(&Position {
-                line: 10,
-                character: 7
+            single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 7
+                }
             }),
             "position within single line range should be contained"
         );
         assert!(
-            !single_line_range.contains(&Position {
-                line: 10,
-                character: 4
+            !single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
             }),
             "position before single line range should not be contained"
         );
         assert!(
-            !single_line_range.contains(&Position {
-                line: 10,
-                character: 11
+            !single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 11
+                }
             }),
             "position after single line range should not be contained"
         );
@@ -499,23 +529,32 @@ mod tests {
         };
 
         assert!(
-            zero_width_range.contains(&Position {
-                line: 10,
-                character: 5
+            zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 5
+                }
             }),
             "position at zero-width range should be contained"
         );
         assert!(
-            !zero_width_range.contains(&Position {
-                line: 10,
-                character: 4
+            !zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
             }),
             "position before zero-width range should not be contained"
         );
         assert!(
-            !zero_width_range.contains(&Position {
-                line: 10,
-                character: 6
+            !zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 6
+                }
             }),
             "position after zero-width range should not be contained"
         );
