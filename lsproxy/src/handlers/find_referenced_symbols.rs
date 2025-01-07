@@ -111,7 +111,6 @@ pub async fn find_referenced_symbols(
         } else {
             // Check if any definition is in workspace files
             let has_internal_definition = definitions.iter().any(|def| files.contains(&def.path));
-
             if has_internal_definition {
                 let mut symbols_with_definitions = Vec::new();
                 for def in definitions.iter().filter(|def| files.contains(&def.path)) {
@@ -128,11 +127,16 @@ pub async fn find_referenced_symbols(
                         symbols_with_definitions.push(symbol);
                     }
                 }
-
-                workspace_symbols.push(ReferenceWithSymbolDefinition {
-                    reference: identifier.clone(),
-                    symbols: symbols_with_definitions,
-                });
+                // Only add to workspace_symbols if we found at least one symbol
+                if !symbols_with_definitions.is_empty() {
+                    workspace_symbols.push(ReferenceWithSymbolDefinition {
+                        reference: identifier.clone(),
+                        symbols: symbols_with_definitions,
+                    });
+                } else {
+                    // If no symbols were found, add to not_found
+                    not_found.push(identifier.clone());
+                }
             } else {
                 builtin_symbols.push(identifier.clone());
             }
