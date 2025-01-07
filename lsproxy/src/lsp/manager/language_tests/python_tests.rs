@@ -37,13 +37,13 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
 
     let expected = vec![
         Symbol {
-            name: String::from("graph"),
-            kind: String::from("variable"),
+            name: String::from("plot_path"),
+            kind: String::from("function"),
             identifier_position: FilePosition {
                 path: String::from("main.py"),
                 position: Position {
-                    line: 5,
-                    character: 0,
+                    line: 6,
+                    character: 4,
                 },
             },
             range: FileRange {
@@ -53,52 +53,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 0,
                 },
                 end: Position {
-                    line: 5,
-                    character: 20,
+                    line: 12,
+                    character: 14,
                 },
             },
         },
         Symbol {
-            name: String::from("result"),
-            kind: String::from("variable"),
+            name: String::from("main"),
+            kind: String::from("function"),
             identifier_position: FilePosition {
                 path: String::from("main.py"),
                 position: Position {
-                    line: 6,
-                    character: 0,
+                    line: 14,
+                    character: 4,
                 },
             },
             range: FileRange {
                 path: String::from("main.py"),
                 start: Position {
-                    line: 6,
+                    line: 14,
                     character: 0,
                 },
                 end: Position {
-                    line: 6,
-                    character: 51,
-                },
-            },
-        },
-        Symbol {
-            name: String::from("cost"),
-            kind: String::from("variable"),
-            identifier_position: FilePosition {
-                path: String::from("main.py"),
-                position: Position {
-                    line: 6,
-                    character: 8,
-                },
-            },
-            range: FileRange {
-                path: String::from("main.py"),
-                start: Position {
-                    line: 6,
-                    character: 0,
-                },
-                end: Position {
-                    line: 6,
-                    character: 51,
+                    line: 19,
+                    character: 28,
                 },
             },
         },
@@ -123,23 +101,45 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
 
     let expected = vec![
         Symbol {
-            name: String::from("AStarGraph"),
+            name: String::from("GraphBase"),
             kind: String::from("class"),
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 1,
+                    line: 3,
                     character: 6,
                 },
             },
             range: FileRange {
                 path: String::from("graph.py"),
                 start: Position {
-                    line: 1,
+                    line: 3,
                     character: 0,
                 },
                 end: Position {
-                    line: 60,
+                    line: 4,
+                    character: 8,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("AStarGraph"),
+            kind: String::from("class"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 6,
+                    character: 6,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 6,
+                    character: 0,
+                },
+                end: Position {
+                    line: 55,
                     character: 40,
                 },
             },
@@ -150,19 +150,19 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 4,
+                    line: 7,
                     character: 8,
                 },
             },
             range: FileRange {
                 path: String::from("graph.py"),
                 start: Position {
-                    line: 4,
+                    line: 7,
                     character: 0,
                 },
                 end: Position {
-                    line: 21,
-                    character: 9,
+                    line: 14,
+                    character: 10,
                 },
             },
         },
@@ -172,19 +172,19 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 24,
+                    line: 17,
                     character: 8,
                 },
             },
             range: FileRange {
                 path: String::from("graph.py"),
                 start: Position {
-                    line: 23,
+                    line: 16,
                     character: 0,
                 },
                 end: Position {
-                    line: 25,
-                    character: 28,
+                    line: 18,
+                    character: 29,
                 },
             },
         },
@@ -194,18 +194,18 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 27,
+                    line: 21,
                     character: 8,
                 },
             },
             range: FileRange {
                 path: String::from("graph.py"),
                 start: Position {
-                    line: 27,
+                    line: 20,
                     character: 0,
                 },
                 end: Position {
-                    line: 34,
+                    line: 28,
                     character: 57,
                 },
             },
@@ -216,18 +216,18 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 36,
+                    line: 31,
                     character: 8,
                 },
             },
             range: FileRange {
                 path: String::from("graph.py"),
                 start: Position {
-                    line: 36,
+                    line: 30,
                     character: 0,
                 },
                 end: Position {
-                    line: 54,
+                    line: 49,
                     character: 16,
                 },
             },
@@ -238,18 +238,18 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 56,
+                    line: 51,
                     character: 8,
                 },
             },
             range: FileRange {
                 path: String::from("graph.py"),
                 start: Position {
-                    line: 56,
+                    line: 51,
                     character: 0,
                 },
                 end: Position {
-                    line: 60,
+                    line: 55,
                     character: 40,
                 },
             },
@@ -272,7 +272,7 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
         .find_references(
             file_path,
             lsp_types::Position {
-                line: 1,
+                line: 6,
                 character: 6,
             },
         )
@@ -283,11 +283,11 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/graph.py").unwrap(),
             range: Range {
                 start: lsp_types::Position {
-                    line: 1,
+                    line: 6,
                     character: 6,
                 },
                 end: lsp_types::Position {
-                    line: 1,
+                    line: 6,
                     character: 16,
                 },
             },
@@ -309,12 +309,64 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
             range: Range {
                 start: lsp_types::Position {
+                    line: 6,
+                    character: 27,
+                },
+                end: lsp_types::Position {
+                    line: 6,
+                    character: 37,
+                },
+            },
+        },
+        Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/main.py").unwrap(),
+            range: Range {
+                start: lsp_types::Position {
+                    line: 15,
+                    character: 12,
+                },
+                end: lsp_types::Position {
+                    line: 15,
+                    character: 22,
+                },
+            },
+        },
+        Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/search.py").unwrap(),
+            range: Range {
+                start: lsp_types::Position {
+                    line: 1,
+                    character: 18,
+                },
+                end: lsp_types::Position {
+                    line: 1,
+                    character: 28,
+                },
+            },
+        },
+        Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/search.py").unwrap(),
+            range: Range {
+                start: lsp_types::Position {
                     line: 5,
-                    character: 8,
+                    character: 41,
                 },
                 end: lsp_types::Position {
                     line: 5,
-                    character: 18,
+                    character: 51,
+                },
+            },
+        },
+        Location {
+            uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/search.py").unwrap(),
+            range: Range {
+                start: lsp_types::Position {
+                    line: 17,
+                    character: 37,
+                },
+                end: lsp_types::Position {
+                    line: 17,
+                    character: 47,
                 },
             },
         },
@@ -353,11 +405,11 @@ async fn test_definition() -> Result<(), Box<dyn std::error::Error>> {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/python/graph.py").unwrap(),
             range: Range {
                 start: lsp_types::Position {
-                    line: 1,
+                    line: 6,
                     character: 6,
                 },
                 end: lsp_types::Position {
-                    line: 1,
+                    line: 6,
                     character: 16,
                 },
             },

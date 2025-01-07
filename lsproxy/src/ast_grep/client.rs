@@ -110,10 +110,7 @@ impl AstGrepClient {
 
         let mut symbols: Vec<AstGrepMatch> =
             serde_json::from_str(&output).map_err(|e| format!("Failed to parse JSON: {}", e))?;
-        symbols = symbols
-            .into_iter()
-            .filter(|s| s.rule_id != "all-identifiers")
-            .collect();
+        symbols = symbols.into_iter().collect();
         symbols.sort_by_key(|s| s.range.start.line);
         Ok(symbols)
     }
@@ -146,26 +143,6 @@ mod tests {
             lsp_types::Position {
                 line: 6,
                 character: 17,
-            },
-            lsp_types::Position {
-                line: 8,
-                character: 24,
-            },
-            lsp_types::Position {
-                line: 8,
-                character: 29,
-            },
-            lsp_types::Position {
-                line: 8,
-                character: 34,
-            },
-            lsp_types::Position {
-                line: 8,
-                character: 40,
-            },
-            lsp_types::Position {
-                line: 8,
-                character: 45,
             },
             lsp_types::Position {
                 line: 9,

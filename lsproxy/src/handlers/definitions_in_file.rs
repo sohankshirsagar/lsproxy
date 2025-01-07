@@ -94,13 +94,13 @@ mod test {
 
         let expected = vec![
             Symbol {
-                name: String::from("graph"),
-                kind: String::from("variable"),
+                name: String::from("plot_path"),
+                kind: String::from("function"),
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 5,
-                        character: 0,
+                        line: 6,
+                        character: 4,
                     },
                 },
                 range: FileRange {
@@ -110,52 +110,30 @@ mod test {
                         character: 0,
                     },
                     end: Position {
-                        line: 5,
-                        character: 20,
+                        line: 12,
+                        character: 14,
                     },
                 },
             },
             Symbol {
-                name: String::from("result"),
-                kind: String::from("variable"),
+                name: String::from("main"),
+                kind: String::from("function"),
                 identifier_position: FilePosition {
                     path: String::from("main.py"),
                     position: Position {
-                        line: 6,
-                        character: 0,
+                        line: 14,
+                        character: 4,
                     },
                 },
                 range: FileRange {
                     path: String::from("main.py"),
                     start: Position {
-                        line: 6,
+                        line: 14,
                         character: 0,
                     },
                     end: Position {
-                        line: 6,
-                        character: 51,
-                    },
-                },
-            },
-            Symbol {
-                name: String::from("cost"),
-                kind: String::from("variable"),
-                identifier_position: FilePosition {
-                    path: String::from("main.py"),
-                    position: Position {
-                        line: 6,
-                        character: 8,
-                    },
-                },
-                range: FileRange {
-                    path: String::from("main.py"),
-                    start: Position {
-                        line: 6,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 6,
-                        character: 51,
+                        line: 19,
+                        character: 28,
                     },
                 },
             },
