@@ -305,9 +305,18 @@ impl Manager {
         }
 
         // First we find all the positions we need to find the definition of
+        let symbol = match self.ast_grep.get_symbol_from_position(file_path, &position).await {
+            Ok(symbol) => symbol,
+            Err(e) => {
+                return Err(LspManagerError::InternalError(format!(
+                    "Failed to find referenced symbols, {}",
+                    e
+                )));
+            }
+        };
         let references_to_symbols = match self
             .ast_grep
-            .get_references_contained_in_symbol(file_path, &position)
+            .get_references_contained_in_symbol(file_path, &symbol)
             .await
         {
             Ok(referenced_symbols) => referenced_symbols,

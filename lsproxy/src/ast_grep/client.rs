@@ -15,7 +15,7 @@ impl AstGrepClient {
         &self,
         file_name: &str,
         identifier_position: &lsp_types::Position,
-    ) -> Result<AstGrepMatch, Box<dyn std::error::Error>> {
+    ) -> Result<Symbol, Box<dyn std::error::Error>> {
         // Get all symbols in the file
         let full_path = get_mount_dir().join(&file_name);
         let full_path_str = full_path.to_str().unwrap_or_default();
@@ -29,7 +29,7 @@ impl AstGrepClient {
                 && symbol.range.start.column == identifier_position.character
         });
         match symbol_result {
-            Some(matched_symbol) => Ok(matched_symbol),
+            Some(matched_symbol) => Ok(Symbol::from(matched_symbol)),
             None => Err(Box::new(Error::new(
                 ErrorKind::NotFound,
                 "No symbol found for position",
@@ -55,7 +55,7 @@ impl AstGrepClient {
     pub async fn get_references_contained_in_symbol(
         &self,
         file_name: &str,
-        identifier_position: &lsp_types::Position,
+        symbol: &Symbol,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
         let full_path = get_mount_dir().join(&file_name);
         let full_path_str = full_path.to_str().unwrap_or_default();
@@ -64,11 +64,6 @@ impl AstGrepClient {
         let matches = self
             .scan_file(&self.reference_config_path, full_path_str)
             .await?;
-
-        let symbol = Symbol::from(
-            self.get_symbol_from_position(file_name, identifier_position)
-                .await?,
-        );
 
         // Filter matches to those within the symbol's range
         let contained_references = matches
@@ -134,8 +129,9 @@ mod tests {
             character: 6,
         };
 
+        let symbol = client.get_symbol_from_position(path, &position).await?;
         let references = client
-            .get_references_contained_in_symbol(path, &position)
+            .get_references_contained_in_symbol(path, &symbol)
             .await?;
         let match_positions: Vec<lsp_types::Position> =
             references.iter().map(lsp_types::Position::from).collect();
@@ -191,8 +187,9 @@ mod tests {
             character: 4,
         };
 
+        let symbol = client.get_symbol_from_position(path, &position).await?;
         let references = client
-            .get_references_contained_in_symbol(path, &position)
+            .get_references_contained_in_symbol(path, &symbol)
             .await
             .unwrap();
         let match_positions: Vec<lsp_types::Position> = references
