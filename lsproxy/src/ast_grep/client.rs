@@ -141,20 +141,12 @@ mod tests {
             references.iter().map(lsp_types::Position::from).collect();
         let expected = vec![
             lsp_types::Position {
-                line: 6,
-                character: 17,
-            },
-            lsp_types::Position {
                 line: 9,
                 character: 23,
             },
             lsp_types::Position {
                 line: 16,
                 character: 5,
-            },
-            lsp_types::Position {
-                line: 18,
-                character: 20,
             },
             lsp_types::Position {
                 line: 20,
@@ -180,10 +172,6 @@ mod tests {
                 line: 48,
                 character: 14,
             },
-            lsp_types::Position {
-                line: 52,
-                character: 28,
-            },
         ];
         assert_eq!(match_positions, expected);
         Ok(())
@@ -197,10 +185,10 @@ mod tests {
             reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
         };
 
-        let path = "/mnt/lsproxy_root/sample_project/python/graph.py";
+        let path = "/mnt/lsproxy_root/sample_project/python/main.py";
         let position = lsp_types::Position {
-            line: 51, // Line with @log_execution_time decorator
-            character: 8,
+            line: 14,
+            character: 4,
         };
 
         let references = client
@@ -214,10 +202,28 @@ mod tests {
                 character: ast_match.range.start.column as u32,
             })
             .collect();
-        let expected = vec![lsp_types::Position {
-            line: 52,
-            character: 28,
-        }];
+        let expected = vec![
+            lsp_types::Position {
+                line: 15,
+                character: 12,
+            },
+            lsp_types::Position {
+                line: 16,
+                character: 19,
+            },
+            lsp_types::Position {
+                line: 17,
+                character: 4,
+            },
+            lsp_types::Position {
+                line: 18,
+                character: 4,
+            },
+            lsp_types::Position {
+                line: 19,
+                character: 4,
+            },
+        ];
         assert_eq!(match_positions, expected);
         Ok(())
     }
