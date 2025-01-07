@@ -626,11 +626,11 @@
         "type": "object",
         "required": [
           "workspace_symbols",
-          "builtin_symbols",
+          "external_symbols",
           "not_found"
         ],
         "properties": {
-          "builtin_symbols": {
+          "external_symbols": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Identifier"

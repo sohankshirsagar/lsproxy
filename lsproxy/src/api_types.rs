@@ -312,7 +312,7 @@ pub struct ReferencesResponse {
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencedSymbolsResponse {
     pub workspace_symbols: Vec<ReferenceWithSymbolDefinition>,
-    pub builtin_symbols: Vec<Identifier>,
+    pub external_symbols: Vec<Identifier>,
     pub not_found: Vec<Identifier>,
 }
 

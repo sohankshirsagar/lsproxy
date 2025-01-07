@@ -102,7 +102,7 @@ pub async fn find_referenced_symbols(
 
     // Then categorize the definitions
     let mut workspace_symbols = Vec::new();
-    let mut builtin_symbols = Vec::new();
+    let mut external_symbols = Vec::new();
     let mut not_found = Vec::new();
 
     for (identifier, definitions) in unwrapped_definition_responses {
@@ -138,7 +138,7 @@ pub async fn find_referenced_symbols(
                     not_found.push(identifier.clone());
                 }
             } else {
-                builtin_symbols.push(identifier.clone());
+                external_symbols.push(identifier.clone());
             }
         }
     }
@@ -146,7 +146,7 @@ pub async fn find_referenced_symbols(
     // Return the categorized response
     HttpResponse::Ok().json(ReferencedSymbolsResponse {
         workspace_symbols,
-        builtin_symbols,
+        external_symbols,
         not_found,
     })
 }
