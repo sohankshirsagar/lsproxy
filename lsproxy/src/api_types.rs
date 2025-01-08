@@ -1,8 +1,8 @@
-use log::warn;
-use lsp_types::{GotoDefinitionResponse, Location, LocationLink};
+use lsp_types::{Location, LocationLink};
 use serde::{Deserialize, Serialize};
-use serde_json::{to_value, Value};
+use serde_json::Value;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, RwLock};
@@ -49,6 +49,13 @@ pub struct ErrorResponse {
     pub error: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HealthResponse {
+    pub status: String,
+    pub version: String,
+    pub languages: HashMap<SupportedLanguages, bool>,
+}
+
 #[derive(
     Debug, EnumString, Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema,
 )]
@@ -65,6 +72,10 @@ pub enum SupportedLanguages {
     CPP,
     #[serde(rename = "java")]
     Java,
+    #[serde(rename = "golang")]
+    Golang,
+    #[serde(rename = "php")]
+    PHP,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
@@ -96,6 +107,17 @@ pub struct FileRange {
     pub end: Position,
 }
 
+impl FileRange {
+    pub fn contains(&self, position: FilePosition) -> bool {
+        let pos = &position.position;
+        self.path == position.path
+            && self.start.line <= pos.line
+            && self.end.line >= pos.line
+            && (self.start.line != pos.line || self.start.character <= pos.character)
+            && (self.end.line != pos.line || self.end.character >= pos.character)
+    }
+}
+
 impl From<Position> for lsp_types::Position {
     fn from(position: Position) -> Self {
         lsp_types::Position {
@@ -124,6 +146,12 @@ impl From<FileRange> for lsp_types::Range {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ReferenceWithSymbolDefinition {
+    pub reference: Identifier,
+    pub symbols: Vec<Symbol>,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CodeContext {
     pub range: FileRange,
     pub source_code: String,
@@ -142,6 +170,12 @@ pub struct Symbol {
     pub identifier_position: FilePosition,
 
     /// The full range of the symbol.
+    pub range: FileRange,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Identifier {
+    pub name: String,
     pub range: FileRange,
 }
 
@@ -178,6 +212,12 @@ pub struct GetReferencesRequest {
     #[serde(default)]
     #[schema(example = false)]
     pub include_raw_response: bool,
+}
+
+/// Request to get the symbols that are referenced from the symbol at the given position
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct GetReferencedSymbolsRequest {
+    pub identifier_position: FilePosition,
 }
 
 /// Request to get the symbols in a file.
@@ -231,6 +271,8 @@ pub struct DefinitionResponse {
     /// The source code of symbol definitions.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_code_context: Option<Vec<CodeContext>>,
+    /// The identifier that was "clicked-on" to get the definition.
+    pub selected_identifier: Identifier,
 }
 
 /// Response to a references request.
@@ -263,64 +305,18 @@ pub struct ReferencesResponse {
     /// The source code around the references.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Vec<CodeContext>>,
+    /// The identifier that was "clicked-on" to get the references.
+    pub selected_identifier: Identifier,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ReferencedSymbolsResponse {
+    pub workspace_symbols: Vec<ReferenceWithSymbolDefinition>,
+    pub external_symbols: Vec<Identifier>,
+    pub not_found: Vec<Identifier>,
 }
 
 pub type SymbolResponse = Vec<Symbol>;
-
-impl From<(GotoDefinitionResponse, Option<Vec<CodeContext>>, bool)> for DefinitionResponse {
-    fn from(
-        (response, source_code_context, include_raw): (
-            GotoDefinitionResponse,
-            Option<Vec<CodeContext>>,
-            bool,
-        ),
-    ) -> Self {
-        let raw_response = if include_raw {
-            Some(to_value(&response).unwrap_or_else(|e| {
-                warn!("Serialization failed: {:?}", e);
-                Value::Null
-            }))
-        } else {
-            None
-        };
-        let definitions = match response {
-            GotoDefinitionResponse::Scalar(location) => vec![FilePosition::from(location)],
-            GotoDefinitionResponse::Array(locations) => {
-                locations.into_iter().map(FilePosition::from).collect()
-            }
-            GotoDefinitionResponse::Link(links) => {
-                links.into_iter().map(FilePosition::from).collect()
-            }
-        };
-        DefinitionResponse {
-            raw_response,
-            definitions,
-            source_code_context,
-        }
-    }
-}
-
-impl From<(Vec<Location>, Option<Vec<CodeContext>>, bool)> for ReferencesResponse {
-    fn from(
-        (locations, source_code_context, include_raw): (
-            Vec<Location>,
-            Option<Vec<CodeContext>>,
-            bool,
-        ),
-    ) -> Self {
-        let raw_response = if include_raw {
-            Some(to_value(&locations).unwrap_or_default())
-        } else {
-            None
-        };
-        let references = locations.into_iter().map(FilePosition::from).collect();
-        ReferencesResponse {
-            raw_response,
-            references,
-            context: source_code_context,
-        }
-    }
-}
 
 impl From<Location> for FilePosition {
     fn from(location: Location) -> Self {
@@ -343,5 +339,224 @@ impl From<LocationLink> for FilePosition {
                 character: link.target_range.start.character,
             },
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FindIdentifierRequest {
+    /// The name of the identifier to search for.
+    #[schema(example = "User")]
+    pub name: String,
+    /// The path to the file to search for identifiers.
+    #[schema(example = "src/main.py")]
+    pub path: String,
+    /// The position hint to search for identifiers. If not provided.
+    pub position: Option<Position>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentifierResponse {
+    pub identifiers: Vec<Identifier>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_contains_multi_line_range() {
+        let range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 12,
+                character: 10,
+            },
+        };
+
+        // Test positions within the range
+        assert!(
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 11,
+                    character: 0
+                }
+            }),
+            "middle line should be contained"
+        );
+        assert!(
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 5
+                }
+            }),
+            "start position should be contained"
+        );
+        assert!(
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 12,
+                    character: 10
+                }
+            }),
+            "end position should be contained"
+        );
+    }
+
+    #[test]
+    fn test_contains_multi_line_range_outside_positions() {
+        let range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 12,
+                character: 10,
+            },
+        };
+
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 9,
+                    character: 0
+                }
+            }),
+            "line before start should not be contained"
+        );
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 13,
+                    character: 0
+                }
+            }),
+            "line after end should not be contained"
+        );
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
+            }),
+            "position before start on first line should not be contained"
+        );
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 12,
+                    character: 11
+                }
+            }),
+            "position after end on last line should not be contained"
+        );
+    }
+
+    #[test]
+    fn test_contains_single_line_range() {
+        let single_line_range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 10,
+                character: 10,
+            },
+        };
+
+        assert!(
+            single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 7
+                }
+            }),
+            "position within single line range should be contained"
+        );
+        assert!(
+            !single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
+            }),
+            "position before single line range should not be contained"
+        );
+        assert!(
+            !single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 11
+                }
+            }),
+            "position after single line range should not be contained"
+        );
+    }
+
+    #[test]
+    fn test_contains_zero_width_range() {
+        let zero_width_range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 10,
+                character: 5,
+            },
+        };
+
+        assert!(
+            zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 5
+                }
+            }),
+            "position at zero-width range should be contained"
+        );
+        assert!(
+            !zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
+            }),
+            "position before zero-width range should not be contained"
+        );
+        assert!(
+            !zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 6
+                }
+            }),
+            "position after zero-width range should not be contained"
+        );
     }
 }

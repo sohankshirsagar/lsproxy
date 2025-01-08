@@ -41,8 +41,10 @@ pub const TYPESCRIPT_AND_JAVASCRIPT_ROOT_FILES: &[&str] =
 
 pub const TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS: &[&str] =
     &["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
-pub const TYPESCRIPT_EXTENSIONS: &[&str] = &["ts", "tsx"];
-pub const JAVASCRIPT_EXTENSIONS: &[&str] = &["js", "jsx"];
+pub const TYPESCRIPT_EXTENSIONS: &[&str] = &["ts"];
+pub const TYPESCRIPTREACT_EXTENSIONS: &[&str] = &["tsx"];
+pub const JAVASCRIPT_EXTENSIONS: &[&str] = &["js"];
+pub const JAVASCRIPTREACT_EXTENSIONS: &[&str] = &["jsx"];
 pub const TYPESCRIPT_AND_JAVASCRIPT_EXTENSIONS: &[&str] = &["ts", "tsx", "js", "jsx"];
 
 pub const RUST_ROOT_FILES: &[&str] = &["Cargo.toml"];
@@ -71,6 +73,29 @@ pub const JAVA_ROOT_FILES: &[&str] = &["gradlew", ".git", "mvnw"];
 pub const JAVA_FILE_PATTERNS: &[&str] = &["**/*.java"];
 pub const JAVA_EXTENSIONS: &[&str] = &["java"];
 
+pub const GOLANG_ROOT_FILES: &[&str] = &["go.mod", "go.work"];
+pub const GOLANG_FILE_PATTERNS: &[&str] = &["**/*.go", "**/*.gomod", "**/*.gowork", "**/*.gotmpl"];
+pub const GOLANG_EXTENSIONS: &[&str] = &["go"];
+
+pub const PHP_ROOT_FILES: &[&str] = &[
+    "composer.json",
+    "composer.lock",
+    "phpunit.xml",
+    "artisan",
+    ".env",
+    "index.php",
+    "wp-config.php",
+];
+pub const PHP_FILE_PATTERNS: &[&str] = &[
+    "**/*.php",
+    "**/*.phtml",
+    "**/*.phps",
+    "**/*.php5",
+    "**/*.php7",
+    "**/*.php8",
+];
+pub const PHP_EXTENSIONS: &[&str] = &["php", "phtml", "phps", "php5", "php7", "php8"];
+
 #[derive(Clone, PartialEq)]
 pub enum DidOpenConfiguration {
     Lazy,
@@ -85,7 +110,6 @@ pub trait WorkspaceDocuments: Send + Sync {
         range: Option<Range>,
     ) -> Result<String, Box<dyn Error + Send + Sync>>;
     async fn list_files(&self) -> Vec<PathBuf>;
-    async fn update_patterns(&self, include_patterns: Vec<String>, exclude_patterns: Vec<String>);
     fn get_did_open_configuration(&self) -> DidOpenConfiguration;
     fn is_did_open_document(&self, file_path: &str) -> bool;
     fn add_did_open_document(&mut self, file_path: &str);
@@ -261,11 +285,6 @@ impl WorkspaceDocuments for WorkspaceDocumentsHandler {
         }
     }
 
-    async fn update_patterns(&self, include_patterns: Vec<String>, exclude_patterns: Vec<String>) {
-        *self.patterns.write().await = (include_patterns, exclude_patterns);
-        self.cache.write().await.clear();
-    }
-
     fn get_did_open_configuration(&self) -> DidOpenConfiguration {
         self.did_open_configuration.clone()
     }
@@ -368,41 +387,6 @@ mod tests {
         assert_eq!(files.len(), 2);
         assert!(files.contains(&dir.path().join("file1.rs")));
         assert!(files.contains(&dir.path().join("file3.rs")));
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_update_patterns() -> Result<(), Box<dyn Error + Send + Sync>> {
-        // Setup temporary directory and files
-        let dir = tempdir()?;
-        fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
-        fs::write(dir.path().join("file2.txt"), "Hello")?;
-        let (_, rx) = create_test_watcher_channels();
-
-        // Initialize WorkspaceDocumentsHandler with initial patterns
-        let handler = WorkspaceDocumentsHandler::new(
-            dir.path(),
-            vec!["*.txt".to_string()],
-            vec![],
-            rx,
-            DidOpenConfiguration::None,
-        );
-
-        // Verify initial file listing
-        let initial_files = handler.list_files().await;
-        assert_eq!(initial_files.len(), 1);
-        assert!(initial_files.contains(&dir.path().join("file2.txt")));
-
-        // Update patterns to include Rust files
-        handler
-            .update_patterns(vec!["*.rs".to_string()], vec![])
-            .await;
-
-        // Verify updated file listing
-        let updated_files = handler.list_files().await;
-        assert_eq!(updated_files.len(), 1);
-        assert!(updated_files.contains(&dir.path().join("file1.rs")));
 
         Ok(())
     }
@@ -530,34 +514,6 @@ mod tests {
 
         // Test listing files with no matches
         let files = handler.list_files().await;
-        assert!(files.is_empty());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_update_patterns_empty_include_exclude() -> Result<(), Box<dyn Error + Send + Sync>>
-    {
-        // Setup temporary directory and files
-        let dir = tempdir()?;
-        fs::write(dir.path().join("file1.rs"), "fn main() {}")?;
-        fs::write(dir.path().join("file2.txt"), "Hello")?;
-        let (_, rx) = create_test_watcher_channels();
-        // Initialize WorkspaceDocumentsHandler with initial patterns
-        let handler = WorkspaceDocumentsHandler::new(
-            dir.path(),
-            vec!["*.rs".to_string()],
-            vec!["file2.txt".to_string()],
-            rx,
-            DidOpenConfiguration::None,
-        );
-
-        // Update patterns with empty include and exclude
-        handler.update_patterns(vec![], vec![]).await;
-
-        // Test listing files after updating patterns
-        let files = handler.list_files().await;
-        // Assuming empty include patterns match nothing
         assert!(files.is_empty());
 
         Ok(())

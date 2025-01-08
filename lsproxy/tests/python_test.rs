@@ -1,23 +1,28 @@
 use lsproxy::api_types::{
-    set_global_mount_dir, FilePosition, FileRange, Position, Symbol, SymbolResponse,
+    set_global_mount_dir, FilePosition, FileRange, HealthResponse, Position, Symbol, SymbolResponse,
 };
 use lsproxy::{initialize_app_state, run_server};
 use reqwest;
-use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-fn wait_for_server(url: &str) {
+fn wait_for_server(base_url: &str) {
     let client = reqwest::blocking::Client::new();
+    let health_url = format!("{}/v1/system/health", base_url);
+
     for _ in 0..30 {
         // Try for 30 seconds
-        if client.get(url).send().is_ok() {
-            return;
+        if let Ok(response) = client.get(&health_url).send() {
+            if let Ok(health) = response.json::<HealthResponse>() {
+                if health.status == "ok" {
+                    return;
+                }
+            }
         }
         thread::sleep(Duration::from_secs(1));
     }
-    panic!("Server did not respond within 30 seconds");
+    panic!("Server did not respond with healthy status within 30 seconds");
 }
 
 #[test]
@@ -29,6 +34,7 @@ fn test_server_integration_python() -> Result<(), Box<dyn std::error::Error>> {
 
     // Spawn the server in a separate thread
     let _server_thread = thread::spawn(move || {
+        std::env::set_var("USE_AUTH", "false");
         set_global_mount_dir(&mount_dir);
 
         let system = actix_web::rt::System::new();
@@ -54,13 +60,8 @@ fn test_server_integration_python() -> Result<(), Box<dyn std::error::Error>> {
         return Err(error_msg.into());
     }
 
-    // Check if the server is running
-    match TcpStream::connect("0.0.0.0:4444") {
-        Ok(_) => println!("Server is running"),
-        Err(e) => return Err(format!("Failed to connect to server: {}", e).into()),
-    }
     let base_url = "http://localhost:4444";
-    wait_for_server(&format!("{}/v1/workspace/list-files", base_url));
+    wait_for_server(base_url);
 
     let client = reqwest::blocking::Client::new();
     // Test workspace/list-files endpoint
@@ -73,7 +74,13 @@ fn test_server_integration_python() -> Result<(), Box<dyn std::error::Error>> {
     let mut workspace_files: Vec<String> = response.json().expect("Failed to parse JSON");
 
     // Check if the expected files are present
-    let mut expected_files = vec!["graph.py", "main.py", "search.py", "__init__.py"];
+    let mut expected_files = vec![
+        "decorators.py",
+        "graph.py",
+        "main.py",
+        "search.py",
+        "__init__.py",
+    ];
     assert_eq!(
         workspace_files.len(),
         expected_files.len(),
@@ -97,13 +104,13 @@ fn test_server_integration_python() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::from_value(response.json().expect("Failed to parse JSON"))?;
     let expected = vec![
         Symbol {
-            name: String::from("graph"),
-            kind: String::from("variable"),
+            name: String::from("plot_path"),
+            kind: String::from("function"),
             identifier_position: FilePosition {
                 path: String::from("main.py"),
                 position: Position {
-                    line: 5,
-                    character: 0,
+                    line: 6,
+                    character: 4,
                 },
             },
             range: FileRange {
@@ -113,52 +120,30 @@ fn test_server_integration_python() -> Result<(), Box<dyn std::error::Error>> {
                     character: 0,
                 },
                 end: Position {
-                    line: 5,
-                    character: 20,
+                    line: 12,
+                    character: 14,
                 },
             },
         },
         Symbol {
-            name: String::from("result"),
-            kind: String::from("variable"),
+            name: String::from("main"),
+            kind: String::from("function"),
             identifier_position: FilePosition {
                 path: String::from("main.py"),
                 position: Position {
-                    line: 6,
-                    character: 0,
+                    line: 14,
+                    character: 4,
                 },
             },
             range: FileRange {
                 path: String::from("main.py"),
                 start: Position {
-                    line: 6,
+                    line: 14,
                     character: 0,
                 },
                 end: Position {
-                    line: 6,
-                    character: 51,
-                },
-            },
-        },
-        Symbol {
-            name: String::from("cost"),
-            kind: String::from("variable"),
-            identifier_position: FilePosition {
-                path: String::from("main.py"),
-                position: Position {
-                    line: 6,
-                    character: 8,
-                },
-            },
-            range: FileRange {
-                path: String::from("main.py"),
-                start: Position {
-                    line: 6,
-                    character: 0,
-                },
-                end: Position {
-                    line: 6,
-                    character: 51,
+                    line: 19,
+                    character: 28,
                 },
             },
         },

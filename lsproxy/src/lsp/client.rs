@@ -1,16 +1,15 @@
 use crate::lsp::json_rpc::JsonRpc;
 use crate::lsp::process::Process;
-use crate::lsp::{ExpectedMessageKey, InnerMessage, JsonRpcHandler, ProcessHandler};
+use crate::lsp::{ExpectedMessageKey, JsonRpcHandler, ProcessHandler};
 use crate::utils::file_utils::{detect_language_string, search_directories};
 use async_trait::async_trait;
 use log::{debug, error, warn};
 use lsp_types::{
     ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
-    DocumentSymbolParams, DocumentSymbolResponse, GotoDefinitionParams, GotoDefinitionResponse,
-    InitializeParams, InitializeResult, Location, PartialResultParams, Position,
-    PublishDiagnosticsClientCapabilities, ReferenceContext, ReferenceParams, TagSupport,
-    TextDocumentClientCapabilities, TextDocumentIdentifier, TextDocumentItem,
-    TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
+    GotoDefinitionParams, GotoDefinitionResponse, InitializeParams, InitializeResult, Location,
+    PartialResultParams, Position, PublishDiagnosticsClientCapabilities, ReferenceContext,
+    ReferenceParams, TagSupport, TextDocumentClientCapabilities, TextDocumentIdentifier,
+    TextDocumentItem, TextDocumentPositionParams, Url, WorkDoneProgressParams, WorkspaceFolder,
 };
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -30,7 +29,7 @@ pub trait LspClient: Send {
         debug!("Initializing LSP client with root path: {:?}", root_path);
         self.start_response_listener().await?;
 
-        let params = self.get_initialize_params(root_path).await;
+        let params = self.get_initialize_params(root_path).await?;
 
         let result = self
             .send_request("initialize", Some(serde_json::to_value(params)?))
@@ -65,17 +64,17 @@ pub trait LspClient: Send {
         capabilities
     }
 
-    async fn get_initialize_params(&mut self, root_path: String) -> InitializeParams {
-        InitializeParams {
+    async fn get_initialize_params(
+        &mut self,
+        root_path: String,
+    ) -> Result<InitializeParams, Box<dyn Error + Send + Sync>> {
+        let workspace_folders = self.find_workspace_folders(root_path.clone()).await?;
+        Ok(InitializeParams {
             capabilities: self.get_capabilities(),
-            workspace_folders: Some(
-                self.find_workspace_folders(root_path.clone())
-                    .await
-                    .unwrap(),
-            ),
+            workspace_folders: Some(workspace_folders),
             root_uri: Some(Url::from_file_path(&root_path).unwrap()), // primarily for python
             ..Default::default()
-        }
+        })
     }
 
     async fn send_request(
@@ -129,14 +128,10 @@ pub trait LspClient: Send {
                                     id, message
                                 );
                             }
-                        } else if let Some(params) = message
-                            .params
-                            .clone()
-                            .and_then(|p| serde_json::from_value::<InnerMessage>(p).ok())
-                        {
+                        } else if let Some(params) = message.params.clone() {
                             let message_key = ExpectedMessageKey {
                                 method: message.method.clone().unwrap(),
-                                message: params.message,
+                                params: params,
                             };
                             if let Some(sender) =
                                 pending_requests.remove_notification(message_key).await
@@ -245,31 +240,6 @@ pub trait LspClient: Send {
 
         debug!("Received goto definition response");
         Ok(goto_resp)
-    }
-
-    async fn text_document_symbols(
-        &mut self,
-        file_path: &str,
-    ) -> Result<DocumentSymbolResponse, Box<dyn Error + Send + Sync>> {
-        debug!("Requesting document symbols for {}", file_path);
-        let params = DocumentSymbolParams {
-            text_document: TextDocumentIdentifier {
-                uri: Url::from_file_path(file_path).unwrap(),
-            },
-            work_done_progress_params: WorkDoneProgressParams::default(),
-            partial_result_params: PartialResultParams::default(),
-        };
-
-        let result = self
-            .send_request(
-                "textDocument/documentSymbol",
-                Some(serde_json::to_value(params)?),
-            )
-            .await?;
-
-        let symbols: DocumentSymbolResponse = serde_json::from_value(result)?;
-        debug!("Received document symbols response");
-        Ok(symbols)
     }
 
     async fn text_document_reference(

@@ -50,7 +50,7 @@ impl LspClient for JdtlsClient {
         debug!("Initializing LSP client with root path: {:?}", root_path);
         self.start_response_listener().await?;
 
-        let params = self.get_initialize_params(root_path).await;
+        let params = self.get_initialize_params(root_path).await?;
 
         let result = self
             .send_request("initialize", Some(serde_json::to_value(params)?))
@@ -63,7 +63,10 @@ impl LspClient for JdtlsClient {
             .get_pending_requests()
             .add_notification(ExpectedMessageKey {
                 method: "language/status".to_string(),
-                message: "ServiceReady".to_string(),
+                params: serde_json::json!({
+                    "type": "ServiceReady",
+                    "message": "ServiceReady"
+                }),
             })
             .await?;
         debug!("Java: waiting for service ready notification. This may take a minute...");
