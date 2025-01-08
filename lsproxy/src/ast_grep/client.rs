@@ -56,6 +56,7 @@ impl AstGrepClient {
         &self,
         file_name: &str,
         symbol: &Symbol,
+        full_scan: bool,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
         let full_path = get_mount_dir().join(&file_name);
         let full_path_str = full_path.to_str().unwrap_or_default();
@@ -131,7 +132,7 @@ mod tests {
 
         let symbol = client.get_symbol_from_position(path, &position).await?;
         let references = client
-            .get_references_contained_in_symbol(path, &symbol)
+            .get_references_contained_in_symbol(path, &symbol, false)
             .await?;
         let match_positions: Vec<lsp_types::Position> =
             references.iter().map(lsp_types::Position::from).collect();
@@ -189,7 +190,7 @@ mod tests {
 
         let symbol = client.get_symbol_from_position(path, &position).await?;
         let references = client
-            .get_references_contained_in_symbol(path, &symbol)
+            .get_references_contained_in_symbol(path, &symbol, false)
             .await
             .unwrap();
         let match_positions: Vec<lsp_types::Position> = references
