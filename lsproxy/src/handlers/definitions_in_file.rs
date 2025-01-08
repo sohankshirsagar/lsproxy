@@ -53,7 +53,7 @@ pub async fn definitions_in_file(
         Ok(symbols) => {
             let symbol_response: Vec<Symbol> = symbols
                 .into_iter()
-                .filter(|s| s.kind != "local-variable")
+                .filter(|s| s.rule_id != "local-variable")
                 .map(Symbol::from)
                 .collect();
             HttpResponse::Ok().json(symbol_response)

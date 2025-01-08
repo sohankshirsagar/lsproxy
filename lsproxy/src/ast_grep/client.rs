@@ -78,7 +78,7 @@ impl AstGrepClient {
                         character: m.range.start.column as u32,
                     },
                 });
-                
+
                 position_matches && (full_scan || m.rule_id != "final-identifier")
             })
             .collect();

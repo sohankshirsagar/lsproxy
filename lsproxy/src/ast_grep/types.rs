@@ -7,7 +7,7 @@ use crate::{
     utils::file_utils::absolute_path_to_relative_path_string,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AstGrepMatch {
     pub text: String,
@@ -61,21 +61,21 @@ pub struct AstGrepPosition {
     pub column: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CharCount {
     pub leading: usize,
     pub trailing: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaVariables {
     pub single: SingleVariable,
     pub multi: MultiVariables,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SingleVariable {
     #[serde(rename = "NAME")]
     pub name: MetaVariable,
@@ -83,20 +83,20 @@ pub struct SingleVariable {
     pub context: Option<MetaVariable>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MultiVariables {
     pub secondary: Option<Vec<MetaVariable>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaVariable {
     pub text: String,
     pub range: AstGrepRange,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Label {
     pub text: String,

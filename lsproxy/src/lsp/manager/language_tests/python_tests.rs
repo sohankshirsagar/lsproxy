@@ -80,6 +80,28 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                 },
             },
         },
+        Symbol {
+            name: String::from("graph"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("main.py"),
+                position: Position {
+                    line: 15,
+                    character: 4,
+                },
+            },
+            range: FileRange {
+                path: String::from("main.py"),
+                start: Position {
+                    line: 15,
+                    character: 0,
+                },
+                end: Position {
+                    line: 15,
+                    character: 24,
+                },
+            },
+        },
     ];
     assert_eq!(symbol_response, expected);
     Ok(())
@@ -211,6 +233,94 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
             },
         },
         Symbol {
+            name: String::from("D"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 24,
+                    character: 8,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 24,
+                    character: 0,
+                },
+                end: Position {
+                    line: 24,
+                    character: 13,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("D2"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 25,
+                    character: 8,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 25,
+                    character: 0,
+                },
+                end: Position {
+                    line: 25,
+                    character: 14,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("dx"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 26,
+                    character: 8,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 26,
+                    character: 0,
+                },
+                end: Position {
+                    line: 26,
+                    character: 36,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("dy"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 27,
+                    character: 8,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 27,
+                    character: 0,
+                },
+                end: Position {
+                    line: 27,
+                    character: 36,
+                },
+            },
+        },
+        Symbol {
             name: String::from("get_vertex_neighbours"),
             kind: String::from("function"),
             identifier_position: FilePosition {
@@ -229,6 +339,72 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                 end: Position {
                     line: 49,
                     character: 16,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("n"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 32,
+                    character: 8,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 32,
+                    character: 0,
+                },
+                end: Position {
+                    line: 32,
+                    character: 14,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("x2"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 44,
+                    character: 12,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 44,
+                    character: 0,
+                },
+                end: Position {
+                    line: 44,
+                    character: 28,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("y2"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 45,
+                    character: 12,
+                },
+            },
+            range: FileRange {
+                path: String::from("graph.py"),
+                start: Position {
+                    line: 45,
+                    character: 0,
+                },
+                end: Position {
+                    line: 45,
+                    character: 28,
                 },
             },
         },
