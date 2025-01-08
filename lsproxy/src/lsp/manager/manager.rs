@@ -316,7 +316,7 @@ impl Manager {
         };
         let references_to_symbols = match self
             .ast_grep
-            .get_references_contained_in_symbol(file_path, &symbol)
+            .get_references_contained_in_symbol(file_path, &symbol, false)
             .await
         {
             Ok(referenced_symbols) => referenced_symbols,
