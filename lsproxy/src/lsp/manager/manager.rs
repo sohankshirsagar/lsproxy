@@ -448,7 +448,19 @@ impl Manager {
                 // If we found no external definitions through the chain, remove this branch
                 Ok(vec![])
             } else {
-                Ok(final_definitions)
+                // Combine all locations from different GotoDefinitionResponses into a single Array variant
+                let all_locations: Vec<Location> = final_definitions.into_iter().flat_map(|def| {
+                    match def {
+                        GotoDefinitionResponse::Scalar(loc) => vec![loc],
+                        GotoDefinitionResponse::Array(locs) => locs,
+                        GotoDefinitionResponse::Link(links) => links
+                            .into_iter()
+                            .map(|link| Location::new(link.target_uri, link.target_range))
+                            .collect(),
+                    }
+                }).collect();
+                
+                Ok(vec![GotoDefinitionResponse::Array(all_locations)])
             }
         })
     }
