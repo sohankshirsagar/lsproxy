@@ -143,7 +143,37 @@ pub async fn find_referenced_symbols(
         }
     }
 
-    // Return the categorized response
+    // Sort workspace_symbols by reference location
+    workspace_symbols.sort_by(|a, b| {
+        let path_cmp = a.reference.range.path.cmp(&b.reference.range.path);
+        if path_cmp.is_eq() {
+            a.reference.range.start.line.cmp(&b.reference.range.start.line)
+        } else {
+            path_cmp
+        }
+    });
+
+    // Sort external_symbols by location
+    external_symbols.sort_by(|a, b| {
+        let path_cmp = a.range.path.cmp(&b.range.path);
+        if path_cmp.is_eq() {
+            a.range.start.line.cmp(&b.range.start.line)
+        } else {
+            path_cmp
+        }
+    });
+
+    // Sort not_found by location
+    not_found.sort_by(|a, b| {
+        let path_cmp = a.range.path.cmp(&b.range.path);
+        if path_cmp.is_eq() {
+            a.range.start.line.cmp(&b.range.start.line)
+        } else {
+            path_cmp
+        }
+    });
+
+    // Return the sorted response
     HttpResponse::Ok().json(ReferencedSymbolsResponse {
         workspace_symbols,
         external_symbols,
