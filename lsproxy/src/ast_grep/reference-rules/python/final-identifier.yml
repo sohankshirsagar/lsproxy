@@ -14,9 +14,14 @@ rule:
           inside:
             kind: call
       - inside:
+          kind: attribute
+          field: object
+      - inside:
           any:
           - kind: attribute
             inside:
               kind: attribute
           - kind: call
           - kind: decorator
+          - kind: function_definition
+          - kind: parameters

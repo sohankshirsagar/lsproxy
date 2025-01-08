@@ -6,7 +6,7 @@ use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
-use log::{error, info};
+use log::{error, info, debug};
 use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 
 #[utoipa::path(
@@ -149,4 +149,104 @@ pub async fn find_referenced_symbols(
         external_symbols,
         not_found,
     })
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use actix_web::http::StatusCode;
+    use tokio::time::{sleep, Duration};
+
+    use crate::api_types::{FilePosition, Position};
+    use crate::initialize_app_state;
+    use crate::test_utils::{python_sample_path, TestContext};
+
+    #[tokio::test]
+    async fn test_python_nested_function_referenced_symbols() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencedSymbolsRequest {
+            identifier_position: FilePosition {
+                path: String::from("search.py"),
+                position: Position {
+                    line: 16,
+                    character: 4,
+                },
+            },
+        });
+
+        sleep(Duration::from_secs(5)).await;
+
+        let response = find_referenced_symbols(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .ok_or("Missing content-type header")?
+            .to_str()?;
+        assert_eq!(content_type, "application/json");
+
+        // Check the body
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await?;
+        let referenced_symbols_response: ReferencedSymbolsResponse = serde_json::from_slice(&bytes)?;
+
+        let expected_response = ReferencedSymbolsResponse {
+            workspace_symbols: Vec::new(),
+            external_symbols: Vec::new(),
+            not_found: Vec::new(),
+        };
+
+        assert_eq!(referenced_symbols_response, expected_response);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_python_class_referenced_symbols() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&python_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencedSymbolsRequest {
+            identifier_position: FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 6,
+                    character: 6,
+                },
+            },
+        });
+
+        sleep(Duration::from_secs(5)).await;
+
+        let response = find_referenced_symbols(state, mock_request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .ok_or("Missing content-type header")?
+            .to_str()?;
+        assert_eq!(content_type, "application/json");
+
+        // Check the body
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await?;
+        let referenced_symbols_response: ReferencedSymbolsResponse = serde_json::from_slice(&bytes)?;
+
+        let expected_response = ReferencedSymbolsResponse {
+            workspace_symbols: Vec::new(),
+            external_symbols: Vec::new(),
+            not_found: Vec::new(),
+        };
+
+        let names: Vec<String> = referenced_symbols_response.workspace_symbols.into_iter().map(|symbol| {
+            match symbol.symbols.first() {
+                Some(sym) => sym.name.clone(),
+                None => String::from("NOTFOUND"),
+            }
+        }).collect();
+        assert_eq!(names, vec![String::from("thing")]);
+        Ok(())
+    }
 }
