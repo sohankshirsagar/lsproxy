@@ -67,16 +67,19 @@ impl AstGrepClient {
             .await?;
 
         // Filter matches to those within the symbol's range
+        // And if not full_scan, exclude matches with rule_id "final-identifier"
         let contained_references = matches
             .into_iter()
             .filter(|m| {
-                symbol.range.contains(FilePosition {
+                let position_matches = symbol.range.contains(FilePosition {
                     path: String::from(file_name),
                     position: Position {
                         line: m.range.start.line as u32,
                         character: m.range.start.column as u32,
                     },
-                })
+                });
+                
+                position_matches && (full_scan || m.rule_id != "final-identifier")
             })
             .collect();
 
