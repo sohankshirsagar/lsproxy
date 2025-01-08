@@ -315,20 +315,60 @@ impl Manager {
                 })?;
 
             // Check if any definition locations are outside the original symbol's scope
+            // OR if the symbol at this location is a function
             let has_external_definitions = match &definition {
-                GotoDefinitionResponse::Scalar(loc) => !original_symbol
-                    .range
-                    .contains(FilePosition::from(loc.clone())),
-                GotoDefinitionResponse::Array(locs) => locs.iter().any(|loc| {
-                    !original_symbol
-                        .range
-                        .contains(FilePosition::from(loc.clone()))
-                }),
-                GotoDefinitionResponse::Link(links) => links.iter().any(|link| {
-                    !original_symbol
-                        .range
-                        .contains(FilePosition::from(link.clone()))
-                }),
+                GotoDefinitionResponse::Scalar(loc) => {
+                    let is_external = !original_symbol.range.contains(FilePosition::from(loc.clone()));
+                    if !is_external {
+                        // Check if internal symbol is a function
+                        if let Ok(internal_symbol) = self.get_symbol_from_position(
+                            &uri_to_relative_path_string(&loc.uri),
+                            &loc.range.start.into()
+                        ).await {
+                            internal_symbol.kind.to_lowercase().contains("function")
+                        } else {
+                            false
+                        }
+                    } else {
+                        true
+                    }
+                },
+                GotoDefinitionResponse::Array(locs) => {
+                    locs.iter().any(|loc| {
+                        let is_external = !original_symbol.range.contains(FilePosition::from(loc.clone()));
+                        if !is_external {
+                            // Check if internal symbol is a function
+                            if let Ok(internal_symbol) = self.get_symbol_from_position(
+                                &uri_to_relative_path_string(&loc.uri),
+                                &loc.range.start.into()
+                            ).await {
+                                internal_symbol.kind.to_lowercase().contains("function")
+                            } else {
+                                false
+                            }
+                        } else {
+                            true
+                        }
+                    })
+                },
+                GotoDefinitionResponse::Link(links) => {
+                    links.iter().any(|link| {
+                        let is_external = !original_symbol.range.contains(FilePosition::from(link.clone()));
+                        if !is_external {
+                            // Check if internal symbol is a function
+                            if let Ok(internal_symbol) = self.get_symbol_from_position(
+                                &uri_to_relative_path_string(&link.target_uri),
+                                &link.target_range.start.into()
+                            ).await {
+                                internal_symbol.kind.to_lowercase().contains("function")
+                            } else {
+                                false
+                            }
+                        } else {
+                            true
+                        }
+                    })
+                },
             };
 
             if has_external_definitions {
