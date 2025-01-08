@@ -248,12 +248,36 @@ impl Manager {
             .get_client(lsp_type)
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
-        locked_client
+        let mut definition = locked_client
             .text_document_definition(full_path_str, position)
             .await
             .map_err(|e| {
                 LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
-            })
+            })?;
+
+        // Sort the locations if there are multiple
+        match &mut definition {
+            GotoDefinitionResponse::Array(locations) => {
+                locations.sort_by(|a, b| {
+                    let path_a = uri_to_relative_path_string(&a.uri);
+                    let path_b = uri_to_relative_path_string(&b.uri);
+                    path_a.cmp(&path_b)
+                        .then(a.range.start.line.cmp(&b.range.start.line))
+                        .then(a.range.start.character.cmp(&b.range.start.character))
+                });
+            }
+            GotoDefinitionResponse::Link(links) => {
+                links.sort_by(|a, b| {
+                    let path_a = uri_to_relative_path_string(&a.target_uri);
+                    let path_b = uri_to_relative_path_string(&b.target_uri);
+                    path_a.cmp(&path_b)
+                        .then(a.target_range.start.line.cmp(&b.target_range.start.line))
+                        .then(a.target_range.start.character.cmp(&b.target_range.start.character))
+                });
+            }
+            _ => {}
+        }
+        Ok(definition)
     }
 
     pub fn get_client(
@@ -449,7 +473,7 @@ impl Manager {
                 Ok(vec![])
             } else {
                 // Combine all locations from different GotoDefinitionResponses into a single Array variant
-                let all_locations: Vec<Location> = final_definitions.into_iter().flat_map(|def| {
+                let mut all_locations: Vec<Location> = final_definitions.into_iter().flat_map(|def| {
                     match def {
                         GotoDefinitionResponse::Scalar(loc) => vec![loc],
                         GotoDefinitionResponse::Array(locs) => locs,
@@ -459,6 +483,15 @@ impl Manager {
                             .collect(),
                     }
                 }).collect();
+
+                // Sort locations by file path, then line, then character
+                all_locations.sort_by(|a, b| {
+                    let path_a = uri_to_relative_path_string(&a.uri);
+                    let path_b = uri_to_relative_path_string(&b.uri);
+                    path_a.cmp(&path_b)
+                        .then(a.range.start.line.cmp(&b.range.start.line))
+                        .then(a.range.start.character.cmp(&b.range.start.character))
+                });
                 
                 Ok(vec![GotoDefinitionResponse::Array(all_locations)])
             }
