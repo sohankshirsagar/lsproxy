@@ -261,7 +261,8 @@ impl Manager {
                 locations.sort_by(|a, b| {
                     let path_a = uri_to_relative_path_string(&a.uri);
                     let path_b = uri_to_relative_path_string(&b.uri);
-                    path_a.cmp(&path_b)
+                    path_a
+                        .cmp(&path_b)
                         .then(a.range.start.line.cmp(&b.range.start.line))
                         .then(a.range.start.character.cmp(&b.range.start.character))
                 });
@@ -270,9 +271,15 @@ impl Manager {
                 links.sort_by(|a, b| {
                     let path_a = uri_to_relative_path_string(&a.target_uri);
                     let path_b = uri_to_relative_path_string(&b.target_uri);
-                    path_a.cmp(&path_b)
+                    path_a
+                        .cmp(&path_b)
                         .then(a.target_range.start.line.cmp(&b.target_range.start.line))
-                        .then(a.target_range.start.character.cmp(&b.target_range.start.character))
+                        .then(
+                            a.target_range
+                                .start
+                                .character
+                                .cmp(&b.target_range.start.character),
+                        )
                 });
             }
             _ => {}
@@ -342,13 +349,18 @@ impl Manager {
             // OR if the symbol at this location is a function
             let has_external_definitions = match &definition {
                 GotoDefinitionResponse::Scalar(loc) => {
-                    let is_external = !original_symbol.range.contains(FilePosition::from(loc.clone()));
+                    let is_external = !original_symbol
+                        .range
+                        .contains(FilePosition::from(loc.clone()));
                     if !is_external {
                         // Check if internal symbol is a function
-                        if let Ok(internal_symbol) = self.get_symbol_from_position(
-                            &uri_to_relative_path_string(&loc.uri),
-                            &loc.range.start.into()
-                        ).await {
+                        if let Ok(internal_symbol) = self
+                            .get_symbol_from_position(
+                                &uri_to_relative_path_string(&loc.uri),
+                                &loc.range.start.into(),
+                            )
+                            .await
+                        {
                             internal_symbol.kind.to_lowercase().contains("function")
                         } else {
                             false
@@ -356,21 +368,26 @@ impl Manager {
                     } else {
                         true
                     }
-                },
+                }
                 GotoDefinitionResponse::Array(locs) => {
                     // Handle each location sequentially instead of using any()
                     let mut is_external_or_function = false;
                     for loc in locs {
-                        let is_external = !original_symbol.range.contains(FilePosition::from(loc.clone()));
+                        let is_external = !original_symbol
+                            .range
+                            .contains(FilePosition::from(loc.clone()));
                         if is_external {
                             is_external_or_function = true;
                             break;
                         }
                         // Check if internal symbol is a function
-                        if let Ok(internal_symbol) = self.get_symbol_from_position(
-                            &uri_to_relative_path_string(&loc.uri),
-                            &loc.range.start.into()
-                        ).await {
+                        if let Ok(internal_symbol) = self
+                            .get_symbol_from_position(
+                                &uri_to_relative_path_string(&loc.uri),
+                                &loc.range.start.into(),
+                            )
+                            .await
+                        {
                             if internal_symbol.kind.to_lowercase().contains("function") {
                                 is_external_or_function = true;
                                 break;
@@ -378,21 +395,26 @@ impl Manager {
                         }
                     }
                     is_external_or_function
-                },
+                }
                 GotoDefinitionResponse::Link(links) => {
                     // Handle each link sequentially instead of using any()
                     let mut is_external_or_function = false;
                     for link in links {
-                        let is_external = !original_symbol.range.contains(FilePosition::from(link.clone()));
+                        let is_external = !original_symbol
+                            .range
+                            .contains(FilePosition::from(link.clone()));
                         if is_external {
                             is_external_or_function = true;
                             break;
                         }
                         // Check if internal symbol is a function
-                        if let Ok(internal_symbol) = self.get_symbol_from_position(
-                            &uri_to_relative_path_string(&link.target_uri),
-                            &link.target_range.start.into()
-                        ).await {
+                        if let Ok(internal_symbol) = self
+                            .get_symbol_from_position(
+                                &uri_to_relative_path_string(&link.target_uri),
+                                &link.target_range.start.into(),
+                            )
+                            .await
+                        {
                             if internal_symbol.kind.to_lowercase().contains("function") {
                                 is_external_or_function = true;
                                 break;
@@ -400,7 +422,7 @@ impl Manager {
                         }
                     }
                     is_external_or_function
-                },
+                }
             };
 
             if has_external_definitions {
@@ -473,26 +495,28 @@ impl Manager {
                 Ok(vec![])
             } else {
                 // Combine all locations from different GotoDefinitionResponses into a single Array variant
-                let mut all_locations: Vec<Location> = final_definitions.into_iter().flat_map(|def| {
-                    match def {
+                let mut all_locations: Vec<Location> = final_definitions
+                    .into_iter()
+                    .flat_map(|def| match def {
                         GotoDefinitionResponse::Scalar(loc) => vec![loc],
                         GotoDefinitionResponse::Array(locs) => locs,
                         GotoDefinitionResponse::Link(links) => links
                             .into_iter()
                             .map(|link| Location::new(link.target_uri, link.target_range))
                             .collect(),
-                    }
-                }).collect();
+                    })
+                    .collect();
 
                 // Sort locations by file path, then line, then character
                 all_locations.sort_by(|a, b| {
                     let path_a = uri_to_relative_path_string(&a.uri);
                     let path_b = uri_to_relative_path_string(&b.uri);
-                    path_a.cmp(&path_b)
+                    path_a
+                        .cmp(&path_b)
                         .then(a.range.start.line.cmp(&b.range.start.line))
                         .then(a.range.start.character.cmp(&b.range.start.character))
                 });
-                
+
                 Ok(vec![GotoDefinitionResponse::Array(all_locations)])
             }
         })

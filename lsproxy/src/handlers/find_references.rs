@@ -270,7 +270,7 @@ mod test {
             identifier_position: FilePosition {
                 path: String::from("graph.py"),
                 position: Position {
-                    line: 6,
+                    line: 12,
                     character: 6,
                 },
             },
@@ -299,7 +299,7 @@ mod test {
                 FilePosition {
                     path: String::from("graph.py"),
                     position: Position {
-                        line: 6,
+                        line: 12,
                         character: 6,
                     },
                 },
@@ -341,7 +341,7 @@ mod test {
                 FilePosition {
                     path: String::from("search.py"),
                     position: Position {
-                        line: 17,
+                        line: 16,
                         character: 37,
                     },
                 },
@@ -352,18 +352,18 @@ mod test {
                 range: FileRange {
                     path: String::from("graph.py"),
                     start: Position {
-                        line: 6,
+                        line: 12,
                         character: 6,
                     },
                     end: Position {
-                        line: 6,
+                        line: 12,
                         character: 16,
                     },
                 },
             },
         };
 
-        assert_eq!(expected_response, reference_response);
+        assert_eq!(reference_response, expected_response);
         Ok(())
     }
 
@@ -506,7 +506,7 @@ mod test {
         let error_response: ErrorResponse = serde_json::from_slice(&bytes)?;
         assert_eq!(
             error_response.error,
-            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"b\", range: FileRange { path: \"graph.py\", start: Position { line: 53, character: 15 }, end: Position { line: 53, character: 16 } } }, Identifier { name: \"barrier\", range: FileRange { path: \"graph.py\", start: Position { line: 53, character: 20 }, end: Position { line: 53, character: 27 } } }, Identifier { name: \"barrier\", range: FileRange { path: \"graph.py\", start: Position { line: 52, character: 12 }, end: Position { line: 52, character: 19 } } }]"
+            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 88, character: 15 }, end: Position { line: 88, character: 16 } } }, Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 16 }, end: Position { line: 87, character: 17 } } }, Identifier { name: \"append\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } } }]"
         );
 
         Ok(())

@@ -129,7 +129,7 @@ mod tests {
 
         let path = "/mnt/lsproxy_root/sample_project/python/graph.py";
         let position = lsp_types::Position {
-            line: 6, // Line with @log_execution_time decorator
+            line: 12,
             character: 6,
         };
 
@@ -141,36 +141,64 @@ mod tests {
             references.iter().map(lsp_types::Position::from).collect();
         let expected = vec![
             lsp_types::Position {
-                line: 9,
+                line: 15,
                 character: 23,
             },
             lsp_types::Position {
-                line: 16,
+                line: 22,
                 character: 5,
             },
             lsp_types::Position {
-                line: 20,
+                line: 35,
+                character: 15,
+            },
+            lsp_types::Position {
+                line: 35,
+                character: 34,
+            },
+            lsp_types::Position {
+                line: 39,
+                character: 28,
+            },
+            lsp_types::Position {
+                line: 40,
+                character: 29,
+            },
+            lsp_types::Position {
+                line: 63,
+                character: 18,
+            },
+            lsp_types::Position {
+                line: 65,
+                character: 15,
+            },
+            lsp_types::Position {
+                line: 67,
                 character: 5,
             },
             lsp_types::Position {
-                line: 26,
+                line: 71,
                 character: 13,
             },
             lsp_types::Position {
-                line: 27,
+                line: 72,
                 character: 13,
             },
             lsp_types::Position {
-                line: 28,
+                line: 73,
                 character: 46,
             },
             lsp_types::Position {
-                line: 30,
+                line: 75,
                 character: 5,
             },
             lsp_types::Position {
-                line: 48,
-                character: 14,
+                line: 86,
+                character: 20,
+            },
+            lsp_types::Position {
+                line: 87,
+                character: 18,
             },
         ];
         assert_eq!(match_positions, expected);
