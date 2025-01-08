@@ -334,40 +334,48 @@ impl Manager {
                     }
                 },
                 GotoDefinitionResponse::Array(locs) => {
-                    locs.iter().any(|loc| {
+                    // Handle each location sequentially instead of using any()
+                    let mut is_external_or_function = false;
+                    for loc in locs {
                         let is_external = !original_symbol.range.contains(FilePosition::from(loc.clone()));
-                        if !is_external {
-                            // Check if internal symbol is a function
-                            if let Ok(internal_symbol) = self.get_symbol_from_position(
-                                &uri_to_relative_path_string(&loc.uri),
-                                &loc.range.start.into()
-                            ).await {
-                                internal_symbol.kind.to_lowercase().contains("function")
-                            } else {
-                                false
-                            }
-                        } else {
-                            true
+                        if is_external {
+                            is_external_or_function = true;
+                            break;
                         }
-                    })
+                        // Check if internal symbol is a function
+                        if let Ok(internal_symbol) = self.get_symbol_from_position(
+                            &uri_to_relative_path_string(&loc.uri),
+                            &loc.range.start.into()
+                        ).await {
+                            if internal_symbol.kind.to_lowercase().contains("function") {
+                                is_external_or_function = true;
+                                break;
+                            }
+                        }
+                    }
+                    is_external_or_function
                 },
                 GotoDefinitionResponse::Link(links) => {
-                    links.iter().any(|link| {
+                    // Handle each link sequentially instead of using any()
+                    let mut is_external_or_function = false;
+                    for link in links {
                         let is_external = !original_symbol.range.contains(FilePosition::from(link.clone()));
-                        if !is_external {
-                            // Check if internal symbol is a function
-                            if let Ok(internal_symbol) = self.get_symbol_from_position(
-                                &uri_to_relative_path_string(&link.target_uri),
-                                &link.target_range.start.into()
-                            ).await {
-                                internal_symbol.kind.to_lowercase().contains("function")
-                            } else {
-                                false
-                            }
-                        } else {
-                            true
+                        if is_external {
+                            is_external_or_function = true;
+                            break;
                         }
-                    })
+                        // Check if internal symbol is a function
+                        if let Ok(internal_symbol) = self.get_symbol_from_position(
+                            &uri_to_relative_path_string(&link.target_uri),
+                            &link.target_range.start.into()
+                        ).await {
+                            if internal_symbol.kind.to_lowercase().contains("function") {
+                                is_external_or_function = true;
+                                break;
+                            }
+                        }
+                    }
+                    is_external_or_function
                 },
             };
 
