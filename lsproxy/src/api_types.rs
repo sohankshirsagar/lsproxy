@@ -145,6 +145,16 @@ impl From<FileRange> for lsp_types::Range {
     }
 }
 
+/// A reference to a symbol along with its definition(s) found in the workspace
+///
+/// e.g. for a reference to `User` in `main.py`:
+/// ```python
+/// user = User("John", 30)
+/// _______^
+/// ```
+/// This would contain:
+/// - The reference location and name ("User" at line 0)
+/// - The symbol definition(s) (e.g. "class User" in models.py)
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferenceWithSymbolDefinition {
     pub reference: Identifier,
@@ -215,6 +225,10 @@ pub struct GetReferencesRequest {
 }
 
 /// Request to get the symbols that are referenced from the symbol at the given position
+/// Request to get all symbols that are referenced from a given position
+///
+/// The input position should point to a location in code where symbols are referenced.
+/// For example, inside a function body to find all symbols used by that function.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencedSymbolsRequest {
     pub identifier_position: FilePosition,
@@ -309,6 +323,12 @@ pub struct ReferencesResponse {
     pub selected_identifier: Identifier,
 }
 
+/// Response containing symbols referenced from the requested position
+///
+/// The symbols are categorized into:
+/// - workspace_symbols: References to symbols that were found and have definitions in the workspace
+/// - external_symbols: References to symbols from external dependencies (no definition in workspace)
+/// - not_found: References where the symbol definition could not be found
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencedSymbolsResponse {
     pub workspace_symbols: Vec<ReferenceWithSymbolDefinition>,

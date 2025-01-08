@@ -9,6 +9,24 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 
+/// Find all symbols that are referenced from a given position
+///
+/// Returns references categorized into:
+/// - Workspace symbols (with their definitions)
+/// - External symbols (from dependencies)
+/// - Symbols that couldn't be found
+///
+/// e.g. for a function in `main.py`:
+/// ```python
+/// def process_user():
+///     user = User("John", 30)  # Reference to User class
+///     log("Processing user")    # Reference to log function
+///     return user.name         # Reference to name property
+/// ```
+/// This would return:
+/// - Workspace symbols: User (with definition from models.py)
+/// - External symbols: log (from logging module)
+/// - Not found: name (if property definition not found)
 #[utoipa::path(
     post,
     path = "/symbol/find-referenced-symbols",
