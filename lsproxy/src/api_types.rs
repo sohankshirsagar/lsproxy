@@ -327,7 +327,7 @@ pub struct ReferencesResponse {
 ///
 /// The symbols are categorized into:
 /// - workspace_symbols: References to symbols that were found and have definitions in the workspace
-/// - external_symbols: References to symbols from external dependencies (no definition in workspace)
+/// - external_symbols: References to symbols from outside the workspace (built-in functions, external libraries)
 /// - not_found: References where the symbol definition could not be found
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencedSymbolsResponse {

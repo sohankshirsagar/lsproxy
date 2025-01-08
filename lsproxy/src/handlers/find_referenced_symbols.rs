@@ -13,7 +13,7 @@ use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 ///
 /// Returns references categorized into:
 /// - Workspace symbols (with their definitions)
-/// - External symbols (from dependencies)
+/// - External symbols (built-in functions like 'len', 'print' or from external libraries)
 /// - Symbols that couldn't be found
 ///
 /// e.g. for a function in `main.py`:
@@ -21,12 +21,12 @@ use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 /// @log_execution_time     # Reference to decorator
 /// def process_user():
 ///     user = User()       # Reference to User class
-///     log_info("Done")    # Reference to log_info function
+///     print("Done")       # Reference to built-in function
 /// ```
 /// This would return:
 /// - Workspace symbols: log_execution_time (with definition from decorators.py)
 /// - Workspace symbols: User (with definition from models.py)
-/// - External symbols: log_info (from logging module)
+/// - External symbols: print (Python built-in)
 #[utoipa::path(
     post,
     path = "/symbol/find-referenced-symbols",
