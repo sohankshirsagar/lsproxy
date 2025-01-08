@@ -27,6 +27,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast::{channel, Sender};
 use tokio::sync::Mutex;
+use std::pin::Pin;
+use std::future::Future;
 
 pub struct Manager {
     lsp_clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
@@ -292,15 +294,16 @@ impl Manager {
             })
     }
 
-    async fn resolve_definition_chain(
-        &self,
-        file_path: &str,
-        original_symbol: &Symbol,
-        ast_match: &AstGrepMatch,
-        client: &mut Box<dyn LspClient>,
-    ) -> Result<Vec<GotoDefinitionResponse>, LspManagerError> {
-        let full_path = get_mount_dir().join(file_path);
-        let full_path_str = full_path.to_str().unwrap_or_default();
+    fn resolve_definition_chain<'a>(
+        &'a self,
+        file_path: &'a str,
+        original_symbol: &'a Symbol,
+        ast_match: &'a AstGrepMatch,
+        client: &'a mut Box<dyn LspClient>,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<GotoDefinitionResponse>, LspManagerError>> + 'a>> {
+        Box::pin(async move {
+            let full_path = get_mount_dir().join(file_path);
+            let full_path_str = full_path.to_str().unwrap_or_default();
         
         // Get initial definition
         let definition = client
@@ -379,12 +382,13 @@ impl Manager {
             }
         }
 
-        if final_definitions.is_empty() {
-            // If we found no external definitions through the chain, remove this branch
-            Ok(vec![])
-        } else {
-            Ok(final_definitions)
-        }
+            if final_definitions.is_empty() {
+                // If we found no external definitions through the chain, remove this branch
+                Ok(vec![])
+            } else {
+                Ok(final_definitions)
+            }
+        })
     }
 
     pub async fn find_referenced_symbols(
