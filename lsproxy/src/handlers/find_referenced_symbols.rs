@@ -18,15 +18,15 @@ use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 ///
 /// e.g. for a function in `main.py`:
 /// ```python
+/// @log_execution_time     # Reference to decorator
 /// def process_user():
-///     user = User("John", 30)  # Reference to User class
-///     log("Processing user")    # Reference to log function
-///     return user.name         # Reference to name property
+///     user = User()       # Reference to User class
+///     log_info("Done")    # Reference to log_info function
 /// ```
 /// This would return:
+/// - Workspace symbols: log_execution_time (with definition from decorators.py)
 /// - Workspace symbols: User (with definition from models.py)
-/// - External symbols: log (from logging module)
-/// - Not found: name (if property definition not found)
+/// - External symbols: log_info (from logging module)
 #[utoipa::path(
     post,
     path = "/symbol/find-referenced-symbols",
