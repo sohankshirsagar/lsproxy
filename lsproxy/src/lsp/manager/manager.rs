@@ -584,6 +584,8 @@ impl Manager {
                 for def in def_chain {
                     definitions.push((ast_match.clone(), def));
                 }
+            } else {
+                definitions.push((ast_match.clone(), GotoDefinitionResponse::Array(vec![])));
             }
         }
 
