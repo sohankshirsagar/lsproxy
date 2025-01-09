@@ -187,6 +187,7 @@ pub struct Symbol {
 pub struct Identifier {
     pub name: String,
     pub range: FileRange,
+    pub kind: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]

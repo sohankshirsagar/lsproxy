@@ -146,8 +146,14 @@ impl From<AstGrepMatch> for Identifier {
     fn from(ast_match: AstGrepMatch) -> Self {
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
         let match_range = ast_match.get_range();
+        let kind = match ast_match.rule_id.as_str() {
+            "all-identifiers" => None,
+            _ => Some(ast_match.rule_id),
+        };
+
         Identifier {
             name: ast_match.meta_variables.single.name.text.clone(),
+            kind,
             range: FileRange {
                 path: path.clone(),
                 start: Position {

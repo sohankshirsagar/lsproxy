@@ -349,6 +349,7 @@ mod test {
             context: None,
             selected_identifier: Identifier {
                 name: String::from("AStarGraph"),
+                kind: None,
                 range: FileRange {
                     path: String::from("graph.py"),
                     start: Position {
@@ -506,7 +507,7 @@ mod test {
         let error_response: ErrorResponse = serde_json::from_slice(&bytes)?;
         assert_eq!(
             error_response.error,
-            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 88, character: 15 }, end: Position { line: 88, character: 16 } } }, Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 16 }, end: Position { line: 87, character: 17 } } }, Identifier { name: \"append\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } } }]"
+            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 88, character: 15 }, end: Position { line: 88, character: 16 } }, kind: None }, Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 16 }, end: Position { line: 87, character: 17 } }, kind: None }, Identifier { name: \"append\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } }, kind: None }]"
         );
 
         Ok(())
