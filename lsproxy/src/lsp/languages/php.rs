@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use log::warn;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
-use std::{error::Error, path::Path, process::Stdio};
+use std::{error::Error, path::Path, process::Stdio, fs};
 use tokio::{process::Command, sync::broadcast::Receiver};
 use url::Url;
 
@@ -99,7 +99,7 @@ impl PhpactorClient {
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stderr(std::fs::File::create("/tmp/phpactor_log.txt").unwrap().into())
             .spawn()
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
 
