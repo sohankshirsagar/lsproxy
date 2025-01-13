@@ -46,8 +46,25 @@ pip install lsproxy-sdk
 You can find the source for the SDK [here](https://github.com/agentic-labs/lsproxy-python-sdk)
 
 ### Run a container or add to compose
-> :warning: Version 0.2.0 and newer: JWT authentication is enabled by default for endpoints. Set the JWT_SECRET variable to configure or set USE_AUTH=false to turn off.
+> :warning: Version 0.2.0 and newer: JWT authentication is enabled by default for endpoints. So you MUST provide a secret or turn it off as described below
+#### Authentication enabled
+```bash
+docker run -p 4444:4444 -v $WORKSPACE_PATH:/mnt/workspace -e JWT_SECRET=shared_secret agenticlabs/lsproxy
+```
 
+```dockerfile
+services:
+  lsproxy:
+    image: agenticlabs/lsproxy
+    ports:
+      - "4444:4444"
+    environment:
+      - JWT_SECRET=shared_secret
+    volumes:
+      - ${WORKSPACE_PATH}:/mnt/workspace
+```
+
+#### Authentication disabled
 ```bash
 docker run -p 4444:4444 -v $WORKSPACE_PATH:/mnt/workspace -e USE_AUTH=false agenticlabs/lsproxy
 ```
@@ -59,7 +76,7 @@ services:
     ports:
       - "4444:4444"
     environment:
-      - JWT_SECRET=shared_secret
+      - USE_AUTH=false
     volumes:
       - ${WORKSPACE_PATH}:/mnt/workspace
 ```
