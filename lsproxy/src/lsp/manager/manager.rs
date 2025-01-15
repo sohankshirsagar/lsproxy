@@ -1,6 +1,6 @@
 use crate::api_types::{get_mount_dir, FilePosition, Identifier, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
-use crate::ast_grep::types::AstGrepMatch;
+use crate::ast_grep::types::{AstGrepMatch, AstGrepPosition};
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     ClangdClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RustAnalyzerClient,
@@ -216,7 +216,7 @@ impl Manager {
     ) -> Result<Symbol, LspManagerError> {
         match self
             .ast_grep
-            .get_symbol_from_position(file_path, identifier_position)
+            .get_symbol_match_from_position(file_path, identifier_position)
             .await
         {
             Ok(ast_grep_symbol) => Ok(Symbol::from(ast_grep_symbol)),
@@ -324,7 +324,7 @@ impl Manager {
     fn resolve_definition_chain<'a>(
         &'a self,
         file_path: &'a str,
-        original_symbol: &'a Symbol,
+        original_symbol_match: &'a AstGrepMatch,
         ast_match: &'a AstGrepMatch,
         client: &'a mut Box<dyn LspClient>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<GotoDefinitionResponse>, LspManagerError>> + 'a>>
@@ -345,19 +345,20 @@ impl Manager {
             // OR if the symbol at this location is a function
             let has_external_definitions = match &definition {
                 GotoDefinitionResponse::Scalar(loc) => {
-                    let is_external = !original_symbol
+                    let is_external = !original_symbol_match
                         .range
-                        .contains(FilePosition::from(loc.clone()));
+                        .contains_position(&AstGrepPosition::from(loc));
                     if !is_external {
                         // Check if internal symbol is a function
-                        if let Ok(internal_symbol) = self
-                            .get_symbol_from_position(
+                        if let Ok(internal_symbol_match) = self
+                            .ast_grep
+                            .get_symbol_match_from_position(
                                 &uri_to_relative_path_string(&loc.uri),
                                 &loc.range.start.into(),
                             )
                             .await
                         {
-                            internal_symbol.kind.to_lowercase().contains("function")
+                            internal_symbol_match.rule_id.to_lowercase().contains("function")
                         } else {
                             false
                         }
@@ -369,22 +370,23 @@ impl Manager {
                     // Handle each location sequentially instead of using any()
                     let mut is_external_or_function = false;
                     for loc in locs {
-                        let is_external = !original_symbol
+                        let is_external = !original_symbol_match
                             .range
-                            .contains(FilePosition::from(loc.clone()));
+                            .contains_position(&AstGrepPosition::from(loc));
                         if is_external {
                             is_external_or_function = true;
                             break;
                         }
                         // Check if internal symbol is a function
-                        if let Ok(internal_symbol) = self
-                            .get_symbol_from_position(
+                        if let Ok(internal_symbol_match) = self
+                            .ast_grep
+                            .get_symbol_match_from_position(
                                 &uri_to_relative_path_string(&loc.uri),
                                 &loc.range.start.into(),
                             )
                             .await
                         {
-                            if internal_symbol.kind.to_lowercase().contains("function") {
+                            if internal_symbol_match.rule_id.to_lowercase().contains("function") {
                                 is_external_or_function = true;
                                 break;
                             }
@@ -396,22 +398,23 @@ impl Manager {
                     // Handle each link sequentially instead of using any()
                     let mut is_external_or_function = false;
                     for link in links {
-                        let is_external = !original_symbol
+                        let is_external = !original_symbol_match
                             .range
-                            .contains(FilePosition::from(link.clone()));
+                            .contains_position(&AstGrepPosition::from(link));
                         if is_external {
                             is_external_or_function = true;
                             break;
                         }
                         // Check if internal symbol is a function
-                        if let Ok(internal_symbol) = self
-                            .get_symbol_from_position(
+                        if let Ok(internal_symbol_match) = self
+                            .ast_grep
+                            .get_symbol_match_from_position(
                                 &uri_to_relative_path_string(&link.target_uri),
                                 &link.target_range.start.into(),
                             )
                             .await
                         {
-                            if internal_symbol.kind.to_lowercase().contains("function") {
+                            if internal_symbol_match.rule_id.to_lowercase().contains("function") {
                                 is_external_or_function = true;
                                 break;
                             }
@@ -446,8 +449,9 @@ impl Manager {
                     character: location.range.start.character,
                 };
 
-                let internal_symbol = match self
-                    .get_symbol_from_position(
+                let internal_symbol_match = match self
+                    .ast_grep
+                    .get_symbol_match_from_position(
                         &uri_to_relative_path_string(&location.uri),
                         &def_position,
                     )
@@ -460,9 +464,9 @@ impl Manager {
                 // Get all references within this symbol (with full_scan)
                 let internal_references = match self
                     .ast_grep
-                    .get_references_contained_in_symbol(
+                    .get_references_contained_in_symbol_match(
                         &uri_to_relative_path_string(&location.uri),
-                        &internal_symbol,
+                        &internal_symbol_match,
                         true,
                     )
                     .await
@@ -476,7 +480,7 @@ impl Manager {
                     let nested_definitions = self
                         .resolve_definition_chain(
                             &uri_to_relative_path_string(&location.uri),
-                            original_symbol,
+                            &original_symbol_match,
                             &reference,
                             client,
                         )
@@ -532,12 +536,12 @@ impl Manager {
         }
 
         // First we find all the positions we need to find the definition of
-        let symbol = match self
+        let symbol_match = match self
             .ast_grep
-            .get_symbol_from_position(file_path, &position)
+            .get_symbol_match_from_position(file_path, &position)
             .await
         {
-            Ok(symbol) => symbol,
+            Ok(symbol_match) => symbol_match,
             Err(e) => {
                 return Err(LspManagerError::InternalError(format!(
                     "Failed to find referenced symbols, {}",
@@ -547,7 +551,7 @@ impl Manager {
         };
         let references_to_symbols = match self
             .ast_grep
-            .get_references_contained_in_symbol(file_path, &symbol, false)
+            .get_references_contained_in_symbol_match(file_path, &symbol_match, false)
             .await
         {
             Ok(referenced_symbols) => referenced_symbols,
@@ -571,8 +575,9 @@ impl Manager {
         let mut definitions = Vec::new();
 
         for ast_match in references_to_symbols {
+            println!("INITIAL DEF: {:?}", ast_match.meta_variables.single.name.text);
             let def_chain = self
-                .resolve_definition_chain(file_path, &symbol, &ast_match, &mut *locked_client)
+                .resolve_definition_chain(file_path, &symbol_match, &ast_match, &mut *locked_client)
                 .await?;
 
             // Only include definitions that were found and led to external symbols

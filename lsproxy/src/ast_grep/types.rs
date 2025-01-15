@@ -45,6 +45,16 @@ pub struct AstGrepRange {
     pub byte_offset: ByteOffset,
     pub start: AstGrepPosition,
     pub end: AstGrepPosition,
+
+}
+
+impl AstGrepRange {
+    pub fn contains_position(&self, pos: &AstGrepPosition) -> bool {
+        self.start.line <= pos.line
+        && self.end.line >= pos.line
+        && (self.start.line != pos.line || self.start.column <= pos.column)
+        && (self.end.line != pos.line || self.end.column >= pos.column)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -101,6 +111,24 @@ pub struct MetaVariable {
 pub struct Label {
     pub text: String,
     pub range: AstGrepRange,
+}
+
+impl From<&lsp_types::LocationLink> for AstGrepPosition {
+    fn from(loc: &lsp_types::LocationLink) -> Self {
+        Self {
+            line: loc.target_range.start.line,
+            column: loc.target_range.start.character
+        }
+    }
+}
+
+impl From<&lsp_types::Location> for AstGrepPosition {
+    fn from(loc: &lsp_types::Location) -> Self {
+        Self {
+            line: loc.range.start.line,
+            column: loc.range.start.character
+        }
+    }
 }
 
 impl From<&AstGrepMatch> for lsp_types::Position {

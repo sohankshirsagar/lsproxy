@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use log::warn;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
-use std::{error::Error, path::Path, process::Stdio, fs};
+use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
 use url::Url;
 
