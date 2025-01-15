@@ -1,14 +1,14 @@
 use std::io::{Error, ErrorKind};
 use tokio::process::Command;
 
-const SYMBOL_CONFIG_PATH: &str = "/usr/src/ast_grep/symbol-config.yml";
-const IDENTIFIER_CONFIG_PATH: &str = "/usr/src/ast_grep/identifier-config.yml";
-const REFERENCE_CONFIG_PATH: &str = "/usr/src/ast_grep/reference-config.yml";
+const SYMBOL_CONFIG_PATH: &str = "/usr/src/ast_grep/symbol/config.yml";
+const IDENTIFIER_CONFIG_PATH: &str = "/usr/src/ast_grep/identifier/config.yml";
+const REFERENCE_CONFIG_PATH: &str = "/usr/src/ast_grep/reference/config.yml";
 
 use super::types::AstGrepMatch;
 use crate::api_types::{get_mount_dir, FilePosition, Position, Symbol};
 
-pub struct AstGrepClient {}
+pub struct AstGrepClient;
 
 impl AstGrepClient {
     pub async fn get_symbol_from_position(

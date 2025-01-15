@@ -59,11 +59,7 @@ impl Manager {
             .watch(Path::new(root_path), RecursiveMode::Recursive)
             .expect("Failed to watch path");
 
-        let ast_grep = AstGrepClient {
-            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
-            identifier_config_path: String::from("/usr/src/ast_grep/identifier-config.yml"),
-            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
-        };
+        let ast_grep = AstGrepClient {};
         Ok(Self {
             lsp_clients: HashMap::new(),
             watch_events_sender: event_sender,

@@ -65,7 +65,10 @@ impl PhpactorClient {
         let config_path = Path::new(root_path).join(".phpactor.json");
         let config_content = serde_json::json!({
             "logging.enabled": true,
+            "logging.level": "info",
             "logging.path": "/tmp/phpactor.log",
+            "logging.formatter": "json",
+            "language_server.trace": false,
         });
 
         std::fs::write(&config_path, serde_json::to_string_pretty(&config_content)?)
@@ -99,7 +102,7 @@ impl PhpactorClient {
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(std::fs::File::create("/tmp/phpactor_log.txt").unwrap().into())
+            .stderr(Stdio::piped())
             .spawn()
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
 
