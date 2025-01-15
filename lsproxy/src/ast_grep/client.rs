@@ -1,14 +1,14 @@
 use std::io::{Error, ErrorKind};
 use tokio::process::Command;
 
+const SYMBOL_CONFIG_PATH: &str = "/usr/src/ast_grep/symbol-config.yml";
+const IDENTIFIER_CONFIG_PATH: &str = "/usr/src/ast_grep/identifier-config.yml";
+const REFERENCE_CONFIG_PATH: &str = "/usr/src/ast_grep/reference-config.yml";
+
 use super::types::AstGrepMatch;
 use crate::api_types::{get_mount_dir, FilePosition, Position, Symbol};
 
-pub struct AstGrepClient {
-    pub symbol_config_path: String,
-    pub identifier_config_path: String,
-    pub reference_config_path: String,
-}
+pub struct AstGrepClient {}
 
 impl AstGrepClient {
     pub async fn get_symbol_from_position(
@@ -20,7 +20,7 @@ impl AstGrepClient {
         let full_path = get_mount_dir().join(&file_name);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let file_symbols = self
-            .scan_file(&self.symbol_config_path, full_path_str)
+            .scan_file(SYMBOL_CONFIG_PATH, full_path_str)
             .await?;
 
         // Find the symbol that matches our identifier position
@@ -41,14 +41,14 @@ impl AstGrepClient {
         &self,
         file_name: &str,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
-        self.scan_file(&self.symbol_config_path, file_name).await
+        self.scan_file(SYMBOL_CONFIG_PATH, file_name).await
     }
 
     pub async fn get_file_identifiers(
         &self,
         file_name: &str,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
-        self.scan_file(&self.identifier_config_path, file_name)
+        self.scan_file(IDENTIFIER_CONFIG_PATH, file_name)
             .await
     }
 
@@ -63,7 +63,7 @@ impl AstGrepClient {
 
         // Get all references
         let matches = self
-            .scan_file(&self.reference_config_path, full_path_str)
+            .scan_file(REFERENCE_CONFIG_PATH, full_path_str)
             .await?;
 
         // Filter matches to those within the symbol's range
@@ -94,7 +94,7 @@ impl AstGrepClient {
         let command_result = Command::new("ast-grep")
             .arg("scan")
             .arg("--config")
-            .arg(config_path)
+            .arg(&config_path)
             .arg("--json")
             .arg(file_name)
             .output()
@@ -121,11 +121,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
-        let client = AstGrepClient {
-            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
-            identifier_config_path: String::from("/usr/src/ast_grep/identifier-config.yml"),
-            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
-        };
+        let client = AstGrepClient {};
 
         let path = "/mnt/lsproxy_root/sample_project/python/graph.py";
         let position = lsp_types::Position {
@@ -207,11 +203,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_contained_references() -> Result<(), Box<dyn std::error::Error>> {
-        let client = AstGrepClient {
-            symbol_config_path: String::from("/usr/src/ast_grep/symbol-config.yml"),
-            identifier_config_path: String::from("/usr/src/ast_grep/identifier-config.yml"),
-            reference_config_path: String::from("/usr/src/ast_grep/reference-config.yml"),
-        };
+        let client = AstGrepClient {};
 
         let path = "/mnt/lsproxy_root/sample_project/python/main.py";
         let position = lsp_types::Position {
