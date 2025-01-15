@@ -24,9 +24,9 @@ impl AstGrepClient {
             .await?;
 
         // Find the symbol that matches our identifier position
-        let symbol_result = file_symbols.into_iter().find(|symbol| {
-            symbol.range.start.line == identifier_position.line
-                && symbol.range.start.column == identifier_position.character
+        let symbol_result = file_symbols.into_iter().find(|ast_symbol_match| {
+            ast_symbol_match.meta_variables.single.name.range.start.line == identifier_position.line
+                && ast_symbol_match.meta_variables.single.name.range.start.column == identifier_position.character
         });
         match symbol_result {
             Some(matched_symbol) => Ok(Symbol::from(matched_symbol)),
