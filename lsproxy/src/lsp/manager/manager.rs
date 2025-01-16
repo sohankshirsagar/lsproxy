@@ -708,3 +708,30 @@ impl fmt::Display for LspManagerError {
 }
 
 impl std::error::Error for LspManagerError {}
+
+impl LspManagerError {
+    pub fn into_http_response(self) -> actix_web::HttpResponse {
+        use actix_web::HttpResponse;
+        use crate::api_types::ErrorResponse;
+        use log::error;
+
+        error!("LSP error: {}", self);
+        match self {
+            Self::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
+                error: format!("File not found: {}", path)
+            }),
+            Self::LspClientNotFound(lang) => HttpResponse::InternalServerError().json(ErrorResponse {
+                error: format!("LSP client not found for {:?}", lang)
+            }),
+            Self::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorResponse {
+                error: format!("Internal error: {}", msg)
+            }),
+            Self::UnsupportedFileType(path) => HttpResponse::BadRequest().json(ErrorResponse {
+                error: format!("Unsupported file type: {}", path)
+            }),
+            Self::NotImplemented(msg) => HttpResponse::NotImplemented().json(ErrorResponse {
+                error: format!("Not implemented: {}", msg)
+            }),
+        }
+    }
+}
