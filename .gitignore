@@ -38,3 +38,5 @@ compile_commands.json
 .classpath
 .env
 .phpactor.json
+package-lock.json
+node_modules
