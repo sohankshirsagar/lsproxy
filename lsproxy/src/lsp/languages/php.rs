@@ -60,7 +60,6 @@ impl PhpactorClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-
         // Create a Phpactor configuration file
         let config_path = Path::new(root_path).join(".phpactor.json");
         let config_content = serde_json::json!({
@@ -88,7 +87,8 @@ impl PhpactorClient {
         if let Some(status) = child.wait().await.ok() {
             if !status.success() {
                 if let Some(code) = status.code() {
-                    warn!( "`composer dump-autoload` exited with non-zero status code: {}",
+                    warn!(
+                        "`composer dump-autoload` exited with non-zero status code: {}",
                         code
                     );
                 } else {

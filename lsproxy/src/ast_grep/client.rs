@@ -19,14 +19,19 @@ impl AstGrepClient {
         // Get all symbols in the file
         let full_path = get_mount_dir().join(&file_name);
         let full_path_str = full_path.to_str().unwrap_or_default();
-        let file_symbols = self
-            .scan_file(SYMBOL_CONFIG_PATH, full_path_str)
-            .await?;
+        let file_symbols = self.scan_file(SYMBOL_CONFIG_PATH, full_path_str).await?;
 
         // Find the symbol that matches our identifier position
         let symbol_result = file_symbols.into_iter().find(|ast_symbol_match| {
             ast_symbol_match.meta_variables.single.name.range.start.line == identifier_position.line
-                && ast_symbol_match.meta_variables.single.name.range.start.column == identifier_position.character
+                && ast_symbol_match
+                    .meta_variables
+                    .single
+                    .name
+                    .range
+                    .start
+                    .column
+                    == identifier_position.character
         });
         match symbol_result {
             Some(matched_symbol) => Ok(matched_symbol),
@@ -48,8 +53,7 @@ impl AstGrepClient {
         &self,
         file_name: &str,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
-        self.scan_file(IDENTIFIER_CONFIG_PATH, file_name)
-            .await
+        self.scan_file(IDENTIFIER_CONFIG_PATH, file_name).await
     }
 
     pub async fn get_references_contained_in_symbol_match(
@@ -62,18 +66,19 @@ impl AstGrepClient {
         let full_path_str = full_path.to_str().unwrap_or_default();
 
         // Get all references
-        let matches = self
-            .scan_file(REFERENCE_CONFIG_PATH, full_path_str)
-            .await?;
+        let matches = self.scan_file(REFERENCE_CONFIG_PATH, full_path_str).await?;
 
         // Filter matches to those within the symbol's range
         // And if not full_scan, exclude matches with rule_id "final-identifier"
         let contained_references = matches
             .into_iter()
             .filter(|m| {
-                let position_matches = symbol_match.get_range().contains_position(&AstGrepPosition {
-                    line: m.range.start.line as u32,
-                    column: 0,
+                let position_matches = symbol.range.contains(FilePosition {
+                    path: String::from(file_name),
+                    position: Position {
+                        line: m.get_identifier_range().start.line as u32,
+                        character: m.get_identifier_range().start.column as u32,
+                    },
                 });
 
                 position_matches && (full_scan || m.rule_id != "final-identifier")
@@ -107,7 +112,7 @@ impl AstGrepClient {
         let mut symbols: Vec<AstGrepMatch> =
             serde_json::from_str(&output).map_err(|e| format!("Failed to parse JSON: {}", e))?;
         symbols = symbols.into_iter().collect();
-        symbols.sort_by_key(|s| s.range.start.line);
+        symbols.sort_by_key(|s| s.get_identifier_range().start.line);
         Ok(symbols)
     }
 }

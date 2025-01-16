@@ -11,7 +11,7 @@ use crate::{
 #[serde(rename_all = "camelCase")]
 pub struct AstGrepMatch {
     pub text: String,
-    pub range: AstGrepRange,
+    range: AstGrepRange,
     pub file: String,
     pub lines: String,
     pub char_count: CharCount,
@@ -30,12 +30,16 @@ impl AstGrepMatch {
         }
     }
 
-    pub fn get_range(&self) -> AstGrepRange {
+    pub fn get_context_range(&self) -> AstGrepRange {
         if let Some(context) = &self.meta_variables.single.context {
             context.range.clone()
         } else {
             self.range.clone()
         }
+    }
+
+    pub fn get_identifier_range(&self) -> AstGrepRange {
+        self.meta_variables.single.name.range.clone()
     }
 }
 
@@ -144,7 +148,7 @@ impl From<AstGrepMatch> for Symbol {
     fn from(ast_match: AstGrepMatch) -> Self {
         assert!(ast_match.rule_id != "all-identifiers");
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
-        let match_range = ast_match.get_range();
+        let match_range = ast_match.get_context_range();
         Symbol {
             name: ast_match.meta_variables.single.name.text.clone(),
             kind: ast_match.rule_id.clone(),
@@ -173,7 +177,7 @@ impl From<AstGrepMatch> for Symbol {
 impl From<AstGrepMatch> for Identifier {
     fn from(ast_match: AstGrepMatch) -> Self {
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
-        let match_range = ast_match.get_range();
+        let match_range = ast_match.get_context_range();
         let kind = match ast_match.rule_id.as_str() {
             "all-identifiers" => None,
             _ => Some(ast_match.rule_id),
