@@ -4,7 +4,6 @@ use log::error;
 
 use crate::api_types::ErrorResponse;
 use crate::handlers::error::IntoHttpResponse;
-use crate::lsp::manager::LspManagerError;
 use crate::AppState;
 
 /// Get a list of all files in the workspace

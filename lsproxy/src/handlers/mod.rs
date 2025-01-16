@@ -6,6 +6,7 @@ mod find_references;
 mod health;
 mod list_files;
 mod read_source_code;
+mod error;
 
 mod utils;
 pub use self::{

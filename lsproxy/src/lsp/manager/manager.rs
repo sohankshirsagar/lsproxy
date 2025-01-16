@@ -243,13 +243,6 @@ impl Manager {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
         })?;
 
-        // Only Python and TypeScript/JavaScript are currently supported
-        match lsp_type {
-            SupportedLanguages::Python | SupportedLanguages::TypeScriptJavaScript => (),
-            _ => return Err(LspManagerError::NotImplemented(
-                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript".to_string()
-            ))
-        }
         let client = self
             .get_client(lsp_type)
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
@@ -558,6 +551,18 @@ impl Manager {
 
         let full_path = get_mount_dir().join(&file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
+
+        let lsp_type = detect_language(full_path_str).map_err(|e| {
+            LspManagerError::InternalError(format!("Language detection failed: {}", e))
+        })?;
+
+        // Only Python and TypeScript/JavaScript are currently supported
+        match lsp_type {
+            SupportedLanguages::Python | SupportedLanguages::TypeScriptJavaScript => (),
+            _ => return Err(LspManagerError::NotImplemented(
+                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript".to_string()
+            ))
+        }
 
         // First we find all the positions we need to find the definition of
         let symbol_match = match self
