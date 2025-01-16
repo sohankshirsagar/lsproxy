@@ -156,7 +156,7 @@ impl From<FileRange> for lsp_types::Range {
 /// - The reference location and name ("User" at line 0)
 /// - The symbol definition(s) (e.g. "class User" in models.py)
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ReferenceWithSymbolDefinition {
+pub struct ReferenceWithSymbolDefinitions {
     pub reference: Identifier,
     pub definitions: Vec<Symbol>,
 }
@@ -332,7 +332,7 @@ pub struct ReferencesResponse {
 /// - not_found: References where the symbol definition could not be found
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReferencedSymbolsResponse {
-    pub workspace_symbols: Vec<ReferenceWithSymbolDefinition>,
+    pub workspace_symbols: Vec<ReferenceWithSymbolDefinitions>,
     pub external_symbols: Vec<Identifier>,
     pub not_found: Vec<Identifier>,
 }

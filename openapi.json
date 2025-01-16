@@ -612,22 +612,22 @@
           }
         }
       },
-      "ReferenceWithSymbolDefinition": {
+      "ReferenceWithSymbolDefinitions": {
         "type": "object",
         "description": "A reference to a symbol along with its definition(s) found in the workspace\n\ne.g. for a reference to `User` in `main.py`:\n```python\nuser = User(\"John\", 30)\n_______^\n```\nThis would contain:\n- The reference location and name (\"User\" at line 0)\n- The symbol definition(s) (e.g. \"class User\" in models.py)",
         "required": [
           "reference",
-          "symbols"
+          "definitions"
         ],
         "properties": {
-          "reference": {
-            "$ref": "#/components/schemas/Identifier"
-          },
-          "symbols": {
+          "definitions": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Symbol"
             }
+          },
+          "reference": {
+            "$ref": "#/components/schemas/Identifier"
           }
         }
       },
@@ -655,7 +655,7 @@
           "workspace_symbols": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ReferenceWithSymbolDefinition"
+              "$ref": "#/components/schemas/ReferenceWithSymbolDefinitions"
             }
           }
         }

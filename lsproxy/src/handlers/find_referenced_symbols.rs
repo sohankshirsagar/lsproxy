@@ -1,6 +1,6 @@
 use crate::api_types::{
     ErrorResponse, FilePosition, GetReferencedSymbolsRequest, Identifier, Position,
-    ReferenceWithSymbolDefinition, ReferencedSymbolsResponse,
+    ReferenceWithSymbolDefinitions, ReferencedSymbolsResponse,
 };
 use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::AppState;
@@ -147,7 +147,7 @@ pub async fn find_referenced_symbols(
                 }
                 // Only add to workspace_symbols if we found at least one symbol
                 if !symbols_with_definitions.is_empty() {
-                    workspace_symbols.push(ReferenceWithSymbolDefinition {
+                    workspace_symbols.push(ReferenceWithSymbolDefinitions {
                         reference: identifier.clone(),
                         definitions: symbols_with_definitions,
                     });
@@ -249,7 +249,7 @@ mod test {
 
         let expected_response = ReferencedSymbolsResponse {
             workspace_symbols: vec![
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("log_execution_time"),
                         range: FileRange {
@@ -288,7 +288,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("initialize_search"),
                         range: FileRange {
@@ -327,7 +327,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("reconstruct_path"),
                         range: FileRange {
@@ -366,7 +366,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("get_vertex_neighbours"),
                         range: FileRange {
@@ -405,7 +405,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("move_cost"),
                         range: FileRange {
@@ -444,7 +444,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("heuristic"),
                         range: FileRange {
@@ -662,7 +662,7 @@ mod test {
 
         let expected_response = ReferencedSymbolsResponse {
             workspace_symbols: vec![
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("_barrier_cost"),
                         range: FileRange {
@@ -701,7 +701,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("_distance_cost"),
                         range: FileRange {
@@ -740,7 +740,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("cost_function"),
                         range: FileRange {
@@ -825,7 +825,7 @@ mod test {
                         },
                     ],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("log_execution_time"),
                         range: FileRange {
@@ -864,7 +864,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("log_execution_time"),
                         range: FileRange {
@@ -903,7 +903,7 @@ mod test {
                         },
                     }],
                 },
-                ReferenceWithSymbolDefinition {
+                ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("move_cost"),
                         range: FileRange {

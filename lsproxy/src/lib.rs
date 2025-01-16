@@ -26,7 +26,7 @@ use crate::api_types::{
     get_mount_dir, set_global_mount_dir, CodeContext, DefinitionResponse, ErrorResponse,
     FilePosition, FileRange, FileSymbolsRequest, GetDefinitionRequest, GetReferencedSymbolsRequest,
     GetReferencesRequest, HealthResponse, Position, ReferencedSymbolsResponse, ReferencesResponse,
-    SupportedLanguages, Symbol, SymbolResponse,
+    SupportedLanguages, Symbol, SymbolResponse, ReferenceWithSymbolDefinitions
 };
 use crate::handlers::{
     definitions_in_file, find_definition, find_referenced_symbols, find_references, health_check,
@@ -64,6 +64,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             ReferencesResponse,
             ReferencedSymbolsResponse,
             SymbolResponse,
+            ReferenceWithSymbolDefinitions,
             FilePosition,
             Position,
             Symbol,
