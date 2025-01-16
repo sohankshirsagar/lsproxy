@@ -5,8 +5,8 @@ const SYMBOL_CONFIG_PATH: &str = "/usr/src/ast_grep/symbol/config.yml";
 const IDENTIFIER_CONFIG_PATH: &str = "/usr/src/ast_grep/identifier/config.yml";
 const REFERENCE_CONFIG_PATH: &str = "/usr/src/ast_grep/reference/config.yml";
 
-use super::types::{AstGrepMatch, AstGrepPosition};
-use crate::api_types::{get_mount_dir};
+use super::types::AstGrepMatch;
+use crate::api_types::get_mount_dir;
 
 pub struct AstGrepClient;
 
@@ -73,13 +73,9 @@ impl AstGrepClient {
         let contained_references = matches
             .into_iter()
             .filter(|m| {
-                let position_matches = symbol.range.contains(FilePosition {
-                    path: String::from(file_name),
-                    position: Position {
-                        line: m.get_identifier_range().start.line as u32,
-                        character: m.get_identifier_range().start.column as u32,
-                    },
-                });
+                let position_matches = symbol_match
+                    .get_context_range()
+                    .contains_position(&m.get_identifier_range().start);
 
                 position_matches && (full_scan || m.rule_id != "final-identifier")
             })
@@ -131,7 +127,9 @@ mod tests {
             character: 6,
         };
 
-        let symbol_match = client.get_symbol_match_from_position(path, &position).await?;
+        let symbol_match = client
+            .get_symbol_match_from_position(path, &position)
+            .await?;
         let references = client
             .get_references_contained_in_symbol_match(path, &symbol_match, false)
             .await?;
@@ -213,7 +211,9 @@ mod tests {
             character: 4,
         };
 
-        let symbol_match = client.get_symbol_match_from_position(path, &position).await?;
+        let symbol_match = client
+            .get_symbol_match_from_position(path, &position)
+            .await?;
         let references = client
             .get_references_contained_in_symbol_match(path, &symbol_match, false)
             .await
@@ -221,8 +221,8 @@ mod tests {
         let match_positions: Vec<lsp_types::Position> = references
             .iter()
             .map(|ast_match: &AstGrepMatch| lsp_types::Position {
-                line: ast_match.range.start.line as u32,
-                character: ast_match.range.start.column as u32,
+                line: ast_match.get_identifier_range().start.line as u32,
+                character: ast_match.get_identifier_range().start.column as u32,
             })
             .collect();
         let expected = vec![

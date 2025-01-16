@@ -1,4 +1,4 @@
-use crate::api_types::{get_mount_dir, FilePosition, Identifier, SupportedLanguages, Symbol};
+use crate::api_types::{get_mount_dir, Identifier, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::{AstGrepMatch, AstGrepPosition};
 use crate::lsp::client::LspClient;
@@ -346,7 +346,7 @@ impl Manager {
             let has_external_definitions = match &definition {
                 GotoDefinitionResponse::Scalar(loc) => {
                     let is_external = !original_symbol_match
-                        .get_range()
+                        .get_context_range()
                         .contains_position(&AstGrepPosition::from(loc));
                     if !is_external {
                         // Check if internal symbol is a function
@@ -358,7 +358,10 @@ impl Manager {
                             )
                             .await
                         {
-                            internal_symbol_match.rule_id.to_lowercase().contains("function")
+                            internal_symbol_match
+                                .rule_id
+                                .to_lowercase()
+                                .contains("function")
                         } else {
                             false
                         }
@@ -371,7 +374,7 @@ impl Manager {
                     let mut is_external_or_function = false;
                     for loc in locs {
                         let is_external = !original_symbol_match
-                            .get_range()
+                            .get_context_range()
                             .contains_position(&AstGrepPosition::from(loc));
                         if is_external {
                             is_external_or_function = true;
@@ -386,7 +389,11 @@ impl Manager {
                             )
                             .await
                         {
-                            if internal_symbol_match.rule_id.to_lowercase().contains("function") {
+                            if internal_symbol_match
+                                .rule_id
+                                .to_lowercase()
+                                .contains("function")
+                            {
                                 is_external_or_function = true;
                                 break;
                             }
@@ -399,7 +406,7 @@ impl Manager {
                     let mut is_external_or_function = false;
                     for link in links {
                         let is_external = !original_symbol_match
-                            .get_range()
+                            .get_context_range()
                             .contains_position(&AstGrepPosition::from(link));
                         if is_external {
                             is_external_or_function = true;
@@ -414,7 +421,11 @@ impl Manager {
                             )
                             .await
                         {
-                            if internal_symbol_match.rule_id.to_lowercase().contains("function") {
+                            if internal_symbol_match
+                                .rule_id
+                                .to_lowercase()
+                                .contains("function")
+                            {
                                 is_external_or_function = true;
                                 break;
                             }
@@ -575,7 +586,10 @@ impl Manager {
         let mut definitions = Vec::new();
 
         for ast_match in references_to_symbols {
-            println!("INITIAL DEF: {:?}", ast_match.meta_variables.single.name.text);
+            println!(
+                "INITIAL DEF: {:?}",
+                ast_match.meta_variables.single.name.text
+            );
             let def_chain = self
                 .resolve_definition_chain(file_path, &symbol_match, &ast_match, &mut *locked_client)
                 .await?;
