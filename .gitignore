@@ -37,3 +37,4 @@ compile_commands.json
 .project
 .classpath
 .env
+.phpactor.json

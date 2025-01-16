@@ -58,6 +58,28 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
         Symbol {
+            name: String::from("astar"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("PathfinderDisplay.tsx"),
+                position: Position {
+                    line: 33,
+                    character: 14,
+                },
+            },
+            range: FileRange {
+                path: String::from("PathfinderDisplay.tsx"),
+                start: Position {
+                    line: 33,
+                    character: 0,
+                },
+                end: Position {
+                    line: 33,
+                    character: 19,
+                },
+            },
+        },
+        Symbol {
             name: String::from("findPath"),
             kind: String::from("function"),
             identifier_position: FilePosition {
@@ -98,6 +120,72 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                 end: Position {
                     line: 61,
                     character: 5,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("newMaze"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("PathfinderDisplay.tsx"),
+                position: Position {
+                    line: 66,
+                    character: 14,
+                },
+            },
+            range: FileRange {
+                path: String::from("PathfinderDisplay.tsx"),
+                start: Position {
+                    line: 66,
+                    character: 0,
+                },
+                end: Position {
+                    line: 66,
+                    character: 21,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("newPath"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("PathfinderDisplay.tsx"),
+                position: Position {
+                    line: 34,
+                    character: 14,
+                },
+            },
+            range: FileRange {
+                path: String::from("PathfinderDisplay.tsx"),
+                start: Position {
+                    line: 34,
+                    character: 0,
+                },
+                end: Position {
+                    line: 34,
+                    character: 21,
+                },
+            },
+        },
+        Symbol {
+            name: String::from("timer"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("PathfinderDisplay.tsx"),
+                position: Position {
+                    line: 42,
+                    character: 18,
+                },
+            },
+            range: FileRange {
+                path: String::from("PathfinderDisplay.tsx"),
+                start: Position {
+                    line: 42,
+                    character: 0,
+                },
+                end: Position {
+                    line: 42,
+                    character: 23,
                 },
             },
         },
