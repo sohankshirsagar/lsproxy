@@ -357,18 +357,20 @@
       },
       "ErrorResponse": {
         "type": "object",
+        "description": "Response returned when an API error occurs",
         "required": [
           "error"
         ],
         "properties": {
           "error": {
-            "type": "string"
+            "type": "string",
+            "description": "Description of the error that occurred"
           }
         }
       },
       "FilePosition": {
         "type": "object",
-        "description": "Specific position within a file.",
+        "description": "A position within a specific file in the workspace",
         "required": [
           "path",
           "position"
@@ -376,15 +378,18 @@
         "properties": {
           "path": {
             "type": "string",
+            "description": "Path to the file, relative to the workspace root",
             "example": "src/main.py"
           },
           "position": {
-            "$ref": "#/components/schemas/Position"
+            "$ref": "#/components/schemas/Position",
+            "description": "Position within the file"
           }
         }
       },
       "FileRange": {
         "type": "object",
+        "description": "A range within a specific file, defined by start and end positions",
         "required": [
           "path",
           "start",
@@ -511,6 +516,7 @@
       },
       "HealthResponse": {
         "type": "object",
+        "description": "Response returned by the health check endpoint",
         "required": [
           "status",
           "version",
@@ -519,6 +525,7 @@
         "properties": {
           "languages": {
             "type": "object",
+            "description": "Map of supported languages and whether they are currently available",
             "additionalProperties": {
               "type": "boolean"
             },
@@ -536,10 +543,12 @@
             }
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "description": "Current status of the service (\"ok\" or error description)"
           },
           "version": {
-            "type": "string"
+            "type": "string",
+            "description": "Version of the service"
           }
         }
       },
@@ -580,6 +589,7 @@
       },
       "Position": {
         "type": "object",
+        "description": "A position within a text document, using 0-based indexing",
         "required": [
           "line",
           "character"
@@ -588,7 +598,7 @@
           "character": {
             "type": "integer",
             "format": "int32",
-            "description": "0-indexed character index.",
+            "description": "0-indexed character index within the line.",
             "example": 5,
             "minimum": 0
           },
