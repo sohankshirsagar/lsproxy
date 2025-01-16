@@ -3,7 +3,7 @@ set -e
 
 # Build the Docker image
 echo "Building Docker image..."
-docker build -t lsproxy-builder -f release/Dockerfile .
+docker build -t lsproxy-builder -f release/Dockerfile lsproxy
 
 # Create a temporary container
 CONTAINER_ID=$(docker create lsproxy-builder)
