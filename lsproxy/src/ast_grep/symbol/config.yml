@@ -1,6 +1,6 @@
 ruleDirs:
   - rules
-utilDirss:
+utilDirs:
   - utils
 languageGlobs:
   cpp: ['*.c', '*.h']
