@@ -1,4 +1,5 @@
 use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use crate::handlers::error::IntoHttpResponse;
 use crate::handlers::utils;
 use crate::lsp::manager::{LspManagerError, Manager};
 use crate::utils::file_utils::uri_to_relative_path_string;
@@ -89,10 +90,7 @@ pub async fn find_definition(
     {
         Ok(definitions) => definitions,
         Err(e) => {
-            error!("Definition error: {:?}", e);
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("Definition retrieval failed: {}", e),
-            });
+            return e.into_http_response();
         }
     };
 

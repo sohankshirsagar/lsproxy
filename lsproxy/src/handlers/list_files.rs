@@ -3,6 +3,7 @@ use actix_web::HttpResponse;
 use log::error;
 
 use crate::api_types::ErrorResponse;
+use crate::handlers::error::IntoHttpResponse;
 use crate::lsp::manager::LspManagerError;
 use crate::AppState;
 
@@ -36,27 +37,7 @@ pub async fn list_files(data: Data<AppState>) -> HttpResponse {
         Ok(files) => HttpResponse::Ok().json(files),
         Err(e) => {
             error!("Failed to get workspace files: {}", e);
-            match e {
-                LspManagerError::FileNotFound(path) => {
-                    HttpResponse::BadRequest().json(ErrorResponse {
-                        error: format!("File not found: {}", path),
-                    })
-                }
-                LspManagerError::LspClientNotFound(lang) => HttpResponse::InternalServerError()
-                    .json(ErrorResponse {
-                        error: format!("LSP client not found for {:?}", lang),
-                    }),
-                LspManagerError::InternalError(msg) => {
-                    HttpResponse::InternalServerError().json(ErrorResponse {
-                        error: format!("Internal error: {}", msg),
-                    })
-                }
-                LspManagerError::UnsupportedFileType(path) => {
-                    HttpResponse::BadRequest().json(ErrorResponse {
-                        error: format!("Unsupported file type: {}", path),
-                    })
-                }
-            }
+            e.into_http_response()
         }
     }
 }

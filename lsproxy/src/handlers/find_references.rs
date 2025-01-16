@@ -3,6 +3,7 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Location, Position as LspPosition};
 
+use crate::handlers::error::IntoHttpResponse;
 use crate::api_types::{
     CodeContext, ErrorResponse, FilePosition, FileRange, GetReferencesRequest, Position,
     ReferencesResponse,
@@ -186,25 +187,7 @@ async fn get_code_contexts(
 }
 
 fn handle_lsp_error(e: LspManagerError) -> HttpResponse {
-    error!("Failed to get references: {}", e);
-    match e {
-        LspManagerError::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
-            error: format!("File not found: {}", path),
-        }),
-        LspManagerError::LspClientNotFound(lang) => {
-            HttpResponse::InternalServerError().body(format!("LSP client not found for {:?}", lang))
-        }
-        LspManagerError::InternalError(msg) => {
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("Internal error: {}", msg),
-            })
-        }
-        LspManagerError::UnsupportedFileType(path) => {
-            HttpResponse::BadRequest().json(ErrorResponse {
-                error: format!("Unsupported file type: {}", path),
-            })
-        }
-    }
+    e.into_http_response()
 }
 
 async fn fetch_code_context(
