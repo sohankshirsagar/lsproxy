@@ -69,7 +69,7 @@ impl AstGrepClient {
         let matches = self.scan_file(REFERENCE_CONFIG_PATH, full_path_str).await?;
 
         // Filter matches to those within the symbol's range
-        // And if not full_scan, exclude matches with rule_id "final-identifier"
+        // And if not full_scan, exclude matches with rule_id "non-function"
         let contained_references = matches
             .into_iter()
             .filter(|m| {
@@ -77,7 +77,7 @@ impl AstGrepClient {
                     .get_context_range()
                     .contains_position(&m.get_identifier_range().start);
 
-                position_matches && (full_scan || m.rule_id != "final-identifier")
+                position_matches && (full_scan || m.rule_id != "non-function")
             })
             .collect();
 

@@ -1,4 +1,4 @@
-id: final-identifier
+id: non-function
 language: python
 rule:
   kind: identifier
