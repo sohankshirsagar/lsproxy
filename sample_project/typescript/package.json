@@ -4,7 +4,7 @@
   "description": "A* pathfinding implementation in TypeScript",
   "main": "dist/main.js",
   "scripts": {
-    "start": "ts-node main.ts",
+    "start": "ts-node src/main.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
