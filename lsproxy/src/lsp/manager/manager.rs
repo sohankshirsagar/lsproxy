@@ -346,7 +346,7 @@ impl Manager {
             let has_external_definitions = match &definition {
                 GotoDefinitionResponse::Scalar(loc) => {
                     let is_external = !original_symbol_match
-                        .range
+                        .get_range()
                         .contains_position(&AstGrepPosition::from(loc));
                     if !is_external {
                         // Check if internal symbol is a function
@@ -371,7 +371,7 @@ impl Manager {
                     let mut is_external_or_function = false;
                     for loc in locs {
                         let is_external = !original_symbol_match
-                            .range
+                            .get_range()
                             .contains_position(&AstGrepPosition::from(loc));
                         if is_external {
                             is_external_or_function = true;
@@ -399,7 +399,7 @@ impl Manager {
                     let mut is_external_or_function = false;
                     for link in links {
                         let is_external = !original_symbol_match
-                            .range
+                            .get_range()
                             .contains_position(&AstGrepPosition::from(link));
                         if is_external {
                             is_external_or_function = true;
