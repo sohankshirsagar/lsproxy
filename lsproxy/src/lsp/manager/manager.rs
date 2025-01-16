@@ -242,6 +242,14 @@ impl Manager {
         let lsp_type = detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
         })?;
+
+        // Only Python and TypeScript/JavaScript are currently supported
+        match lsp_type {
+            SupportedLanguages::Python | SupportedLanguages::TypeScriptJavaScript => (),
+            _ => return Err(LspManagerError::NotImplemented(
+                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript".to_string()
+            ))
+        }
         let client = self
             .get_client(lsp_type)
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
@@ -676,6 +684,7 @@ pub enum LspManagerError {
     LspClientNotFound(SupportedLanguages),
     InternalError(String),
     UnsupportedFileType(String),
+    NotImplemented(String),
 }
 
 impl fmt::Display for LspManagerError {
@@ -690,6 +699,9 @@ impl fmt::Display for LspManagerError {
             LspManagerError::InternalError(msg) => write!(f, "Internal error: {}", msg),
             LspManagerError::UnsupportedFileType(path) => {
                 write!(f, "Unsupported file type: {}", path)
+            }
+            LspManagerError::NotImplemented(msg) => {
+                write!(f, "Not implemented: {}", msg)
             }
         }
     }
