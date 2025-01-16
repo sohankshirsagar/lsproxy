@@ -34,12 +34,12 @@ RUN apt-get update && apt-get install \
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install PHPActor
-RUN mkdir -p /usr/local/share/phpactor && \
-    cd /usr/local/share/phpactor && \
-    curl -L https://github.com/phpactor/phpactor/releases/latest/download/phpactor.phar -o phpactor && \
-    chmod +x phpactor && \
-    ln -s /usr/local/share/phpactor/phpactor /usr/local/bin/phpactor
+RUN cd /usr/src && \
+    git clone https://github.com/phpactor/phpactor.git && \
+    cd /usr/src/phpactor && \
+    composer install
+
+ENV PATH="/usr/src/phpactor/bin:${PATH}"
 
 # Config Python
 RUN ln -sf /usr/bin/python3 /usr/bin/python

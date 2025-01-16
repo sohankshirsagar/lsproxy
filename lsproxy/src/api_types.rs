@@ -44,15 +44,21 @@ pub fn set_global_mount_dir(path: impl AsRef<Path>) {
     *global_dir = path.as_ref().to_path_buf();
 }
 
+/// Response returned when an API error occurs
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ErrorResponse {
+    /// Description of the error that occurred
     pub error: String,
 }
 
+/// Response returned by the health check endpoint
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct HealthResponse {
+    /// Current status of the service ("ok" or error description)
     pub status: String,
+    /// Version of the service
     pub version: String,
+    /// Map of supported languages and whether they are currently available
     pub languages: HashMap<SupportedLanguages, bool>,
 }
 
@@ -78,24 +84,28 @@ pub enum SupportedLanguages {
     PHP,
 }
 
+/// A position within a text document, using 0-based indexing
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Position {
     /// 0-indexed line number.
     #[schema(example = 10)]
     pub line: u32,
-    /// 0-indexed character index.
+    /// 0-indexed character index within the line.
     #[schema(example = 5)]
     pub character: u32,
 }
 
-/// Specific position within a file.
+/// A position within a specific file in the workspace
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
+    /// Path to the file, relative to the workspace root
     #[schema(example = "src/main.py")]
     pub path: String,
+    /// Position within the file
     pub position: Position,
 }
 
+/// A range within a specific file, defined by start and end positions
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FileRange {
     /// The path to the file.
@@ -145,6 +155,22 @@ impl From<FileRange> for lsp_types::Range {
     }
 }
 
+/// A reference to a symbol along with its definition(s) found in the workspace
+///
+/// e.g. for a reference to `User` in `main.py`:
+/// ```python
+/// user = User("John", 30)
+/// _______^
+/// ```
+/// This would contain:
+/// - The reference location and name ("User" at line 0)
+/// - The symbol definition(s) (e.g. "class User" in models.py)
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ReferenceWithSymbolDefinitions {
+    pub reference: Identifier,
+    pub definitions: Vec<Symbol>,
+}
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CodeContext {
     pub range: FileRange,
@@ -171,6 +197,7 @@ pub struct Symbol {
 pub struct Identifier {
     pub name: String,
     pub range: FileRange,
+    pub kind: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
@@ -206,6 +233,16 @@ pub struct GetReferencesRequest {
     #[serde(default)]
     #[schema(example = false)]
     pub include_raw_response: bool,
+}
+
+/// Request to get the symbols that are referenced from the symbol at the given position
+/// Request to get all symbols that are referenced from a given position
+///
+/// The input position should point to a location in code where symbols are referenced.
+/// For example, inside a function body to find all symbols used by that function.
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct GetReferencedSymbolsRequest {
+    pub identifier_position: FilePosition,
 }
 
 /// Request to get the symbols in a file.
@@ -297,6 +334,19 @@ pub struct ReferencesResponse {
     pub selected_identifier: Identifier,
 }
 
+/// Response containing symbols referenced from the requested position
+///
+/// The symbols are categorized into:
+/// - workspace_symbols: References to symbols that were found and have definitions in the workspace
+/// - external_symbols: References to symbols from outside the workspace (built-in functions, external libraries)
+/// - not_found: References where the symbol definition could not be found
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ReferencedSymbolsResponse {
+    pub workspace_symbols: Vec<ReferenceWithSymbolDefinitions>,
+    pub external_symbols: Vec<Identifier>,
+    pub not_found: Vec<Identifier>,
+}
+
 pub type SymbolResponse = Vec<Symbol>;
 
 impl From<Location> for FilePosition {
@@ -340,4 +390,204 @@ pub struct FindIdentifierRequest {
 #[serde(rename_all = "camelCase")]
 pub struct IdentifierResponse {
     pub identifiers: Vec<Identifier>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_contains_multi_line_range() {
+        let range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 12,
+                character: 10,
+            },
+        };
+
+        // Test positions within the range
+        assert!(
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 11,
+                    character: 0
+                }
+            }),
+            "middle line should be contained"
+        );
+        assert!(
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 5
+                }
+            }),
+            "start position should be contained"
+        );
+        assert!(
+            range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 12,
+                    character: 10
+                }
+            }),
+            "end position should be contained"
+        );
+    }
+
+    #[test]
+    fn test_contains_multi_line_range_outside_positions() {
+        let range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 12,
+                character: 10,
+            },
+        };
+
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 9,
+                    character: 0
+                }
+            }),
+            "line before start should not be contained"
+        );
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 13,
+                    character: 0
+                }
+            }),
+            "line after end should not be contained"
+        );
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
+            }),
+            "position before start on first line should not be contained"
+        );
+        assert!(
+            !range.contains(FilePosition {
+                path: range.path.clone(),
+                position: Position {
+                    line: 12,
+                    character: 11
+                }
+            }),
+            "position after end on last line should not be contained"
+        );
+    }
+
+    #[test]
+    fn test_contains_single_line_range() {
+        let single_line_range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 10,
+                character: 10,
+            },
+        };
+
+        assert!(
+            single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 7
+                }
+            }),
+            "position within single line range should be contained"
+        );
+        assert!(
+            !single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
+            }),
+            "position before single line range should not be contained"
+        );
+        assert!(
+            !single_line_range.contains(FilePosition {
+                path: single_line_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 11
+                }
+            }),
+            "position after single line range should not be contained"
+        );
+    }
+
+    #[test]
+    fn test_contains_zero_width_range() {
+        let zero_width_range = FileRange {
+            path: "test.rs".to_string(),
+            start: Position {
+                line: 10,
+                character: 5,
+            },
+            end: Position {
+                line: 10,
+                character: 5,
+            },
+        };
+
+        assert!(
+            zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 5
+                }
+            }),
+            "position at zero-width range should be contained"
+        );
+        assert!(
+            !zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 4
+                }
+            }),
+            "position before zero-width range should not be contained"
+        );
+        assert!(
+            !zero_width_range.contains(FilePosition {
+                path: zero_width_range.path.clone(),
+                position: Position {
+                    line: 10,
+                    character: 6
+                }
+            }),
+            "position after zero-width range should not be contained"
+        );
+    }
 }
