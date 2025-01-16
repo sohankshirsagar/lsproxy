@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.3.0"
+LSPROXY_VERSION="0.3.1"
 
 # Function to detect architecture
 detect_arch() {
@@ -100,12 +100,14 @@ install_php() {
     # Install Composer
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-    # Install PHPActor
-    mkdir -p /usr/local/share/phpactor
-    cd /usr/local/share/phpactor
-    curl -L https://github.com/phpactor/phpactor/releases/latest/download/phpactor.phar -o phpactor
-    chmod +x phpactor
-    ln -s /usr/local/share/phpactor/phpactor /usr/local/bin/phpactor
+    # Install PHPActor from source
+    cd /usr/src && \
+    git clone https://github.com/phpactor/phpactor.git && \
+    cd /usr/src/phpactor && \
+    composer install
+
+    # Add phpactor to PATH
+    echo 'export PATH="/usr/src/phpactor/bin:${PATH}"' >> /etc/profile.d/phpactor.sh
 }
 
 # Function to install Node.js dependencies
