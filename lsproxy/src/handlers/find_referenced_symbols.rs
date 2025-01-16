@@ -149,7 +149,7 @@ pub async fn find_referenced_symbols(
                 if !symbols_with_definitions.is_empty() {
                     workspace_symbols.push(ReferenceWithSymbolDefinition {
                         reference: identifier.clone(),
-                        symbols: symbols_with_definitions,
+                        definitions: symbols_with_definitions,
                     });
                 } else {
                     // If no symbols were found, add to not_found
@@ -265,7 +265,7 @@ mod test {
                         },
                         kind: Some(String::from("decorator")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("log_execution_time"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -304,7 +304,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("initialize_search"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -343,7 +343,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("reconstruct_path"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -382,7 +382,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("get_vertex_neighbours"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -421,7 +421,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("move_cost"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -460,7 +460,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("heuristic"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -678,7 +678,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("_barrier_cost"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -717,7 +717,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("_distance_cost"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -756,7 +756,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![
+                    definitions: vec![
                         Symbol {
                             name: String::from("_barrier_cost"),
                             kind: String::from("function"),
@@ -841,7 +841,7 @@ mod test {
                         },
                         kind: Some(String::from("decorator")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("log_execution_time"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -880,7 +880,7 @@ mod test {
                         },
                         kind: Some(String::from("decorator")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("log_execution_time"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
@@ -919,7 +919,7 @@ mod test {
                         },
                         kind: Some(String::from("function-call")),
                     },
-                    symbols: vec![Symbol {
+                    definitions: vec![Symbol {
                         name: String::from("move_cost"),
                         kind: String::from("function"),
                         identifier_position: FilePosition {
