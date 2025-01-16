@@ -175,7 +175,7 @@ mod test {
 
         // Test finding all occurrences of 'path' in PathfinderDisplay.tsx
         let mock_request = Json(FindIdentifierRequest {
-            path: String::from("PathfinderDisplay.tsx"),
+            path: String::from("src/PathfinderDisplay.tsx"),
             name: String::from("path"),
             position: None,
         });
@@ -203,7 +203,7 @@ mod test {
 
         // Test finding closest matches for 'maze' near but not exactly at a position
         let mock_request = Json(FindIdentifierRequest {
-            path: String::from("PathfinderDisplay.tsx"),
+            path: String::from("src/PathfinderDisplay.tsx"),
             name: String::from("maze"),
             position: Some(Position {
                 line: 25, // Near maze usage but not exact
