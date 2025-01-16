@@ -139,6 +139,8 @@
         "tags": [
           "symbol"
         ],
+        "summary": "Find all symbols that are referenced from a given position",
+        "description": "Returns references categorized into:\n- Workspace symbols (with their definitions)\n- External symbols (built-in functions like 'len', 'print' or from external libraries)\n- Symbols that couldn't be found\n\ne.g. for a function in `main.py`:\n```python\n@log_execution_time     # Reference to decorator\ndef process_user():\n    user = User()       # Reference to User class\n    print(\"Done\")       # Reference to built-in function\n```\nThis would return:\n- Workspace symbols: log_execution_time (with definition from decorators.py)\n- Workspace symbols: User (with definition from models.py)\n- External symbols: print (Python built-in)",
         "operationId": "find_referenced_symbols",
         "requestBody": {
           "content": {
@@ -471,7 +473,7 @@
       },
       "GetReferencedSymbolsRequest": {
         "type": "object",
-        "description": "Request to get the symbols that are referenced from the symbol at the given position",
+        "description": "Request to get the symbols that are referenced from the symbol at the given position\nRequest to get all symbols that are referenced from a given position\n\nThe input position should point to a location in code where symbols are referenced.\nFor example, inside a function body to find all symbols used by that function.",
         "required": [
           "identifier_position"
         ],
@@ -548,6 +550,12 @@
           "range"
         ],
         "properties": {
+          "kind": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "name": {
             "type": "string"
           },
@@ -606,6 +614,7 @@
       },
       "ReferenceWithSymbolDefinition": {
         "type": "object",
+        "description": "A reference to a symbol along with its definition(s) found in the workspace\n\ne.g. for a reference to `User` in `main.py`:\n```python\nuser = User(\"John\", 30)\n_______^\n```\nThis would contain:\n- The reference location and name (\"User\" at line 0)\n- The symbol definition(s) (e.g. \"class User\" in models.py)",
         "required": [
           "reference",
           "symbols"
@@ -624,6 +633,7 @@
       },
       "ReferencedSymbolsResponse": {
         "type": "object",
+        "description": "Response containing symbols referenced from the requested position\n\nThe symbols are categorized into:\n- workspace_symbols: References to symbols that were found and have definitions in the workspace\n- external_symbols: References to symbols from outside the workspace (built-in functions, external libraries)\n- not_found: References where the symbol definition could not be found",
         "required": [
           "workspace_symbols",
           "external_symbols",

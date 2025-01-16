@@ -45,6 +45,16 @@ pub struct AstGrepRange {
     pub byte_offset: ByteOffset,
     pub start: AstGrepPosition,
     pub end: AstGrepPosition,
+
+}
+
+impl AstGrepRange {
+    pub fn contains_position(&self, pos: &AstGrepPosition) -> bool {
+        self.start.line <= pos.line
+        && self.end.line >= pos.line
+        && (self.start.line != pos.line || self.start.column <= pos.column)
+        && (self.end.line != pos.line || self.end.column >= pos.column)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -103,6 +113,24 @@ pub struct Label {
     pub range: AstGrepRange,
 }
 
+impl From<&lsp_types::LocationLink> for AstGrepPosition {
+    fn from(loc: &lsp_types::LocationLink) -> Self {
+        Self {
+            line: loc.target_range.start.line,
+            column: loc.target_range.start.character
+        }
+    }
+}
+
+impl From<&lsp_types::Location> for AstGrepPosition {
+    fn from(loc: &lsp_types::Location) -> Self {
+        Self {
+            line: loc.range.start.line,
+            column: loc.range.start.character
+        }
+    }
+}
+
 impl From<&AstGrepMatch> for lsp_types::Position {
     fn from(ast_match: &AstGrepMatch) -> Self {
         Self {
@@ -146,8 +174,14 @@ impl From<AstGrepMatch> for Identifier {
     fn from(ast_match: AstGrepMatch) -> Self {
         let path = absolute_path_to_relative_path_string(&PathBuf::from(ast_match.file.clone()));
         let match_range = ast_match.get_range();
+        let kind = match ast_match.rule_id.as_str() {
+            "all-identifiers" => None,
+            _ => Some(ast_match.rule_id),
+        };
+
         Identifier {
             name: ast_match.meta_variables.single.name.text.clone(),
+            kind,
             range: FileRange {
                 path: path.clone(),
                 start: Position {

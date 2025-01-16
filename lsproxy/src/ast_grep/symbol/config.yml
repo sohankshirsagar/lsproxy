@@ -1,5 +1,7 @@
 ruleDirs:
-  - reference-rules
+  - rules
+utilDirss:
+  - utils
 languageGlobs:
   cpp: ['*.c', '*.h']
   tsx: ['*.ts', '*.cts', '*.mts']

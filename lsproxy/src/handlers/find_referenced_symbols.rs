@@ -9,6 +9,24 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 
+/// Find all symbols that are referenced from a given position
+///
+/// Returns references categorized into:
+/// - Workspace symbols (with their definitions)
+/// - External symbols (built-in functions like 'len', 'print' or from external libraries)
+/// - Symbols that couldn't be found
+///
+/// e.g. for a function in `main.py`:
+/// ```python
+/// @log_execution_time     # Reference to decorator
+/// def process_user():
+///     user = User()       # Reference to User class
+///     print("Done")       # Reference to built-in function
+/// ```
+/// This would return:
+/// - Workspace symbols: log_execution_time (with definition from decorators.py)
+/// - Workspace symbols: User (with definition from models.py)
+/// - External symbols: print (Python built-in)
 #[utoipa::path(
     post,
     path = "/symbol/find-referenced-symbols",
@@ -245,6 +263,7 @@ mod test {
                                 character: 19,
                             },
                         },
+                        kind: Some(String::from("decorator")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("log_execution_time"),
@@ -283,6 +302,7 @@ mod test {
                                 character: 71,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("initialize_search"),
@@ -321,6 +341,7 @@ mod test {
                                 character: 35,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("reconstruct_path"),
@@ -359,6 +380,7 @@ mod test {
                                 character: 52,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("get_vertex_neighbours"),
@@ -397,6 +419,7 @@ mod test {
                                 character: 54,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("move_cost"),
@@ -435,6 +458,7 @@ mod test {
                                 character: 57,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("heuristic"),
@@ -474,6 +498,7 @@ mod test {
                             character: 23,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("append"),
@@ -488,6 +513,7 @@ mod test {
                             character: 19,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("min"),
@@ -502,6 +528,7 @@ mod test {
                             character: 21,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("remove"),
@@ -516,6 +543,7 @@ mod test {
                             character: 28,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("add"),
@@ -530,6 +558,7 @@ mod test {
                             character: 27,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("add"),
@@ -544,6 +573,7 @@ mod test {
                             character: 33,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("get"),
@@ -558,6 +588,7 @@ mod test {
                             character: 37,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("float"),
@@ -572,6 +603,7 @@ mod test {
                             character: 54,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("RuntimeError"),
@@ -586,9 +618,10 @@ mod test {
                             character: 22,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
             ],
-            not_found: Vec::new(),
+            not_found: vec![],
         };
 
         assert_eq!(referenced_symbols_response, expected_response);
@@ -643,6 +676,7 @@ mod test {
                                 character: 41,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("_barrier_cost"),
@@ -681,6 +715,7 @@ mod test {
                                 character: 43,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("_distance_cost"),
@@ -719,6 +754,7 @@ mod test {
                                 character: 28,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![
                         Symbol {
@@ -803,6 +839,7 @@ mod test {
                                 character: 23,
                             },
                         },
+                        kind: Some(String::from("decorator")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("log_execution_time"),
@@ -841,6 +878,7 @@ mod test {
                                 character: 23,
                             },
                         },
+                        kind: Some(String::from("decorator")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("log_execution_time"),
@@ -879,6 +917,7 @@ mod test {
                                 character: 29,
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     symbols: vec![Symbol {
                         name: String::from("move_cost"),
@@ -918,6 +957,7 @@ mod test {
                             character: 29,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("property"),
@@ -932,6 +972,7 @@ mod test {
                             character: 13,
                         },
                     },
+                    kind: Some(String::from("decorator")),
                 },
                 Identifier {
                     name: String::from("abs"),
@@ -946,6 +987,7 @@ mod test {
                             character: 18,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("abs"),
@@ -960,6 +1002,7 @@ mod test {
                             character: 37,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("ValueError"),
@@ -974,6 +1017,7 @@ mod test {
                             character: 28,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("abs"),
@@ -988,6 +1032,7 @@ mod test {
                             character: 16,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("abs"),
@@ -1002,6 +1047,7 @@ mod test {
                             character: 16,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("min"),
@@ -1016,6 +1062,7 @@ mod test {
                             character: 49,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("append"),
@@ -1030,9 +1077,10 @@ mod test {
                             character: 24,
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
             ],
-            not_found: Vec::new(),
+            not_found: vec![],
         };
 
         assert_eq!(referenced_symbols_response, expected_response);

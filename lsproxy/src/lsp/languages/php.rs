@@ -6,6 +6,7 @@ use crate::{
     },
 };
 use async_trait::async_trait;
+use log::warn;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
 use std::{error::Error, path::Path, process::Stdio};
@@ -59,6 +60,43 @@ impl PhpactorClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+
+        // Create a Phpactor configuration file
+        let config_path = Path::new(root_path).join(".phpactor.json");
+        let config_content = serde_json::json!({
+            "logging.enabled": true,
+            "logging.level": "info",
+            "logging.path": "/tmp/phpactor.log",
+            "logging.formatter": "json",
+            "language_server.trace": false,
+        });
+
+        std::fs::write(&config_path, serde_json::to_string_pretty(&config_content)?)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+        // Dump autoload if it exists for better performance
+        let mut child = Command::new("composer")
+            .arg("dump-autoload")
+            .arg("--no-scripts")
+            .current_dir(root_path) // Set the working directory
+            .stdout(Stdio::piped()) // Capture stdout
+            .stderr(Stdio::piped()) // Capture stderr
+            .spawn()
+            .map_err(|e| format!("Failed to spawn `composer dump-autoload`: {}", e))?;
+
+        // Wait for the child process to complete
+        if let Some(status) = child.wait().await.ok() {
+            if !status.success() {
+                if let Some(code) = status.code() {
+                    warn!( "`composer dump-autoload` exited with non-zero status code: {}",
+                        code
+                    );
+                } else {
+                    warn!("`composer dump-autoload` was terminated by a signal.");
+                }
+            }
+        }
+
         let process = Command::new("phpactor")
             .arg("language-server")
             .current_dir(root_path)

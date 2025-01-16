@@ -1,5 +1,5 @@
 ruleDirs:
-  - identifier-rules
+  - rules
 languageGlobs:
   cpp: ['*.c', '*.h']
   tsx: ['*.ts', '*.cts', '*.mts']
