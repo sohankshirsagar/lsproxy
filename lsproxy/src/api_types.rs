@@ -44,15 +44,21 @@ pub fn set_global_mount_dir(path: impl AsRef<Path>) {
     *global_dir = path.as_ref().to_path_buf();
 }
 
+/// Response returned when an API error occurs
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ErrorResponse {
+    /// Description of the error that occurred
     pub error: String,
 }
 
+/// Response returned by the health check endpoint
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct HealthResponse {
+    /// Current status of the service ("ok" or error description)
     pub status: String,
+    /// Version of the service
     pub version: String,
+    /// Map of supported languages and whether they are currently available
     pub languages: HashMap<SupportedLanguages, bool>,
 }
 
@@ -78,24 +84,28 @@ pub enum SupportedLanguages {
     PHP,
 }
 
+/// A position within a text document, using 0-based indexing
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Position {
     /// 0-indexed line number.
     #[schema(example = 10)]
     pub line: u32,
-    /// 0-indexed character index.
+    /// 0-indexed character index within the line.
     #[schema(example = 5)]
     pub character: u32,
 }
 
-/// Specific position within a file.
+/// A position within a specific file in the workspace
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FilePosition {
+    /// Path to the file, relative to the workspace root
     #[schema(example = "src/main.py")]
     pub path: String,
+    /// Position within the file
     pub position: Position,
 }
 
+/// A range within a specific file, defined by start and end positions
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FileRange {
     /// The path to the file.
