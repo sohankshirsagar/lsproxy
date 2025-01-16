@@ -602,10 +602,6 @@ impl Manager {
         let mut definitions = Vec::new();
 
         for ast_match in references_to_symbols {
-            println!(
-                "INITIAL DEF: {:?}",
-                ast_match.meta_variables.single.name.text
-            );
             let def_chain = self
                 .resolve_definition_chain(file_path, &symbol_match, &ast_match, &mut *locked_client)
                 .await?;
