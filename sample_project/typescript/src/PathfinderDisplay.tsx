@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Node } from './node';
 import { AStar } from './astar';
 import { Grid } from './types';
+import { GridDisplay } from './GridDisplay';
+import { Controls } from './Controls';
+import { InfoPanel } from './InfoPanel';
 
 interface PathfinderDisplayProps {
     initialMaze?: Grid;
@@ -50,17 +53,6 @@ export const PathfinderDisplay: React.FC<PathfinderDisplayProps> = ({
         }
     }, [isAnimating, currentStep, path]);
 
-    const getCellColor = (x: number, y: number): string => {
-        if (x === start.x && y === start.y) return 'bg-green-500';
-        if (x === end.x && y === end.y) return 'bg-red-500';
-        if (path?.slice(0, currentStep + 1).some(node => node.x === x && node.y === y)) {
-            return 'bg-blue-500';
-        }
-        if (maze[y][x] === 100) return 'bg-gray-500';
-        if (maze[y][x] === -1) return 'bg-black';
-        return 'bg-white';
-    };
-
     const toggleCell = (x: number, y: number) => {
         if ((x === start.x && y === start.y) || (x === end.x && y === end.y)) return;
         
@@ -71,56 +63,31 @@ export const PathfinderDisplay: React.FC<PathfinderDisplayProps> = ({
         setCurrentStep(0);
     };
 
+    const handleReset = () => {
+        setMaze(initialMaze);
+        setPath(null);
+        setCurrentStep(0);
+    };
+
     return (
         <div className="p-4">
-            <div className="mb-4 space-x-2">
-                <button
-                    onClick={findPath}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    disabled={isAnimating}
-                >
-                    {isAnimating ? 'Finding Path...' : 'Find Path'}
-                </button>
-                <button
-                    onClick={() => {
-                        setMaze(initialMaze);
-                        setPath(null);
-                        setCurrentStep(0);
-                    }}
-                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                    disabled={isAnimating}
-                >
-                    Reset
-                </button>
-            </div>
+            <Controls 
+                onFindPath={findPath}
+                onReset={handleReset}
+                isAnimating={isAnimating}
+            />
             
-            <div className="inline-block border border-gray-200">
-                {maze.map((row, y) => (
-                    <div key={y} className="flex">
-                        {row.map((_, x) => (
-                            <div
-                                key={`${x}-${y}`}
-                                className={`w-8 h-8 border border-gray-200 ${getCellColor(x, y)} 
-                                    transition-colors duration-300 cursor-pointer`}
-                                onClick={() => toggleCell(x, y)}
-                            />
-                        ))}
-                    </div>
-                ))}
-            </div>
+            <GridDisplay 
+                maze={maze}
+                start={start}
+                end={end}
+                path={path}
+                currentStep={currentStep}
+                isAnimating={isAnimating}
+                onCellClick={toggleCell}
+            />
 
-            <div className="mt-4">
-                <div className="text-sm text-gray-600">
-                    Click cells to toggle walls. Green = Start, Red = End, Blue = Path
-                </div>
-                {path && (
-                    <div className="mt-2 text-sm">
-                        Path length: {path.length} steps
-                        <br />
-                        Total cost: {path[path.length - 1].g.toFixed(2)}
-                    </div>
-                )}
-            </div>
+            <InfoPanel path={path} />
         </div>
     );
 };
