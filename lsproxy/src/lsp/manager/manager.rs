@@ -214,9 +214,11 @@ impl Manager {
         file_path: &str,
         identifier_position: &lsp_types::Position,
     ) -> Result<Symbol, LspManagerError> {
+        let full_path = get_mount_dir().join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default();
         match self
             .ast_grep
-            .get_symbol_match_from_position(file_path, identifier_position)
+            .get_symbol_match_from_position(full_path_str, identifier_position)
             .await
         {
             Ok(ast_grep_symbol) => Ok(Symbol::from(ast_grep_symbol)),
@@ -353,7 +355,7 @@ impl Manager {
                         if let Ok(internal_symbol_match) = self
                             .ast_grep
                             .get_symbol_match_from_position(
-                                &uri_to_relative_path_string(&loc.uri),
+                                loc.uri.path(),
                                 &loc.range.start.into(),
                             )
                             .await
@@ -384,7 +386,7 @@ impl Manager {
                         if let Ok(internal_symbol_match) = self
                             .ast_grep
                             .get_symbol_match_from_position(
-                                &uri_to_relative_path_string(&loc.uri),
+                                loc.uri.path(),
                                 &loc.range.start.into(),
                             )
                             .await
@@ -416,7 +418,7 @@ impl Manager {
                         if let Ok(internal_symbol_match) = self
                             .ast_grep
                             .get_symbol_match_from_position(
-                                &uri_to_relative_path_string(&link.target_uri),
+                                link.target_uri.path(),
                                 &link.target_range.start.into(),
                             )
                             .await
@@ -463,7 +465,7 @@ impl Manager {
                 let internal_symbol_match = match self
                     .ast_grep
                     .get_symbol_match_from_position(
-                        &uri_to_relative_path_string(&location.uri),
+                        location.uri.path(),
                         &def_position,
                     )
                     .await
@@ -476,7 +478,7 @@ impl Manager {
                 let internal_references = match self
                     .ast_grep
                     .get_references_contained_in_symbol_match(
-                        &uri_to_relative_path_string(&location.uri),
+                        location.uri.path(),
                         &internal_symbol_match,
                         true,
                     )
@@ -546,10 +548,13 @@ impl Manager {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
 
+        let full_path = get_mount_dir().join(&file_path);
+        let full_path_str = full_path.to_str().unwrap_or_default();
+
         // First we find all the positions we need to find the definition of
         let symbol_match = match self
             .ast_grep
-            .get_symbol_match_from_position(file_path, &position)
+            .get_symbol_match_from_position(full_path_str, &position)
             .await
         {
             Ok(symbol_match) => symbol_match,
@@ -562,7 +567,7 @@ impl Manager {
         };
         let references_to_symbols = match self
             .ast_grep
-            .get_references_contained_in_symbol_match(file_path, &symbol_match, false)
+            .get_references_contained_in_symbol_match(full_path_str, &symbol_match, false)
             .await
         {
             Ok(referenced_symbols) => referenced_symbols,
@@ -574,8 +579,6 @@ impl Manager {
             }
         };
 
-        let full_path = get_mount_dir().join(&file_path);
-        let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
         })?;

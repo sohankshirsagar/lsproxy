@@ -6,7 +6,6 @@ const IDENTIFIER_CONFIG_PATH: &str = "/usr/src/ast_grep/identifier/config.yml";
 const REFERENCE_CONFIG_PATH: &str = "/usr/src/ast_grep/reference/config.yml";
 
 use super::types::AstGrepMatch;
-use crate::api_types::get_mount_dir;
 
 pub struct AstGrepClient;
 
@@ -17,9 +16,7 @@ impl AstGrepClient {
         identifier_position: &lsp_types::Position,
     ) -> Result<AstGrepMatch, Box<dyn std::error::Error>> {
         // Get all symbols in the file
-        let full_path = get_mount_dir().join(&file_name);
-        let full_path_str = full_path.to_str().unwrap_or_default();
-        let file_symbols = self.scan_file(SYMBOL_CONFIG_PATH, full_path_str).await?;
+        let file_symbols = self.scan_file(SYMBOL_CONFIG_PATH, file_name).await?;
 
         // Find the symbol that matches our identifier position
         let symbol_result = file_symbols.into_iter().find(|ast_symbol_match| {
@@ -62,11 +59,8 @@ impl AstGrepClient {
         symbol_match: &AstGrepMatch,
         full_scan: bool,
     ) -> Result<Vec<AstGrepMatch>, Box<dyn std::error::Error>> {
-        let full_path = get_mount_dir().join(&file_name);
-        let full_path_str = full_path.to_str().unwrap_or_default();
-
         // Get all references
-        let matches = self.scan_file(REFERENCE_CONFIG_PATH, full_path_str).await?;
+        let matches = self.scan_file(REFERENCE_CONFIG_PATH, file_name).await?;
 
         // Filter matches to those within the symbol's range
         // And if not full_scan, exclude matches with rule_id "non-function"
