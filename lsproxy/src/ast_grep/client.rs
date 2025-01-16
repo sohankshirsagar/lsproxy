@@ -72,8 +72,8 @@ impl AstGrepClient {
             .into_iter()
             .filter(|m| {
                 let position_matches = symbol_match.get_range().contains_position(&AstGrepPosition {
-                    line: m.range.start.line as u32,
-                    column: 0,
+                    line: m.range.start.line,
+                    column: m.range.start.column,
                 });
 
                 position_matches && (full_scan || m.rule_id != "final-identifier")
