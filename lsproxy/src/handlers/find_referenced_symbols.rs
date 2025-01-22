@@ -233,7 +233,7 @@ mod test {
         sleep(Duration::from_secs(5)).await;
 
         let response = find_referenced_symbols(state, mock_request).await;
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::OK, "Response: {:?}", response);
         let content_type = response
             .headers()
             .get("content-type")
@@ -646,7 +646,7 @@ mod test {
         sleep(Duration::from_secs(5)).await;
 
         let response = find_referenced_symbols(state, mock_request).await;
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::OK, "Response: {:?}", response);
         let content_type = response
             .headers()
             .get("content-type")
