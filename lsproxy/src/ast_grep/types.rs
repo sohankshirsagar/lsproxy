@@ -1,6 +1,21 @@
 use std::path::PathBuf;
+use std::collections::HashSet;
+use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
+
+lazy_static! {
+    static ref CALLABLE_TYPES: HashMap<&'static str, HashSet<&'static str>> = {
+        let mut m = HashMap::new();
+        // Empty placeholder maps for each supported language
+        // These will be filled in later with language-specific callable types
+        m.insert("python", HashSet::new());
+        m.insert("typescript", HashSet::new());
+        m.insert("javascript", HashSet::new());
+        m
+    };
+}
 
 use crate::{
     api_types::{FilePosition, FileRange, Identifier, Position, Symbol},
@@ -65,6 +80,14 @@ impl AstGrepMatch {
             && self.get_context_range().end.line >= link.target_range.end.line
             && (self.get_context_range().start.line != link.target_range.start.line || self.get_context_range().start.column <= link.target_range.start.character)
             && (self.get_context_range().end.line != link.target_range.end.line || self.get_context_range().end.column >= link.target_range.end.character)
+    }
+
+    pub fn is_callable(&self) -> bool {
+        if let Some(types) = CALLABLE_TYPES.get(self.language.as_str()) {
+            types.contains(self.rule_id.as_str())
+        } else {
+            false
+        }
     }
 }
 

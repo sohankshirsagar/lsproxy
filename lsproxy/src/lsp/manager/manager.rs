@@ -390,11 +390,7 @@ impl Manager {
                             )
                             .await
                         {
-                            if internal_symbol_match
-                                .rule_id
-                                .to_lowercase()
-                                .contains("function")
-                            {
+                            if internal_symbol_match.is_callable() {
                                 is_external_or_function = true;
                                 break;
                             }
@@ -421,11 +417,7 @@ impl Manager {
                             )
                             .await
                         {
-                            if internal_symbol_match
-                                .rule_id
-                                .to_lowercase()
-                                .contains("function")
-                            {
+                            if internal_symbol_match.is_callable() {
                                 is_external_or_function = true;
                                 break;
                             }
