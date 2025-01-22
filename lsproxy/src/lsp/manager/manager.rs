@@ -371,9 +371,11 @@ impl Manager {
 
             // Check if any definition locations are outside the original symbol's scope
             // OR if the symbol at this location is a function
-            let has_external_definitions = match &definition {
+            match &definition {
                 GotoDefinitionResponse::Scalar(loc) => {
-                    self.is_external_or_callable(original_symbol_match, loc).await
+                    if self.is_external_or_callable(original_symbol_match, loc).await {
+                        return Ok(vec![definition]);
+                    }
                 }
                 GotoDefinitionResponse::Array(locs) => {
                     for loc in locs {
@@ -381,7 +383,6 @@ impl Manager {
                             return Ok(vec![definition]);
                         }
                     }
-                    false
                 }
                 GotoDefinitionResponse::Link(links) => {
                     for link in links {
@@ -390,14 +391,8 @@ impl Manager {
                             return Ok(vec![definition]);
                         }
                     }
-                    false
                 }
             };
-
-            if has_external_definitions {
-                // Found external definitions, return them
-                return Ok(vec![definition]);
-            }
 
             // All definitions are internal, need to look deeper
             let mut final_definitions = Vec::new();
