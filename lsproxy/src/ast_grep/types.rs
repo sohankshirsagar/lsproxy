@@ -1,12 +1,10 @@
 use std::path::PathBuf;
-use std::collections::HashSet;
-use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use once_cell::sync::Lazy;
 
 use serde::{Deserialize, Serialize};
 
-lazy_static! {
-    static ref CALLABLE_TYPES: HashMap<&'static str, HashSet<&'static str>> = {
+static CALLABLE_TYPES: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy::new(|| {
         let mut m = HashMap::new();
         
         // C++
@@ -62,8 +60,8 @@ lazy_static! {
         m.insert("tsx", typescript.clone());
 
         m
-    };
-}
+    }
+);
 
 use crate::{
     api_types::{FilePosition, FileRange, Identifier, Position, Symbol},
