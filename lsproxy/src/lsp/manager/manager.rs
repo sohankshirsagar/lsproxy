@@ -349,14 +349,71 @@ impl Manager {
         }
     }
 
+    async fn check_base_case(
+        &self,
+        definition: &GotoDefinitionResponse,
+        original_symbol_match: &AstGrepMatch,
+    ) -> Result<bool, LspManagerError> {
+        match definition {
+            GotoDefinitionResponse::Scalar(loc) => {
+                Ok(self.is_external_or_callable(original_symbol_match, loc).await)
+            }
+            GotoDefinitionResponse::Array(locs) => {
+                for loc in locs {
+                    if self.is_external_or_callable(original_symbol_match, loc).await {
+                        return Ok(true);
+                    }
+                }
+                Ok(false)
+            }
+            GotoDefinitionResponse::Link(links) => {
+                for link in links {
+                    let location = Location::new(link.target_uri.clone(), link.target_range);
+                    if self.is_external_or_callable(original_symbol_match, &location).await {
+                        return Ok(true);
+                    }
+                }
+                Ok(false)
+            }
+        }
+    }
+
+    fn get_locations_from_definition(definition: &GotoDefinitionResponse) -> Vec<Location> {
+        match definition {
+            GotoDefinitionResponse::Scalar(loc) => vec![loc.clone()],
+            GotoDefinitionResponse::Array(locs) => locs.clone(),
+            GotoDefinitionResponse::Link(links) => links
+                .iter()
+                .map(|l| Location::new(l.target_uri.clone(), l.target_range))
+                .collect(),
+        }
+    }
+
+    fn sort_and_combine_locations(definitions: Vec<GotoDefinitionResponse>) -> GotoDefinitionResponse {
+        let mut all_locations: Vec<Location> = definitions
+            .into_iter()
+            .flat_map(|def| Self::get_locations_from_definition(&def))
+            .collect();
+
+        all_locations.sort_by(|a, b| {
+            let path_a = uri_to_relative_path_string(&a.uri);
+            let path_b = uri_to_relative_path_string(&b.uri);
+            path_a
+                .cmp(&path_b)
+                .then(a.range.start.line.cmp(&b.range.start.line))
+                .then(a.range.start.character.cmp(&b.range.start.character))
+        });
+
+        GotoDefinitionResponse::Array(all_locations)
+    }
+
     fn resolve_definition_chain<'a>(
         &'a self,
         file_path: &'a str,
         original_symbol_match: &'a AstGrepMatch,
         ast_match: &'a AstGrepMatch,
         client: &'a mut Box<dyn LspClient>,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<GotoDefinitionResponse>, LspManagerError>> + 'a>>
-    {
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<GotoDefinitionResponse>, LspManagerError>> + 'a>> {
         Box::pin(async move {
             let full_path = get_mount_dir().join(file_path);
             let full_path_str = full_path.to_str().unwrap_or_default();
@@ -369,109 +426,52 @@ impl Manager {
                     LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
                 })?;
 
-            // Check if any definition locations are outside the original symbol's scope
-            // OR if the symbol at this location is a function
-            match &definition {
-                GotoDefinitionResponse::Scalar(loc) => {
-                    if self.is_external_or_callable(original_symbol_match, loc).await {
-                        return Ok(vec![definition]);
-                    }
-                }
-                GotoDefinitionResponse::Array(locs) => {
-                    for loc in locs {
-                        if self.is_external_or_callable(original_symbol_match, loc).await {
-                            return Ok(vec![definition]);
-                        }
-                    }
-                }
-                GotoDefinitionResponse::Link(links) => {
-                    for link in links {
-                        let location = Location::new(link.target_uri.clone(), link.target_range);
-                        if self.is_external_or_callable(original_symbol_match, &location).await {
-                            return Ok(vec![definition]);
-                        }
-                    }
-                }
-            };
+            // Base case: Check if any definition is external or callable
+            if self.check_base_case(&definition, original_symbol_match).await? {
+                return Ok(vec![definition]);
+            }
 
-            // All definitions are internal, need to look deeper
+            // Recursive case: Look through internal references
             let mut final_definitions = Vec::new();
-
-            // For each internal definition location
-            let locations = match &definition {
-                GotoDefinitionResponse::Scalar(loc) => vec![loc.clone()],
-                GotoDefinitionResponse::Array(locs) => locs.clone(),
-                GotoDefinitionResponse::Link(links) => links
-                    .iter()
-                    .map(|l| Location::new(l.target_uri.clone(), l.target_range))
-                    .collect(),
-            };
+            let locations = Self::get_locations_from_definition(&definition);
 
             for location in locations {
-                // Get the symbol at this definition
                 let def_position = Position {
                     line: location.range.start.line,
                     character: location.range.start.character,
                 };
 
                 // Get the symbol and its references
-                let (_, internal_references) = match self
+                let (_, internal_references) = self
                     .ast_grep
                     .get_symbol_and_references(location.uri.path(), &def_position, true)
                     .await
-                {
-                    Ok(result) => result,
-                    Err(e) => {
-                        return Err(LspManagerError::InternalError(format!(
-                            "Failed to find referenced symbols, {}",
+                    .map_err(|e| {
+                        LspManagerError::InternalError(format!(
+                            "Failed to find referenced symbols: {}",
                             e
-                        )));
-                    }
-                };
+                        ))
+                    })?;
 
-                // For each reference, recursively resolve its definition chain
+                // Recursively resolve each reference
                 for reference in internal_references {
                     let nested_definitions = self
                         .resolve_definition_chain(
                             &uri_to_relative_path_string(&location.uri),
-                            &original_symbol_match,
+                            original_symbol_match,
                             &reference,
                             client,
                         )
                         .await?;
-
                     final_definitions.extend(nested_definitions);
                 }
             }
 
+            // Return empty if no external definitions found
             if final_definitions.is_empty() {
-                // If we found no external definitions through the chain, remove this branch
                 Ok(vec![])
             } else {
-                // Combine all locations from different GotoDefinitionResponses into a single Array variant
-                let mut all_locations: Vec<Location> = final_definitions
-                    .into_iter()
-                    .flat_map(|def| match def {
-                        GotoDefinitionResponse::Scalar(loc) => vec![loc],
-                        GotoDefinitionResponse::Array(locs) => locs,
-                        GotoDefinitionResponse::Link(links) => links
-                            .into_iter()
-                            .map(|link| Location::new(link.target_uri, link.target_range))
-                            .collect(),
-                    })
-                    .collect();
-
-                // Sort locations by file path, then line, then character
-                all_locations.sort_by(|a, b| {
-                    let path_a = uri_to_relative_path_string(&a.uri);
-                    let path_b = uri_to_relative_path_string(&b.uri);
-                    path_a
-                        .cmp(&path_b)
-                        .then(a.range.start.line.cmp(&b.range.start.line))
-                        .then(a.range.start.character.cmp(&b.range.start.character))
-                });
-
-                Ok(vec![GotoDefinitionResponse::Array(all_locations)])
+                Ok(vec![Self::sort_and_combine_locations(final_definitions)])
             }
         })
     }
