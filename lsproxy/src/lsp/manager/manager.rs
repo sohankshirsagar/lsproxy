@@ -414,30 +414,19 @@ impl Manager {
                     character: location.range.start.character,
                 };
 
-                let internal_symbol_match = match self
+                // Get the symbol and its references
+                let (_, internal_references) = match self
                     .ast_grep
-                    .get_symbol_match_from_position(
-                        location.uri.path(),
-                        &def_position,
-                    )
+                    .get_symbol_and_references(location.uri.path(), &def_position, true)
                     .await
                 {
-                    Ok(s) => s,
-                    Err(_) => continue,
-                };
-
-                // Get all references within this symbol (with full_scan)
-                let internal_references = match self
-                    .ast_grep
-                    .get_references_contained_in_symbol_match(
-                        location.uri.path(),
-                        &internal_symbol_match,
-                        true,
-                    )
-                    .await
-                {
-                    Ok(refs) => refs,
-                    Err(_) => continue,
+                    Ok(result) => result,
+                    Err(e) => {
+                        return Err(LspManagerError::InternalError(format!(
+                            "Failed to find referenced symbols, {}",
+                            e
+                        )));
+                    }
                 };
 
                 // For each reference, recursively resolve its definition chain
