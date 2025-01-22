@@ -45,7 +45,7 @@ static CALLABLE_TYPES: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy
         let mut python = HashSet::new();
         python.insert("function");
         python.insert("class");
-        m.insert("Python", python);
+        m.insert("python", python);
 
         // Rust
         let mut rust = HashSet::new();
