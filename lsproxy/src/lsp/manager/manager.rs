@@ -360,10 +360,7 @@ impl Manager {
                             )
                             .await
                         {
-                            internal_symbol_match
-                                .rule_id
-                                .to_lowercase()
-                                .contains("function")
+                            internal_symbol_match.is_callable()
                         } else {
                             false
                         }
