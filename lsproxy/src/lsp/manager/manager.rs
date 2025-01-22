@@ -413,8 +413,18 @@ impl Manager {
         original_symbol_match: &'a AstGrepMatch,
         ast_match: &'a AstGrepMatch,
         client: &'a mut Box<dyn LspClient>,
+        depth: Option<u32>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<GotoDefinitionResponse>, LspManagerError>> + 'a>> {
         Box::pin(async move {
+            const MAX_DEPTH: u32 = 10;
+            let current_depth = depth.unwrap_or(0);
+            
+            if current_depth >= MAX_DEPTH {
+                return Err(LspManagerError::RecursionLimitExceeded(
+                    format!("Definition chain exceeded maximum depth of {}", MAX_DEPTH)
+                ));
+            }
+
             let full_path = get_mount_dir().join(file_path);
             let full_path_str = full_path.to_str().unwrap_or_default();
 
@@ -461,6 +471,7 @@ impl Manager {
                             original_symbol_match,
                             &reference,
                             client,
+                            Some(current_depth + 1),
                         )
                         .await?;
                     final_definitions.extend(nested_definitions);
@@ -530,7 +541,7 @@ impl Manager {
 
         for ast_match in references_to_symbols {
             let def_chain = self
-                .resolve_definition_chain(file_path, &symbol_match, &ast_match, &mut *locked_client)
+                .resolve_definition_chain(file_path, &symbol_match, &ast_match, &mut *locked_client, None)
                 .await?;
 
             // Only include definitions that were found and led to external symbols
@@ -613,6 +624,7 @@ pub enum LspManagerError {
     InternalError(String),
     UnsupportedFileType(String),
     NotImplemented(String),
+    RecursionLimitExceeded(String),
 }
 
 impl fmt::Display for LspManagerError {
@@ -630,6 +642,9 @@ impl fmt::Display for LspManagerError {
             }
             LspManagerError::NotImplemented(msg) => {
                 write!(f, "Not implemented: {}", msg)
+            }
+            LspManagerError::RecursionLimitExceeded(msg) => {
+                write!(f, "Recursion limit exceeded: {}", msg)
             }
         }
     }
