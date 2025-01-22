@@ -515,26 +515,13 @@ impl Manager {
             ))
         }
 
-        // First we find all the positions we need to find the definition of
-        let symbol_match = match self
+        // Get the symbol and its references
+        let (symbol_match, references_to_symbols) = match self
             .ast_grep
-            .get_symbol_match_from_position(full_path_str, &position)
+            .get_symbol_and_references(full_path_str, &position, false)
             .await
         {
-            Ok(symbol_match) => symbol_match,
-            Err(e) => {
-                return Err(LspManagerError::InternalError(format!(
-                    "Failed to find referenced symbols, {}",
-                    e
-                )));
-            }
-        };
-        let references_to_symbols = match self
-            .ast_grep
-            .get_references_contained_in_symbol_match(full_path_str, &symbol_match, false)
-            .await
-        {
-            Ok(referenced_symbols) => referenced_symbols,
+            Ok(result) => result,
             Err(e) => {
                 return Err(LspManagerError::InternalError(format!(
                     "Failed to find referenced symbols, {}",
