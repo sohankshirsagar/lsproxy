@@ -419,11 +419,7 @@ impl Manager {
             const MAX_DEPTH: u32 = 10;
             let current_depth = depth.unwrap_or(0);
             
-            debug!("resolve_definition_chain: Depth {}, Processing symbol '{}' in file '{}'", 
-                current_depth, ast_match.get_source_code(), file_path);
-            
             if current_depth >= MAX_DEPTH {
-                debug!("resolve_definition_chain: Max depth reached!");
                 return Err(LspManagerError::RecursionLimitExceeded(
                     format!("Definition chain exceeded maximum depth of {}", MAX_DEPTH)
                 ));
@@ -433,25 +429,16 @@ impl Manager {
             let full_path_str = full_path.to_str().unwrap_or_default();
 
             // Get initial definition
-            debug!("resolve_definition_chain: Getting definition for position {:?}", 
-                lsp_types::Position::from(ast_match));
-            
             let definition = client
                 .text_document_definition(full_path_str, lsp_types::Position::from(ast_match))
                 .await
                 .map_err(|e| {
-                    debug!("resolve_definition_chain: Definition retrieval failed: {}", e);
                     LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
                 })?;
 
-            debug!("resolve_definition_chain: Got definition response: {:?}", definition);
-
             // Base case: Check if any definition is external or callable
             let is_base_case = self.check_base_case(&definition, original_symbol_match).await?;
-            debug!("resolve_definition_chain: Base case check result: {}", is_base_case);
-            
             if is_base_case {
-                debug!("resolve_definition_chain: Found external/callable definition, returning");
                 return Ok(vec![definition]);
             }
 
@@ -459,11 +446,7 @@ impl Manager {
             let mut final_definitions = Vec::new();
             let locations = Self::get_locations_from_definition(&definition);
 
-            debug!("resolve_definition_chain: Processing {} locations", locations.len());
-            
-            for (idx, location) in locations.iter().enumerate() {
-                debug!("resolve_definition_chain: Processing location {} at {:?}", idx, location);
-                
+            for location in locations.iter() {
                 let def_position = Position {
                     line: location.range.start.line,
                     character: location.range.start.character,
@@ -510,9 +493,6 @@ impl Manager {
         file_path: &str,
         position: Position,
     ) -> Result<Vec<(AstGrepMatch, GotoDefinitionResponse)>, LspManagerError> {
-        debug!("find_referenced_symbols: Starting search for position {:?} in file '{}'", 
-            position, file_path);
-        
         let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
@@ -537,20 +517,13 @@ impl Manager {
         }
 
         // Get the symbol and its references
-        debug!("find_referenced_symbols: Getting symbol and references");
-        
         let (symbol_match, references_to_symbols) = match self
             .ast_grep
             .get_symbol_and_references(full_path_str, &position, false)
             .await
         {
-            Ok(result) => {
-                debug!("find_referenced_symbols: Found symbol '{}' with {} references", 
-                    result.0.get_source_code(), result.1.len());
-                result
-            },
+            Ok(result) => result,
             Err(e) => {
-                debug!("find_referenced_symbols: Failed to get symbol and references: {}", e);
                 return Err(LspManagerError::InternalError(format!(
                     "Failed to find referenced symbols, {}",
                     e
@@ -567,16 +540,10 @@ impl Manager {
         let mut locked_client = client.lock().await;
         let mut definitions = Vec::new();
 
-        debug!("find_referenced_symbols: Processing {} references", references_to_symbols.len());
-        
-        for (idx, ast_match) in references_to_symbols.iter().enumerate() {
-            debug!("find_referenced_symbols: Processing reference {} at {:?}", idx, ast_match);
-            
+        for ast_match in references_to_symbols.iter() {
             let def_chain = self
                 .resolve_definition_chain(file_path, &symbol_match, ast_match, &mut *locked_client, None)
                 .await?;
-            
-            debug!("find_referenced_symbols: Got definition chain with {} results", def_chain.len());
 
             // Only include definitions that were found and led to external symbols
             if !def_chain.is_empty() {
