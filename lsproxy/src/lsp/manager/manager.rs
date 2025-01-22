@@ -1,6 +1,6 @@
 use crate::api_types::{get_mount_dir, Identifier, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
-use crate::ast_grep::types::{AstGrepMatch, AstGrepPosition};
+use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     ClangdClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RustAnalyzerClient,
@@ -349,8 +349,7 @@ impl Manager {
             let has_external_definitions = match &definition {
                 GotoDefinitionResponse::Scalar(loc) => {
                     let is_external = !original_symbol_match
-                        .get_context_range()
-                        .contains_position(&AstGrepPosition::from(loc));
+                        .contains_location(loc);
                     if !is_external {
                         // Check if internal symbol is a function
                         if let Ok(internal_symbol_match) = self
@@ -377,8 +376,7 @@ impl Manager {
                     let mut is_external_or_function = false;
                     for loc in locs {
                         let is_external = !original_symbol_match
-                            .get_context_range()
-                            .contains_position(&AstGrepPosition::from(loc));
+                            .contains_location(loc);
                         if is_external {
                             is_external_or_function = true;
                             break;
@@ -409,8 +407,7 @@ impl Manager {
                     let mut is_external_or_function = false;
                     for link in links {
                         let is_external = !original_symbol_match
-                            .get_context_range()
-                            .contains_position(&AstGrepPosition::from(link));
+                            .contains_locationlink(link);
                         if is_external {
                             is_external_or_function = true;
                             break;
