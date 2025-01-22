@@ -13,52 +13,52 @@ static CALLABLE_TYPES: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy
         cpp.insert("function-declaration");
         cpp.insert("function-definition");
         cpp.insert("class");
-        m.insert("cpp", cpp);
+        m.insert("Cpp", cpp);
 
         // Go
         let mut go = HashSet::new();
         go.insert("function");
         go.insert("method");
-        m.insert("go", go);
+        m.insert("Go", go);
 
         // Java
         let mut java = HashSet::new();
         java.insert("method");
         java.insert("class");
-        m.insert("java", java);
+        m.insert("Java", java);
 
         // JavaScript
         let mut javascript = HashSet::new();
         javascript.insert("function");
         javascript.insert("method");
         javascript.insert("class");
-        m.insert("javascript", javascript);
+        m.insert("JavaScript", javascript);
 
         // PHP
         let mut php = HashSet::new();
         php.insert("function");
         php.insert("method");
         php.insert("class");
-        m.insert("php", php);
+        m.insert("Php", php);
 
         // Python
         let mut python = HashSet::new();
         python.insert("function");
         python.insert("class");
-        m.insert("python", python);
+        m.insert("Python", python);
 
         // Rust
         let mut rust = HashSet::new();
         rust.insert("function");
-        m.insert("rust", rust);
+        m.insert("Rust", rust);
 
         // TypeScript/TSX
         let mut typescript = HashSet::new();
         typescript.insert("function");
         typescript.insert("method");
         typescript.insert("class");
-        m.insert("typescript", typescript.clone());
-        m.insert("tsx", typescript);
+        m.insert("TypeScript", typescript.clone());
+        m.insert("Tsx", typescript);
 
         m
     }
