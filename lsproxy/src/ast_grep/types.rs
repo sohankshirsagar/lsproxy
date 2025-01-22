@@ -45,7 +45,7 @@ static CALLABLE_TYPES: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy
         let mut python = HashSet::new();
         python.insert("function");
         python.insert("class");
-        m.insert("python", python);
+        m.insert("Python", python);
 
         // Rust
         let mut rust = HashSet::new();
@@ -130,19 +130,27 @@ impl AstGrepMatch {
     }
 
     pub fn is_callable(&self) -> bool {
+        debug!(
+            "is_callable: checking if '{}' is callable. Language='{}', rule_id='{}'", 
+            self.get_source_code(),
+            self.language,
+            self.rule_id
+        );
+        
         if let Some(types) = CALLABLE_TYPES.get(self.language.as_str()) {
             let is_callable = types.contains(self.rule_id.as_str());
             debug!(
-                "is_callable check: language={}, rule_id={}, result={}", 
-                self.language, 
-                self.rule_id, 
+                "is_callable: found types for language '{}': {:?}, result={}", 
+                self.language,
+                types,
                 is_callable
             );
             is_callable
         } else {
             debug!(
-                "is_callable check: language {} not found in CALLABLE_TYPES", 
-                self.language
+                "is_callable: language '{}' not found in CALLABLE_TYPES map: {:?}", 
+                self.language,
+                CALLABLE_TYPES.keys().collect::<Vec<_>>()
             );
             false
         }
