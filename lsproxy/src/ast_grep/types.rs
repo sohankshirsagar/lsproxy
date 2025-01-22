@@ -41,6 +41,31 @@ impl AstGrepMatch {
     pub fn get_identifier_range(&self) -> AstGrepRange {
         self.meta_variables.single.name.range.clone()
     }
+
+    pub fn contains(&self, other: &AstGrepMatch) -> bool {
+        self.file == other.file
+            && self.get_context_range().start.line <= other.get_context_range().start.line
+            && self.get_context_range().end.line >= other.get_context_range().end.line
+            && (self.get_context_range().start.line != other.get_context_range().start.line || self.get_context_range().start.column <= other.get_context_range().start.column)
+            && (self.get_context_range().end.line != other.get_context_range().end.line || self.get_context_range().end.column >= other.get_context_range().end.column)
+    }
+
+    pub fn contains_location(&self, loc: &lsp_types::Location) -> bool {
+        self.file == loc.uri.path()
+            && self.get_context_range().start.line <= loc.range.start.line
+            && self.get_context_range().end.line >= loc.range.end.line
+            && (self.get_context_range().start.line != loc.range.start.line || self.get_context_range().start.column <= loc.range.start.character)
+            && (self.get_context_range().end.line != loc.range.end.line || self.get_context_range().end.column >= loc.range.end.character)
+
+    }
+
+    pub fn contains_locationlink(&self, link: &lsp_types::LocationLink) -> bool {
+        self.file == link.target_uri.path()
+            && self.get_context_range().start.line <= link.target_range.start.line
+            && self.get_context_range().end.line >= link.target_range.end.line
+            && (self.get_context_range().start.line != link.target_range.start.line || self.get_context_range().start.column <= link.target_range.start.character)
+            && (self.get_context_range().end.line != link.target_range.end.line || self.get_context_range().end.column >= link.target_range.end.character)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -49,15 +74,6 @@ pub struct AstGrepRange {
     pub byte_offset: ByteOffset,
     pub start: AstGrepPosition,
     pub end: AstGrepPosition,
-}
-
-impl AstGrepRange {
-    pub fn contains_position(&self, pos: &AstGrepPosition) -> bool {
-        self.start.line <= pos.line
-            && self.end.line >= pos.line
-            && (self.start.line != pos.line || self.start.column <= pos.column)
-            && (self.end.line != pos.line || self.end.column >= pos.column)
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -114,24 +130,6 @@ pub struct MetaVariable {
 pub struct Label {
     pub text: String,
     pub range: AstGrepRange,
-}
-
-impl From<&lsp_types::LocationLink> for AstGrepPosition {
-    fn from(loc: &lsp_types::LocationLink) -> Self {
-        Self {
-            line: loc.target_range.start.line,
-            column: loc.target_range.start.character,
-        }
-    }
-}
-
-impl From<&lsp_types::Location> for AstGrepPosition {
-    fn from(loc: &lsp_types::Location) -> Self {
-        Self {
-            line: loc.range.start.line,
-            column: loc.range.start.character,
-        }
-    }
 }
 
 impl From<&AstGrepMatch> for lsp_types::Position {

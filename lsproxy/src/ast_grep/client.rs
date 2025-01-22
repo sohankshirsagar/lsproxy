@@ -67,11 +67,10 @@ impl AstGrepClient {
         let contained_references = matches
             .into_iter()
             .filter(|m| {
-                let position_matches = symbol_match
-                    .get_context_range()
-                    .contains_position(&m.get_identifier_range().start);
+                let contained = symbol_match
+                    .contains(m);
 
-                position_matches && (full_scan || m.rule_id != "non-function")
+                contained && (full_scan || m.rule_id != "non-function")
             })
             .collect();
 
