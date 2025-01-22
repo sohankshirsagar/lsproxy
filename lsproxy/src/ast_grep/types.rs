@@ -130,28 +130,9 @@ impl AstGrepMatch {
     }
 
     pub fn is_callable(&self) -> bool {
-        debug!(
-            "is_callable: checking if '{}' is callable. Language='{}', rule_id='{}'", 
-            self.get_source_code(),
-            self.language,
-            self.rule_id
-        );
-        
         if let Some(types) = CALLABLE_TYPES.get(self.language.as_str()) {
-            let is_callable = types.contains(self.rule_id.as_str());
-            debug!(
-                "is_callable: found types for language '{}': {:?}, result={}", 
-                self.language,
-                types,
-                is_callable
-            );
-            is_callable
+            types.contains(self.rule_id.as_str())
         } else {
-            debug!(
-                "is_callable: language '{}' not found in CALLABLE_TYPES map: {:?}", 
-                self.language,
-                CALLABLE_TYPES.keys().collect::<Vec<_>>()
-            );
             false
         }
     }
