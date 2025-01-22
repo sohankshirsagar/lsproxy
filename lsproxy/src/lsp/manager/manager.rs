@@ -1,3 +1,4 @@
+use log::{debug, error, warn};
 use crate::api_types::{get_mount_dir, Identifier, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
@@ -15,7 +16,6 @@ use crate::utils::workspace_documents::{
     JAVA_FILE_PATTERNS, PHP_FILE_PATTERNS, PYTHON_FILE_PATTERNS, RUST_FILE_PATTERNS,
     TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS,
 };
-use log::{debug, error, warn};
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range};
 use notify::RecursiveMode;
 use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
