@@ -324,6 +324,31 @@ impl Manager {
             })
     }
 
+    async fn is_external_or_callable(
+        &self,
+        original_symbol_match: &AstGrepMatch,
+        location: &lsp_types::Location,
+    ) -> bool {
+        let is_external = !original_symbol_match.contains_location(location);
+        if is_external {
+            return true;
+        }
+        
+        // Check if internal symbol is callable
+        if let Ok(internal_symbol_match) = self
+            .ast_grep
+            .get_symbol_match_from_position(
+                location.uri.path(),
+                &location.range.start.into(),
+            )
+            .await
+        {
+            internal_symbol_match.is_callable()
+        } else {
+            false
+        }
+    }
+
     fn resolve_definition_chain<'a>(
         &'a self,
         file_path: &'a str,
@@ -348,79 +373,24 @@ impl Manager {
             // OR if the symbol at this location is a function
             let has_external_definitions = match &definition {
                 GotoDefinitionResponse::Scalar(loc) => {
-                    let is_external = !original_symbol_match
-                        .contains_location(loc);
-                    if !is_external {
-                        // Check if internal symbol is a function
-                        if let Ok(internal_symbol_match) = self
-                            .ast_grep
-                            .get_symbol_match_from_position(
-                                loc.uri.path(),
-                                &loc.range.start.into(),
-                            )
-                            .await
-                        {
-                            internal_symbol_match.is_callable()
-                        } else {
-                            false
-                        }
-                    } else {
-                        true
-                    }
+                    self.is_external_or_callable(original_symbol_match, loc).await
                 }
                 GotoDefinitionResponse::Array(locs) => {
-                    // Handle each location sequentially instead of using any()
-                    let mut is_external_or_function = false;
                     for loc in locs {
-                        let is_external = !original_symbol_match
-                            .contains_location(loc);
-                        if is_external {
-                            is_external_or_function = true;
-                            break;
-                        }
-                        // Check if internal symbol is a function
-                        if let Ok(internal_symbol_match) = self
-                            .ast_grep
-                            .get_symbol_match_from_position(
-                                loc.uri.path(),
-                                &loc.range.start.into(),
-                            )
-                            .await
-                        {
-                            if internal_symbol_match.is_callable() {
-                                is_external_or_function = true;
-                                break;
-                            }
+                        if self.is_external_or_callable(original_symbol_match, loc).await {
+                            return Ok(vec![definition]);
                         }
                     }
-                    is_external_or_function
+                    false
                 }
                 GotoDefinitionResponse::Link(links) => {
-                    // Handle each link sequentially instead of using any()
-                    let mut is_external_or_function = false;
                     for link in links {
-                        let is_external = !original_symbol_match
-                            .contains_locationlink(link);
-                        if is_external {
-                            is_external_or_function = true;
-                            break;
-                        }
-                        // Check if internal symbol is a function
-                        if let Ok(internal_symbol_match) = self
-                            .ast_grep
-                            .get_symbol_match_from_position(
-                                link.target_uri.path(),
-                                &link.target_range.start.into(),
-                            )
-                            .await
-                        {
-                            if internal_symbol_match.is_callable() {
-                                is_external_or_function = true;
-                                break;
-                            }
+                        let location = Location::new(link.target_uri.clone(), link.target_range);
+                        if self.is_external_or_callable(original_symbol_match, &location).await {
+                            return Ok(vec![definition]);
                         }
                     }
-                    is_external_or_function
+                    false
                 }
             };
 
