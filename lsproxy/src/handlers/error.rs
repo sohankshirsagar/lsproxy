@@ -25,9 +25,6 @@ impl IntoHttpResponse for LspManagerError {
             Self::NotImplemented(msg) => HttpResponse::NotImplemented().json(ErrorResponse {
                 error: format!("Not implemented: {}", msg)
             }),
-            Self::RecursionLimitExceeded(msg) => HttpResponse::BadRequest().json(ErrorResponse {
-                error: format!("Recursion limit exceeded: {}", msg)
-            }),
         }
     }
 }
