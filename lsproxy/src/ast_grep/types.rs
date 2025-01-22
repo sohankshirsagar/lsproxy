@@ -56,8 +56,8 @@ static CALLABLE_TYPES: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy
         typescript.insert("function");
         typescript.insert("method");
         typescript.insert("class");
-        m.insert("typescript", typescript);
-        m.insert("tsx", typescript.clone());
+        m.insert("typescript", typescript.clone());
+        m.insert("tsx", typescript);
 
         m
     }
