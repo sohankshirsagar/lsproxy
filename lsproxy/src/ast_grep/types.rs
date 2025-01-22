@@ -8,11 +8,59 @@ use serde::{Deserialize, Serialize};
 lazy_static! {
     static ref CALLABLE_TYPES: HashMap<&'static str, HashSet<&'static str>> = {
         let mut m = HashMap::new();
-        // Empty placeholder maps for each supported language
-        // These will be filled in later with language-specific callable types
-        m.insert("python", HashSet::new());
-        m.insert("typescript", HashSet::new());
-        m.insert("javascript", HashSet::new());
+        
+        // C++
+        let mut cpp = HashSet::new();
+        cpp.insert("function-declaration");
+        cpp.insert("function-definition");
+        cpp.insert("class");
+        m.insert("cpp", cpp);
+
+        // Go
+        let mut go = HashSet::new();
+        go.insert("function");
+        go.insert("method");
+        m.insert("go", go);
+
+        // Java
+        let mut java = HashSet::new();
+        java.insert("method");
+        java.insert("class");
+        m.insert("java", java);
+
+        // JavaScript
+        let mut javascript = HashSet::new();
+        javascript.insert("function");
+        javascript.insert("method");
+        javascript.insert("class");
+        m.insert("javascript", javascript);
+
+        // PHP
+        let mut php = HashSet::new();
+        php.insert("function");
+        php.insert("method");
+        php.insert("class");
+        m.insert("php", php);
+
+        // Python
+        let mut python = HashSet::new();
+        python.insert("function");
+        python.insert("class");
+        m.insert("python", python);
+
+        // Rust
+        let mut rust = HashSet::new();
+        rust.insert("function");
+        m.insert("rust", rust);
+
+        // TypeScript/TSX
+        let mut typescript = HashSet::new();
+        typescript.insert("function");
+        typescript.insert("method");
+        typescript.insert("class");
+        m.insert("typescript", typescript);
+        m.insert("tsx", typescript.clone());
+
         m
     };
 }
