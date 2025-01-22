@@ -324,169 +324,6 @@ impl Manager {
             })
     }
 
-    async fn is_external_or_callable(
-        &self,
-        original_symbol_match: &AstGrepMatch,
-        location: &lsp_types::Location,
-    ) -> bool {
-        let is_external = !original_symbol_match.contains_location(location);
-        if is_external {
-            return true;
-        }
-        
-        // Check if internal symbol is callable
-        if let Ok(internal_symbol_match) = self
-            .ast_grep
-            .get_symbol_match_from_position(
-                location.uri.path(),
-                &location.range.start.into(),
-            )
-            .await
-        {
-            internal_symbol_match.is_callable()
-        } else {
-            false
-        }
-    }
-
-    async fn check_base_case(
-        &self,
-        definition: &GotoDefinitionResponse,
-        original_symbol_match: &AstGrepMatch,
-    ) -> Result<bool, LspManagerError> {
-        match definition {
-            GotoDefinitionResponse::Scalar(loc) => {
-                Ok(self.is_external_or_callable(original_symbol_match, loc).await)
-            }
-            GotoDefinitionResponse::Array(locs) => {
-                for loc in locs {
-                    if self.is_external_or_callable(original_symbol_match, loc).await {
-                        return Ok(true);
-                    }
-                }
-                Ok(false)
-            }
-            GotoDefinitionResponse::Link(links) => {
-                for link in links {
-                    let location = Location::new(link.target_uri.clone(), link.target_range);
-                    if self.is_external_or_callable(original_symbol_match, &location).await {
-                        return Ok(true);
-                    }
-                }
-                Ok(false)
-            }
-        }
-    }
-
-    fn get_locations_from_definition(definition: &GotoDefinitionResponse) -> Vec<Location> {
-        match definition {
-            GotoDefinitionResponse::Scalar(loc) => vec![loc.clone()],
-            GotoDefinitionResponse::Array(locs) => locs.clone(),
-            GotoDefinitionResponse::Link(links) => links
-                .iter()
-                .map(|l| Location::new(l.target_uri.clone(), l.target_range))
-                .collect(),
-        }
-    }
-
-    fn sort_and_combine_locations(definitions: Vec<GotoDefinitionResponse>) -> GotoDefinitionResponse {
-        let mut all_locations: Vec<Location> = definitions
-            .into_iter()
-            .flat_map(|def| Self::get_locations_from_definition(&def))
-            .collect();
-
-        all_locations.sort_by(|a, b| {
-            let path_a = uri_to_relative_path_string(&a.uri);
-            let path_b = uri_to_relative_path_string(&b.uri);
-            path_a
-                .cmp(&path_b)
-                .then(a.range.start.line.cmp(&b.range.start.line))
-                .then(a.range.start.character.cmp(&b.range.start.character))
-        });
-
-        GotoDefinitionResponse::Array(all_locations)
-    }
-
-    fn resolve_definition_chain<'a>(
-        &'a self,
-        file_path: &'a str,
-        original_symbol_match: &'a AstGrepMatch,
-        ast_match: &'a AstGrepMatch,
-        client: &'a mut Box<dyn LspClient>,
-        depth: Option<u32>,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<GotoDefinitionResponse>, LspManagerError>> + 'a>> {
-        Box::pin(async move {
-            const MAX_DEPTH: u32 = 10;
-            let current_depth = depth.unwrap_or(0);
-            
-            if current_depth >= MAX_DEPTH {
-                return Err(LspManagerError::RecursionLimitExceeded(
-                    format!("Definition chain exceeded maximum depth of {}", MAX_DEPTH)
-                ));
-            }
-
-            let full_path = get_mount_dir().join(file_path);
-            let full_path_str = full_path.to_str().unwrap_or_default();
-
-            // Get initial definition
-            let definition = client
-                .text_document_definition(full_path_str, lsp_types::Position::from(ast_match))
-                .await
-                .map_err(|e| {
-                    LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
-                })?;
-
-            // Base case: Check if any definition is external or callable
-            let is_base_case = self.check_base_case(&definition, original_symbol_match).await?;
-            if is_base_case {
-                return Ok(vec![definition]);
-            }
-
-            // Recursive case: Look through internal references
-            let mut final_definitions = Vec::new();
-            let locations = Self::get_locations_from_definition(&definition);
-
-            for location in locations.iter() {
-                let def_position = Position {
-                    line: location.range.start.line,
-                    character: location.range.start.character,
-                };
-
-                // Get the symbol and its references
-                let (_, internal_references) = self
-                    .ast_grep
-                    .get_symbol_and_references(location.uri.path(), &def_position, true)
-                    .await
-                    .map_err(|e| {
-                        LspManagerError::InternalError(format!(
-                            "Failed to find referenced symbols: {}",
-                            e
-                        ))
-                    })?;
-
-                // Recursively resolve each reference
-                for reference in internal_references {
-                    let nested_definitions = self
-                        .resolve_definition_chain(
-                            &uri_to_relative_path_string(&location.uri),
-                            original_symbol_match,
-                            &reference,
-                            client,
-                            Some(current_depth + 1),
-                        )
-                        .await?;
-                    final_definitions.extend(nested_definitions);
-                }
-            }
-
-            // Return empty if no external definitions found
-            if final_definitions.is_empty() {
-                Ok(vec![])
-            } else {
-                Ok(vec![Self::sort_and_combine_locations(final_definitions)])
-            }
-        })
-    }
 
     pub async fn find_referenced_symbols(
         &self,
@@ -517,7 +354,7 @@ impl Manager {
         }
 
         // Get the symbol and its references
-        let (symbol_match, references_to_symbols) = match self
+        let (_, references_to_symbols) = match self
             .ast_grep
             .get_symbol_and_references(full_path_str, &position, false)
             .await
@@ -531,28 +368,22 @@ impl Manager {
             }
         };
 
-        let lsp_type = detect_language(full_path_str).map_err(|e| {
-            LspManagerError::InternalError(format!("Language detection failed: {}", e))
-        })?;
         let client = self
             .get_client(lsp_type)
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
         let mut definitions = Vec::new();
 
+        // Get direct definitions for each reference
         for ast_match in references_to_symbols.iter() {
-            let def_chain = self
-                .resolve_definition_chain(file_path, &symbol_match, ast_match, &mut *locked_client, None)
-                .await?;
-
-            // Only include definitions that were found and led to external symbols
-            if !def_chain.is_empty() {
-                for def in def_chain {
-                    definitions.push((ast_match.clone(), def));
-                }
-            } else {
-                definitions.push((ast_match.clone(), GotoDefinitionResponse::Array(vec![])));
-            }
+            let definition = locked_client
+                .text_document_definition(full_path_str, lsp_types::Position::from(ast_match))
+                .await
+                .map_err(|e| {
+                    LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
+                })?;
+            
+            definitions.push((ast_match.clone(), definition));
         }
 
         Ok(definitions)
@@ -625,7 +456,6 @@ pub enum LspManagerError {
     InternalError(String),
     UnsupportedFileType(String),
     NotImplemented(String),
-    RecursionLimitExceeded(String),
 }
 
 impl fmt::Display for LspManagerError {
@@ -643,9 +473,6 @@ impl fmt::Display for LspManagerError {
             }
             LspManagerError::NotImplemented(msg) => {
                 write!(f, "Not implemented: {}", msg)
-            }
-            LspManagerError::RecursionLimitExceeded(msg) => {
-                write!(f, "Recursion limit exceeded: {}", msg)
             }
         }
     }
