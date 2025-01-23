@@ -19,14 +19,6 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
     )
 )]
 pub async fn health_check(data: Data<AppState>) -> HttpResponse {
-    let manager = match data.manager.lock() {
-        Ok(manager) => manager,
-        Err(e) => {
-            return HttpResponse::InternalServerError()
-                .json(format!("Failed to lock manager: {}", e))
-        }
-    };
-
     let mut languages = HashMap::new();
     for lang in [
         SupportedLanguages::Python,
@@ -37,7 +29,7 @@ pub async fn health_check(data: Data<AppState>) -> HttpResponse {
         SupportedLanguages::Golang,
         SupportedLanguages::PHP,
     ] {
-        languages.insert(lang, manager.get_client(lang).is_some());
+        languages.insert(lang, data.manager.get_client(lang).is_some());
     }
 
     HttpResponse::Ok().json(HealthResponse {

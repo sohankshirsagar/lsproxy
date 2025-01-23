@@ -46,25 +46,10 @@ impl AstGrepMatch {
         self.file == other.file
             && self.get_context_range().start.line <= other.get_context_range().start.line
             && self.get_context_range().end.line >= other.get_context_range().end.line
-            && (self.get_context_range().start.line != other.get_context_range().start.line || self.get_context_range().start.column <= other.get_context_range().start.column)
-            && (self.get_context_range().end.line != other.get_context_range().end.line || self.get_context_range().end.column >= other.get_context_range().end.column)
-    }
-
-    pub fn contains_location(&self, loc: &lsp_types::Location) -> bool {
-        self.file == loc.uri.path()
-            && self.get_context_range().start.line <= loc.range.start.line
-            && self.get_context_range().end.line >= loc.range.end.line
-            && (self.get_context_range().start.line != loc.range.start.line || self.get_context_range().start.column <= loc.range.start.character)
-            && (self.get_context_range().end.line != loc.range.end.line || self.get_context_range().end.column >= loc.range.end.character)
-
-    }
-
-    pub fn contains_locationlink(&self, link: &lsp_types::LocationLink) -> bool {
-        self.file == link.target_uri.path()
-            && self.get_context_range().start.line <= link.target_range.start.line
-            && self.get_context_range().end.line >= link.target_range.end.line
-            && (self.get_context_range().start.line != link.target_range.start.line || self.get_context_range().start.column <= link.target_range.start.character)
-            && (self.get_context_range().end.line != link.target_range.end.line || self.get_context_range().end.column >= link.target_range.end.character)
+            && (self.get_context_range().start.line != other.get_context_range().start.line
+                || self.get_context_range().start.column <= other.get_context_range().start.column)
+            && (self.get_context_range().end.line != other.get_context_range().end.line
+                || self.get_context_range().end.column >= other.get_context_range().end.column)
     }
 }
 

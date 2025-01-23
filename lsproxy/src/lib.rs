@@ -12,7 +12,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -25,8 +25,8 @@ mod utils;
 use crate::api_types::{
     get_mount_dir, set_global_mount_dir, CodeContext, DefinitionResponse, ErrorResponse,
     FilePosition, FileRange, FileSymbolsRequest, GetDefinitionRequest, GetReferencedSymbolsRequest,
-    GetReferencesRequest, HealthResponse, Position, ReferencedSymbolsResponse, ReferencesResponse,
-    SupportedLanguages, Symbol, SymbolResponse, ReferenceWithSymbolDefinitions
+    GetReferencesRequest, HealthResponse, Position, ReferenceWithSymbolDefinitions,
+    ReferencedSymbolsResponse, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
 };
 use crate::handlers::{
     definitions_in_file, find_definition, find_referenced_symbols, find_references, health_check,
@@ -96,7 +96,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 pub struct ApiDoc;
 
 pub struct AppState {
-    manager: Arc<Mutex<Manager>>,
+    manager: Arc<Manager>,
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
@@ -122,12 +122,10 @@ pub async fn initialize_app_state_with_mount_dir(
     let mount_dir_path = get_mount_dir();
     let mount_dir = mount_dir_path.to_string_lossy();
 
-    let manager = Arc::new(Mutex::new(Manager::new(&mount_dir).await?));
-    manager
-        .lock()
-        .unwrap()
-        .start_langservers(&mount_dir)
-        .await?;
+    // Create and initialize manager before wrapping in Arc
+    let mut manager = Manager::new(&mount_dir).await?;
+    manager.start_langservers(&mount_dir).await?;
+    let manager = Arc::new(manager);
 
     Ok(Data::new(AppState { manager }))
 }

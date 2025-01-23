@@ -22,9 +22,7 @@ use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
-use std::future::Future;
 use std::path::Path;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast::{channel, Sender};
@@ -324,215 +322,6 @@ impl Manager {
             })
     }
 
-    fn resolve_definition_chain<'a>(
-        &'a self,
-        file_path: &'a str,
-        original_symbol_match: &'a AstGrepMatch,
-        ast_match: &'a AstGrepMatch,
-        client: &'a mut Box<dyn LspClient>,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<GotoDefinitionResponse>, LspManagerError>> + 'a>>
-    {
-        Box::pin(async move {
-            let full_path = get_mount_dir().join(file_path);
-            let full_path_str = full_path.to_str().unwrap_or_default();
-
-            // Get initial definition
-            let definition = client
-                .text_document_definition(full_path_str, lsp_types::Position::from(ast_match))
-                .await
-                .map_err(|e| {
-                    LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
-                })?;
-
-            // Check if any definition locations are outside the original symbol's scope
-            // OR if the symbol at this location is a function
-            let has_external_definitions = match &definition {
-                GotoDefinitionResponse::Scalar(loc) => {
-                    let is_external = !original_symbol_match
-                        .contains_location(loc);
-                    if !is_external {
-                        // Check if internal symbol is a function
-                        if let Ok(internal_symbol_match) = self
-                            .ast_grep
-                            .get_symbol_match_from_position(
-                                loc.uri.path(),
-                                &loc.range.start.into(),
-                            )
-                            .await
-                        {
-                            internal_symbol_match
-                                .rule_id
-                                .to_lowercase()
-                                .contains("function")
-                        } else {
-                            false
-                        }
-                    } else {
-                        true
-                    }
-                }
-                GotoDefinitionResponse::Array(locs) => {
-                    // Handle each location sequentially instead of using any()
-                    let mut is_external_or_function = false;
-                    for loc in locs {
-                        let is_external = !original_symbol_match
-                            .contains_location(loc);
-                        if is_external {
-                            is_external_or_function = true;
-                            break;
-                        }
-                        // Check if internal symbol is a function
-                        if let Ok(internal_symbol_match) = self
-                            .ast_grep
-                            .get_symbol_match_from_position(
-                                loc.uri.path(),
-                                &loc.range.start.into(),
-                            )
-                            .await
-                        {
-                            if internal_symbol_match
-                                .rule_id
-                                .to_lowercase()
-                                .contains("function")
-                            {
-                                is_external_or_function = true;
-                                break;
-                            }
-                        }
-                    }
-                    is_external_or_function
-                }
-                GotoDefinitionResponse::Link(links) => {
-                    // Handle each link sequentially instead of using any()
-                    let mut is_external_or_function = false;
-                    for link in links {
-                        let is_external = !original_symbol_match
-                            .contains_locationlink(link);
-                        if is_external {
-                            is_external_or_function = true;
-                            break;
-                        }
-                        // Check if internal symbol is a function
-                        if let Ok(internal_symbol_match) = self
-                            .ast_grep
-                            .get_symbol_match_from_position(
-                                link.target_uri.path(),
-                                &link.target_range.start.into(),
-                            )
-                            .await
-                        {
-                            if internal_symbol_match
-                                .rule_id
-                                .to_lowercase()
-                                .contains("function")
-                            {
-                                is_external_or_function = true;
-                                break;
-                            }
-                        }
-                    }
-                    is_external_or_function
-                }
-            };
-
-            if has_external_definitions {
-                // Found external definitions, return them
-                return Ok(vec![definition]);
-            }
-
-            // All definitions are internal, need to look deeper
-            let mut final_definitions = Vec::new();
-
-            // For each internal definition location
-            let locations = match &definition {
-                GotoDefinitionResponse::Scalar(loc) => vec![loc.clone()],
-                GotoDefinitionResponse::Array(locs) => locs.clone(),
-                GotoDefinitionResponse::Link(links) => links
-                    .iter()
-                    .map(|l| Location::new(l.target_uri.clone(), l.target_range))
-                    .collect(),
-            };
-
-            for location in locations {
-                // Get the symbol at this definition
-                let def_position = Position {
-                    line: location.range.start.line,
-                    character: location.range.start.character,
-                };
-
-                let internal_symbol_match = match self
-                    .ast_grep
-                    .get_symbol_match_from_position(
-                        location.uri.path(),
-                        &def_position,
-                    )
-                    .await
-                {
-                    Ok(s) => s,
-                    Err(_) => continue,
-                };
-
-                // Get all references within this symbol (with full_scan)
-                let internal_references = match self
-                    .ast_grep
-                    .get_references_contained_in_symbol_match(
-                        location.uri.path(),
-                        &internal_symbol_match,
-                        true,
-                    )
-                    .await
-                {
-                    Ok(refs) => refs,
-                    Err(_) => continue,
-                };
-
-                // For each reference, recursively resolve its definition chain
-                for reference in internal_references {
-                    let nested_definitions = self
-                        .resolve_definition_chain(
-                            &uri_to_relative_path_string(&location.uri),
-                            &original_symbol_match,
-                            &reference,
-                            client,
-                        )
-                        .await?;
-
-                    final_definitions.extend(nested_definitions);
-                }
-            }
-
-            if final_definitions.is_empty() {
-                // If we found no external definitions through the chain, remove this branch
-                Ok(vec![])
-            } else {
-                // Combine all locations from different GotoDefinitionResponses into a single Array variant
-                let mut all_locations: Vec<Location> = final_definitions
-                    .into_iter()
-                    .flat_map(|def| match def {
-                        GotoDefinitionResponse::Scalar(loc) => vec![loc],
-                        GotoDefinitionResponse::Array(locs) => locs,
-                        GotoDefinitionResponse::Link(links) => links
-                            .into_iter()
-                            .map(|link| Location::new(link.target_uri, link.target_range))
-                            .collect(),
-                    })
-                    .collect();
-
-                // Sort locations by file path, then line, then character
-                all_locations.sort_by(|a, b| {
-                    let path_a = uri_to_relative_path_string(&a.uri);
-                    let path_b = uri_to_relative_path_string(&b.uri);
-                    path_a
-                        .cmp(&path_b)
-                        .then(a.range.start.line.cmp(&b.range.start.line))
-                        .then(a.range.start.character.cmp(&b.range.start.character))
-                });
-
-                Ok(vec![GotoDefinitionResponse::Array(all_locations)])
-            }
-        })
-    }
-
     pub async fn find_referenced_symbols(
         &self,
         file_path: &str,
@@ -557,30 +346,18 @@ impl Manager {
         match lsp_type {
             SupportedLanguages::Python | SupportedLanguages::TypeScriptJavaScript => (),
             _ => return Err(LspManagerError::NotImplemented(
-                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript".to_string()
-            ))
+                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript"
+                    .to_string(),
+            )),
         }
 
-        // First we find all the positions we need to find the definition of
-        let symbol_match = match self
+        // Get the symbol and its references
+        let (_, references_to_symbols) = match self
             .ast_grep
-            .get_symbol_match_from_position(full_path_str, &position)
+            .get_symbol_and_references(full_path_str, &position, false)
             .await
         {
-            Ok(symbol_match) => symbol_match,
-            Err(e) => {
-                return Err(LspManagerError::InternalError(format!(
-                    "Failed to find referenced symbols, {}",
-                    e
-                )));
-            }
-        };
-        let references_to_symbols = match self
-            .ast_grep
-            .get_references_contained_in_symbol_match(full_path_str, &symbol_match, false)
-            .await
-        {
-            Ok(referenced_symbols) => referenced_symbols,
+            Ok(result) => result,
             Err(e) => {
                 return Err(LspManagerError::InternalError(format!(
                     "Failed to find referenced symbols, {}",
@@ -589,28 +366,22 @@ impl Manager {
             }
         };
 
-        let lsp_type = detect_language(full_path_str).map_err(|e| {
-            LspManagerError::InternalError(format!("Language detection failed: {}", e))
-        })?;
         let client = self
             .get_client(lsp_type)
             .ok_or(LspManagerError::LspClientNotFound(lsp_type))?;
         let mut locked_client = client.lock().await;
         let mut definitions = Vec::new();
 
-        for ast_match in references_to_symbols {
-            let def_chain = self
-                .resolve_definition_chain(file_path, &symbol_match, &ast_match, &mut *locked_client)
-                .await?;
+        // Get direct definitions for each reference
+        for ast_match in references_to_symbols.iter() {
+            let definition = locked_client
+                .text_document_definition(full_path_str, lsp_types::Position::from(ast_match))
+                .await
+                .map_err(|e| {
+                    LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
+                })?;
 
-            // Only include definitions that were found and led to external symbols
-            if !def_chain.is_empty() {
-                for def in def_chain {
-                    definitions.push((ast_match.clone(), def));
-                }
-            } else {
-                definitions.push((ast_match.clone(), GotoDefinitionResponse::Array(vec![])));
-            }
+            definitions.push((ast_match.clone(), definition));
         }
 
         Ok(definitions)
@@ -706,4 +477,3 @@ impl fmt::Display for LspManagerError {
 }
 
 impl std::error::Error for LspManagerError {}
-

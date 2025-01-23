@@ -49,9 +49,8 @@ pub async fn find_referenced_symbols(
         info.identifier_position.position.character
     );
 
-    let manager = data.manager.lock().unwrap();
-
-    let referenecd_ast_symbols = match manager
+    let referenecd_ast_symbols = match data
+        .manager
         .find_referenced_symbols(
             &info.identifier_position.path,
             LspPosition {
@@ -108,7 +107,7 @@ pub async fn find_referenced_symbols(
             .collect();
 
     // First get the workspace files
-    let files = match manager.list_files().await {
+    let files = match data.manager.list_files().await {
         Ok(files) => files,
         Err(e) => {
             error!("Failed to list workspace files: {:?}", e);
@@ -132,7 +131,8 @@ pub async fn find_referenced_symbols(
             if has_internal_definition {
                 let mut symbols_with_definitions = Vec::new();
                 for def in definitions.iter().filter(|def| files.contains(&def.path)) {
-                    if let Ok(symbol) = manager
+                    if let Ok(symbol) = data
+                        .manager
                         .get_symbol_from_position(
                             &def.path,
                             &lsp_types::Position {
@@ -233,7 +233,12 @@ mod test {
         sleep(Duration::from_secs(5)).await;
 
         let response = find_referenced_symbols(state, mock_request).await;
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Response: {:?}",
+            response
+        );
         let content_type = response
             .headers()
             .get("content-type")
@@ -624,7 +629,38 @@ mod test {
             not_found: vec![],
         };
 
-        assert_eq!(referenced_symbols_response, expected_response);
+        // Sort definitions for each reference before comparing
+        let mut sorted_response = referenced_symbols_response;
+        for symbol in sorted_response.workspace_symbols.iter_mut() {
+            symbol.definitions.sort_by(|a, b| {
+                let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+                if path_cmp.is_eq() {
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
+                } else {
+                    path_cmp
+                }
+            });
+        }
+
+        let mut sorted_expected = expected_response;
+        for symbol in sorted_expected.workspace_symbols.iter_mut() {
+            symbol.definitions.sort_by(|a, b| {
+                let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+                if path_cmp.is_eq() {
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
+                } else {
+                    path_cmp
+                }
+            });
+        }
+
+        assert_eq!(sorted_response, sorted_expected);
         Ok(())
     }
 
@@ -646,7 +682,12 @@ mod test {
         sleep(Duration::from_secs(5)).await;
 
         let response = find_referenced_symbols(state, mock_request).await;
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Response: {:?}",
+            response
+        );
         let content_type = response
             .headers()
             .get("content-type")
@@ -758,68 +799,68 @@ mod test {
                     },
                     definitions: vec![
                         Symbol {
-                            name: String::from("_barrier_cost"),
-                            kind: String::from("function"),
+                            name: String::from("cost_function"),
+                            kind: String::from("local-variable"),
                             identifier_position: FilePosition {
                                 path: String::from("graph.py"),
                                 position: Position {
-                                    line: 26,
-                                    character: 8,
+                                    line: 59,
+                                    character: 12,
                                 },
                             },
                             range: FileRange {
                                 path: String::from("graph.py"),
                                 start: Position {
-                                    line: 26,
+                                    line: 59,
                                     character: 0,
                                 },
                                 end: Position {
-                                    line: 31,
-                                    character: 16,
+                                    line: 59,
+                                    character: 47,
                                 },
                             },
                         },
                         Symbol {
-                            name: String::from("_distance_cost"),
-                            kind: String::from("function"),
+                            name: String::from("cost_function"),
+                            kind: String::from("local-variable"),
                             identifier_position: FilePosition {
                                 path: String::from("graph.py"),
                                 position: Position {
-                                    line: 33,
-                                    character: 8,
+                                    line: 61,
+                                    character: 12,
                                 },
                             },
                             range: FileRange {
                                 path: String::from("graph.py"),
                                 start: Position {
-                                    line: 33,
+                                    line: 61,
                                     character: 0,
                                 },
                                 end: Position {
-                                    line: 35,
-                                    character: 50,
+                                    line: 61,
+                                    character: 47,
                                 },
                             },
                         },
                         Symbol {
-                            name: String::from("_combined_cost"),
-                            kind: String::from("function"),
+                            name: String::from("cost_function"),
+                            kind: String::from("local-variable"),
                             identifier_position: FilePosition {
                                 path: String::from("graph.py"),
                                 position: Position {
-                                    line: 37,
-                                    character: 8,
+                                    line: 57,
+                                    character: 12,
                                 },
                             },
                             range: FileRange {
                                 path: String::from("graph.py"),
                                 start: Position {
-                                    line: 37,
+                                    line: 57,
                                     character: 0,
                                 },
                                 end: Position {
-                                    line: 41,
-                                    character: 43,
+                                    line: 57,
+                                    character: 46,
                                 },
                             },
                         },
@@ -1083,7 +1124,38 @@ mod test {
             not_found: vec![],
         };
 
-        assert_eq!(referenced_symbols_response, expected_response);
+        // Sort definitions for each reference before comparing
+        let mut sorted_response = referenced_symbols_response;
+        for symbol in sorted_response.workspace_symbols.iter_mut() {
+            symbol.definitions.sort_by(|a, b| {
+                let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+                if path_cmp.is_eq() {
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
+                } else {
+                    path_cmp
+                }
+            });
+        }
+
+        let mut sorted_expected = expected_response;
+        for symbol in sorted_expected.workspace_symbols.iter_mut() {
+            symbol.definitions.sort_by(|a, b| {
+                let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+                if path_cmp.is_eq() {
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
+                } else {
+                    path_cmp
+                }
+            });
+        }
+
+        assert_eq!(sorted_response, sorted_expected);
         Ok(())
     }
 }

@@ -3,11 +3,11 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{Location, Position as LspPosition};
 
-use crate::handlers::error::IntoHttpResponse;
 use crate::api_types::{
     CodeContext, ErrorResponse, FilePosition, FileRange, GetReferencesRequest, Position,
     ReferencesResponse,
 };
+use crate::handlers::error::IntoHttpResponse;
 use crate::handlers::utils;
 use crate::lsp::manager::{LspManagerError, Manager};
 use crate::utils::file_utils::uri_to_relative_path_string;
@@ -54,17 +54,8 @@ pub async fn find_references(
         info.identifier_position.position.character
     );
 
-    let manager = match data.manager.lock() {
-        Ok(guard) => guard,
-        Err(e) => {
-            error!("Failed to acquire manager lock: {}", e);
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "Internal server error: failed to acquire lock".to_string(),
-            });
-        }
-    };
-
-    let file_identifiers = match manager
+    let file_identifiers = match data
+        .manager
         .get_file_identifiers(&info.identifier_position.path)
         .await
     {
@@ -89,9 +80,10 @@ pub async fn find_references(
             }
         };
 
-    let references_result = find_and_filter_references(&manager, &info.identifier_position).await;
+    let references_result =
+        find_and_filter_references(&data.manager, &info.identifier_position).await;
     let code_contexts_result = get_code_contexts(
-        &manager,
+        &data.manager,
         &references_result,
         info.include_code_context_lines,
     )
