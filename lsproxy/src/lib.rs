@@ -96,7 +96,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 pub struct ApiDoc;
 
 pub struct AppState {
-    manager: Arc<Mutex<Manager>>,
+    manager: Arc<Manager>,
 }
 
 pub async fn initialize_app_state() -> Result<Data<AppState>, Box<dyn std::error::Error>> {
@@ -122,10 +122,8 @@ pub async fn initialize_app_state_with_mount_dir(
     let mount_dir_path = get_mount_dir();
     let mount_dir = mount_dir_path.to_string_lossy();
 
-    let manager = Arc::new(Mutex::new(Manager::new(&mount_dir).await?));
+    let manager = Arc::new(Manager::new(&mount_dir).await?);
     manager
-        .lock()
-        .unwrap()
         .start_langservers(&mount_dir)
         .await?;
 
