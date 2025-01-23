@@ -622,7 +622,32 @@ mod test {
             not_found: vec![],
         };
 
-        assert_eq!(referenced_symbols_response, expected_response);
+        // Sort definitions for each reference before comparing
+        let mut sorted_response = referenced_symbols_response;
+        for symbol in sorted_response.workspace_symbols.iter_mut() {
+            symbol.definitions.sort_by(|a, b| {
+                let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+                if path_cmp.is_eq() {
+                    a.identifier_position.position.line.cmp(&b.identifier_position.position.line)
+                } else {
+                    path_cmp
+                }
+            });
+        }
+
+        let mut sorted_expected = expected_response;
+        for symbol in sorted_expected.workspace_symbols.iter_mut() {
+            symbol.definitions.sort_by(|a, b| {
+                let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+                if path_cmp.is_eq() {
+                    a.identifier_position.position.line.cmp(&b.identifier_position.position.line)
+                } else {
+                    path_cmp
+                }
+            });
+        }
+
+        assert_eq!(sorted_response, sorted_expected);
         Ok(())
     }
 
