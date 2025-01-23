@@ -49,16 +49,7 @@ pub async fn find_definition(
         info.position.path, info.position.position.line, info.position.position.character
     );
 
-    let manager = match data.manager.lock() {
-        Ok(manager) => manager,
-        Err(e) => {
-            error!("Failed to lock manager: {:?}", e);
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("Failed to lock manager: {}", e),
-            });
-        }
-    };
-    let file_identifiers = match manager.get_file_identifiers(&info.position.path).await {
+    let file_identifiers = match data.manager.get_file_identifiers(&info.position.path).await {
         Ok(identifiers) => identifiers,
         Err(e) => {
             error!("Failed to get file identifiers: {:?}", e);
@@ -78,7 +69,7 @@ pub async fn find_definition(
             }
         };
 
-    let definitions = match manager
+    let definitions = match data.manager
         .find_definition(
             &info.position.path,
             LspPosition {
@@ -95,7 +86,7 @@ pub async fn find_definition(
     };
 
     let source_code_context = if info.include_source_code {
-        match fetch_definition_source_code(&manager, &definitions).await {
+        match fetch_definition_source_code(&data.manager, &definitions).await {
             Ok(context) => Some(context),
             Err(e) => {
                 error!("Failed to fetch definition source code: {:?}", e);

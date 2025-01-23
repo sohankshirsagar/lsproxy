@@ -30,17 +30,6 @@ pub struct ReadSourceCodeResponse {
 pub async fn read_source_code(data: Data<AppState>, info: Json<FileRange>) -> HttpResponse {
     info!("Reading source code from file: {}", info.path);
 
-    let manager = data
-        .manager
-        .lock()
-        .map_err(|e| {
-            error!("Failed to lock manager: {:?}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("Failed to lock manager: {}", e),
-            })
-        })
-        .unwrap();
-
     let lsp_range = Some(Range::new(
         LspPosition {
             line: info.start.line,
@@ -52,7 +41,7 @@ pub async fn read_source_code(data: Data<AppState>, info: Json<FileRange>) -> Ht
         },
     ));
 
-    match manager.read_source_code(&info.path, lsp_range).await {
+    match data.manager.read_source_code(&info.path, lsp_range).await {
         Ok(source_code) => HttpResponse::Ok().json(ReadSourceCodeResponse { source_code }),
         Err(e) => {
             error!("Failed to read source code: {:?}", e);

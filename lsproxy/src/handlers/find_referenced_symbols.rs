@@ -49,9 +49,7 @@ pub async fn find_referenced_symbols(
         info.identifier_position.position.character
     );
 
-    let manager = data.manager.lock().unwrap();
-
-    let referenecd_ast_symbols = match manager
+    let referenecd_ast_symbols = match data.manager
         .find_referenced_symbols(
             &info.identifier_position.path,
             LspPosition {
@@ -108,7 +106,7 @@ pub async fn find_referenced_symbols(
             .collect();
 
     // First get the workspace files
-    let files = match manager.list_files().await {
+    let files = match data.manager.list_files().await {
         Ok(files) => files,
         Err(e) => {
             error!("Failed to list workspace files: {:?}", e);
@@ -132,7 +130,7 @@ pub async fn find_referenced_symbols(
             if has_internal_definition {
                 let mut symbols_with_definitions = Vec::new();
                 for def in definitions.iter().filter(|def| files.contains(&def.path)) {
-                    if let Ok(symbol) = manager
+                    if let Ok(symbol) = data.manager
                         .get_symbol_from_position(
                             &def.path,
                             &lsp_types::Position {
