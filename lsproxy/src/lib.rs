@@ -122,10 +122,10 @@ pub async fn initialize_app_state_with_mount_dir(
     let mount_dir_path = get_mount_dir();
     let mount_dir = mount_dir_path.to_string_lossy();
 
-    let manager = Arc::new(Manager::new(&mount_dir).await?);
-    manager
-        .start_langservers(&mount_dir)
-        .await?;
+    // Create and initialize manager before wrapping in Arc
+    let mut manager = Manager::new(&mount_dir).await?;
+    manager.start_langservers(&mount_dir).await?;
+    let manager = Arc::new(manager);
 
     Ok(Data::new(AppState { manager }))
 }
