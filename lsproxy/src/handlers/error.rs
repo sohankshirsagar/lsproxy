@@ -11,19 +11,21 @@ impl IntoHttpResponse for LspManagerError {
         log::error!("LSP error: {}", self);
         match self {
             Self::FileNotFound(path) => HttpResponse::BadRequest().json(ErrorResponse {
-                error: format!("File not found: {}", path)
+                error: format!("File not found: {}", path),
             }),
-            Self::LspClientNotFound(lang) => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("LSP client not found for {:?}", lang)
-            }),
+            Self::LspClientNotFound(lang) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: format!("LSP client not found for {:?}", lang),
+                })
+            }
             Self::InternalError(msg) => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: format!("Internal error: {}", msg)
+                error: format!("Internal error: {}", msg),
             }),
             Self::UnsupportedFileType(path) => HttpResponse::BadRequest().json(ErrorResponse {
-                error: format!("Unsupported file type: {}", path)
+                error: format!("Unsupported file type: {}", path),
             }),
             Self::NotImplemented(msg) => HttpResponse::NotImplemented().json(ErrorResponse {
-                error: format!("Not implemented: {}", msg)
+                error: format!("Not implemented: {}", msg),
             }),
         }
     }

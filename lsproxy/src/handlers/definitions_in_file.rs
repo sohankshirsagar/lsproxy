@@ -1,6 +1,6 @@
 use actix_web::web::{Data, Query};
 use actix_web::HttpResponse;
-use log::{error, info};
+use log::info;
 
 use crate::api_types::{ErrorResponse, FileSymbolsRequest, Symbol};
 use crate::AppState;
@@ -41,7 +41,11 @@ pub async fn definitions_in_file(
         info.file_path
     );
 
-    match data.manager.definitions_in_file_ast_grep(&info.file_path).await {
+    match data
+        .manager
+        .definitions_in_file_ast_grep(&info.file_path)
+        .await
+    {
         Ok(symbols) => {
             let symbol_response: Vec<Symbol> = symbols
                 .into_iter()

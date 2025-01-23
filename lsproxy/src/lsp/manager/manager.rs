@@ -1,4 +1,3 @@
-use log::{debug, error, warn};
 use crate::api_types::{get_mount_dir, Identifier, SupportedLanguages, Symbol};
 use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
@@ -16,15 +15,14 @@ use crate::utils::workspace_documents::{
     JAVA_FILE_PATTERNS, PHP_FILE_PATTERNS, PYTHON_FILE_PATTERNS, RUST_FILE_PATTERNS,
     TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS,
 };
+use log::{debug, error, warn};
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range};
 use notify::RecursiveMode;
 use notify_debouncer_mini::{new_debouncer, DebounceEventResult, DebouncedEvent};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
-use std::future::Future;
 use std::path::Path;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast::{channel, Sender};
@@ -324,7 +322,6 @@ impl Manager {
             })
     }
 
-
     pub async fn find_referenced_symbols(
         &self,
         file_path: &str,
@@ -349,8 +346,9 @@ impl Manager {
         match lsp_type {
             SupportedLanguages::Python | SupportedLanguages::TypeScriptJavaScript => (),
             _ => return Err(LspManagerError::NotImplemented(
-                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript".to_string()
-            ))
+                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript"
+                    .to_string(),
+            )),
         }
 
         // Get the symbol and its references
@@ -382,7 +380,7 @@ impl Manager {
                 .map_err(|e| {
                     LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
                 })?;
-            
+
             definitions.push((ast_match.clone(), definition));
         }
 
@@ -479,4 +477,3 @@ impl fmt::Display for LspManagerError {
 }
 
 impl std::error::Error for LspManagerError {}
-

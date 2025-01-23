@@ -12,7 +12,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -25,8 +25,8 @@ mod utils;
 use crate::api_types::{
     get_mount_dir, set_global_mount_dir, CodeContext, DefinitionResponse, ErrorResponse,
     FilePosition, FileRange, FileSymbolsRequest, GetDefinitionRequest, GetReferencedSymbolsRequest,
-    GetReferencesRequest, HealthResponse, Position, ReferencedSymbolsResponse, ReferencesResponse,
-    SupportedLanguages, Symbol, SymbolResponse, ReferenceWithSymbolDefinitions
+    GetReferencesRequest, HealthResponse, Position, ReferenceWithSymbolDefinitions,
+    ReferencedSymbolsResponse, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
 };
 use crate::handlers::{
     definitions_in_file, find_definition, find_referenced_symbols, find_references, health_check,

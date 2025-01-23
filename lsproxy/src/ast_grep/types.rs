@@ -1,68 +1,6 @@
 use std::path::PathBuf;
-use std::collections::{HashMap, HashSet};
-use once_cell::sync::Lazy;
-use log::debug;
 
 use serde::{Deserialize, Serialize};
-
-static CALLABLE_TYPES: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy::new(|| {
-        let mut m = HashMap::new();
-        
-        // C++
-        let mut cpp = HashSet::new();
-        cpp.insert("function-declaration");
-        cpp.insert("function-definition");
-        cpp.insert("class");
-        m.insert("Cpp", cpp);
-
-        // Go
-        let mut go = HashSet::new();
-        go.insert("function");
-        go.insert("method");
-        m.insert("Go", go);
-
-        // Java
-        let mut java = HashSet::new();
-        java.insert("method");
-        java.insert("class");
-        m.insert("Java", java);
-
-        // JavaScript
-        let mut javascript = HashSet::new();
-        javascript.insert("function");
-        javascript.insert("method");
-        javascript.insert("class");
-        m.insert("JavaScript", javascript);
-
-        // PHP
-        let mut php = HashSet::new();
-        php.insert("function");
-        php.insert("method");
-        php.insert("class");
-        m.insert("Php", php);
-
-        // Python
-        let mut python = HashSet::new();
-        python.insert("function");
-        python.insert("class");
-        m.insert("Python", python);
-
-        // Rust
-        let mut rust = HashSet::new();
-        rust.insert("function");
-        m.insert("Rust", rust);
-
-        // TypeScript/TSX
-        let mut typescript = HashSet::new();
-        typescript.insert("function");
-        typescript.insert("method");
-        typescript.insert("class");
-        m.insert("TypeScript", typescript.clone());
-        m.insert("Tsx", typescript);
-
-        m
-    }
-);
 
 use crate::{
     api_types::{FilePosition, FileRange, Identifier, Position, Symbol},
@@ -108,33 +46,10 @@ impl AstGrepMatch {
         self.file == other.file
             && self.get_context_range().start.line <= other.get_context_range().start.line
             && self.get_context_range().end.line >= other.get_context_range().end.line
-            && (self.get_context_range().start.line != other.get_context_range().start.line || self.get_context_range().start.column <= other.get_context_range().start.column)
-            && (self.get_context_range().end.line != other.get_context_range().end.line || self.get_context_range().end.column >= other.get_context_range().end.column)
-    }
-
-    pub fn contains_location(&self, loc: &lsp_types::Location) -> bool {
-        self.file == loc.uri.path()
-            && self.get_context_range().start.line <= loc.range.start.line
-            && self.get_context_range().end.line >= loc.range.end.line
-            && (self.get_context_range().start.line != loc.range.start.line || self.get_context_range().start.column <= loc.range.start.character)
-            && (self.get_context_range().end.line != loc.range.end.line || self.get_context_range().end.column >= loc.range.end.character)
-
-    }
-
-    pub fn contains_locationlink(&self, link: &lsp_types::LocationLink) -> bool {
-        self.file == link.target_uri.path()
-            && self.get_context_range().start.line <= link.target_range.start.line
-            && self.get_context_range().end.line >= link.target_range.end.line
-            && (self.get_context_range().start.line != link.target_range.start.line || self.get_context_range().start.column <= link.target_range.start.character)
-            && (self.get_context_range().end.line != link.target_range.end.line || self.get_context_range().end.column >= link.target_range.end.character)
-    }
-
-    pub fn is_callable(&self) -> bool {
-        if let Some(types) = CALLABLE_TYPES.get(self.language.as_str()) {
-            types.contains(self.rule_id.as_str())
-        } else {
-            false
-        }
+            && (self.get_context_range().start.line != other.get_context_range().start.line
+                || self.get_context_range().start.column <= other.get_context_range().start.column)
+            && (self.get_context_range().end.line != other.get_context_range().end.line
+                || self.get_context_range().end.column >= other.get_context_range().end.column)
     }
 }
 

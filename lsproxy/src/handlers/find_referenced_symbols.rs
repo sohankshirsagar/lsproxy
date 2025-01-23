@@ -49,7 +49,8 @@ pub async fn find_referenced_symbols(
         info.identifier_position.position.character
     );
 
-    let referenecd_ast_symbols = match data.manager
+    let referenecd_ast_symbols = match data
+        .manager
         .find_referenced_symbols(
             &info.identifier_position.path,
             LspPosition {
@@ -130,7 +131,8 @@ pub async fn find_referenced_symbols(
             if has_internal_definition {
                 let mut symbols_with_definitions = Vec::new();
                 for def in definitions.iter().filter(|def| files.contains(&def.path)) {
-                    if let Ok(symbol) = data.manager
+                    if let Ok(symbol) = data
+                        .manager
                         .get_symbol_from_position(
                             &def.path,
                             &lsp_types::Position {
@@ -231,7 +233,12 @@ mod test {
         sleep(Duration::from_secs(5)).await;
 
         let response = find_referenced_symbols(state, mock_request).await;
-        assert_eq!(response.status(), StatusCode::OK, "Response: {:?}", response);
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Response: {:?}",
+            response
+        );
         let content_type = response
             .headers()
             .get("content-type")
@@ -628,7 +635,10 @@ mod test {
             symbol.definitions.sort_by(|a, b| {
                 let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
                 if path_cmp.is_eq() {
-                    a.identifier_position.position.line.cmp(&b.identifier_position.position.line)
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
                 } else {
                     path_cmp
                 }
@@ -640,7 +650,10 @@ mod test {
             symbol.definitions.sort_by(|a, b| {
                 let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
                 if path_cmp.is_eq() {
-                    a.identifier_position.position.line.cmp(&b.identifier_position.position.line)
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
                 } else {
                     path_cmp
                 }
@@ -669,7 +682,12 @@ mod test {
         sleep(Duration::from_secs(5)).await;
 
         let response = find_referenced_symbols(state, mock_request).await;
-        assert_eq!(response.status(), StatusCode::OK, "Response: {:?}", response);
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Response: {:?}",
+            response
+        );
         let content_type = response
             .headers()
             .get("content-type")
@@ -683,7 +701,428 @@ mod test {
         let referenced_symbols_response: ReferencedSymbolsResponse =
             serde_json::from_slice(&bytes)?;
 
-        let expected_response = ReferencedSymbolsResponse { workspace_symbols: vec![ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("_barrier_cost"), range: FileRange { path: String::from("graph.py"), start: Position { line: 39, character: 28 }, end: Position { line: 39, character: 41 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("_barrier_cost"), kind: String::from("function"), identifier_position: FilePosition { path: String::from("graph.py"), position: Position { line: 26, character: 8 } }, range: FileRange { path: String::from("graph.py"), start: Position { line: 26, character: 0 }, end: Position { line: 31, character: 16 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("_distance_cost"), range: FileRange { path: String::from("graph.py"), start: Position { line: 40, character: 29 }, end: Position { line: 40, character: 43 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("_distance_cost"), kind: String::from("function"), identifier_position: FilePosition { path: String::from("graph.py"), position: Position { line: 33, character: 8 } }, range: FileRange { path: String::from("graph.py"), start: Position { line: 33, character: 0 }, end: Position { line: 35, character: 50 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("cost_function"), range: FileRange { path: String::from("graph.py"), start: Position { line: 65, character: 15 }, end: Position { line: 65, character: 28 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("cost_function"), kind: String::from("local-variable"), identifier_position: FilePosition { path: String::from("graph.py"), position: Position { line: 59, character: 12 } }, range: FileRange { path: String::from("graph.py"), start: Position { line: 59, character: 0 }, end: Position { line: 59, character: 47 } } }, Symbol { name: String::from("cost_function"), kind: String::from("local-variable"), identifier_position: FilePosition { path: String::from("graph.py"), position: Position { line: 61, character: 12 } }, range: FileRange { path: String::from("graph.py"), start: Position { line: 61, character: 0 }, end: Position { line: 61, character: 47 } } }, Symbol { name: String::from("cost_function"), kind: String::from("local-variable"), identifier_position: FilePosition { path: String::from("graph.py"), position: Position { line: 57, character: 12 } }, range: FileRange { path: String::from("graph.py"), start: Position { line: 57, character: 0 }, end: Position { line: 57, character: 46 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("log_execution_time"), range: FileRange { path: String::from("graph.py"), start: Position { line: 67, character: 5 }, end: Position { line: 67, character: 23 } }, kind: Some(String::from("decorator")) }, definitions: vec![Symbol { name: String::from("log_execution_time"), kind: String::from("function"), identifier_position: FilePosition { path: String::from("decorators.py"), position: Position { line: 3, character: 4 } }, range: FileRange { path: String::from("decorators.py"), start: Position { line: 3, character: 0 }, end: Position { line: 11, character: 18 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("log_execution_time"), range: FileRange { path: String::from("graph.py"), start: Position { line: 75, character: 5 }, end: Position { line: 75, character: 23 } }, kind: Some(String::from("decorator")) }, definitions: vec![Symbol { name: String::from("log_execution_time"), kind: String::from("function"), identifier_position: FilePosition { path: String::from("decorators.py"), position: Position { line: 3, character: 4 } }, range: FileRange { path: String::from("decorators.py"), start: Position { line: 3, character: 0 }, end: Position { line: 11, character: 18 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("move_cost"), range: FileRange { path: String::from("graph.py"), start: Position { line: 86, character: 20 }, end: Position { line: 86, character: 29 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("move_cost"), kind: String::from("function"), identifier_position: FilePosition { path: String::from("graph.py"), position: Position { line: 43, character: 8 } }, range: FileRange { path: String::from("graph.py"), start: Position { line: 43, character: 0 }, end: Position { line: 65, character: 34 } } }] }], external_symbols: vec![Identifier { name: String::from("append"), range: FileRange { path: String::from("graph.py"), start: Position { line: 15, character: 23 }, end: Position { line: 15, character: 29 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("property"), range: FileRange { path: String::from("graph.py"), start: Position { line: 22, character: 5 }, end: Position { line: 22, character: 13 } }, kind: Some(String::from("decorator")) }, Identifier { name: String::from("abs"), range: FileRange { path: String::from("graph.py"), start: Position { line: 35, character: 15 }, end: Position { line: 35, character: 18 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("abs"), range: FileRange { path: String::from("graph.py"), start: Position { line: 35, character: 34 }, end: Position { line: 35, character: 37 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("ValueError"), range: FileRange { path: String::from("graph.py"), start: Position { line: 63, character: 18 }, end: Position { line: 63, character: 28 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("abs"), range: FileRange { path: String::from("graph.py"), start: Position { line: 71, character: 13 }, end: Position { line: 71, character: 16 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("abs"), range: FileRange { path: String::from("graph.py"), start: Position { line: 72, character: 13 }, end: Position { line: 72, character: 16 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("min"), range: FileRange { path: String::from("graph.py"), start: Position { line: 73, character: 46 }, end: Position { line: 73, character: 49 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("append"), range: FileRange { path: String::from("graph.py"), start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } }, kind: Some(String::from("function-call")) }], not_found: vec![] };
+        let expected_response = ReferencedSymbolsResponse {
+            workspace_symbols: vec![
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("_barrier_cost"),
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 39,
+                                character: 28,
+                            },
+                            end: Position {
+                                line: 39,
+                                character: 41,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("_barrier_cost"),
+                        kind: String::from("function"),
+                        identifier_position: FilePosition {
+                            path: String::from("graph.py"),
+                            position: Position {
+                                line: 26,
+                                character: 8,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 26,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 31,
+                                character: 16,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("_distance_cost"),
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 40,
+                                character: 29,
+                            },
+                            end: Position {
+                                line: 40,
+                                character: 43,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("_distance_cost"),
+                        kind: String::from("function"),
+                        identifier_position: FilePosition {
+                            path: String::from("graph.py"),
+                            position: Position {
+                                line: 33,
+                                character: 8,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 33,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 35,
+                                character: 50,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("cost_function"),
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 65,
+                                character: 15,
+                            },
+                            end: Position {
+                                line: 65,
+                                character: 28,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![
+                        Symbol {
+                            name: String::from("cost_function"),
+                            kind: String::from("local-variable"),
+                            identifier_position: FilePosition {
+                                path: String::from("graph.py"),
+                                position: Position {
+                                    line: 59,
+                                    character: 12,
+                                },
+                            },
+                            range: FileRange {
+                                path: String::from("graph.py"),
+                                start: Position {
+                                    line: 59,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 59,
+                                    character: 47,
+                                },
+                            },
+                        },
+                        Symbol {
+                            name: String::from("cost_function"),
+                            kind: String::from("local-variable"),
+                            identifier_position: FilePosition {
+                                path: String::from("graph.py"),
+                                position: Position {
+                                    line: 61,
+                                    character: 12,
+                                },
+                            },
+                            range: FileRange {
+                                path: String::from("graph.py"),
+                                start: Position {
+                                    line: 61,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 61,
+                                    character: 47,
+                                },
+                            },
+                        },
+                        Symbol {
+                            name: String::from("cost_function"),
+                            kind: String::from("local-variable"),
+                            identifier_position: FilePosition {
+                                path: String::from("graph.py"),
+                                position: Position {
+                                    line: 57,
+                                    character: 12,
+                                },
+                            },
+                            range: FileRange {
+                                path: String::from("graph.py"),
+                                start: Position {
+                                    line: 57,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 57,
+                                    character: 46,
+                                },
+                            },
+                        },
+                    ],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("log_execution_time"),
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 67,
+                                character: 5,
+                            },
+                            end: Position {
+                                line: 67,
+                                character: 23,
+                            },
+                        },
+                        kind: Some(String::from("decorator")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("log_execution_time"),
+                        kind: String::from("function"),
+                        identifier_position: FilePosition {
+                            path: String::from("decorators.py"),
+                            position: Position {
+                                line: 3,
+                                character: 4,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("decorators.py"),
+                            start: Position {
+                                line: 3,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 11,
+                                character: 18,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("log_execution_time"),
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 75,
+                                character: 5,
+                            },
+                            end: Position {
+                                line: 75,
+                                character: 23,
+                            },
+                        },
+                        kind: Some(String::from("decorator")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("log_execution_time"),
+                        kind: String::from("function"),
+                        identifier_position: FilePosition {
+                            path: String::from("decorators.py"),
+                            position: Position {
+                                line: 3,
+                                character: 4,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("decorators.py"),
+                            start: Position {
+                                line: 3,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 11,
+                                character: 18,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("move_cost"),
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 86,
+                                character: 20,
+                            },
+                            end: Position {
+                                line: 86,
+                                character: 29,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("move_cost"),
+                        kind: String::from("function"),
+                        identifier_position: FilePosition {
+                            path: String::from("graph.py"),
+                            position: Position {
+                                line: 43,
+                                character: 8,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("graph.py"),
+                            start: Position {
+                                line: 43,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 65,
+                                character: 34,
+                            },
+                        },
+                    }],
+                },
+            ],
+            external_symbols: vec![
+                Identifier {
+                    name: String::from("append"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 15,
+                            character: 23,
+                        },
+                        end: Position {
+                            line: 15,
+                            character: 29,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("property"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 22,
+                            character: 5,
+                        },
+                        end: Position {
+                            line: 22,
+                            character: 13,
+                        },
+                    },
+                    kind: Some(String::from("decorator")),
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 35,
+                            character: 15,
+                        },
+                        end: Position {
+                            line: 35,
+                            character: 18,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 35,
+                            character: 34,
+                        },
+                        end: Position {
+                            line: 35,
+                            character: 37,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("ValueError"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 63,
+                            character: 18,
+                        },
+                        end: Position {
+                            line: 63,
+                            character: 28,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 71,
+                            character: 13,
+                        },
+                        end: Position {
+                            line: 71,
+                            character: 16,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 72,
+                            character: 13,
+                        },
+                        end: Position {
+                            line: 72,
+                            character: 16,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("min"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 73,
+                            character: 46,
+                        },
+                        end: Position {
+                            line: 73,
+                            character: 49,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("append"),
+                    range: FileRange {
+                        path: String::from("graph.py"),
+                        start: Position {
+                            line: 87,
+                            character: 18,
+                        },
+                        end: Position {
+                            line: 87,
+                            character: 24,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+            ],
+            not_found: vec![],
+        };
 
         // Sort definitions for each reference before comparing
         let mut sorted_response = referenced_symbols_response;
@@ -691,7 +1130,10 @@ mod test {
             symbol.definitions.sort_by(|a, b| {
                 let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
                 if path_cmp.is_eq() {
-                    a.identifier_position.position.line.cmp(&b.identifier_position.position.line)
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
                 } else {
                     path_cmp
                 }
@@ -703,7 +1145,10 @@ mod test {
             symbol.definitions.sort_by(|a, b| {
                 let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
                 if path_cmp.is_eq() {
-                    a.identifier_position.position.line.cmp(&b.identifier_position.position.line)
+                    a.identifier_position
+                        .position
+                        .line
+                        .cmp(&b.identifier_position.position.line)
                 } else {
                     path_cmp
                 }

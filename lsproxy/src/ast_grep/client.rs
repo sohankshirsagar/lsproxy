@@ -59,8 +59,12 @@ impl AstGrepClient {
         position: &lsp_types::Position,
         full_scan: bool,
     ) -> Result<(AstGrepMatch, Vec<AstGrepMatch>), Box<dyn std::error::Error>> {
-        let symbol_match = self.get_symbol_match_from_position(file_name, position).await?;
-        let references = self.get_references_contained_in_symbol_match(file_name, &symbol_match, full_scan).await?;
+        let symbol_match = self
+            .get_symbol_match_from_position(file_name, position)
+            .await?;
+        let references = self
+            .get_references_contained_in_symbol_match(file_name, &symbol_match, full_scan)
+            .await?;
         Ok((symbol_match, references))
     }
 
@@ -78,8 +82,7 @@ impl AstGrepClient {
         let contained_references = matches
             .into_iter()
             .filter(|m| {
-                let contained = symbol_match
-                    .contains(m);
+                let contained = symbol_match.contains(m);
 
                 contained && (full_scan || m.rule_id != "non-function")
             })

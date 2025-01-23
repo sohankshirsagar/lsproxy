@@ -1,4 +1,5 @@
 mod definitions_in_file;
+mod error;
 mod find_definition;
 mod find_identifier;
 mod find_referenced_symbols;
@@ -6,7 +7,6 @@ mod find_references;
 mod health;
 mod list_files;
 mod read_source_code;
-mod error;
 
 mod utils;
 pub use self::{

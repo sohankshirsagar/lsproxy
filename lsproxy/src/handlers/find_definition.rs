@@ -69,7 +69,8 @@ pub async fn find_definition(
             }
         };
 
-    let definitions = match data.manager
+    let definitions = match data
+        .manager
         .find_definition(
             &info.position.path,
             LspPosition {
