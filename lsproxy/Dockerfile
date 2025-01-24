@@ -85,6 +85,14 @@ RUN curl -O -L "https://go.dev/dl/go1.21.4.linux-${TARGETARCH}.tar.gz" && \
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/root/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+# Install ruby and ruby-lsp
+RUN apt update && apt install -y ruby-full \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN gem install ruby-lsp
+
 # Install coverage tools
 RUN cargo install cargo-llvm-cov
 RUN rustup component add llvm-tools-preview

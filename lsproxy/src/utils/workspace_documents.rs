@@ -46,6 +46,15 @@ pub const TYPESCRIPTREACT_EXTENSIONS: &[&str] = &["tsx"];
 pub const JAVASCRIPT_EXTENSIONS: &[&str] = &["js"];
 pub const JAVASCRIPTREACT_EXTENSIONS: &[&str] = &["jsx"];
 pub const TYPESCRIPT_AND_JAVASCRIPT_EXTENSIONS: &[&str] = &["ts", "tsx", "js", "jsx"];
+pub const RUBY_ROOT_FILES: &[&str] = &[
+    "Gemfile",
+    "Rakefile",
+    ".rubt-version",
+    "config.ru",
+    ".gemspec",
+];
+pub const RUBY_FILE_PATTERNS: &[&str] = &["**/*.rb", "**/*.erb"];
+pub const RUBY_EXTENSIONS: &[&str] = &["rb", "erb"];
 
 pub const RUST_ROOT_FILES: &[&str] = &["Cargo.toml"];
 pub const RUST_FILE_PATTERNS: &[&str] = &["**/*.rs"];
