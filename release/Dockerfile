@@ -86,6 +86,13 @@ RUN curl -O -L "https://go.dev/dl/go1.21.4.linux-${TARGETARCH}.tar.gz" && \
     /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
     cp ~/go/bin/gopls /usr/local/bin/gopls
 
+# Install ruby and ruby-lsp
+RUN apt update && apt install -y ruby-full \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN gem install ruby-lsp
+
 ENV HOME=/home/user
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
