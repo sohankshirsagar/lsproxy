@@ -3,8 +3,8 @@ use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
-    ClangdClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RustAnalyzerClient,
-    TypeScriptLanguageClient, RubyClient
+    ClangdClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RubyClient,
+    RustAnalyzerClient, TypeScriptLanguageClient,
 };
 use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::utils::file_utils::{
@@ -12,8 +12,8 @@ use crate::utils::file_utils::{
 };
 use crate::utils::workspace_documents::{
     WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
-    JAVA_FILE_PATTERNS, PHP_FILE_PATTERNS, PYTHON_FILE_PATTERNS, RUST_FILE_PATTERNS,
-    TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS, RUBY_FILE_PATTERNS
+    JAVA_FILE_PATTERNS, PHP_FILE_PATTERNS, PYTHON_FILE_PATTERNS, RUBY_FILE_PATTERNS,
+    RUST_FILE_PATTERNS, TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS,
 };
 use log::{debug, error, warn};
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range};

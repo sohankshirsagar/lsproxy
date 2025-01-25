@@ -2,7 +2,7 @@ use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
     utils::workspace_documents::{
         DidOpenConfiguration, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
-        RUBY_ROOT_FILES, RUBY_FILE_PATTERNS
+        RUBY_FILE_PATTERNS, RUBY_ROOT_FILES,
     },
 };
 use async_trait::async_trait;
@@ -69,10 +69,7 @@ impl RubyClient {
         let json_rpc_handler = JsonRpcHandler::new();
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            RUBY_FILE_PATTERNS
-                .iter()
-                .map(|&s| s.to_string())
-                .collect(),
+            RUBY_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
             DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())
