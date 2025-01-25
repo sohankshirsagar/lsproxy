@@ -458,6 +458,57 @@ mod test {
     }
 
     #[tokio::test]
+    async fn test_ruby_decorator_references() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&ruby_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencesRequest {
+            identifier_position: FilePosition {
+                path: String::from("decorators.rb"),
+                position: Position {
+                    line: 8,
+                    character: 8,
+                },
+            },
+            include_code_context_lines: None,
+            include_raw_response: false,
+        });
+
+        let response = find_references(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .ok_or("Missing content-type header")?
+            .to_str()?;
+        assert_eq!(content_type, "application/json");
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await?;
+        let reference_response: ReferencesResponse = serde_json::from_slice(&bytes)?;
+
+        // TODO: Replace with actual expected references once confirmed
+        let expected_response = ReferencesResponse {
+            raw_response: None,
+            references: vec![
+                FilePosition {
+                    path: String::from("decorators.rb"),
+                    position: Position {
+                        line: 8,
+                        character: 8,
+                    },
+                },
+            ],
+            context: None,
+            selected_identifier: reference_response.selected_identifier.clone(),
+        };
+
+        assert_eq!(reference_response, expected_response);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_invalid_position() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup(&python_sample_path(), false).await?;
         let state = initialize_app_state().await?;
