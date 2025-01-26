@@ -82,6 +82,8 @@ pub enum SupportedLanguages {
     Golang,
     #[serde(rename = "php")]
     PHP,
+    #[serde(rename = "ruby")]
+    Ruby,
 }
 
 /// A position within a text document, using 0-based indexing
@@ -235,11 +237,12 @@ pub struct GetReferencesRequest {
     pub include_raw_response: bool,
 }
 
-/// Request to get the symbols that are referenced from the symbol at the given position
-/// Request to get all symbols that are referenced from a given position
+/// Request to get all symbols that are referenced from a symbol at the given position
 ///
-/// The input position should point to a location in code where symbols are referenced.
-/// For example, inside a function body to find all symbols used by that function.
+/// The input position must point to a symbol (e.g. function name, class name, variable name).
+/// The response will include all symbols that are referenced from that input symbol.
+/// For example, if the position points to a function name, the response will include
+/// all symbols referenced within that function's implementation.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencedSymbolsRequest {
     pub identifier_position: FilePosition,

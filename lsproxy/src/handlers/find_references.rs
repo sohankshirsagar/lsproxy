@@ -234,7 +234,7 @@ mod test {
 
     use crate::api_types::{FilePosition, Identifier, Position};
     use crate::initialize_app_state;
-    use crate::test_utils::{python_sample_path, rust_sample_path, TestContext};
+    use crate::test_utils::{python_sample_path, ruby_sample_path, rust_sample_path, TestContext};
 
     #[tokio::test]
     async fn test_python_references() -> Result<(), Box<dyn std::error::Error>> {
@@ -454,6 +454,105 @@ mod test {
         };
 
         assert_eq!(expected_response, reference_response);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ruby_decorator_references() -> Result<(), Box<dyn std::error::Error>> {
+        let _context = TestContext::setup(&ruby_sample_path(), false).await?;
+        let state = initialize_app_state().await?;
+
+        let mock_request = Json(GetReferencesRequest {
+            identifier_position: FilePosition {
+                path: String::from("decorators.rb"),
+                position: Position {
+                    line: 8,
+                    character: 8,
+                },
+            },
+            include_code_context_lines: None,
+            include_raw_response: false,
+        });
+
+        let response = find_references(state, mock_request).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .ok_or("Missing content-type header")?
+            .to_str()?;
+        assert_eq!(content_type, "application/json");
+
+        let body = response.into_body();
+        let bytes = actix_web::body::to_bytes(body).await?;
+        let reference_response: ReferencesResponse = serde_json::from_slice(&bytes)?;
+
+        let expected_response = ReferencesResponse {
+            raw_response: None,
+            references: vec![
+                FilePosition {
+                    path: String::from("decorators.rb"),
+                    position: Position {
+                        line: 8,
+                        character: 8,
+                    },
+                },
+                FilePosition {
+                    path: String::from("graph.rb"),
+                    position: Position {
+                        line: 51,
+                        character: 2,
+                    },
+                },
+                FilePosition {
+                    path: String::from("graph.rb"),
+                    position: Position {
+                        line: 59,
+                        character: 2,
+                    },
+                },
+                FilePosition {
+                    path: String::from("main.rb"),
+                    position: Position {
+                        line: 18,
+                        character: 2,
+                    },
+                },
+                FilePosition {
+                    path: String::from("search.rb"),
+                    position: Position {
+                        line: 11,
+                        character: 2,
+                    },
+                },
+                FilePosition {
+                    path: String::from("search.rb"),
+                    position: Position {
+                        line: 31,
+                        character: 2,
+                    },
+                },
+            ],
+            context: None,
+            selected_identifier: Identifier {
+                name: String::from("log_time"),
+                range: FileRange {
+                    path: String::from("decorators.rb"),
+                    start: Position {
+                        line: 8,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 8,
+                        character: 16,
+                    },
+                },
+                kind: None,
+            },
+        };
+
+        assert_eq!(reference_response, expected_response);
         Ok(())
     }
 

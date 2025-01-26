@@ -9,23 +9,26 @@ use actix_web::HttpResponse;
 use log::{error, info};
 use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 
-/// Find all symbols that are referenced from a given position
+/// Find all symbols that are referenced from a given symbol's definition
 ///
-/// Returns references categorized into:
+/// The input position must point to a symbol (e.g. function name, class name, variable name).
+/// Returns all symbols referenced within that symbol's implementation, categorized into:
 /// - Workspace symbols (with their definitions)
 /// - External symbols (built-in functions like 'len', 'print' or from external libraries)
 /// - Symbols that couldn't be found
 ///
-/// e.g. for a function in `main.py`:
+/// e.g. for a function definition in `main.py`:
 /// ```python
 /// @log_execution_time     # Reference to decorator
-/// def process_user():
+/// def process_user():     # <-- Input position here
 ///     user = User()       # Reference to User class
 ///     print("Done")       # Reference to built-in function
 /// ```
 /// This would return:
-/// - Workspace symbols: log_execution_time (with definition from decorators.py)
-/// - Workspace symbols: User (with definition from models.py)
+/// - Workspace symbols: [
+///     log_execution_time (with definition from decorators.py),
+///     User (with definition from models.py)
+///   ]
 /// - External symbols: print (Python built-in)
 #[utoipa::path(
     post,

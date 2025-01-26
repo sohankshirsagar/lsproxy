@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.3.3"
+LSPROXY_VERSION="0.3.4"
 
 # Function to detect architecture
 detect_arch() {
@@ -148,6 +148,13 @@ install_go() {
     echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> /etc/profile.d/go.sh
 }
 
+# Function to install Ruby and Ruby LSP
+install_ruby() {
+    echo "Installing Ruby and Ruby LSP..."
+    DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full
+    gem install ruby-lsp
+}
+
 # Function to download and install LSProxy binary
 install_lsproxy() {
     local arch=$(detect_arch)
@@ -192,6 +199,7 @@ main() {
     install_node_deps
     install_rust_tools
     install_go
+    install_ruby
     install_lsproxy
     install_ast_grep_config
     cleanup
