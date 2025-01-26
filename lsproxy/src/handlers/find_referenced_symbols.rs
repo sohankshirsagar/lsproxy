@@ -25,8 +25,10 @@ use lsp_types::{GotoDefinitionResponse, Position as LspPosition};
 ///     print("Done")       # Reference to built-in function
 /// ```
 /// This would return:
-/// - Workspace symbols: log_execution_time (with definition from decorators.py)
-/// - Workspace symbols: User (with definition from models.py) 
+/// - Workspace symbols: [
+///     log_execution_time (with definition from decorators.py),
+///     User (with definition from models.py)
+///   ]
 /// - External symbols: print (Python built-in)
 #[utoipa::path(
     post,
