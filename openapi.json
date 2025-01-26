@@ -139,8 +139,8 @@
         "tags": [
           "symbol"
         ],
-        "summary": "Find all symbols that are referenced from a given position",
-        "description": "Returns references categorized into:\n- Workspace symbols (with their definitions)\n- External symbols (built-in functions like 'len', 'print' or from external libraries)\n- Symbols that couldn't be found\n\ne.g. for a function in `main.py`:\n```python\n@log_execution_time     # Reference to decorator\ndef process_user():\n    user = User()       # Reference to User class\n    print(\"Done\")       # Reference to built-in function\n```\nThis would return:\n- Workspace symbols: log_execution_time (with definition from decorators.py)\n- Workspace symbols: User (with definition from models.py)\n- External symbols: print (Python built-in)",
+        "summary": "Find all symbols that are referenced from a given symbol's definition",
+        "description": "The input position must point to a symbol (e.g. function name, class name, variable name).\nReturns all symbols referenced within that symbol's implementation, categorized into:\n- Workspace symbols (with their definitions)\n- External symbols (built-in functions like 'len', 'print' or from external libraries)\n- Symbols that couldn't be found\n\ne.g. for a function definition in `main.py`:\n```python\n@log_execution_time     # Reference to decorator\ndef process_user():     # <-- Input position here\n    user = User()       # Reference to User class\n    print(\"Done\")       # Reference to built-in function\n```\nThis would return:\n- Workspace symbols: [\n    log_execution_time (with definition from decorators.py),\n    User (with definition from models.py)\n  ]\n- External symbols: print (Python built-in)",
         "operationId": "find_referenced_symbols",
         "requestBody": {
           "content": {
@@ -478,7 +478,7 @@
       },
       "GetReferencedSymbolsRequest": {
         "type": "object",
-        "description": "Request to get the symbols that are referenced from the symbol at the given position\nRequest to get all symbols that are referenced from a given position\n\nThe input position should point to a location in code where symbols are referenced.\nFor example, inside a function body to find all symbols used by that function.",
+        "description": "Request to get all symbols that are referenced from a symbol at the given position\n\nThe input position must point to a symbol (e.g. function name, class name, variable name).\nThe response will include all symbols that are referenced from that input symbol.\nFor example, if the position points to a function name, the response will include\nall symbols referenced within that function's implementation.",
         "required": [
           "identifier_position"
         ],
@@ -538,7 +538,8 @@
                 "cpp",
                 "java",
                 "golang",
-                "php"
+                "php",
+                "ruby"
               ]
             }
           },
@@ -712,7 +713,8 @@
           "cpp",
           "java",
           "golang",
-          "php"
+          "php",
+          "ruby"
         ]
       },
       "Symbol": {
