@@ -22,7 +22,7 @@ RUN apt-get update && \
             fi \
             ;; \
         "linux/arm64") \
-            if [ "$BUILDARCH" != "amd64" ]; then \
+            if [ "$BUILDARCH" = "amd64" ]; then \
                 rustup target add aarch64-unknown-linux-gnu && \
                 apt-get install -y gcc-aarch64-linux-gnu && \
                 echo '[target.aarch64-unknown-linux-gnu]' > /usr/local/cargo/config.toml && \
