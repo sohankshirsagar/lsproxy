@@ -1,6 +1,7 @@
 FROM --platform=linux/$BUILDARCH rust:1.81.0-slim-bookworm AS builder
 ARG BUILDARCH
 ARG TARGETPLATFORM
+ARG TARGETARCH
 
 WORKDIR /usr/src/app
 
@@ -64,7 +65,23 @@ RUN case "$TARGETPLATFORM" in \
             ;; \
     esac
 
+RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${BUILDARCH}.tar.gz" && \
+    tar -C /usr/local -xzf go1.23.5.linux-${BUILDARCH}.tar.gz && \
+    rm go1.23.5.linux-${BUILDARCH}.tar.gz && \
+    GOARCH=${TARGETARCH} /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
+    if [ "${TARGETARCH}" = "${BUILDARCH}" ]; then \
+        cp ~/go/bin/gopls /usr/src/bin/ ; \
+    else \
+        case "${TARGETARCH}" in \
+            "amd64") cp ~/go/bin/linux_amd64/gopls /usr/src/bin/ ;; \
+            "arm64") cp ~/go/bin/linux_arm64/gopls /usr/src/bin/ ;; \
+            *) echo "Unsupported TARGETARCH: ${TARGETARCH}" && exit 1 ;; \
+        esac ; \
+    fi
+
 FROM rust:1.81.0-slim-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install runtime dependencies, Python, Node.js, PHP, and npm
 RUN apt-get update && apt-get install \
@@ -137,11 +154,10 @@ RUN npm install -g typescript-language-server typescript
 
 # Install go and Gopls
 ARG TARGETARCH
-RUN curl -O -L "https://go.dev/dl/go1.21.4.linux-${TARGETARCH}.tar.gz" && \
-    tar -C /usr/local -xzf go1.21.4.linux-${TARGETARCH}.tar.gz && \
-    rm go1.21.4.linux-${TARGETARCH}.tar.gz && \
-    /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
-    cp ~/go/bin/gopls /usr/local/bin/gopls
+RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${TARGETARCH}.tar.gz" && \
+    tar -C /usr/local -xzf go1.23.5.linux-${TARGETARCH}.tar.gz && \
+    rm go1.23.5.linux-${TARGETARCH}.tar.gz
+COPY --from=builder /usr/src/bin/gopls /usr/bin/gopls
 
 # Install ruby and ruby-lsp
 RUN apt update && apt install -y ruby-full \
