@@ -52,7 +52,7 @@ RUN case "$TARGETPLATFORM" in \
             fi \
             ;; \
         "linux/arm64") \
-            if [ "$BUILDARCH" != "amd64" ]; then \
+            if [ "$BUILDARCH" = "amd64" ]; then \
                 cargo build --release --target aarch64-unknown-linux-gnu; \
             elif [ "$BUILDARCH" = "arm64" ]; then \
                 cargo build --release; \
