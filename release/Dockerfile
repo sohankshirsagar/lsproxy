@@ -41,27 +41,26 @@ RUN apt-get update && \
 COPY . .
 
 # Build with appropriate target
+RUN mkdir -p /usr/src/bin
+
 RUN case "$TARGETPLATFORM" in \
         "linux/amd64") \
             if [ "$BUILDARCH" = "arm64" ]; then \
-                cargo build --release --target x86_64-unknown-linux-gnu; \
+                cargo build --release --target x86_64-unknown-linux-gnu && \
+                cp target/x86_64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
             elif [ "$BUILDARCH" = "amd64" ]; then \
-                cargo build --release; \
-            else \
-                echo "Unsupported build architecture for linux/amd64: $BUILDARCH" && exit 1; \
+                cargo build --release && \
+                cp target/release/lsproxy /usr/src/bin/lsproxy; \
             fi \
             ;; \
         "linux/arm64") \
             if [ "$BUILDARCH" = "amd64" ]; then \
-                cargo build --release --target aarch64-unknown-linux-gnu; \
+                cargo build --release --target aarch64-unknown-linux-gnu && \
+                cp target/aarch64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
             elif [ "$BUILDARCH" = "arm64" ]; then \
-                cargo build --release; \
-            else \
-                echo "Unsupported build architecture for linux/arm64: $BUILDARCH" && exit 1; \
+                cargo build --release && \
+                cp target/release/lsproxy /usr/src/bin/lsproxy; \
             fi \
-            ;; \
-        *) \
-            echo "Unsupported target platform: $TARGETPLATFORM (BUILDARCH: $BUILDARCH)" && exit 1 \
             ;; \
     esac
 
@@ -157,7 +156,7 @@ ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 # Copy binary with -bin suffix
-COPY --from=builder /usr/src/app/target/release/lsproxy /usr/local/bin/lsproxy-bin
+COPY --from=builder /usr/src/bin/lsproxy /usr/local/bin/lsproxy-bin
 
 # Copy ast-grep rules
 COPY ./src/ast_grep /usr/src/ast_grep
