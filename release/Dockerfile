@@ -182,7 +182,7 @@ ENV RUST_LOG=info
 ENV RA_LOG="/tmp/rust-analyzer.log"
 
 RUN mkdir -p /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user/go \
-    && chown -R 1000:1000 /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user /usr/local/bin
+    && chown -R 1000:1000 /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user /usr/local/bin /var/lib/gems/3.1.0
 
 # Create the wrapper script with all current env vars
 RUN echo '#!/bin/bash' > /usr/local/bin/lsproxy \

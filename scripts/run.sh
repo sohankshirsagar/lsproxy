@@ -68,7 +68,7 @@ echo -e "${BLUE}Starting application...${NC}"
 ./scripts/build.sh
 
 # Run the application
-docker run --rm -p 4444:4444 \
+docker run --rm --user 1000 -p 4444:4444 \
     -v "$WORKSPACE_PATH:/mnt/workspace" \
     $AUTH_ENV \
     -v "$(pwd)/lsproxy/target/release":/usr/src/app \
