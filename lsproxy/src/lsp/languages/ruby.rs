@@ -52,12 +52,13 @@ impl RubyClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let debug_file = std::fs::File::create("/tmp/ruby-lsp.log")?;
         let process = Command::new("ruby-lsp")
             .arg("--use-launcher")
             .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stderr(debug_file)
             .spawn()
             .map_err(|e| {
                 eprintln!("Failed to start ruby-lsp process: {}", e);

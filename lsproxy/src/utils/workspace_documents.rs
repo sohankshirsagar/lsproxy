@@ -49,7 +49,7 @@ pub const TYPESCRIPT_AND_JAVASCRIPT_EXTENSIONS: &[&str] = &["ts", "tsx", "js", "
 pub const RUBY_ROOT_FILES: &[&str] = &[
     "Gemfile",
     "Rakefile",
-    ".rubt-version",
+    ".ruby-version",
     "config.ru",
     ".gemspec",
 ];
