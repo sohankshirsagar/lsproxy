@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.3.4"
+LSPROXY_VERSION="0.3.5"
 
 # Function to detect architecture
 detect_arch() {
