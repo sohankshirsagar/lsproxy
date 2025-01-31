@@ -172,16 +172,19 @@ RUN apt-get update && apt-get install -y \
     libgdbm-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
-    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+RUN git clone https://github.com/rbenv/rbenv.git /home/user/.rbenv && \
+    git clone https://github.com/rbenv/ruby-build.git /home/user/.rbenv/plugins/ruby-build
 
 # Set up rbenv
-ENV PATH="${HOME}/.rbenv/shims:${HOME}/.rbenv/bin:${PATH}"
+ENV PATH="/home/user/.rbenv/shims:/home/user/.rbenv/bin:${PATH}"
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc && \
     echo 'eval "$(rbenv init -)"' >> ~/.profile
 
+USER 1000
 # Install Ruby (using bash to ensure rbenv is initialized)
 RUN bash -c "rbenv install 3.4.1 && rbenv global 3.4.1"
+
+USER root
 
 RUN gem install ruby-lsp
 
