@@ -159,6 +159,21 @@ RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${TARGETARCH}.tar.gz" && \
     rm go1.23.5.linux-${TARGETARCH}.tar.gz
 COPY --from=builder /usr/src/bin/gopls /usr/bin/gopls
 
+# Install ruby via rbenv and ruby-lsp
+RUN apt-get update && apt-get install -y \
+    zlib1g-dev \
+    autoconf \
+    bison \
+    libyaml-dev \
+    libreadline-dev \
+    libncurses5-dev \
+    libffi-dev \
+    libgdbm-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
+    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+
 # Set up rbenv
 ENV PATH="/root/.rbenv/shims:/root/.rbenv/bin:${PATH}"
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc && \
