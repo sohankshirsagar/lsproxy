@@ -172,6 +172,7 @@ RUN apt-get update && apt-get install -y \
     libgdbm-dev \
     && rm -rf /var/lib/apt/lists/*
 
+USER 1000
 RUN git clone https://github.com/rbenv/rbenv.git /home/user/.rbenv && \
     git clone https://github.com/rbenv/ruby-build.git /home/user/.rbenv/plugins/ruby-build
 
@@ -180,7 +181,6 @@ ENV PATH="/home/user/.rbenv/shims:/home/user/.rbenv/bin:${PATH}"
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc && \
     echo 'eval "$(rbenv init -)"' >> ~/.profile
 
-USER 1000
 # Install Ruby (using bash to ensure rbenv is initialized)
 RUN bash -c "rbenv install 3.4.1 && rbenv global 3.4.1"
 
