@@ -172,8 +172,8 @@ RUN apt-get update && apt-get install -y \
     libgdbm-dev \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /home/user && chown 1000:1000 /home/user
 USER 1000
-mkdir /home/user
 RUN git clone https://github.com/rbenv/rbenv.git /home/user/.rbenv && \
     git clone https://github.com/rbenv/ruby-build.git /home/user/.rbenv/plugins/ruby-build
 
