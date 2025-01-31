@@ -174,16 +174,20 @@ RUN apt-get update && apt-get install -y \
 
 RUN mkdir -p /home/user && chown 1000:1000 /home/user
 USER 1000
-RUN git clone https://github.com/rbenv/rbenv.git /home/user/.rbenv && \
-    git clone https://github.com/rbenv/ruby-build.git /home/user/.rbenv/plugins/ruby-build
 
-# Set up rbenv
+# Clone rbenv and ruby-build
+RUN git clone --depth 1 https://github.com/rbenv/rbenv.git /home/user/.rbenv && \
+    git clone --depth 1 https://github.com/rbenv/ruby-build.git /home/user/.rbenv/plugins/ruby-build
+
+# Set up rbenv - note we need both shims and bin in PATH
 ENV PATH="/home/user/.rbenv/shims:/home/user/.rbenv/bin:${PATH}"
-RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc && \
-    echo 'eval "$(rbenv init -)"' >> ~/.profile
 
-# Install Ruby (using bash to ensure rbenv is initialized)
-RUN bash -c "rbenv install 3.4.1 && rbenv global 3.4.1"
+# Initialize rbenv
+RUN echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
+    echo 'eval "$(rbenv init -)"' >> /home/user/.profile
+
+# Install Ruby
+RUN bash -c "eval \"$(rbenv init -)\" && rbenv install 3.4.1 && rbenv global 3.4.1"
 
 USER root
 
@@ -206,8 +210,8 @@ ENV RA_LOG="/tmp/rust-analyzer.log"
 RUN mkdir -p /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user/go \
     && chown -R 1000:1000 /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user /usr/local/bin
 
-# Create the wrapper script with all current env vars
 RUN echo '#!/bin/bash' > /usr/local/bin/lsproxy \
+    && echo 'eval "$(rbenv init -)"' >> /usr/local/bin/lsproxy \
     && env | while read -r line; do \
     echo "export $line" >> /usr/local/bin/lsproxy; \
     done \
