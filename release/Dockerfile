@@ -173,6 +173,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 USER 1000
+mkdir /home/user
 RUN git clone https://github.com/rbenv/rbenv.git /home/user/.rbenv && \
     git clone https://github.com/rbenv/ruby-build.git /home/user/.rbenv/plugins/ruby-build
 
