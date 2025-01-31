@@ -187,7 +187,7 @@ RUN echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
     echo 'eval "$(rbenv init -)"' >> /home/user/.profile
 
 # Install Ruby
-RUN bash -c "eval \"$(rbenv init -)\" && rbenv install 3.4.1 && rbenv global 3.4.1"
+RUN bash -c 'eval "$(rbenv init -)" && rbenv install 3.4.1 && rbenv global 3.4.1'
 
 USER root
 
