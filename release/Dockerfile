@@ -82,6 +82,7 @@ RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${BUILDARCH}.tar.gz" && \
 FROM rust:1.81.0-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV HOME=/home/user
 
 # Install runtime dependencies, Python, Node.js, PHP, and npm
 RUN apt-get update && apt-get install \
@@ -175,7 +176,7 @@ RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
     git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
 
 # Set up rbenv
-ENV PATH="/root/.rbenv/shims:/root/.rbenv/bin:${PATH}"
+ENV PATH="${HOME}/.rbenv/shims:${HOME}/.rbenv/bin:${PATH}"
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc && \
     echo 'eval "$(rbenv init -)"' >> ~/.profile
 
@@ -184,7 +185,6 @@ RUN bash -c "rbenv install 3.4.1 && rbenv global 3.4.1"
 
 RUN gem install ruby-lsp
 
-ENV HOME=/home/user
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
