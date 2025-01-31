@@ -159,10 +159,13 @@ RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${TARGETARCH}.tar.gz" && \
     rm go1.23.5.linux-${TARGETARCH}.tar.gz
 COPY --from=builder /usr/src/bin/gopls /usr/bin/gopls
 
-# Install ruby and ruby-lsp
-RUN apt update && apt install -y ruby-full \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Set up rbenv
+ENV PATH="/root/.rbenv/shims:/root/.rbenv/bin:${PATH}"
+RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc && \
+    echo 'eval "$(rbenv init -)"' >> ~/.profile
+
+# Install Ruby (using bash to ensure rbenv is initialized)
+RUN bash -c "rbenv install 3.4.1 && rbenv global 3.4.1"
 
 RUN gem install ruby-lsp
 
