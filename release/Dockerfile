@@ -186,12 +186,12 @@ ENV PATH="/home/user/.rbenv/shims:/home/user/.rbenv/bin:${PATH}"
 RUN echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
     echo 'eval "$(rbenv init -)"' >> /home/user/.profile
 
-# Install Ruby
+# Install Ruby and ruby-lsp
 RUN bash -c 'eval "$(rbenv init -)" && rbenv install 3.4.1 && rbenv global 3.4.1'
+RUN gem install ruby-lsp
 
 USER root
 
-RUN gem install ruby-lsp
 
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
