@@ -406,7 +406,8 @@ impl Manager {
     }
 
     pub async fn list_files(&self) -> Result<Vec<String>, LspManagerError> {
-        let mut files = Vec::new();
+        use std::collections::HashSet;
+        let mut files = HashSet::new();
         for client in self.lsp_clients.values() {
             let mut locked_client = client.lock().await;
             files.extend(
@@ -416,11 +417,11 @@ impl Manager {
                     .await
                     .iter()
                     .filter_map(|f| Some(absolute_path_to_relative_path_string(f)))
-                    .collect::<Vec<String>>(),
             );
         }
-        files.sort();
-        Ok(files)
+        let mut unique_files: Vec<_> = files.into_iter().collect();
+        unique_files.sort();
+        Ok(unique_files)
     }
 
     pub async fn read_source_code(
