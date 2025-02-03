@@ -4,7 +4,7 @@ use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
     ClangdClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RubyClient,
-    RustAnalyzerClient, TypeScriptLanguageClient,
+    RustAnalyzerClient, TypeScriptLanguageClient, RubySorbetClient
 };
 use crate::utils::file_utils::uri_to_relative_path_string;
 use crate::utils::file_utils::{
@@ -109,7 +109,7 @@ impl Manager {
                     RUBY_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
                 }
                 SupportedLanguages::RubySorbet => {
-                    vec!["sorbet/config".to_string()]
+                    vec!["**/sorbet/config".to_string()]
                 }
             };
             if search_files(
@@ -496,21 +496,3 @@ impl fmt::Display for LspManagerError {
 
 impl std::error::Error for LspManagerError {}
 
-fn has_sorbet_type_annotation(path: &Path) -> bool {
-    if let Ok(file) = File::open(path) {
-        let reader = BufReader::new(file);
-        for line in reader.lines().take(10) { // Only check first 10 lines for magic comments
-            if let Ok(line) = line {
-                let trimmed = line.trim();
-                if trimmed.starts_with("#") {
-                    let comment = trimmed[1..].trim();
-                    if comment.starts_with("typed:") {
-                        let type_level = comment["typed:".len()..].trim();
-                        return matches!(type_level, "true" | "strict" | "strong");
-                    }
-                }
-            }
-        }
-    }
-    false
-}
