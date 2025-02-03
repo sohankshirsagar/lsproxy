@@ -109,7 +109,7 @@ impl Manager {
                     RUBY_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
                 }
                 SupportedLanguages::RubySorbet => {
-                    // Just look for the sorbet/config file pattern where config is the file
+                    vec!["sorbet/config".to_string()]
                 }
             };
             if search_files(
