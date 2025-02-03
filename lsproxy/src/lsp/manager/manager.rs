@@ -77,6 +77,7 @@ impl Manager {
             SupportedLanguages::Golang,
             SupportedLanguages::PHP,
             SupportedLanguages::Ruby,
+            SupportedLanguages::RubySorbet,
         ] {
             let patterns = match lsp {
                 SupportedLanguages::Python => PYTHON_FILE_PATTERNS
@@ -106,6 +107,9 @@ impl Manager {
                 }
                 SupportedLanguages::Ruby => {
                     RUBY_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
+                }
+                SupportedLanguages::RubySorbet => {
+                    // Just look for the sorbet/config file pattern where config is the file
                 }
             };
             if search_files(
@@ -180,6 +184,11 @@ impl Manager {
                 ),
                 SupportedLanguages::Ruby => Box::new(
                     RubyClient::new(workspace_path, self.watch_events_sender.subscribe())
+                        .await
+                        .map_err(|e| e.to_string())?,
+                ),
+                SupportedLanguages::RubySorbet => Box::new(
+                    RubySorbetClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
