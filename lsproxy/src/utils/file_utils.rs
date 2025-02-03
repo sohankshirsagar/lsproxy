@@ -5,6 +5,8 @@ use crate::{
 use ignore::WalkBuilder;
 use log::{debug, warn};
 use std::path::{Path, PathBuf};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use url::Url;
 
 use super::workspace_documents::{
@@ -132,7 +134,14 @@ pub fn detect_language(file_path: &str) -> Result<SupportedLanguages, LspManager
         ext if JAVA_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Java),
         ext if GOLANG_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Golang),
         ext if PHP_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::PHP),
-        ext if RUBY_EXTENSIONS.contains(&ext) => Ok(SupportedLanguages::Ruby),
+        ext if RUBY_EXTENSIONS.contains(&ext) => {
+            let path = Path::new(file_path);
+            if has_sorbet_type_annotation(path) {
+                Ok(SupportedLanguages::RubySorbet)
+            } else {
+                Ok(SupportedLanguages::Ruby)
+            }
+        }
         _ => Err(LspManagerError::UnsupportedFileType(file_path.to_string())),
     }
 }

@@ -495,3 +495,22 @@ impl fmt::Display for LspManagerError {
 }
 
 impl std::error::Error for LspManagerError {}
+
+fn has_sorbet_type_annotation(path: &Path) -> bool {
+    if let Ok(file) = File::open(path) {
+        let reader = BufReader::new(file);
+        for line in reader.lines().take(10) { // Only check first 10 lines for magic comments
+            if let Ok(line) = line {
+                let trimmed = line.trim();
+                if trimmed.starts_with("#") {
+                    let comment = trimmed[1..].trim();
+                    if comment.starts_with("typed:") {
+                        let type_level = comment["typed:".len()..].trim();
+                        return matches!(type_level, "true" | "strict" | "strong");
+                    }
+                }
+            }
+        }
+    }
+    false
+}
