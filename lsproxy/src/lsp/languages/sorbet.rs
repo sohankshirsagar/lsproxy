@@ -5,7 +5,6 @@ use crate::{
         RUBY_FILE_PATTERNS, RUBY_ROOT_FILES,
     },
 };
-use futures_util::TryFutureExt;
 use async_trait::async_trait;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
