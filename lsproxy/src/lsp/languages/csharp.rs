@@ -7,7 +7,7 @@ use crate::{
 use async_trait::async_trait;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
-use log;
+use log::{info, warn};
 use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
 pub struct CSharpClient {
@@ -64,10 +64,10 @@ impl CSharpClient {
         cmd.current_dir(root_path);
 
         if solution_files.is_empty() {
-            log::info!("No solution files found, using root directory");
+            info!("No solution files found, using root directory");
         } else {
             if solution_files.len() > 1 {
-                log::warn!(
+                warn!(
                     "Multiple solution files found. Using '{}'. Ignoring: {:?}", 
                     solution_files[0],
                     &solution_files[1..]
