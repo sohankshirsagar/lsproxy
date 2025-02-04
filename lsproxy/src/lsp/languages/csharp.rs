@@ -53,28 +53,34 @@ impl CSharpClient {
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let debug_file = std::fs::File::create("/tmp/ruby-lsp.log")?;
-        let solution_files = search_files(
+        let mut cmd = Command::new("csharp-ls");
+        cmd.current_dir(root_path);
+
+        match search_files(
             Path::new(root_path), 
             vec![String::from("**/*.sln")], 
             DEFAULT_EXCLUDE_PATTERNS.iter().map(|s| s.to_string()).collect(), 
             true
-        );
-
-        let mut cmd = Command::new("csharp-ls");
-        cmd.current_dir(root_path);
-
-        if solution_files.is_empty() {
-            info!("No solution files found, using root directory");
-        } else {
-            if solution_files.len() > 1 {
-                warn!(
-                    "Multiple solution files found. Using '{}'. Ignoring: {:?}", 
-                    solution_files[0],
-                    &solution_files[1..]
-                );
+        ) {
+            Ok(solution_files) => {
+                if solution_files.is_empty() {
+                    info!("No solution files found, using root directory");
+                } else {
+                    if solution_files.len() > 1 {
+                        warn!(
+                            "Multiple solution files found. Using '{}'. Ignoring: {:?}", 
+                            solution_files[0],
+                            &solution_files[1..]
+                        );
+                    }
+                    cmd.arg("--solution").arg(&solution_files[0]);
+                }
+            },
+            Err(e) => {
+                warn!("Failed to search for solution files: {}", e);
+                info!("Continuing without solution file");
             }
-            cmd.arg("--solution").arg(&solution_files[0]);
-        }
+        };
 
         let process = cmd
             .stdin(Stdio::piped())
