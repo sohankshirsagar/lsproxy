@@ -198,18 +198,6 @@ RUN bash -c 'eval "$(rbenv init -)" \
     && gem install ruby-lsp \
     && gem install srb'
 
-RUN bash -c 'eval "$(rbenv init -)" \
-    && rbenv install 3.1.0 \
-    && rbenv shell 3.1.0 \
-    && gem install ruby-lsp \
-    && gem install srb'
-
-RUN bash -c 'eval "$(rbenv init -)" \
-    && rbenv install 3.1.3 \
-    && rbenv shell 3.1.3 \
-    && gem install ruby-lsp \
-    && gem install srb'
-
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
