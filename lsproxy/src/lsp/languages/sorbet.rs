@@ -1,5 +1,6 @@
 use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
+use futures_util::TryFutureExt;
     utils::workspace_documents::{
         DidOpenConfiguration, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
         RUBY_FILE_PATTERNS, RUBY_ROOT_FILES,
@@ -59,6 +60,7 @@ impl RubySorbetClient {
             .stdout(bundle_log.try_clone()?)
             .stderr(bundle_log)
             .status()
+            .await
             .map_err(|e| {
                 eprintln!("Failed to run bundle install: {}", e);
                 Box::new(e) as Box<dyn std::error::Error + Send + Sync>
