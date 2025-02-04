@@ -52,6 +52,22 @@ impl RubySorbetClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let bundle_log = std::fs::File::create("/tmp/sorbet-bundle-install.log")?;
+        let bundle_status = Command::new("bundle")
+            .arg("install")
+            .current_dir(root_path)
+            .stdout(bundle_log.try_clone()?)
+            .stderr(bundle_log)
+            .status()
+            .map_err(|e| {
+                eprintln!("Failed to run bundle install: {}", e);
+                Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+            })?;
+
+        if !bundle_status.success() {
+            return Err("bundle install failed".into());
+        }
+
         let debug_file = std::fs::File::create("/tmp/sorbet.log")?;
         let process = Command::new("srb")
             .arg("tc")
