@@ -173,7 +173,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /home/user && chown 1000:1000 /home/user
-USER 1000
 
 # Clone rbenv and ruby-build
 RUN git clone --depth 1 https://github.com/rbenv/rbenv.git /home/user/.rbenv && \
@@ -187,11 +186,29 @@ RUN echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
     echo 'eval "$(rbenv init -)"' >> /home/user/.profile
 
 # Install Ruby and ruby-lsp
-RUN bash -c 'eval "$(rbenv init -)" && rbenv install 3.4.1 && rbenv global 3.4.1'
-RUN gem install ruby-lsp
+RUN bash -c 'eval "$(rbenv init -)" \
+    && rbenv install 3.4.1 \
+    && rbenv global 3.4.1 \
+    && gem install ruby-lsp \
+    && gem install srb'
 
-USER root
+RUN bash -c 'eval "$(rbenv init -)" \
+    && rbenv install 3.2.2 \
+    && rbenv shell 3.2.2 \
+    && gem install ruby-lsp \
+    && gem install srb'
 
+RUN bash -c 'eval "$(rbenv init -)" \
+    && rbenv install 3.1.0 \
+    && rbenv shell 3.1.0 \
+    && gem install ruby-lsp \
+    && gem install srb'
+
+RUN bash -c 'eval "$(rbenv init -)" \
+    && rbenv install 3.1.3 \
+    && rbenv shell 3.1.3 \
+    && gem install ruby-lsp \
+    && gem install srb'
 
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go

@@ -117,6 +117,25 @@ pub fn absolute_path_to_relative_path_string(path: &PathBuf) -> String {
         })
 }
 
+fn has_sorbet_type_annotation(path: &Path) -> bool {
+    if let Ok(file) = File::open(path) {
+        let reader = BufReader::new(file);
+        for line in reader.lines().take(10) { // Only check first 10 lines for magic comments
+            if let Ok(line) = line {
+                let trimmed = line.trim();
+                if trimmed.starts_with("#") {
+                    let comment = trimmed[1..].trim();
+                    if comment.starts_with("typed:") {
+                        let type_level = comment["typed:".len()..].trim();
+                        return matches!(type_level, "true" | "strict" | "strong");
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
 pub fn detect_language(file_path: &str) -> Result<SupportedLanguages, LspManagerError> {
     let path = PathBuf::from(file_path);
     let extension = path
