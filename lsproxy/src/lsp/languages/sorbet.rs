@@ -52,7 +52,7 @@ impl RubySorbetClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let debug_file = std::fs::File::create("/tmp/ruby-lsp.log")?;
+        let debug_file = std::fs::File::create("/tmp/sorbet.log")?;
         let process = Command::new("srb")
             .arg("tc")
             .arg("--lsp")
