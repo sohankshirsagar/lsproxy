@@ -169,6 +169,7 @@ RUN apt-get update && apt-get install -y \
     libreadline-dev \
     libncurses5-dev \
     libffi-dev \
+    libpq-dev \
     libgdbm-dev \
     && rm -rf /var/lib/apt/lists/*
 
