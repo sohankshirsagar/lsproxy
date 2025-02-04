@@ -9,14 +9,14 @@ use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
 use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
-pub struct RubyClient {
+pub struct CSharpClient {
     process: ProcessHandler,
     json_rpc: JsonRpcHandler,
     workspace_documents: WorkspaceDocumentsHandler,
     pending_requests: PendingRequests,
 }
 #[async_trait]
-impl LspClient for RubyClient {
+impl LspClient for CSharpClient {
     fn get_process(&mut self) -> &mut ProcessHandler {
         &mut self.process
     }
@@ -46,7 +46,7 @@ impl LspClient for RubyClient {
         })
     }
 }
-impl RubyClient {
+impl CSharpClient {
     pub async fn new(
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
