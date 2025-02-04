@@ -1,11 +1,11 @@
 use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
-use futures_util::TryFutureExt;
     utils::workspace_documents::{
         DidOpenConfiguration, WorkspaceDocumentsHandler, DEFAULT_EXCLUDE_PATTERNS,
         RUBY_FILE_PATTERNS, RUBY_ROOT_FILES,
     },
 };
+use futures_util::TryFutureExt;
 use async_trait::async_trait;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
