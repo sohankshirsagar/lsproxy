@@ -182,21 +182,21 @@ RUN git clone --depth 1 https://github.com/rbenv/rbenv.git /home/user/.rbenv && 
 ENV PATH="/home/user/.rbenv/shims:/home/user/.rbenv/bin:${PATH}"
 
 # Initialize rbenv
-RUN echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
-    echo 'eval "$(rbenv init -)"' >> /home/user/.profile
+RUN echo 'eval "$(/home/user/.rbenv/bin/rbenv init -)"' >> /home/user/.bashrc && \
+    echo 'eval "$(/home/user/.rbenv/bin/rbenv init -)"' >> /home/user/.profile
 
 # Install Ruby and ruby-lsp
-RUN bash -c 'eval "$(rbenv init -)" \
+RUN eval "$(rbenv init -)" \
     && rbenv install 3.4.1 \
     && rbenv global 3.4.1 \
     && gem install ruby-lsp \
-    && gem install srb'
+    && gem install srb
 
-RUN bash -c 'eval "$(rbenv init -)" \
+RUN eval "$(rbenv init -)" \
     && rbenv install 3.2.2 \
     && rbenv shell 3.2.2 \
     && gem install ruby-lsp \
-    && gem install srb'
+    && gem install srb
 
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
@@ -216,10 +216,10 @@ RUN mkdir -p /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/us
     && chown -R 1000:1000 /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user /usr/local/bin
 
 RUN echo '#!/bin/bash' > /usr/local/bin/lsproxy \
-    && echo 'eval "$(rbenv init -)"' >> /usr/local/bin/lsproxy \
     && env | while read -r line; do \
     echo "export $line" >> /usr/local/bin/lsproxy; \
     done \
+    && echo 'eval "$(rbenv init -)"' >> /usr/local/bin/lsproxy \
     && echo 'exec /usr/local/bin/lsproxy-bin "$@"' >> /usr/local/bin/lsproxy \
     && chmod +x /usr/local/bin/lsproxy
 
