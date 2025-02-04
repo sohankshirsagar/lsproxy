@@ -171,6 +171,22 @@ ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
+# Add Microsoft package repository
+RUN curl -fsSL https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -o packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb
+
+# Install .NET SDK
+RUN apt-get update && apt-get install -y \
+    dotnet-sdk-8.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install csharp-ls globally
+RUN dotnet tool install --global csharp-ls
+
+# Add .NET tools to PATH
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
 # Copy binary with -bin suffix
 COPY --from=builder /usr/src/bin/lsproxy /usr/local/bin/lsproxy-bin
 

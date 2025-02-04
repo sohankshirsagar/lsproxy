@@ -1,4 +1,5 @@
 mod clang;
+mod csharp;
 mod golang;
 mod java;
 mod php;
@@ -7,4 +8,4 @@ mod ruby;
 mod rust;
 mod typescript;
 
-pub use self::{clang::*, golang::*, java::*, php::*, python::*, ruby::*, rust::*, typescript::*};
+pub use self::{clang::*, csharp::*, golang::*, java::*, php::*, python::*, ruby::*, rust::*, typescript::*};

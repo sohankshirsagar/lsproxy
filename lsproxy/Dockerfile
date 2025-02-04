@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install \
     python3-pip \
     python3-venv \
     curl \
+    wget \
     clangd \
     build-essential \
     gcc \
@@ -92,6 +93,22 @@ RUN apt update && apt install -y ruby-full \
     && rm -rf /var/lib/apt/lists/*
 
 RUN gem install ruby-lsp
+
+# Download and run dotnet install script
+RUN curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh \
+    && chmod +x dotnet-install.sh \
+    && ./dotnet-install.sh --channel 8.0 \
+    && rm dotnet-install.sh
+
+# Add .NET to PATH
+ENV PATH="${PATH}:/root/.dotnet"
+ENV DOTNET_ROOT=/root/.dotnet
+
+# Install csharp-ls globally
+RUN dotnet tool install --global csharp-ls
+
+# Add .NET tools to PATH
+ENV PATH="${PATH}:/root/.dotnet/tools"
 
 # Install coverage tools
 RUN cargo install cargo-llvm-cov
