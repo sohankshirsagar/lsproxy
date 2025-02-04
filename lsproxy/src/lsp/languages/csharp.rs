@@ -7,6 +7,7 @@ use crate::{
 use async_trait::async_trait;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
+use log;
 use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
 pub struct CSharpClient {
@@ -52,9 +53,30 @@ impl CSharpClient {
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let debug_file = std::fs::File::create("/tmp/ruby-lsp.log")?;
-        let solution_files = search_files(Path::new(root_path), vec![String::from("**/*.sln")], DEFAULT_EXCLUDE_PATTERNS.iter().map(|s| s.to_string()).collect(), true);
-        let process = Command::new("csharp-ls")
-            .current_dir(root_path)
+        let solution_files = search_files(
+            Path::new(root_path), 
+            vec![String::from("**/*.sln")], 
+            DEFAULT_EXCLUDE_PATTERNS.iter().map(|s| s.to_string()).collect(), 
+            true
+        );
+
+        let mut cmd = Command::new("csharp-ls");
+        cmd.current_dir(root_path);
+
+        if solution_files.is_empty() {
+            log::info!("No solution files found, using root directory");
+        } else {
+            if solution_files.len() > 1 {
+                log::warn!(
+                    "Multiple solution files found. Using '{}'. Ignoring: {:?}", 
+                    solution_files[0],
+                    &solution_files[1..]
+                );
+            }
+            cmd.arg("--solution").arg(&solution_files[0]);
+        }
+
+        let process = cmd
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(debug_file)
