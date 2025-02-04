@@ -68,7 +68,7 @@ impl CSharpClient {
                 } else {
                     if solution_files.len() > 1 {
                         warn!(
-                            "Multiple solution files found. Using '{}'. Ignoring: {:?}", 
+                            "Multiple solution files found. Using '{:?}'. Ignoring: {:?}", 
                             solution_files[0],
                             &solution_files[1..]
                         );

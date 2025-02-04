@@ -3,7 +3,7 @@ use crate::ast_grep::client::AstGrepClient;
 use crate::ast_grep::types::AstGrepMatch;
 use crate::lsp::client::LspClient;
 use crate::lsp::languages::{
-    ClangdClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RubyClient,
+    ClangdClient, CSharpClient, GoplsClient, JdtlsClient, JediClient, PhpactorClient, RubyClient,
     RustAnalyzerClient, TypeScriptLanguageClient,
 };
 use crate::utils::file_utils::uri_to_relative_path_string;
@@ -11,7 +11,7 @@ use crate::utils::file_utils::{
     absolute_path_to_relative_path_string, detect_language, search_files,
 };
 use crate::utils::workspace_documents::{
-    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
+    WorkspaceDocuments, C_AND_CPP_FILE_PATTERNS, CSHARP_FILE_PATTERNS, DEFAULT_EXCLUDE_PATTERNS, GOLANG_FILE_PATTERNS,
     JAVA_FILE_PATTERNS, PHP_FILE_PATTERNS, PYTHON_FILE_PATTERNS, RUBY_FILE_PATTERNS,
     RUST_FILE_PATTERNS, TYPESCRIPT_AND_JAVASCRIPT_FILE_PATTERNS,
 };
@@ -73,6 +73,7 @@ impl Manager {
             SupportedLanguages::TypeScriptJavaScript,
             SupportedLanguages::Rust,
             SupportedLanguages::CPP,
+            SupportedLanguages::CSharp,
             SupportedLanguages::Java,
             SupportedLanguages::Golang,
             SupportedLanguages::PHP,
@@ -90,10 +91,12 @@ impl Manager {
                 SupportedLanguages::Rust => {
                     RUST_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
                 }
-                SupportedLanguages::CPP => C_AND_CPP_FILE_PATTERNS
-                    .iter()
-                    .map(|&s| s.to_string())
-                    .collect(),
+                SupportedLanguages::CPP => {
+                    C_AND_CPP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
+                }
+                SupportedLanguages::CSharp => {
+                    CSHARP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
+                }
                 SupportedLanguages::Java => {
                     JAVA_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
                 }
@@ -160,6 +163,11 @@ impl Manager {
                 ),
                 SupportedLanguages::CPP => Box::new(
                     ClangdClient::new(workspace_path, self.watch_events_sender.subscribe())
+                        .await
+                        .map_err(|e| e.to_string())?,
+                ),
+                SupportedLanguages::CSharp => Box::new(
+                    CSharpClient::new(workspace_path, self.watch_events_sender.subscribe())
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
