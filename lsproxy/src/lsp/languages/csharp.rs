@@ -52,7 +52,7 @@ impl CSharpClient {
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let debug_file = std::fs::File::create("/tmp/ruby-lsp.log")?;
+        let debug_file = std::fs::File::create("/tmp/csharp.log")?;
         let mut cmd = Command::new("csharp-ls");
         cmd.current_dir(root_path);
 

@@ -98,6 +98,7 @@ RUN gem install ruby-lsp
 RUN curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh \
     && chmod +x dotnet-install.sh \
     && ./dotnet-install.sh --channel 8.0 \
+    && ./dotnet-install.sh --channel 9.0 \
     && rm dotnet-install.sh
 
 # Add .NET to PATH
