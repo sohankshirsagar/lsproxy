@@ -9,6 +9,22 @@ RUN apt-get update && apt install -y --no-install-recommends curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /usr/src/bin
+
+RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${BUILDARCH}.tar.gz" && \
+    tar -C /usr/local -xzf go1.23.5.linux-${BUILDARCH}.tar.gz && \
+    rm go1.23.5.linux-${BUILDARCH}.tar.gz && \
+    GOARCH=${TARGETARCH} /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
+    if [ "${TARGETARCH}" = "${BUILDARCH}" ]; then \
+        cp ~/go/bin/gopls /usr/src/bin/ ; \
+    else \
+        case "${TARGETARCH}" in \
+            "amd64") cp ~/go/bin/linux_amd64/gopls /usr/src/bin/ ;; \
+            "arm64") cp ~/go/bin/linux_arm64/gopls /usr/src/bin/ ;; \
+            *) echo "Unsupported TARGETARCH: ${TARGETARCH}" && exit 1 ;; \
+        esac ; \
+    fi
+
 # Set up cross-compilation tools and target based on build/target platform
 RUN apt-get update && \
     case "$TARGETPLATFORM" in \
@@ -42,8 +58,6 @@ RUN apt-get update && \
 COPY . .
 
 # Build with appropriate target
-RUN mkdir -p /usr/src/bin
-
 RUN case "$TARGETPLATFORM" in \
         "linux/amd64") \
             if [ "$BUILDARCH" = "arm64" ]; then \
@@ -65,19 +79,6 @@ RUN case "$TARGETPLATFORM" in \
             ;; \
     esac
 
-RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${BUILDARCH}.tar.gz" && \
-    tar -C /usr/local -xzf go1.23.5.linux-${BUILDARCH}.tar.gz && \
-    rm go1.23.5.linux-${BUILDARCH}.tar.gz && \
-    GOARCH=${TARGETARCH} /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
-    if [ "${TARGETARCH}" = "${BUILDARCH}" ]; then \
-        cp ~/go/bin/gopls /usr/src/bin/ ; \
-    else \
-        case "${TARGETARCH}" in \
-            "amd64") cp ~/go/bin/linux_amd64/gopls /usr/src/bin/ ;; \
-            "arm64") cp ~/go/bin/linux_arm64/gopls /usr/src/bin/ ;; \
-            *) echo "Unsupported TARGETARCH: ${TARGETARCH}" && exit 1 ;; \
-        esac ; \
-    fi
 
 FROM rust:1.81.0-slim-bookworm
 
@@ -210,7 +211,7 @@ COPY --from=builder /usr/src/bin/lsproxy /usr/local/bin/lsproxy-bin
 COPY ./src/ast_grep /usr/src/ast_grep
 
 EXPOSE 4444
-ENV RUST_LOG=info
+ENV RUST_LOG=lsproxy=debug,info
 ENV RA_LOG="/tmp/rust-analyzer.log"
 
 RUN mkdir -p /mnt/workspace /usr/local/cargo /usr/src/app /usr/local/go /home/user/go \
