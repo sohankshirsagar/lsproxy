@@ -44,6 +44,7 @@ pub trait LspClient: Send {
         let mut capabilities = ClientCapabilities::default();
         capabilities.text_document = Some(TextDocumentClientCapabilities {
             document_symbol: Some(DocumentSymbolClientCapabilities {
+                dynamic_registration: Some(false),
                 hierarchical_document_symbol_support: Some(true),
                 ..Default::default()
             }),
@@ -87,6 +88,7 @@ pub trait LspClient: Send {
         let mut response_receiver = self.get_pending_requests().add_request(id).await?;
 
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+        debug!("Message: {:?}", message);
         self.get_process().send(&message).await?;
 
         let response = response_receiver
@@ -118,6 +120,7 @@ pub trait LspClient: Send {
                     if let Ok(message) = json_rpc.parse_message(&raw_response) {
                         if let Some(id) = message.id {
                             debug!("Received response for request {}", id);
+                            debug!("Response: {:?}", message);
                             if let Ok(Some(sender)) = pending_requests.remove_request(id).await {
                                 if sender.send(message.clone()).is_err() {
                                     error!("Failed to send response for request {}", id);

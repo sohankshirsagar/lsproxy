@@ -91,6 +91,17 @@ impl CSharpClient {
                 eprintln!("Failed to start ruby-lsp process: {}", e);
                 Box::new(e) as Box<dyn std::error::Error + Send + Sync>
             })?;
+//        let process = Command::new("OmniSharp")
+//            .arg("--lsp")
+//            .current_dir(root_path)
+//            .stdin(Stdio::piped())
+//            .stdout(Stdio::piped())
+//            .stderr(debug_file)
+//            .spawn()
+//            .map_err(|e| {
+//                eprintln!("Failed to start omnisharp process: {}", e);
+//                Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+//            })?;
         let process_handler = ProcessHandler::new(process)
             .await
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
