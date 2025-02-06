@@ -1,13 +1,13 @@
 use crate::{
     lsp::{JsonRpcHandler, LspClient, PendingRequests, ProcessHandler},
-    utils::{file_utils::search_files, workspace_documents::{
-        DidOpenConfiguration, WorkspaceDocumentsHandler, CSHARP_FILE_PATTERNS, CSHARP_ROOT_FILES, DEFAULT_EXCLUDE_PATTERNS
-    }},
+    utils::workspace_documents::{
+        DidOpenConfiguration, WorkspaceDocumentsHandler, CSHARP_FILE_PATTERNS, CSHARP_ROOT_FILES,
+        DEFAULT_EXCLUDE_PATTERNS,
+    },
 };
 use async_trait::async_trait;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
-use log::{info, warn};
 use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
 pub struct CSharpClient {
@@ -69,7 +69,10 @@ impl CSharpClient {
         let json_rpc_handler = JsonRpcHandler::new();
         let workspace_documents = WorkspaceDocumentsHandler::new(
             Path::new(root_path),
-            CSHARP_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
+            CSHARP_FILE_PATTERNS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect(),
             DEFAULT_EXCLUDE_PATTERNS
                 .iter()
                 .map(|&s| s.to_string())

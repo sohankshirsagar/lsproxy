@@ -4,7 +4,7 @@ use crate::lsp::process::Process;
 use crate::lsp::{ExpectedMessageKey, JsonRpcHandler, ProcessHandler};
 use crate::utils::file_utils::{detect_language_string, search_directories};
 use async_trait::async_trait;
-use log::{debug, error, warn, info};
+use log::{debug, error, info, warn};
 use lsp_types::{
     ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     GotoDefinitionParams, GotoDefinitionResponse, InitializeParams, InitializeResult, Location,
@@ -132,7 +132,11 @@ pub trait LspClient: Send {
                                 );
                                 let response = json_rpc.create_success_response(id);
 
-                                let message = format!("Content-Length: {}\r\n\r\n{}", response.len(), response);
+                                let message = format!(
+                                    "Content-Length: {}\r\n\r\n{}",
+                                    response.len(),
+                                    response
+                                );
                                 let _ = process.send(&message).await;
                             }
                         } else if let Some(params) = message.params.clone() {
@@ -247,24 +251,6 @@ pub trait LspClient: Send {
 
         debug!("Received goto definition response");
         Ok(goto_resp)
-        /*
-        let request = self.get_json_rpc().create_success_response(2);
-        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.get_process().send(&message).await?;
-
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-
-        let request = self.get_json_rpc().create_success_response(3);
-        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.get_process().send(&message).await?;
-
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-
-        let request = self.get_json_rpc().create_success_response(4);
-        let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
-        self.get_process().send(&message).await?;
-        Ok(GotoDefinitionResponse::Scalar{0:lsp_types::Location{uri: Url::from_directory_path(get_mount_dir()).unwrap(), range: lsp_types::Range{start: lsp_types::Position{line: 0, character: 0}, end: lsp_types::Position{line: 0, character:0}}}})
-        */
     }
 
     async fn text_document_reference(

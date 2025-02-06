@@ -124,13 +124,6 @@ RUN cargo build --release
 RUN cargo install ast-grep --locked
 COPY ./src/ast_grep /usr/src/ast_grep
 
-RUN mkdir /usr/src/omnisharp
-COPY ./omnisharp-linux-arm64-net6.0.tar.gz /usr/src/omnisharp
-RUN cd /usr/src/omnisharp && tar xvf omnisharp-linux-arm64-net6.0.tar.gz && rm /usr/src/omnisharp/omnisharp-linux-arm64-net6.0.tar.gz
-ENV PATH="${PATH}:/usr/src/omnisharp"
-
-
-
 # Document that the container listens on port 4444
 EXPOSE 4444
 

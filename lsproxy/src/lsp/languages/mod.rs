@@ -8,4 +8,6 @@ mod ruby;
 mod rust;
 mod typescript;
 
-pub use self::{clang::*, csharp::*, golang::*, java::*, php::*, python::*, ruby::*, rust::*, typescript::*};
+pub use self::{
+    clang::*, csharp::*, golang::*, java::*, php::*, python::*, ruby::*, rust::*, typescript::*,
+};
