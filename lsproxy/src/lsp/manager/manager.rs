@@ -363,9 +363,9 @@ impl Manager {
 
         // Only Python and TypeScript/JavaScript are currently supported
         match lsp_type {
-            SupportedLanguages::Python | SupportedLanguages::TypeScriptJavaScript => (),
+            SupportedLanguages::Python | SupportedLanguages::TypeScriptJavaScript | SupportedLanguages::CSharp => (),
             _ => return Err(LspManagerError::NotImplemented(
-                "Find referenced symbols is only implemented for Python and TypeScript/JavaScript"
+                "Find referenced symbols is only implemented for Python, TypeScript/JavaScript, and C#"
                     .to_string(),
             )),
         }
