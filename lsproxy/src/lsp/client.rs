@@ -4,7 +4,7 @@ use crate::lsp::process::Process;
 use crate::lsp::{ExpectedMessageKey, JsonRpcHandler, ProcessHandler};
 use crate::utils::file_utils::{detect_language_string, search_directories};
 use async_trait::async_trait;
-use log::{debug, error, warn};
+use log::{debug, error, warn, info};
 use lsp_types::{
     ClientCapabilities, DidOpenTextDocumentParams, DocumentSymbolClientCapabilities,
     GotoDefinitionParams, GotoDefinitionResponse, InitializeParams, InitializeResult, Location,
@@ -111,7 +111,7 @@ pub trait LspClient: Send {
     }
 
     async fn start_response_listener(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let process = self.get_process().clone();
+        let mut process = self.get_process().clone();
         let pending_requests = self.get_pending_requests().clone();
         let json_rpc = self.get_json_rpc().clone();
 
@@ -121,16 +121,19 @@ pub trait LspClient: Send {
                     if let Ok(message) = json_rpc.parse_message(&raw_response) {
                         if let Some(id) = message.id {
                             debug!("Received response for request {}", id);
-                            debug!("Response: {:?}", message);
                             if let Ok(Some(sender)) = pending_requests.remove_request(id).await {
                                 if sender.send(message.clone()).is_err() {
                                     error!("Failed to send response for request {}", id);
                                 }
                             } else {
-                                error!(
-                                    "Failed to remove pending request {} - Message: {:?}",
+                                info!(
+                                    "Responding to server message {} - Message: {:?}",
                                     id, message
                                 );
+                                let response = json_rpc.create_success_response(id);
+
+                                let message = format!("Content-Length: {}\r\n\r\n{}", response.len(), response);
+                                let _ = process.send(&message).await;
                             }
                         } else if let Some(params) = message.params.clone() {
                             let message_key = ExpectedMessageKey {
@@ -187,7 +190,6 @@ pub trait LspClient: Send {
         file_path: &str,
         position: Position,
     ) -> Result<GotoDefinitionResponse, Box<dyn Error + Send + Sync>> {
-        /*
         debug!(
             "Requesting goto definition for {}, line {}, character {}",
             file_path, position.line, position.character
@@ -245,7 +247,7 @@ pub trait LspClient: Send {
 
         debug!("Received goto definition response");
         Ok(goto_resp)
-        */
+        /*
         let request = self.get_json_rpc().create_success_response(2);
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
@@ -262,6 +264,7 @@ pub trait LspClient: Send {
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
         self.get_process().send(&message).await?;
         Ok(GotoDefinitionResponse::Scalar{0:lsp_types::Location{uri: Url::from_directory_path(get_mount_dir()).unwrap(), range: lsp_types::Range{start: lsp_types::Position{line: 0, character: 0}, end: lsp_types::Position{line: 0, character:0}}}})
+        */
     }
 
     async fn text_document_reference(

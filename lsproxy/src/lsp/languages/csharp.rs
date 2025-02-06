@@ -53,36 +53,8 @@ impl CSharpClient {
         watch_events_rx: Receiver<DebouncedEvent>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let debug_file = std::fs::File::create("/tmp/csharp.log")?;
-        let mut cmd = Command::new("csharp-ls");
-        cmd.current_dir(root_path);
-
-        match search_files(
-            Path::new(root_path), 
-            vec![String::from("**/*.sln")], 
-            DEFAULT_EXCLUDE_PATTERNS.iter().map(|s| s.to_string()).collect(), 
-            true
-        ) {
-            Ok(solution_files) => {
-                if solution_files.is_empty() {
-                    info!("No solution files found, using root directory");
-                } else {
-                    if solution_files.len() > 1 {
-                        warn!(
-                            "Multiple solution files found. Using '{:?}'. Ignoring: {:?}", 
-                            solution_files[0],
-                            &solution_files[1..]
-                        );
-                    }
-                    cmd.arg("--solution").arg(&solution_files[0]);
-                }
-            },
-            Err(e) => {
-                warn!("Failed to search for solution files: {}", e);
-                info!("Continuing without solution file");
-            }
-        };
-
-        let process = cmd
+        let process = Command::new("csharp-ls")
+            .current_dir(root_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(debug_file)
@@ -91,17 +63,6 @@ impl CSharpClient {
                 eprintln!("Failed to start ruby-lsp process: {}", e);
                 Box::new(e) as Box<dyn std::error::Error + Send + Sync>
             })?;
-//        let process = Command::new("OmniSharp")
-//            .arg("--lsp")
-//            .current_dir(root_path)
-//            .stdin(Stdio::piped())
-//            .stdout(Stdio::piped())
-//            .stderr(debug_file)
-//            .spawn()
-//            .map_err(|e| {
-//                eprintln!("Failed to start omnisharp process: {}", e);
-//                Box::new(e) as Box<dyn std::error::Error + Send + Sync>
-//            })?;
         let process_handler = ProcessHandler::new(process)
             .await
             .map_err(|e| format!("Failed to create ProcessHandler: {}", e))?;
