@@ -75,7 +75,6 @@ RUN pip install jedi-language-server ast-grep-cli
 RUN npm install -g typescript-language-server typescript
 
 # Install go and Gopls
-
 ARG TARGETARCH
 RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${TARGETARCH}.tar.gz" && \
     tar -C /usr/local -xzf go1.23.5.linux-${TARGETARCH}.tar.gz && \
@@ -97,13 +96,13 @@ RUN gem install ruby-lsp
 # Download and run dotnet install script
 RUN curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh \
     && chmod +x dotnet-install.sh \
-    && ./dotnet-install.sh --channel 8.0 \
-    && ./dotnet-install.sh --channel 9.0 \
+    && ./dotnet-install.sh --channel 8.0 --install-dir /home/user/.dotnet \
+    && ./dotnet-install.sh --channel 9.0 --install-dir /home/user/.dotnet \
     && rm dotnet-install.sh
 
 # Add .NET to PATH
-ENV PATH="${PATH}:/root/.dotnet"
-ENV DOTNET_ROOT=/root/.dotnet
+ENV PATH="${PATH}:/home/user/.dotnet"
+ENV DOTNET_ROOT=/home/user/.dotnet
 
 # Install csharp-ls globally
 RUN dotnet tool install --global csharp-ls

@@ -60,7 +60,7 @@ impl CSharpClient {
             .stderr(debug_file)
             .spawn()
             .map_err(|e| {
-                eprintln!("Failed to start ruby-lsp process: {}", e);
+                eprintln!("Failed to start csharp-ls process: {}", e);
                 Box::new(e) as Box<dyn std::error::Error + Send + Sync>
             })?;
         let process_handler = ProcessHandler::new(process)

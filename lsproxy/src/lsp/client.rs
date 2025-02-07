@@ -125,7 +125,7 @@ pub trait LspClient: Send {
                                     error!("Failed to send response for request {}", id);
                                 }
                             } else {
-                                info!(
+                                debug!(
                                     "Responding to server message {} - Message: {:?}",
                                     id, message
                                 );
@@ -304,9 +304,13 @@ pub trait LspClient: Send {
             )
             .await?;
 
-        let references: Vec<Location> = serde_json::from_value(result)?;
+        let ref_resp: Vec<Location> = if result.is_null() {
+            Vec::new()
+        } else {
+            serde_json::from_value(result)?
+        };
         debug!("Received references response");
-        Ok(references)
+        Ok(ref_resp)
     }
 
     fn get_process(&mut self) -> &mut ProcessHandler;
