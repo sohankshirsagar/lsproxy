@@ -331,8 +331,6 @@ main() {
     OLD_ENV=$(env)
     check_root
     setup_user
-    setup_environment
-    
     install_system_deps
     install_python
     install_nodejs
