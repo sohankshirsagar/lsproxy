@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
     },
-    "version": "0.1.6"
+    "version": "0.1.7"
   },
   "servers": [
     {
@@ -536,6 +536,7 @@
                 "typescript_javascript",
                 "rust",
                 "cpp",
+                "csharp",
                 "java",
                 "golang",
                 "php",
@@ -711,6 +712,7 @@
           "typescript_javascript",
           "rust",
           "cpp",
+          "csharp",
           "java",
           "golang",
           "php",

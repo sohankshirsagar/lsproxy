@@ -1,4 +1,3 @@
-use crate::api_types::get_mount_dir;
 use crate::lsp::json_rpc::JsonRpc;
 use crate::lsp::process::Process;
 use crate::lsp::{ExpectedMessageKey, JsonRpcHandler, ProcessHandler};
