@@ -109,6 +109,8 @@ RUN apt-get update && apt-get install \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+ENV HOME=/home/user
+
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -181,9 +183,8 @@ ENV DOTNET_ROOT=/home/user/.dotnet
 RUN dotnet tool install --global csharp-ls
 
 # Add .NET tools to PATH
-ENV PATH="${PATH}:/root/.dotnet/tools"
+ENV PATH="${PATH}:/home/user/.dotnet/tools"
 
-ENV HOME=/home/user
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
