@@ -155,6 +155,28 @@ install_ruby() {
     gem install ruby-lsp
 }
 
+# Function to install .NET and C# language server
+install_dotnet() {
+    echo "Installing .NET and C# language server..."
+    # Download and run dotnet install script
+    curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh
+    chmod +x dotnet-install.sh
+    ./dotnet-install.sh --channel 8.0
+    ./dotnet-install.sh --channel 9.0
+    rm dotnet-install.sh
+
+    # Add .NET to PATH
+    echo 'export DOTNET_ROOT=/root/.dotnet' >> /etc/profile.d/dotnet.sh
+    echo 'export PATH="${PATH}:/root/.dotnet:/root/.dotnet/tools"' >> /etc/profile.d/dotnet.sh
+
+    # Source the new PATH for the current session
+    export DOTNET_ROOT=/root/.dotnet
+    export PATH="${PATH}:/root/.dotnet:/root/.dotnet/tools"
+
+    # Install csharp-ls globally
+    dotnet tool install --global csharp-ls
+}
+
 # Function to download and install LSProxy binary
 install_lsproxy() {
     local arch=$(detect_arch)
@@ -200,6 +222,7 @@ main() {
     install_rust_tools
     install_go
     install_ruby
+    install_dotnet
     install_lsproxy
     install_ast_grep_config
     cleanup
