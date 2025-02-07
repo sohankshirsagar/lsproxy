@@ -105,24 +105,10 @@ setup_user() {
     export LSPROXY_TARGET_UID="$TARGET_UID"
 }
 
-# Function to setup environment variables
+# Function to setup environment variables (dynamically captured later)
 setup_environment() {
-    # Create environment file
-    ENV_FILE="/etc/profile.d/lsproxy-env.sh"
-    
-    cat > "$ENV_FILE" <<EOF
-export GOROOT=/usr/local/go
-export GOPATH=\$LSPROXY_USER_HOME/go
-export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH
-export DOTNET_ROOT=\$LSPROXY_USER_HOME/.dotnet
-export PATH=\$PATH:\$LSPROXY_USER_HOME/.dotnet:\$LSPROXY_USER_HOME/.dotnet/tools
-export PATH=/usr/src/phpactor/bin:\$PATH
-export PATH=/opt/jdtls/bin:\$PATH
-export RUST_LOG=info
-export RA_LOG="/tmp/rust-analyzer.log"
-EOF
-
-    chmod 644 "$ENV_FILE"
+    # No static environment variables are written here.
+    :
 }
 
 # Function to detect architecture
@@ -346,6 +332,8 @@ cleanup() {
 # Main installation
 main() {
     echo "Installing LSProxy version ${LSPROXY_VERSION} for Linux..."
+    # Capture the initial environment before any changes
+    OLD_ENV=$(env)
     check_root
     setup_user
     setup_environment
@@ -363,8 +351,26 @@ main() {
     install_lsproxy
     install_ast_grep_config
     cleanup
-    
+
+    # Capture the new environment and write out only differences for selected variables
+    NEW_ENV=$(env)
+    ENV_FILE="/etc/profile.d/lsproxy-env.sh"
+    {
+      for var in GOROOT GOPATH PATH DOTNET_ROOT RUST_LOG RA_LOG; do
+        old_val=$(echo "$OLD_ENV" | grep "^${var}=" || true)
+        new_val=$(echo "$NEW_ENV" | grep "^${var}=" || true)
+        if [ "$old_val" != "$new_val" ]; then
+          echo "export ${new_val}"
+        fi
+      done
+    } > "$ENV_FILE"
+    chmod 644 "$ENV_FILE"
+
     echo "LSProxy installation complete!"
+    echo ""
+    echo "To apply the new environment settings immediately, run:"
+    echo "  source /etc/profile.d/lsproxy-env.sh"
+    echo "Alternatively, log out and log back in."
 }
 
 main
