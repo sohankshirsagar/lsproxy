@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install \
     python3-pip \
     python3-venv \
     curl \
-    wget \
     clangd \
     build-essential \
     gcc \
