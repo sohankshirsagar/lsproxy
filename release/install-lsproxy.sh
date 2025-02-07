@@ -31,8 +31,11 @@ while [[ $# -gt 0 ]]; do
             echo "Install LSProxy and its dependencies"
             echo ""
             echo "Options:"
-            echo "  --user USERNAME    Specify an existing user, or a new user when combined with --uid"
-            echo "  --uid UID         Specify the UID for a new user (must be used with --user)"
+            echo "  --user USERNAME    Specify an existing user, or prepare directories for a future user when used with --uid"
+            echo "  --uid UID         Specify the UID for directory preparation (must be used with --user)"
+            echo ""
+            echo "Note: When both --user and --uid are provided, this script will prepare directories"
+            echo "      for that user/uid combination but will NOT create the user account itself."
             exit 0
             ;;
         *)
