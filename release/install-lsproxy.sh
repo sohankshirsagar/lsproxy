@@ -3,6 +3,125 @@ set -e
 
 LSPROXY_VERSION="0.3.5"
 
+# Initialize variables
+TARGET_USER=""
+TARGET_UID=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --user)
+            if [ -z "$2" ] || [[ "$2" == --* ]]; then
+                echo "Error: --user requires a value"
+                exit 1
+            fi
+            TARGET_USER="$2"
+            shift 2
+            ;;
+        --uid)
+            if [ -z "$2" ] || [[ "$2" == --* ]]; then
+                echo "Error: --uid requires a value"
+                exit 1
+            fi
+            TARGET_UID="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--user USERNAME] [--uid UID]"
+            echo "Install LSProxy and its dependencies"
+            echo ""
+            echo "Options:"
+            echo "  --user USERNAME    Specify an existing user, or a new user when combined with --uid"
+            echo "  --uid UID         Specify the UID for a new user (must be used with --user)"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate and setup user configuration
+setup_user() {
+    local user_home
+
+    # Case 1: No user or UID specified - use root
+    if [ -z "$TARGET_USER" ] && [ -z "$TARGET_UID" ]; then
+        TARGET_USER="root"
+        user_home="/root"
+        echo "No user specified, running as root"
+        
+    # Case 2: Only UID specified - error
+    elif [ -z "$TARGET_USER" ] && [ -n "$TARGET_UID" ]; then
+        echo "Error: --uid must be used with --user"
+        exit 1
+        
+    # Case 3: Only username specified - must exist
+    elif [ -n "$TARGET_USER" ] && [ -z "$TARGET_UID" ]; then
+        if ! id "$TARGET_USER" >/dev/null 2>&1; then
+            echo "Error: User $TARGET_USER does not exist"
+            exit 1
+        fi
+        user_home=$(eval echo ~$TARGET_USER)
+        echo "Using existing user: $TARGET_USER"
+        
+    # Case 4: Both username and UID specified
+    else
+        # Check if user exists
+        if id "$TARGET_USER" >/dev/null 2>&1; then
+            # User exists - verify UID matches
+            existing_uid=$(id -u "$TARGET_USER")
+            if [ "$existing_uid" != "$TARGET_UID" ]; then
+                echo "Error: User $TARGET_USER exists but has UID $existing_uid (not $TARGET_UID)"
+                exit 1
+            fi
+            user_home=$(eval echo ~$TARGET_USER)
+            echo "Using existing user: $TARGET_USER with UID: $TARGET_UID"
+        else
+            # User doesn't exist - we'll create the directories expecting it
+            user_home="/home/$TARGET_USER"
+            echo "Preparing for user: $TARGET_USER with UID: $TARGET_UID"
+        fi
+    fi
+
+    # Create and set up directories
+    mkdir -p "$user_home"/{.local,.cargo,go}
+    
+    # If we have a UID, set ownership
+    if [ -n "$TARGET_UID" ]; then
+        chown -R "${TARGET_UID}:${TARGET_UID}" "$user_home"
+    elif [ "$TARGET_USER" != "root" ]; then
+        chown -R "${TARGET_USER}:${TARGET_USER}" "$user_home"
+    fi
+
+    # Export variables for use in other functions
+    export LSPROXY_USER_HOME="$user_home"
+    export LSPROXY_TARGET_USER="$TARGET_USER"
+    export LSPROXY_TARGET_UID="$TARGET_UID"
+}
+
+# Function to setup environment variables
+setup_environment() {
+    # Create environment file
+    ENV_FILE="/etc/profile.d/lsproxy-env.sh"
+    
+    cat > "$ENV_FILE" <<EOF
+export GOROOT=/usr/local/go
+export GOPATH=\$LSPROXY_USER_HOME/go
+export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH
+export DOTNET_ROOT=\$LSPROXY_USER_HOME/.dotnet
+export PATH=\$PATH:\$LSPROXY_USER_HOME/.dotnet:\$LSPROXY_USER_HOME/.dotnet/tools
+export PATH=/usr/src/phpactor/bin:\$PATH
+export PATH=/opt/jdtls/bin:\$PATH
+export RUST_LOG=info
+export RA_LOG="/tmp/rust-analyzer.log"
+EOF
+
+    chmod 644 "$ENV_FILE"
+}
+
 # Function to detect architecture
 detect_arch() {
     local arch=$(uname -m)
@@ -158,23 +277,36 @@ install_ruby() {
 # Function to install .NET and C# language server
 install_dotnet() {
     echo "Installing .NET and C# language server..."
-    # Download and run dotnet install script
+    local dotnet_dir="$LSPROXY_USER_HOME/.dotnet"
+    
     curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh
     chmod +x dotnet-install.sh
-    ./dotnet-install.sh --channel 8.0
-    ./dotnet-install.sh --channel 9.0
+    
+    if [ "$LSPROXY_TARGET_USER" != "root" ]; then
+        # Install as target user if it exists
+        if id "$LSPROXY_TARGET_USER" >/dev/null 2>&1; then
+            su - "$LSPROXY_TARGET_USER" -c "
+                ./dotnet-install.sh --channel 8.0 --install-dir $dotnet_dir
+                ./dotnet-install.sh --channel 9.0 --install-dir $dotnet_dir
+                export DOTNET_ROOT=$dotnet_dir
+                export PATH=\$PATH:$dotnet_dir:$dotnet_dir/tools
+                dotnet tool install --global csharp-ls
+            "
+        else
+            # Just install the files, user will be created later
+            ./dotnet-install.sh --channel 8.0 --install-dir "$dotnet_dir"
+            ./dotnet-install.sh --channel 9.0 --install-dir "$dotnet_dir"
+        fi
+    else
+        # Install as root
+        ./dotnet-install.sh --channel 8.0 --install-dir "$dotnet_dir"
+        ./dotnet-install.sh --channel 9.0 --install-dir "$dotnet_dir"
+        export DOTNET_ROOT="$dotnet_dir"
+        export PATH="$PATH:$dotnet_dir:$dotnet_dir/tools"
+        dotnet tool install --global csharp-ls
+    fi
+    
     rm dotnet-install.sh
-
-    # Add .NET to PATH
-    echo 'export DOTNET_ROOT=/root/.dotnet' >> /etc/profile.d/dotnet.sh
-    echo 'export PATH="${PATH}:/root/.dotnet:/root/.dotnet/tools"' >> /etc/profile.d/dotnet.sh
-
-    # Source the new PATH for the current session
-    export DOTNET_ROOT=/root/.dotnet
-    export PATH="${PATH}:/root/.dotnet:/root/.dotnet/tools"
-
-    # Install csharp-ls globally
-    dotnet tool install --global csharp-ls
 }
 
 # Function to download and install LSProxy binary
@@ -212,6 +344,8 @@ cleanup() {
 main() {
     echo "Installing LSProxy version ${LSPROXY_VERSION} for Linux..."
     check_root
+    setup_user
+    setup_environment
     
     install_system_deps
     install_python
