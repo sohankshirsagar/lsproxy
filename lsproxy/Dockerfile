@@ -32,7 +32,6 @@ RUN apt-get update && apt-get install \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV HOME=/home/user
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -70,6 +69,10 @@ ENV PATH="/opt/jdtls/bin:${PATH}"
 RUN rustup component add rust-analyzer
 RUN rustup component add rustfmt
 
+# Install coverage tools
+RUN cargo install cargo-llvm-cov
+RUN rustup component add llvm-tools-preview
+
 # Install jedi python language server, ast grep for tree sitter
 RUN pip install jedi-language-server ast-grep-cli
 
@@ -85,7 +88,7 @@ RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${TARGETARCH}.tar.gz" && \
     cp ~/go/bin/gopls /usr/bin/gopls
 
 ENV GOROOT=/usr/local/go
-ENV GOPATH=/root/go
+ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 # Install ruby and ruby-lsp
@@ -94,6 +97,8 @@ RUN apt update && apt install -y ruby-full \
     && rm -rf /var/lib/apt/lists/*
 
 RUN gem install ruby-lsp
+
+ENV HOME=/home/user
 
 # Download and run dotnet install script
 RUN curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh \
@@ -112,9 +117,6 @@ RUN dotnet tool install --global csharp-ls
 # Add .NET tools to PATH
 ENV PATH="${PATH}:/home/user/.dotnet/tools"
 
-# Install coverage tools
-RUN cargo install cargo-llvm-cov
-RUN rustup component add llvm-tools-preview
 
 COPY Cargo.toml .
 
