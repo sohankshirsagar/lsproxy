@@ -78,7 +78,7 @@ pub const C_EXTENSIONS: &[&str] = &["c", "h"];
 pub const CPP_EXTENSIONS: &[&str] = &["cpp", "cc", "cxx", "h", "hpp", "hxx", "hh"];
 pub const C_AND_CPP_EXTENSIONS: &[&str] = &["cpp", "cc", "c", "cxx", "h", "hpp", "hxx", "hh"];
 
-pub const CSHARP_ROOT_FILES: &[&str] = &["*.sln"];
+pub const CSHARP_ROOT_FILES: &[&str] = &["*.sln", "*.csproj", "*.vcxproj"];
 pub const CSHARP_FILE_PATTERNS: &[&str] = &["**/*.cs"];
 pub const CSHARP_EXTENSIONS: &[&str] = &["cs"];
 

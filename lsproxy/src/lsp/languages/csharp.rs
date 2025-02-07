@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use async_trait::async_trait;
-use lsp_types::InitializeParams;
+use lsp_types::{InitializeParams, Url};
 use notify_debouncer_mini::DebouncedEvent;
 use std::{error::Error, path::Path, process::Stdio};
 use tokio::{process::Command, sync::broadcast::Receiver};
@@ -42,7 +42,7 @@ impl LspClient for CSharpClient {
         Ok(InitializeParams {
             capabilities: self.get_capabilities(),
             workspace_folders: Some(workspace_folders.clone()),
-            root_uri: workspace_folders.first().map(|f| f.uri.clone()), // <--------- Not default behavior
+            root_uri: Some(Url::from_file_path(root_path).unwrap()),
             ..Default::default()
         })
     }
