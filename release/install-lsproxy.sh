@@ -105,11 +105,6 @@ setup_user() {
     export LSPROXY_TARGET_UID="$TARGET_UID"
 }
 
-# Function to setup environment variables (dynamically captured later)
-setup_environment() {
-    # No static environment variables are written here.
-    :
-}
 
 # Function to detect architecture
 detect_arch() {
