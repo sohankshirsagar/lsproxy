@@ -218,8 +218,7 @@ mod test {
     use crate::test_utils::{csharp_sample_path, python_sample_path, TestContext};
 
     #[tokio::test]
-    async fn test_csharp_referenced_symbols(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_csharp_referenced_symbols() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup(&csharp_sample_path(), false).await?;
         let state = initialize_app_state().await?;
 
@@ -255,7 +254,419 @@ mod test {
         let referenced_symbols_response: ReferencedSymbolsResponse =
             serde_json::from_slice(&bytes)?;
 
-        let expected_response = ReferencedSymbolsResponse { workspace_symbols: vec![ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("AddNeighborsToOpenList"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 34 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("AddNeighborsToOpenList"), kind: String::from("method"), identifier_position: FilePosition { path: String::from("AStar.cs"), position: Position { line: 51, character: 21 } }, range: FileRange { path: String::from("AStar.cs"), start: Position { line: 51, character: 0 }, end: Position { line: 76, character: 9 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("AddNeighborsToOpenList"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 38, character: 16 }, end: Position { line: 38, character: 38 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("AddNeighborsToOpenList"), kind: String::from("method"), identifier_position: FilePosition { path: String::from("AStar.cs"), position: Position { line: 51, character: 21 } }, range: FileRange { path: String::from("AStar.cs"), start: Position { line: 51, character: 0 }, end: Position { line: 76, character: 9 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("Distance"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 60, character: 94 }, end: Position { line: 60, character: 102 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("Distance"), kind: String::from("method"), identifier_position: FilePosition { path: String::from("AStar.cs"), position: Position { line: 78, character: 23 } }, range: FileRange { path: String::from("AStar.cs"), start: Position { line: 78, character: 0 }, end: Position { line: 81, character: 9 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("FindNeighborInList"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 66, character: 25 }, end: Position { line: 66, character: 43 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("FindNeighborInList"), kind: String::from("method"), identifier_position: FilePosition { path: String::from("AStar.cs"), position: Position { line: 83, character: 21 } }, range: FileRange { path: String::from("AStar.cs"), start: Position { line: 83, character: 0 }, end: Position { line: 86, character: 9 } } }] }, ReferenceWithSymbolDefinitions { reference: Identifier { name: String::from("FindNeighborInList"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 67, character: 25 }, end: Position { line: 67, character: 43 } }, kind: Some(String::from("function-call")) }, definitions: vec![Symbol { name: String::from("FindNeighborInList"), kind: String::from("method"), identifier_position: FilePosition { path: String::from("AStar.cs"), position: Position { line: 83, character: 21 } }, range: FileRange { path: String::from("AStar.cs"), start: Position { line: 83, character: 0 }, end: Position { line: 86, character: 9 } } }] }], external_symbols: vec![Identifier { name: String::from("Add"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 27, character: 20 }, end: Position { line: 27, character: 23 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Any"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 32, character: 27 }, end: Position { line: 32, character: 30 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("RemoveAt"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 36, character: 22 }, end: Position { line: 36, character: 30 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Add"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 37, character: 24 }, end: Position { line: 37, character: 27 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Insert"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 41, character: 18 }, end: Position { line: 41, character: 24 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Insert"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 45, character: 22 }, end: Position { line: 45, character: 28 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Add"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 71, character: 30 }, end: Position { line: 71, character: 33 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Sort"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 75, character: 18 }, end: Position { line: 75, character: 22 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Sqrt"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 80, character: 24 }, end: Position { line: 80, character: 28 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Pow"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 80, character: 34 }, end: Position { line: 80, character: 37 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Pow"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 80, character: 74 }, end: Position { line: 80, character: 77 } }, kind: Some(String::from("function-call")) }, Identifier { name: String::from("Any"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 85, character: 24 }, end: Position { line: 85, character: 27 } }, kind: Some(String::from("function-call")) }], not_found: vec![Identifier { name: String::from("Node"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 17, character: 27 }, end: Position { line: 17, character: 31 } }, kind: Some(String::from("class-instantiation")) }, Identifier { name: String::from("Node"), range: FileRange { path: String::from("AStar.cs"), start: Position { line: 60, character: 35 }, end: Position { line: 60, character: 39 } }, kind: Some(String::from("class-instantiation")) }] };
+        let expected_response = ReferencedSymbolsResponse {
+            workspace_symbols: vec![
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("AddNeighborsToOpenList"),
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 28,
+                                character: 12,
+                            },
+                            end: Position {
+                                line: 28,
+                                character: 34,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("AddNeighborsToOpenList"),
+                        kind: String::from("method"),
+                        identifier_position: FilePosition {
+                            path: String::from("AStar.cs"),
+                            position: Position {
+                                line: 51,
+                                character: 21,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 51,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 76,
+                                character: 9,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("AddNeighborsToOpenList"),
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 38,
+                                character: 16,
+                            },
+                            end: Position {
+                                line: 38,
+                                character: 38,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("AddNeighborsToOpenList"),
+                        kind: String::from("method"),
+                        identifier_position: FilePosition {
+                            path: String::from("AStar.cs"),
+                            position: Position {
+                                line: 51,
+                                character: 21,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 51,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 76,
+                                character: 9,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("Distance"),
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 60,
+                                character: 94,
+                            },
+                            end: Position {
+                                line: 60,
+                                character: 102,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("Distance"),
+                        kind: String::from("method"),
+                        identifier_position: FilePosition {
+                            path: String::from("AStar.cs"),
+                            position: Position {
+                                line: 78,
+                                character: 23,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 78,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 81,
+                                character: 9,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("FindNeighborInList"),
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 66,
+                                character: 25,
+                            },
+                            end: Position {
+                                line: 66,
+                                character: 43,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("FindNeighborInList"),
+                        kind: String::from("method"),
+                        identifier_position: FilePosition {
+                            path: String::from("AStar.cs"),
+                            position: Position {
+                                line: 83,
+                                character: 21,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 83,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 86,
+                                character: 9,
+                            },
+                        },
+                    }],
+                },
+                ReferenceWithSymbolDefinitions {
+                    reference: Identifier {
+                        name: String::from("FindNeighborInList"),
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 67,
+                                character: 25,
+                            },
+                            end: Position {
+                                line: 67,
+                                character: 43,
+                            },
+                        },
+                        kind: Some(String::from("function-call")),
+                    },
+                    definitions: vec![Symbol {
+                        name: String::from("FindNeighborInList"),
+                        kind: String::from("method"),
+                        identifier_position: FilePosition {
+                            path: String::from("AStar.cs"),
+                            position: Position {
+                                line: 83,
+                                character: 21,
+                            },
+                        },
+                        range: FileRange {
+                            path: String::from("AStar.cs"),
+                            start: Position {
+                                line: 83,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: 86,
+                                character: 9,
+                            },
+                        },
+                    }],
+                },
+            ],
+            external_symbols: vec![
+                Identifier {
+                    name: String::from("Add"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 27,
+                            character: 20,
+                        },
+                        end: Position {
+                            line: 27,
+                            character: 23,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Any"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 32,
+                            character: 27,
+                        },
+                        end: Position {
+                            line: 32,
+                            character: 30,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("RemoveAt"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 36,
+                            character: 22,
+                        },
+                        end: Position {
+                            line: 36,
+                            character: 30,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Add"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 37,
+                            character: 24,
+                        },
+                        end: Position {
+                            line: 37,
+                            character: 27,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Insert"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 41,
+                            character: 18,
+                        },
+                        end: Position {
+                            line: 41,
+                            character: 24,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Insert"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 45,
+                            character: 22,
+                        },
+                        end: Position {
+                            line: 45,
+                            character: 28,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Add"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 71,
+                            character: 30,
+                        },
+                        end: Position {
+                            line: 71,
+                            character: 33,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Sort"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 75,
+                            character: 18,
+                        },
+                        end: Position {
+                            line: 75,
+                            character: 22,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Sqrt"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 80,
+                            character: 24,
+                        },
+                        end: Position {
+                            line: 80,
+                            character: 28,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Pow"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 80,
+                            character: 34,
+                        },
+                        end: Position {
+                            line: 80,
+                            character: 37,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Pow"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 80,
+                            character: 74,
+                        },
+                        end: Position {
+                            line: 80,
+                            character: 77,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+                Identifier {
+                    name: String::from("Any"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 85,
+                            character: 24,
+                        },
+                        end: Position {
+                            line: 85,
+                            character: 27,
+                        },
+                    },
+                    kind: Some(String::from("function-call")),
+                },
+            ],
+            not_found: vec![
+                Identifier {
+                    name: String::from("Node"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 17,
+                            character: 27,
+                        },
+                        end: Position {
+                            line: 17,
+                            character: 31,
+                        },
+                    },
+                    kind: Some(String::from("class-instantiation")),
+                },
+                Identifier {
+                    name: String::from("Node"),
+                    range: FileRange {
+                        path: String::from("AStar.cs"),
+                        start: Position {
+                            line: 60,
+                            character: 35,
+                        },
+                        end: Position {
+                            line: 60,
+                            character: 39,
+                        },
+                    },
+                    kind: Some(String::from("class-instantiation")),
+                },
+            ],
+        };
 
         // Sort definitions for each reference before comparing
         let mut sorted_response = referenced_symbols_response;
