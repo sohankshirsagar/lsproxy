@@ -345,18 +345,10 @@ main() {
     install_ast_grep_config
     cleanup
 
-    # Capture the new environment and write out only differences for selected variables
+    # Capture the new environment and write out only differences dynamically
     NEW_ENV=$(env)
     ENV_FILE="/etc/profile.d/lsproxy-env.sh"
-    {
-      for var in GOROOT GOPATH PATH DOTNET_ROOT RUST_LOG RA_LOG; do
-        old_val=$(echo "$OLD_ENV" | grep "^${var}=" || true)
-        new_val=$(echo "$NEW_ENV" | grep "^${var}=" || true)
-        if [ "$old_val" != "$new_val" ]; then
-          echo "export ${new_val}"
-        fi
-      done
-    } > "$ENV_FILE"
+    comm -13 <(echo "$OLD_ENV" | sort) <(echo "$NEW_ENV" | sort) | sed 's/^/export /' > "$ENV_FILE"
     chmod 644 "$ENV_FILE"
 
     echo "LSProxy installation complete!"
