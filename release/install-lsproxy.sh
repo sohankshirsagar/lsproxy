@@ -1,7 +1,110 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.3.5"
+LSPROXY_VERSION="0.3.6"
+
+# Initialize variables
+TARGET_USER=""
+TARGET_UID=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --user)
+            if [ -z "$2" ] || [[ "$2" == --* ]]; then
+                echo "Error: --user requires a value"
+                exit 1
+            fi
+            TARGET_USER="$2"
+            shift 2
+            ;;
+        --uid)
+            if [ -z "$2" ] || [[ "$2" == --* ]]; then
+                echo "Error: --uid requires a value"
+                exit 1
+            fi
+            TARGET_UID="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--user USERNAME] [--uid UID]"
+            echo "Install LSProxy and its dependencies"
+            echo ""
+            echo "Options:"
+            echo "  --user USERNAME    Specify an existing user, or prepare directories for a future user when used with --uid"
+            echo "  --uid UID         Specify the UID for directory preparation (must be used with --user)"
+            echo ""
+            echo "Note: When both --user and --uid are provided, this script will prepare directories"
+            echo "      for that user/uid combination but will NOT create the user account itself."
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate and setup user configuration
+setup_user() {
+    local user_home
+
+    # Case 1: No user or UID specified - use root
+    if [ -z "$TARGET_USER" ] && [ -z "$TARGET_UID" ]; then
+        TARGET_USER="root"
+        user_home="/root"
+        echo "No user specified, running as root"
+        
+    # Case 2: Only UID specified - error
+    elif [ -z "$TARGET_USER" ] && [ -n "$TARGET_UID" ]; then
+        echo "Error: --uid must be used with --user"
+        exit 1
+        
+    # Case 3: Only username specified - must exist
+    elif [ -n "$TARGET_USER" ] && [ -z "$TARGET_UID" ]; then
+        if ! id "$TARGET_USER" >/dev/null 2>&1; then
+            echo "Error: User $TARGET_USER does not exist"
+            exit 1
+        fi
+        user_home=$(eval echo ~$TARGET_USER)
+        echo "Using existing user: $TARGET_USER"
+        
+    # Case 4: Both username and UID specified
+    else
+        # Check if user exists
+        if id "$TARGET_USER" >/dev/null 2>&1; then
+            # User exists - verify UID matches
+            existing_uid=$(id -u "$TARGET_USER")
+            if [ "$existing_uid" != "$TARGET_UID" ]; then
+                echo "Error: User $TARGET_USER exists but has UID $existing_uid (not $TARGET_UID)"
+                exit 1
+            fi
+            user_home=$(eval echo ~$TARGET_USER)
+            echo "Using existing user: $TARGET_USER with UID: $TARGET_UID"
+        else
+            # User doesn't exist - we'll create the directories expecting it
+            user_home="/home/$TARGET_USER"
+            echo "Preparing for user: $TARGET_USER with UID: $TARGET_UID"
+        fi
+    fi
+
+    # Create and set up directories
+    mkdir -p "$user_home"/{.local,.cargo,go}
+    
+    # If we have a UID, set ownership
+    if [ -n "$TARGET_UID" ]; then
+        chown -R "${TARGET_UID}:${TARGET_UID}" "$user_home"
+    elif [ "$TARGET_USER" != "root" ]; then
+        chown -R "${TARGET_USER}:${TARGET_USER}" "$user_home"
+    fi
+
+    # Export variables for use in other functions
+    export LSPROXY_USER_HOME="$user_home"
+    export LSPROXY_TARGET_USER="$TARGET_USER"
+    export LSPROXY_TARGET_UID="$TARGET_UID"
+}
+
 
 # Function to detect architecture
 detect_arch() {
@@ -155,6 +258,41 @@ install_ruby() {
     gem install ruby-lsp
 }
 
+# Function to install .NET and C# language server
+install_dotnet() {
+    echo "Installing .NET and C# language server..."
+    local dotnet_dir="$LSPROXY_USER_HOME/.dotnet"
+    
+    curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh
+    chmod +x dotnet-install.sh
+    
+    if [ "$LSPROXY_TARGET_USER" != "root" ]; then
+        # Install as target user if it exists
+        if id "$LSPROXY_TARGET_USER" >/dev/null 2>&1; then
+            su - "$LSPROXY_TARGET_USER" -c "
+                ./dotnet-install.sh --channel 8.0 --install-dir $dotnet_dir
+                ./dotnet-install.sh --channel 9.0 --install-dir $dotnet_dir
+                export DOTNET_ROOT=$dotnet_dir
+                export PATH=\$PATH:$dotnet_dir:$dotnet_dir/tools
+                dotnet tool install --global csharp-ls
+            "
+        else
+            # Just install the files, user will be created later
+            ./dotnet-install.sh --channel 8.0 --install-dir "$dotnet_dir"
+            ./dotnet-install.sh --channel 9.0 --install-dir "$dotnet_dir"
+        fi
+    else
+        # Install as root
+        ./dotnet-install.sh --channel 8.0 --install-dir "$dotnet_dir"
+        ./dotnet-install.sh --channel 9.0 --install-dir "$dotnet_dir"
+        export DOTNET_ROOT="$dotnet_dir"
+        export PATH="$PATH:$dotnet_dir:$dotnet_dir/tools"
+        dotnet tool install --global csharp-ls
+    fi
+    
+    rm dotnet-install.sh
+}
+
 # Function to download and install LSProxy binary
 install_lsproxy() {
     local arch=$(detect_arch)
@@ -189,8 +327,10 @@ cleanup() {
 # Main installation
 main() {
     echo "Installing LSProxy version ${LSPROXY_VERSION} for Linux..."
+    # Capture the initial environment before any changes
+    OLD_ENV=$(env)
     check_root
-    
+    setup_user
     install_system_deps
     install_python
     install_nodejs
@@ -200,11 +340,22 @@ main() {
     install_rust_tools
     install_go
     install_ruby
+    install_dotnet
     install_lsproxy
     install_ast_grep_config
     cleanup
-    
+
+    # Capture the new environment and write out only differences dynamically
+    NEW_ENV=$(env)
+    ENV_FILE="/etc/profile.d/lsproxy-env.sh"
+    comm -13 <(echo "$OLD_ENV" | sort) <(echo "$NEW_ENV" | sort) | sed 's/^/export /' > "$ENV_FILE"
+    chmod 644 "$ENV_FILE"
+
     echo "LSProxy installation complete!"
+    echo ""
+    echo "To apply the new environment settings immediately, run:"
+    echo "  source /etc/profile.d/lsproxy-env.sh"
+    echo "Alternatively, log out and log back in."
 }
 
 main

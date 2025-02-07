@@ -25,6 +25,7 @@ pub async fn health_check(data: Data<AppState>) -> HttpResponse {
         SupportedLanguages::TypeScriptJavaScript,
         SupportedLanguages::Rust,
         SupportedLanguages::CPP,
+        SupportedLanguages::CSharp,
         SupportedLanguages::Java,
         SupportedLanguages::Golang,
         SupportedLanguages::PHP,

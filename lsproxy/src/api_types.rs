@@ -76,6 +76,8 @@ pub enum SupportedLanguages {
     Rust,
     #[serde(rename = "cpp")]
     CPP,
+    #[serde(rename = "csharp")]
+    CSharp,
     #[serde(rename = "java")]
     Java,
     #[serde(rename = "golang")]

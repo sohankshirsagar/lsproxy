@@ -44,6 +44,7 @@ pub trait LspClient: Send {
         let mut capabilities = ClientCapabilities::default();
         capabilities.text_document = Some(TextDocumentClientCapabilities {
             document_symbol: Some(DocumentSymbolClientCapabilities {
+                dynamic_registration: Some(false),
                 hierarchical_document_symbol_support: Some(true),
                 ..Default::default()
             }),
@@ -87,6 +88,7 @@ pub trait LspClient: Send {
         let mut response_receiver = self.get_pending_requests().add_request(id).await?;
 
         let message = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+        debug!("Message: {:?}", message);
         self.get_process().send(&message).await?;
 
         let response = response_receiver
@@ -108,7 +110,7 @@ pub trait LspClient: Send {
     }
 
     async fn start_response_listener(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let process = self.get_process().clone();
+        let mut process = self.get_process().clone();
         let pending_requests = self.get_pending_requests().clone();
         let json_rpc = self.get_json_rpc().clone();
 
@@ -123,10 +125,18 @@ pub trait LspClient: Send {
                                     error!("Failed to send response for request {}", id);
                                 }
                             } else {
-                                error!(
-                                    "Failed to remove pending request {} - Message: {:?}",
+                                debug!(
+                                    "Responding to server message {} - Message: {:?}",
                                     id, message
                                 );
+                                let response = json_rpc.create_success_response(id);
+
+                                let message = format!(
+                                    "Content-Length: {}\r\n\r\n{}",
+                                    response.len(),
+                                    response
+                                );
+                                let _ = process.send(&message).await;
                             }
                         } else if let Some(params) = message.params.clone() {
                             let message_key = ExpectedMessageKey {
@@ -294,9 +304,13 @@ pub trait LspClient: Send {
             )
             .await?;
 
-        let references: Vec<Location> = serde_json::from_value(result)?;
+        let ref_resp: Vec<Location> = if result.is_null() {
+            Vec::new()
+        } else {
+            serde_json::from_value(result)?
+        };
         debug!("Received references response");
-        Ok(references)
+        Ok(ref_resp)
     }
 
     fn get_process(&mut self) -> &mut ProcessHandler;

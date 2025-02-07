@@ -109,6 +109,8 @@ RUN apt-get update && apt-get install \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+ENV HOME=/home/user
+
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -166,7 +168,23 @@ RUN apt update && apt install -y ruby-full \
 
 RUN gem install ruby-lsp
 
-ENV HOME=/home/user
+# Download and run dotnet install script
+RUN curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh \
+    && chmod +x dotnet-install.sh \
+    && ./dotnet-install.sh --channel 8.0 --install-dir /home/user/.dotnet \
+    && ./dotnet-install.sh --channel 9.0 --install-dir /home/user/.dotnet \
+    && rm dotnet-install.sh
+
+# Add .NET to PATH
+ENV PATH="${PATH}:/home/user/.dotnet"
+ENV DOTNET_ROOT=/home/user/.dotnet
+
+# Install csharp-ls globally
+RUN dotnet tool install --global csharp-ls
+
+# Add .NET tools to PATH
+ENV PATH="${PATH}:/home/user/.dotnet/tools"
+
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/user/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
