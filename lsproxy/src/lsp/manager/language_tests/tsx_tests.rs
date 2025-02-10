@@ -1,3 +1,5 @@
+use crate::api_types;
+
 use super::*;
 
 #[tokio::test]
@@ -23,15 +25,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 13,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 15,
-                    character: 0,
-                },
-                end: Position {
-                    line: 92,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 15,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 92,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -45,15 +49,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 10,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 8,
-                    character: 0,
-                },
-                end: Position {
-                    line: 13,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 8,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 13,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -67,15 +73,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 14,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 36,
-                    character: 0,
-                },
-                end: Position {
-                    line: 36,
-                    character: 19,
+                range: api_types::Range {
+                    start: Position {
+                        line: 36,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 36,
+                        character: 19,
+                    },
                 },
             },
         },
@@ -89,15 +97,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 10,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 35,
-                    character: 0,
-                },
-                end: Position {
-                    line: 41,
-                    character: 5,
+                range: api_types::Range {
+                    start: Position {
+                        line: 35,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 41,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -111,15 +121,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 10,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 65,
-                    character: 0,
-                },
-                end: Position {
-                    line: 69,
-                    character: 5,
+                range: api_types::Range {
+                    start: Position {
+                        line: 65,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 69,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -133,15 +145,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 14,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 58,
-                    character: 0,
-                },
-                end: Position {
-                    line: 58,
-                    character: 21,
+                range: api_types::Range {
+                    start: Position {
+                        line: 58,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 58,
+                        character: 21,
+                    },
                 },
             },
         },
@@ -155,15 +169,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 14,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 37,
-                    character: 0,
-                },
-                end: Position {
-                    line: 37,
-                    character: 21,
+                range: api_types::Range {
+                    start: Position {
+                        line: 37,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 37,
+                        character: 21,
+                    },
                 },
             },
         },
@@ -177,15 +193,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 18,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 45,
-                    character: 0,
-                },
-                end: Position {
-                    line: 45,
-                    character: 23,
+                range: api_types::Range {
+                    start: Position {
+                        line: 45,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 45,
+                        character: 23,
+                    },
                 },
             },
         },
@@ -199,15 +217,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 10,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/PathfinderDisplay.tsx"),
-                start: Position {
-                    line: 55,
-                    character: 0,
-                },
-                end: Position {
-                    line: 63,
-                    character: 5,
+                range: api_types::Range {
+                    start: Position {
+                        line: 55,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 63,
+                        character: 5,
+                    },
                 },
             },
         },

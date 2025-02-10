@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
     },
-    "version": "0.1.7"
+    "version": "0.2.0"
   },
   "servers": [
     {
@@ -278,7 +278,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FileRange"
+                "$ref": "#/components/schemas/ReadSourceCodeRequest"
               }
             }
           },
@@ -392,22 +392,17 @@
         "description": "A range within a specific file, defined by start and end positions",
         "required": [
           "path",
-          "start",
-          "end"
+          "range"
         ],
         "properties": {
-          "end": {
-            "$ref": "#/components/schemas/Position",
-            "description": "The end position of the range."
-          },
           "path": {
             "type": "string",
             "description": "The path to the file.",
             "example": "src/main.py"
           },
-          "start": {
-            "$ref": "#/components/schemas/Position",
-            "description": "The start position of the range."
+          "range": {
+            "$ref": "#/components/schemas/Range",
+            "description": "The range within the file"
           }
         }
       },
@@ -558,9 +553,12 @@
         "type": "object",
         "required": [
           "name",
-          "range"
+          "file_range"
         ],
         "properties": {
+          "file_range": {
+            "$ref": "#/components/schemas/FileRange"
+          },
           "kind": {
             "type": [
               "string",
@@ -569,9 +567,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "range": {
-            "$ref": "#/components/schemas/FileRange"
           }
         }
       },
@@ -610,6 +605,47 @@
             "description": "0-indexed line number.",
             "example": 10,
             "minimum": 0
+          }
+        }
+      },
+      "Range": {
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "properties": {
+          "end": {
+            "$ref": "#/components/schemas/Position",
+            "description": "The end position of the range."
+          },
+          "start": {
+            "$ref": "#/components/schemas/Position",
+            "description": "The start position of the range."
+          }
+        }
+      },
+      "ReadSourceCodeRequest": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the file, relative to the workspace root",
+            "example": "src/main.py"
+          },
+          "range": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Range",
+                "description": "Optional range within the file to read"
+              }
+            ]
           }
         }
       },
@@ -725,9 +761,13 @@
           "name",
           "kind",
           "identifier_position",
-          "range"
+          "file_range"
         ],
         "properties": {
+          "file_range": {
+            "$ref": "#/components/schemas/FileRange",
+            "description": "The full range of the symbol."
+          },
           "identifier_position": {
             "$ref": "#/components/schemas/FilePosition",
             "description": "The start position of the symbol's identifier."
@@ -741,10 +781,6 @@
             "type": "string",
             "description": "The name of the symbol.",
             "example": "User"
-          },
-          "range": {
-            "$ref": "#/components/schemas/FileRange",
-            "description": "The full range of the symbol."
           }
         }
       },
@@ -756,9 +792,13 @@
             "name",
             "kind",
             "identifier_position",
-            "range"
+            "file_range"
           ],
           "properties": {
+            "file_range": {
+              "$ref": "#/components/schemas/FileRange",
+              "description": "The full range of the symbol."
+            },
             "identifier_position": {
               "$ref": "#/components/schemas/FilePosition",
               "description": "The start position of the symbol's identifier."
@@ -772,10 +812,6 @@
               "type": "string",
               "description": "The name of the symbol.",
               "example": "User"
-            },
-            "range": {
-              "$ref": "#/components/schemas/FileRange",
-              "description": "The full range of the symbol."
             }
           }
         }

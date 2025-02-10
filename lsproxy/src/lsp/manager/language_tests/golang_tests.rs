@@ -1,4 +1,5 @@
 use super::*;
+use crate::api_types;
 
 #[tokio::test]
 async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,15 +24,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 5,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 57,
-                    character: 0,
-                },
-                end: Position {
-                    line: 122,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 57,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 122,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -45,15 +48,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 5,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 41,
-                    character: 0,
-                },
-                end: Position {
-                    line: 54,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 41,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 54,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -67,15 +72,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 18,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 17,
-                    character: 0,
-                },
-                end: Position {
-                    line: 17,
-                    character: 55,
+                range: api_types::Range {
+                    start: Position {
+                        line: 17,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 17,
+                        character: 55,
+                    },
                 },
             },
         },
@@ -89,15 +96,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 18,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 18,
-                    character: 0,
-                },
-                end: Position {
-                    line: 18,
-                    character: 64,
+                range: api_types::Range {
+                    start: Position {
+                        line: 18,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 64,
+                    },
                 },
             },
         },
@@ -111,15 +120,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 19,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 30,
-                    character: 0,
-                },
-                end: Position {
-                    line: 38,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 30,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 38,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -133,15 +144,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 19,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 24,
-                    character: 0,
-                },
-                end: Position {
-                    line: 29,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 24,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 29,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -155,15 +168,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 18,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 19,
-                    character: 0,
-                },
-                end: Position {
-                    line: 23,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 19,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 23,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -177,15 +192,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 5,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 15,
-                    character: 0,
-                },
-                end: Position {
-                    line: 15,
-                    character: 27,
+                range: api_types::Range {
+                    start: Position {
+                        line: 15,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 15,
+                        character: 27,
+                    },
                 },
             },
         },
@@ -199,15 +216,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 5,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: file_path.to_string(),
-                start: Position {
-                    line: 7,
-                    character: 0,
-                },
-                end: Position {
-                    line: 12,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 7,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 12,
+                        character: 1,
+                    },
                 },
             },
         },

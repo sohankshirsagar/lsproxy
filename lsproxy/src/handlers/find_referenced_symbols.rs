@@ -166,13 +166,18 @@ pub async fn find_referenced_symbols(
 
     // Sort workspace_symbols by reference location
     workspace_symbols.sort_by(|a, b| {
-        let path_cmp = a.reference.range.path.cmp(&b.reference.range.path);
+        let path_cmp = a
+            .reference
+            .file_range
+            .path
+            .cmp(&b.reference.file_range.path);
         if path_cmp.is_eq() {
             a.reference
+                .file_range
                 .range
                 .start
                 .line
-                .cmp(&b.reference.range.start.line)
+                .cmp(&b.reference.file_range.range.start.line)
         } else {
             path_cmp
         }
@@ -180,9 +185,13 @@ pub async fn find_referenced_symbols(
 
     // Sort external_symbols by location
     external_symbols.sort_by(|a, b| {
-        let path_cmp = a.range.path.cmp(&b.range.path);
+        let path_cmp = a.file_range.path.cmp(&b.file_range.path);
         if path_cmp.is_eq() {
-            a.range.start.line.cmp(&b.range.start.line)
+            a.file_range
+                .range
+                .start
+                .line
+                .cmp(&b.file_range.range.start.line)
         } else {
             path_cmp
         }
@@ -190,9 +199,13 @@ pub async fn find_referenced_symbols(
 
     // Sort not_found by location
     not_found.sort_by(|a, b| {
-        let path_cmp = a.range.path.cmp(&b.range.path);
+        let path_cmp = a.file_range.path.cmp(&b.file_range.path);
         if path_cmp.is_eq() {
-            a.range.start.line.cmp(&b.range.start.line)
+            a.file_range
+                .range
+                .start
+                .line
+                .cmp(&b.file_range.range.start.line)
         } else {
             path_cmp
         }
@@ -213,7 +226,7 @@ mod test {
     use actix_web::http::StatusCode;
     use tokio::time::{sleep, Duration};
 
-    use crate::api_types::{FilePosition, FileRange, Position, Symbol};
+    use crate::api_types::{FilePosition, FileRange, Position, Range, Symbol};
     use crate::initialize_app_state;
     use crate::test_utils::{csharp_sample_path, python_sample_path, TestContext};
 
@@ -260,18 +273,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("AddNeighborsToOpenList"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 28,
-                                character: 12,
-                            },
-                            end: Position {
-                                line: 28,
-                                character: 34,
+                            range: Range {
+                                start: Position {
+                                    line: 28,
+                                    character: 12,
+                                },
+                                end: Position {
+                                    line: 28,
+                                    character: 34,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("AddNeighborsToOpenList"),
@@ -283,15 +298,17 @@ mod test {
                                 character: 21,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 51,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 76,
-                                character: 9,
+                            range: Range {
+                                start: Position {
+                                    line: 51,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 76,
+                                    character: 9,
+                                },
                             },
                         },
                     }],
@@ -299,18 +316,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("AddNeighborsToOpenList"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 38,
-                                character: 16,
-                            },
-                            end: Position {
-                                line: 38,
-                                character: 38,
+                            range: Range {
+                                start: Position {
+                                    line: 38,
+                                    character: 16,
+                                },
+                                end: Position {
+                                    line: 38,
+                                    character: 38,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("AddNeighborsToOpenList"),
@@ -322,15 +341,17 @@ mod test {
                                 character: 21,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 51,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 76,
-                                character: 9,
+                            range: Range {
+                                start: Position {
+                                    line: 51,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 76,
+                                    character: 9,
+                                },
                             },
                         },
                     }],
@@ -338,18 +359,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("Distance"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 60,
-                                character: 94,
-                            },
-                            end: Position {
-                                line: 60,
-                                character: 102,
+                            range: Range {
+                                start: Position {
+                                    line: 60,
+                                    character: 94,
+                                },
+                                end: Position {
+                                    line: 60,
+                                    character: 102,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("Distance"),
@@ -361,15 +384,17 @@ mod test {
                                 character: 23,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 78,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 81,
-                                character: 9,
+                            range: Range {
+                                start: Position {
+                                    line: 78,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 81,
+                                    character: 9,
+                                },
                             },
                         },
                     }],
@@ -377,18 +402,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("FindNeighborInList"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 66,
-                                character: 25,
-                            },
-                            end: Position {
-                                line: 66,
-                                character: 43,
+                            range: Range {
+                                start: Position {
+                                    line: 66,
+                                    character: 25,
+                                },
+                                end: Position {
+                                    line: 66,
+                                    character: 43,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("FindNeighborInList"),
@@ -400,15 +427,17 @@ mod test {
                                 character: 21,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 83,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 86,
-                                character: 9,
+                            range: Range {
+                                start: Position {
+                                    line: 83,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 86,
+                                    character: 9,
+                                },
                             },
                         },
                     }],
@@ -416,18 +445,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("FindNeighborInList"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 67,
-                                character: 25,
-                            },
-                            end: Position {
-                                line: 67,
-                                character: 43,
+                            range: Range {
+                                start: Position {
+                                    line: 67,
+                                    character: 25,
+                                },
+                                end: Position {
+                                    line: 67,
+                                    character: 43,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("FindNeighborInList"),
@@ -439,15 +470,17 @@ mod test {
                                 character: 21,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("AStar.cs"),
-                            start: Position {
-                                line: 83,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 86,
-                                character: 9,
+                            range: Range {
+                                start: Position {
+                                    line: 83,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 86,
+                                    character: 9,
+                                },
                             },
                         },
                     }],
@@ -456,215 +489,243 @@ mod test {
             external_symbols: vec![
                 Identifier {
                     name: String::from("Add"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 27,
-                            character: 20,
-                        },
-                        end: Position {
-                            line: 27,
-                            character: 23,
+                        range: Range {
+                            start: Position {
+                                line: 27,
+                                character: 20,
+                            },
+                            end: Position {
+                                line: 27,
+                                character: 23,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Any"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 32,
-                            character: 27,
-                        },
-                        end: Position {
-                            line: 32,
-                            character: 30,
+                        range: Range {
+                            start: Position {
+                                line: 32,
+                                character: 27,
+                            },
+                            end: Position {
+                                line: 32,
+                                character: 30,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("RemoveAt"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 36,
-                            character: 22,
-                        },
-                        end: Position {
-                            line: 36,
-                            character: 30,
+                        range: Range {
+                            start: Position {
+                                line: 36,
+                                character: 22,
+                            },
+                            end: Position {
+                                line: 36,
+                                character: 30,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Add"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 37,
-                            character: 24,
-                        },
-                        end: Position {
-                            line: 37,
-                            character: 27,
+                        range: Range {
+                            start: Position {
+                                line: 37,
+                                character: 24,
+                            },
+                            end: Position {
+                                line: 37,
+                                character: 27,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Insert"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 41,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 41,
-                            character: 24,
+                        range: Range {
+                            start: Position {
+                                line: 41,
+                                character: 18,
+                            },
+                            end: Position {
+                                line: 41,
+                                character: 24,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Insert"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 45,
-                            character: 22,
-                        },
-                        end: Position {
-                            line: 45,
-                            character: 28,
+                        range: Range {
+                            start: Position {
+                                line: 45,
+                                character: 22,
+                            },
+                            end: Position {
+                                line: 45,
+                                character: 28,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Add"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 71,
-                            character: 30,
-                        },
-                        end: Position {
-                            line: 71,
-                            character: 33,
+                        range: Range {
+                            start: Position {
+                                line: 71,
+                                character: 30,
+                            },
+                            end: Position {
+                                line: 71,
+                                character: 33,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Sort"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 75,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 75,
-                            character: 22,
+                        range: Range {
+                            start: Position {
+                                line: 75,
+                                character: 18,
+                            },
+                            end: Position {
+                                line: 75,
+                                character: 22,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Sqrt"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 80,
-                            character: 24,
-                        },
-                        end: Position {
-                            line: 80,
-                            character: 28,
+                        range: Range {
+                            start: Position {
+                                line: 80,
+                                character: 24,
+                            },
+                            end: Position {
+                                line: 80,
+                                character: 28,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Pow"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 80,
-                            character: 34,
-                        },
-                        end: Position {
-                            line: 80,
-                            character: 37,
+                        range: Range {
+                            start: Position {
+                                line: 80,
+                                character: 34,
+                            },
+                            end: Position {
+                                line: 80,
+                                character: 37,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Pow"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 80,
-                            character: 74,
-                        },
-                        end: Position {
-                            line: 80,
-                            character: 77,
+                        range: Range {
+                            start: Position {
+                                line: 80,
+                                character: 74,
+                            },
+                            end: Position {
+                                line: 80,
+                                character: 77,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Any"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 85,
-                            character: 24,
-                        },
-                        end: Position {
-                            line: 85,
-                            character: 27,
+                        range: Range {
+                            start: Position {
+                                line: 85,
+                                character: 24,
+                            },
+                            end: Position {
+                                line: 85,
+                                character: 27,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
             ],
             not_found: vec![
                 Identifier {
                     name: String::from("Node"),
-                    range: FileRange {
+                    kind: Some(String::from("class")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 17,
-                            character: 27,
-                        },
-                        end: Position {
-                            line: 17,
-                            character: 31,
+                        range: Range {
+                            start: Position {
+                                line: 17,
+                                character: 27,
+                            },
+                            end: Position {
+                                line: 17,
+                                character: 31,
+                            },
                         },
                     },
-                    kind: Some(String::from("class-instantiation")),
                 },
                 Identifier {
                     name: String::from("Node"),
-                    range: FileRange {
+                    kind: Some(String::from("class")),
+                    file_range: FileRange {
                         path: String::from("AStar.cs"),
-                        start: Position {
-                            line: 60,
-                            character: 35,
-                        },
-                        end: Position {
-                            line: 60,
-                            character: 39,
+                        range: Range {
+                            start: Position {
+                                line: 60,
+                                character: 35,
+                            },
+                            end: Position {
+                                line: 60,
+                                character: 39,
+                            },
                         },
                     },
-                    kind: Some(String::from("class-instantiation")),
                 },
             ],
         };
@@ -746,18 +807,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("log_execution_time"),
-                        range: FileRange {
+                        kind: Some(String::from("decorator")),
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 15,
-                                character: 1,
-                            },
-                            end: Position {
-                                line: 15,
-                                character: 19,
+                            range: Range {
+                                start: Position {
+                                    line: 15,
+                                    character: 1,
+                                },
+                                end: Position {
+                                    line: 15,
+                                    character: 19,
+                                },
                             },
                         },
-                        kind: Some(String::from("decorator")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("log_execution_time"),
@@ -769,15 +832,17 @@ mod test {
                                 character: 4,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("decorators.py"),
-                            start: Position {
-                                line: 3,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 11,
-                                character: 18,
+                            range: Range {
+                                start: Position {
+                                    line: 3,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 11,
+                                    character: 18,
+                                },
                             },
                         },
                     }],
@@ -785,18 +850,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("initialize_search"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 29,
-                                character: 54,
-                            },
-                            end: Position {
-                                line: 29,
-                                character: 71,
+                            range: Range {
+                                start: Position {
+                                    line: 29,
+                                    character: 54,
+                                },
+                                end: Position {
+                                    line: 29,
+                                    character: 71,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("initialize_search"),
@@ -808,15 +875,17 @@ mod test {
                                 character: 4,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 4,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 13,
-                                character: 58,
+                            range: Range {
+                                start: Position {
+                                    line: 4,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 13,
+                                    character: 58,
+                                },
                             },
                         },
                     }],
@@ -824,18 +893,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("reconstruct_path"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 36,
-                                character: 19,
-                            },
-                            end: Position {
-                                line: 36,
-                                character: 35,
+                            range: Range {
+                                start: Position {
+                                    line: 36,
+                                    character: 19,
+                                },
+                                end: Position {
+                                    line: 36,
+                                    character: 35,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("reconstruct_path"),
@@ -847,15 +918,17 @@ mod test {
                                 character: 8,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 17,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 27,
-                                character: 25,
+                            range: Range {
+                                start: Position {
+                                    line: 17,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 27,
+                                    character: 25,
+                                },
                             },
                         },
                     }],
@@ -863,18 +936,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("get_vertex_neighbours"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 41,
-                                character: 31,
-                            },
-                            end: Position {
-                                line: 41,
-                                character: 52,
+                            range: Range {
+                                start: Position {
+                                    line: 41,
+                                    character: 31,
+                                },
+                                end: Position {
+                                    line: 41,
+                                    character: 52,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("get_vertex_neighbours"),
@@ -886,15 +961,17 @@ mod test {
                                 character: 8,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 75,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 88,
-                                character: 16,
+                            range: Range {
+                                start: Position {
+                                    line: 75,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 88,
+                                    character: 16,
+                                },
                             },
                         },
                     }],
@@ -902,18 +979,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("move_cost"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 45,
-                                character: 45,
-                            },
-                            end: Position {
-                                line: 45,
-                                character: 54,
+                            range: Range {
+                                start: Position {
+                                    line: 45,
+                                    character: 45,
+                                },
+                                end: Position {
+                                    line: 45,
+                                    character: 54,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("move_cost"),
@@ -925,15 +1004,17 @@ mod test {
                                 character: 8,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 43,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 65,
-                                character: 34,
+                            range: Range {
+                                start: Position {
+                                    line: 43,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 65,
+                                    character: 34,
+                                },
                             },
                         },
                     }],
@@ -941,18 +1022,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("heuristic"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("search.py"),
-                            start: Position {
-                                line: 54,
-                                character: 48,
-                            },
-                            end: Position {
-                                line: 54,
-                                character: 57,
+                            range: Range {
+                                start: Position {
+                                    line: 54,
+                                    character: 48,
+                                },
+                                end: Position {
+                                    line: 54,
+                                    character: 57,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("heuristic"),
@@ -964,15 +1047,17 @@ mod test {
                                 character: 8,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 67,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 73,
-                                character: 57,
+                            range: Range {
+                                start: Position {
+                                    line: 67,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 73,
+                                    character: 57,
+                                },
                             },
                         },
                     }],
@@ -981,138 +1066,156 @@ mod test {
             external_symbols: vec![
                 Identifier {
                     name: String::from("append"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 24,
-                            character: 17,
-                        },
-                        end: Position {
-                            line: 24,
-                            character: 23,
+                        range: Range {
+                            start: Position {
+                                line: 24,
+                                character: 17,
+                            },
+                            end: Position {
+                                line: 24,
+                                character: 23,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("append"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 26,
-                            character: 13,
-                        },
-                        end: Position {
-                            line: 26,
-                            character: 19,
+                        range: Range {
+                            start: Position {
+                                line: 26,
+                                character: 13,
+                            },
+                            end: Position {
+                                line: 26,
+                                character: 19,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("min"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 34,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 34,
-                            character: 21,
+                        range: Range {
+                            start: Position {
+                                line: 34,
+                                character: 18,
+                            },
+                            end: Position {
+                                line: 34,
+                                character: 21,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("remove"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 38,
-                            character: 22,
-                        },
-                        end: Position {
-                            line: 38,
-                            character: 28,
+                        range: Range {
+                            start: Position {
+                                line: 38,
+                                character: 22,
+                            },
+                            end: Position {
+                                line: 38,
+                                character: 28,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("add"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 39,
-                            character: 24,
-                        },
-                        end: Position {
-                            line: 39,
-                            character: 27,
+                        range: Range {
+                            start: Position {
+                                line: 39,
+                                character: 24,
+                            },
+                            end: Position {
+                                line: 39,
+                                character: 27,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("add"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 48,
-                            character: 30,
-                        },
-                        end: Position {
-                            line: 48,
-                            character: 33,
+                        range: Range {
+                            start: Position {
+                                line: 48,
+                                character: 30,
+                            },
+                            end: Position {
+                                line: 48,
+                                character: 33,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("get"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 49,
-                            character: 34,
-                        },
-                        end: Position {
-                            line: 49,
-                            character: 37,
+                        range: Range {
+                            start: Position {
+                                line: 49,
+                                character: 34,
+                            },
+                            end: Position {
+                                line: 49,
+                                character: 37,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("float"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 49,
-                            character: 49,
-                        },
-                        end: Position {
-                            line: 49,
-                            character: 54,
+                        range: Range {
+                            start: Position {
+                                line: 49,
+                                character: 49,
+                            },
+                            end: Position {
+                                line: 49,
+                                character: 54,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("RuntimeError"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("search.py"),
-                        start: Position {
-                            line: 56,
-                            character: 10,
-                        },
-                        end: Position {
-                            line: 56,
-                            character: 22,
+                        range: Range {
+                            start: Position {
+                                line: 56,
+                                character: 10,
+                            },
+                            end: Position {
+                                line: 56,
+                                character: 22,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
             ],
             not_found: vec![],
@@ -1195,18 +1298,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("_barrier_cost"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 39,
-                                character: 28,
-                            },
-                            end: Position {
-                                line: 39,
-                                character: 41,
+                            range: Range {
+                                start: Position {
+                                    line: 39,
+                                    character: 28,
+                                },
+                                end: Position {
+                                    line: 39,
+                                    character: 41,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("_barrier_cost"),
@@ -1218,15 +1323,17 @@ mod test {
                                 character: 8,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 26,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 31,
-                                character: 16,
+                            range: Range {
+                                start: Position {
+                                    line: 26,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 31,
+                                    character: 16,
+                                },
                             },
                         },
                     }],
@@ -1234,18 +1341,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("_distance_cost"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 40,
-                                character: 29,
-                            },
-                            end: Position {
-                                line: 40,
-                                character: 43,
+                            range: Range {
+                                start: Position {
+                                    line: 40,
+                                    character: 29,
+                                },
+                                end: Position {
+                                    line: 40,
+                                    character: 43,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("_distance_cost"),
@@ -1257,15 +1366,17 @@ mod test {
                                 character: 8,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 33,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 35,
-                                character: 50,
+                            range: Range {
+                                start: Position {
+                                    line: 33,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 35,
+                                    character: 50,
+                                },
                             },
                         },
                     }],
@@ -1273,18 +1384,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("cost_function"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 65,
-                                character: 15,
-                            },
-                            end: Position {
-                                line: 65,
-                                character: 28,
+                            range: Range {
+                                start: Position {
+                                    line: 65,
+                                    character: 15,
+                                },
+                                end: Position {
+                                    line: 65,
+                                    character: 28,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![
                         Symbol {
@@ -1297,15 +1410,17 @@ mod test {
                                     character: 12,
                                 },
                             },
-                            range: FileRange {
+                            file_range: FileRange {
                                 path: String::from("graph.py"),
-                                start: Position {
-                                    line: 59,
-                                    character: 0,
-                                },
-                                end: Position {
-                                    line: 59,
-                                    character: 47,
+                                range: Range {
+                                    start: Position {
+                                        line: 59,
+                                        character: 0,
+                                    },
+                                    end: Position {
+                                        line: 59,
+                                        character: 47,
+                                    },
                                 },
                             },
                         },
@@ -1319,15 +1434,17 @@ mod test {
                                     character: 12,
                                 },
                             },
-                            range: FileRange {
+                            file_range: FileRange {
                                 path: String::from("graph.py"),
-                                start: Position {
-                                    line: 61,
-                                    character: 0,
-                                },
-                                end: Position {
-                                    line: 61,
-                                    character: 47,
+                                range: Range {
+                                    start: Position {
+                                        line: 61,
+                                        character: 0,
+                                    },
+                                    end: Position {
+                                        line: 61,
+                                        character: 47,
+                                    },
                                 },
                             },
                         },
@@ -1341,15 +1458,17 @@ mod test {
                                     character: 12,
                                 },
                             },
-                            range: FileRange {
+                            file_range: FileRange {
                                 path: String::from("graph.py"),
-                                start: Position {
-                                    line: 57,
-                                    character: 0,
-                                },
-                                end: Position {
-                                    line: 57,
-                                    character: 46,
+                                range: Range {
+                                    start: Position {
+                                        line: 57,
+                                        character: 0,
+                                    },
+                                    end: Position {
+                                        line: 57,
+                                        character: 46,
+                                    },
                                 },
                             },
                         },
@@ -1358,18 +1477,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("log_execution_time"),
-                        range: FileRange {
+                        kind: Some(String::from("decorator")),
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 67,
-                                character: 5,
-                            },
-                            end: Position {
-                                line: 67,
-                                character: 23,
+                            range: Range {
+                                start: Position {
+                                    line: 67,
+                                    character: 5,
+                                },
+                                end: Position {
+                                    line: 67,
+                                    character: 23,
+                                },
                             },
                         },
-                        kind: Some(String::from("decorator")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("log_execution_time"),
@@ -1381,15 +1502,17 @@ mod test {
                                 character: 4,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("decorators.py"),
-                            start: Position {
-                                line: 3,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 11,
-                                character: 18,
+                            range: Range {
+                                start: Position {
+                                    line: 3,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 11,
+                                    character: 18,
+                                },
                             },
                         },
                     }],
@@ -1397,18 +1520,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("log_execution_time"),
-                        range: FileRange {
+                        kind: Some(String::from("decorator")),
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 75,
-                                character: 5,
-                            },
-                            end: Position {
-                                line: 75,
-                                character: 23,
+                            range: Range {
+                                start: Position {
+                                    line: 75,
+                                    character: 5,
+                                },
+                                end: Position {
+                                    line: 75,
+                                    character: 23,
+                                },
                             },
                         },
-                        kind: Some(String::from("decorator")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("log_execution_time"),
@@ -1420,15 +1545,17 @@ mod test {
                                 character: 4,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("decorators.py"),
-                            start: Position {
-                                line: 3,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 11,
-                                character: 18,
+                            range: Range {
+                                start: Position {
+                                    line: 3,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 11,
+                                    character: 18,
+                                },
                             },
                         },
                     }],
@@ -1436,18 +1563,20 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("move_cost"),
-                        range: FileRange {
+                        kind: Some(String::from("function-call")),
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 86,
-                                character: 20,
-                            },
-                            end: Position {
-                                line: 86,
-                                character: 29,
+                            range: Range {
+                                start: Position {
+                                    line: 86,
+                                    character: 20,
+                                },
+                                end: Position {
+                                    line: 86,
+                                    character: 29,
+                                },
                             },
                         },
-                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("move_cost"),
@@ -1459,15 +1588,17 @@ mod test {
                                 character: 8,
                             },
                         },
-                        range: FileRange {
+                        file_range: FileRange {
                             path: String::from("graph.py"),
-                            start: Position {
-                                line: 43,
-                                character: 0,
-                            },
-                            end: Position {
-                                line: 65,
-                                character: 34,
+                            range: Range {
+                                start: Position {
+                                    line: 43,
+                                    character: 0,
+                                },
+                                end: Position {
+                                    line: 65,
+                                    character: 34,
+                                },
                             },
                         },
                     }],
@@ -1476,138 +1607,156 @@ mod test {
             external_symbols: vec![
                 Identifier {
                     name: String::from("append"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 15,
-                            character: 23,
-                        },
-                        end: Position {
-                            line: 15,
-                            character: 29,
+                        range: Range {
+                            start: Position {
+                                line: 15,
+                                character: 23,
+                            },
+                            end: Position {
+                                line: 15,
+                                character: 29,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("property"),
-                    range: FileRange {
-                        path: String::from("graph.py"),
-                        start: Position {
-                            line: 22,
-                            character: 5,
-                        },
-                        end: Position {
-                            line: 22,
-                            character: 13,
-                        },
-                    },
                     kind: Some(String::from("decorator")),
+                    file_range: FileRange {
+                        path: String::from("graph.py"),
+                        range: Range {
+                            start: Position {
+                                line: 22,
+                                character: 5,
+                            },
+                            end: Position {
+                                line: 22,
+                                character: 13,
+                            },
+                        },
+                    },
                 },
                 Identifier {
                     name: String::from("abs"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 35,
-                            character: 15,
-                        },
-                        end: Position {
-                            line: 35,
-                            character: 18,
+                        range: Range {
+                            start: Position {
+                                line: 35,
+                                character: 15,
+                            },
+                            end: Position {
+                                line: 35,
+                                character: 18,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("abs"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 35,
-                            character: 34,
-                        },
-                        end: Position {
-                            line: 35,
-                            character: 37,
+                        range: Range {
+                            start: Position {
+                                line: 35,
+                                character: 34,
+                            },
+                            end: Position {
+                                line: 35,
+                                character: 37,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("ValueError"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 63,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 63,
-                            character: 28,
+                        range: Range {
+                            start: Position {
+                                line: 63,
+                                character: 18,
+                            },
+                            end: Position {
+                                line: 63,
+                                character: 28,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("abs"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 71,
-                            character: 13,
-                        },
-                        end: Position {
-                            line: 71,
-                            character: 16,
+                        range: Range {
+                            start: Position {
+                                line: 71,
+                                character: 13,
+                            },
+                            end: Position {
+                                line: 71,
+                                character: 16,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("abs"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 72,
-                            character: 13,
-                        },
-                        end: Position {
-                            line: 72,
-                            character: 16,
+                        range: Range {
+                            start: Position {
+                                line: 72,
+                                character: 13,
+                            },
+                            end: Position {
+                                line: 72,
+                                character: 16,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("min"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 73,
-                            character: 46,
-                        },
-                        end: Position {
-                            line: 73,
-                            character: 49,
+                        range: Range {
+                            start: Position {
+                                line: 73,
+                                character: 46,
+                            },
+                            end: Position {
+                                line: 73,
+                                character: 49,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("append"),
-                    range: FileRange {
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
                         path: String::from("graph.py"),
-                        start: Position {
-                            line: 87,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 87,
-                            character: 24,
+                        range: Range {
+                            start: Position {
+                                line: 87,
+                                character: 18,
+                            },
+                            end: Position {
+                                line: 87,
+                                character: 24,
+                            },
                         },
                     },
-                    kind: Some(String::from("function-call")),
                 },
             ],
             not_found: vec![],

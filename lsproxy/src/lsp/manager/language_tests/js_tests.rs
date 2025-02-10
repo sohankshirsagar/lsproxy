@@ -1,4 +1,5 @@
 use super::*;
+use crate::api_types::{Position, Range};
 
 #[tokio::test]
 async fn test_start_manager() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,7 +44,7 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
     let expected = vec![
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
-            range: Range {
+            range: lsp_types::Range {
                 start: lsp_types::Position {
                     line: 0,
                     character: 9,
@@ -56,7 +57,7 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
-            range: Range {
+            range: lsp_types::Range {
                 start: lsp_types::Position {
                     line: 10,
                     character: 21,
@@ -69,7 +70,7 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/js/astar_search.js")?,
-            range: Range {
+            range: lsp_types::Range {
                 start: lsp_types::Position {
                     line: 40,
                     character: 25,
@@ -112,7 +113,7 @@ async fn test_definition() -> Result<(), Box<dyn std::error::Error>> {
         definitions,
         vec![Location {
             uri: Url::parse("file:///usr/lib/node_modules/typescript/lib/lib.es5.d.ts")?,
-            range: Range {
+            range: lsp_types::Range {
                 start: lsp_types::Position {
                     line: 681,
                     character: 4
@@ -152,15 +153,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 9,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("astar_search.js"),
-                start: Position {
-                    line: 0,
-                    character: 0,
-                },
-                end: Position {
-                    line: 2,
-                    character: 1,
+                range: Range {
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 2,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -174,15 +177,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 9,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("astar_search.js"),
-                start: Position {
-                    line: 4,
-                    character: 0,
-                },
-                end: Position {
-                    line: 58,
-                    character: 1,
+                range: Range {
+                    start: Position {
+                        line: 4,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 58,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -196,15 +201,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 16,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("astar_search.js"),
-                start: Position {
-                    line: 17,
-                    character: 0,
-                },
-                end: Position {
-                    line: 26,
-                    character: 9,
+                range: Range {
+                    start: Position {
+                        line: 17,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 26,
+                        character: 9,
+                    },
                 },
             },
         },
@@ -218,15 +225,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 6,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("astar_search.js"),
-                start: Position {
-                    line: 60,
-                    character: 0,
-                },
-                end: Position {
-                    line: 69,
-                    character: 1,
+                range: Range {
+                    start: Position {
+                        line: 60,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 69,
+                        character: 1,
+                    },
                 },
             },
         },

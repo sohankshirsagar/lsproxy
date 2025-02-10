@@ -1,5 +1,6 @@
 use lsproxy::api_types::{
-    set_global_mount_dir, FilePosition, FileRange, HealthResponse, Position, Symbol, SymbolResponse,
+    set_global_mount_dir, FilePosition, FileRange, HealthResponse, Position, Range, Symbol,
+    SymbolResponse,
 };
 use lsproxy::{initialize_app_state, run_server};
 use reqwest;
@@ -107,15 +108,17 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
                     character: 13,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: Position {
-                    line: 96,
-                    character: 21,
+                range: Range {
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 96,
+                        character: 21,
+                    },
                 },
             },
         },
@@ -129,15 +132,17 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
                     character: 22,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 39,
-                    character: 0,
-                },
-                end: Position {
-                    line: 59,
-                    character: 5,
+                range: Range {
+                    start: Position {
+                        line: 39,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 59,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -151,15 +156,17 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
                     character: 17,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 61,
-                    character: 0,
-                },
-                end: Position {
-                    line: 89,
-                    character: 41,
+                range: Range {
+                    start: Position {
+                        line: 61,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 89,
+                        character: 41,
+                    },
                 },
             },
         },
@@ -173,15 +180,17 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
                     character: 55,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 93,
-                    character: 0,
-                },
-                end: Position {
-                    line: 95,
-                    character: 41,
+                range: Range {
+                    start: Position {
+                        line: 93,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 95,
+                        character: 41,
+                    },
                 },
             },
         },
@@ -195,15 +204,17 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
                     character: 59,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 98,
-                    character: 0,
-                },
-                end: Position {
-                    line: 136,
-                    character: 5,
+                range: Range {
+                    start: Position {
+                        line: 98,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 136,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -217,15 +228,17 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
                     character: 20,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 138,
-                    character: 0,
-                },
-                end: Position {
-                    line: 140,
-                    character: 5,
+                range: Range {
+                    start: Position {
+                        line: 138,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 140,
+                        character: 5,
+                    },
                 },
             },
         },

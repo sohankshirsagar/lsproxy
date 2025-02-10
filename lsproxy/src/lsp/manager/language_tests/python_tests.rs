@@ -1,3 +1,5 @@
+use crate::api_types;
+
 use super::*;
 
 #[tokio::test]
@@ -46,15 +48,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("main.py"),
-                start: Position {
-                    line: 5,
-                    character: 0,
-                },
-                end: Position {
-                    line: 12,
-                    character: 14,
+                range: api_types::Range {
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 12,
+                        character: 14,
+                    },
                 },
             },
         },
@@ -68,15 +72,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("main.py"),
-                start: Position {
-                    line: 14,
-                    character: 0,
-                },
-                end: Position {
-                    line: 19,
-                    character: 28,
+                range: api_types::Range {
+                    start: Position {
+                        line: 14,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 19,
+                        character: 28,
+                    },
                 },
             },
         },
@@ -90,15 +96,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("main.py"),
-                start: Position {
-                    line: 15,
-                    character: 0,
-                },
-                end: Position {
-                    line: 15,
-                    character: 24,
+                range: api_types::Range {
+                    start: Position {
+                        line: 15,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 15,
+                        character: 24,
+                    },
                 },
             },
         },
@@ -132,15 +140,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 6,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 4,
-                    character: 0,
-                },
-                end: Position {
-                    line: 5,
-                    character: 8,
+                range: api_types::Range {
+                    start: Position {
+                        line: 4,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 5,
+                        character: 8,
+                    },
                 },
             },
         },
@@ -154,15 +164,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 6,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 7,
-                    character: 0,
-                },
-                end: Position {
-                    line: 10,
-                    character: 25,
+                range: api_types::Range {
+                    start: Position {
+                        line: 7,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 25,
+                    },
                 },
             },
         },
@@ -176,15 +188,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 8,
-                    character: 0,
-                },
-                end: Position {
-                    line: 8,
-                    character: 23,
+                range: api_types::Range {
+                    start: Position {
+                        line: 8,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 8,
+                        character: 23,
+                    },
                 },
             },
         },
@@ -198,15 +212,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 9,
-                    character: 0,
-                },
-                end: Position {
-                    line: 9,
-                    character: 25,
+                range: api_types::Range {
+                    start: Position {
+                        line: 9,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 9,
+                        character: 25,
+                    },
                 },
             },
         },
@@ -220,15 +236,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: Position {
-                    line: 10,
-                    character: 25,
+                range: api_types::Range {
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 25,
+                    },
                 },
             },
         },
@@ -242,15 +260,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 6,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 12,
-                    character: 0,
-                },
-                end: Position {
-                    line: 88,
-                    character: 16,
+                range: api_types::Range {
+                    start: Position {
+                        line: 12,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 88,
+                        character: 16,
+                    },
                 },
             },
         },
@@ -264,15 +284,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 13,
-                    character: 0,
-                },
-                end: Position {
-                    line: 20,
-                    character: 10,
+                range: api_types::Range {
+                    start: Position {
+                        line: 13,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 20,
+                        character: 10,
+                    },
                 },
             },
         },
@@ -286,15 +308,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 22,
-                    character: 0,
-                },
-                end: Position {
-                    line: 24,
-                    character: 29,
+                range: api_types::Range {
+                    start: Position {
+                        line: 22,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 24,
+                        character: 29,
+                    },
                 },
             },
         },
@@ -308,15 +332,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 26,
-                    character: 0,
-                },
-                end: Position {
-                    line: 31,
-                    character: 16,
+                range: api_types::Range {
+                    start: Position {
+                        line: 26,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 31,
+                        character: 16,
+                    },
                 },
             },
         },
@@ -330,15 +356,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 33,
-                    character: 0,
-                },
-                end: Position {
-                    line: 35,
-                    character: 50,
+                range: api_types::Range {
+                    start: Position {
+                        line: 33,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 35,
+                        character: 50,
+                    },
                 },
             },
         },
@@ -352,15 +380,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 37,
-                    character: 0,
-                },
-                end: Position {
-                    line: 41,
-                    character: 43,
+                range: api_types::Range {
+                    start: Position {
+                        line: 37,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 41,
+                        character: 43,
+                    },
                 },
             },
         },
@@ -374,15 +404,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 39,
-                    character: 0,
-                },
-                end: Position {
-                    line: 39,
-                    character: 47,
+                range: api_types::Range {
+                    start: Position {
+                        line: 39,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 39,
+                        character: 47,
+                    },
                 },
             },
         },
@@ -396,15 +428,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 40,
-                    character: 0,
-                },
-                end: Position {
-                    line: 40,
-                    character: 49,
+                range: api_types::Range {
+                    start: Position {
+                        line: 40,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 40,
+                        character: 49,
+                    },
                 },
             },
         },
@@ -418,15 +452,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 43,
-                    character: 0,
-                },
-                end: Position {
-                    line: 65,
-                    character: 34,
+                range: api_types::Range {
+                    start: Position {
+                        line: 43,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 65,
+                        character: 34,
+                    },
                 },
             },
         },
@@ -440,15 +476,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 12,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 57,
-                    character: 0,
-                },
-                end: Position {
-                    line: 57,
-                    character: 46,
+                range: api_types::Range {
+                    start: Position {
+                        line: 57,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 57,
+                        character: 46,
+                    },
                 },
             },
         },
@@ -462,15 +500,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 12,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 59,
-                    character: 0,
-                },
-                end: Position {
-                    line: 59,
-                    character: 47,
+                range: api_types::Range {
+                    start: Position {
+                        line: 59,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 59,
+                        character: 47,
+                    },
                 },
             },
         },
@@ -484,15 +524,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 12,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 61,
-                    character: 0,
-                },
-                end: Position {
-                    line: 61,
-                    character: 47,
+                range: api_types::Range {
+                    start: Position {
+                        line: 61,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 61,
+                        character: 47,
+                    },
                 },
             },
         },
@@ -506,15 +548,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 67,
-                    character: 0,
-                },
-                end: Position {
-                    line: 73,
-                    character: 57,
+                range: api_types::Range {
+                    start: Position {
+                        line: 67,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 73,
+                        character: 57,
+                    },
                 },
             },
         },
@@ -528,15 +572,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 69,
-                    character: 0,
-                },
-                end: Position {
-                    line: 69,
-                    character: 13,
+                range: api_types::Range {
+                    start: Position {
+                        line: 69,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 69,
+                        character: 13,
+                    },
                 },
             },
         },
@@ -550,15 +596,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 70,
-                    character: 0,
-                },
-                end: Position {
-                    line: 70,
-                    character: 14,
+                range: api_types::Range {
+                    start: Position {
+                        line: 70,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 70,
+                        character: 14,
+                    },
                 },
             },
         },
@@ -572,15 +620,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 71,
-                    character: 0,
-                },
-                end: Position {
-                    line: 71,
-                    character: 36,
+                range: api_types::Range {
+                    start: Position {
+                        line: 71,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 71,
+                        character: 36,
+                    },
                 },
             },
         },
@@ -594,15 +644,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 72,
-                    character: 0,
-                },
-                end: Position {
-                    line: 72,
-                    character: 36,
+                range: api_types::Range {
+                    start: Position {
+                        line: 72,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 72,
+                        character: 36,
+                    },
                 },
             },
         },
@@ -616,15 +668,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 75,
-                    character: 0,
-                },
-                end: Position {
-                    line: 88,
-                    character: 16,
+                range: api_types::Range {
+                    start: Position {
+                        line: 75,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 88,
+                        character: 16,
+                    },
                 },
             },
         },
@@ -638,15 +692,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 8,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 77,
-                    character: 0,
-                },
-                end: Position {
-                    line: 77,
-                    character: 14,
+                range: api_types::Range {
+                    start: Position {
+                        line: 77,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 77,
+                        character: 14,
+                    },
                 },
             },
         },
@@ -660,15 +716,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 12,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 82,
-                    character: 0,
-                },
-                end: Position {
-                    line: 82,
-                    character: 28,
+                range: api_types::Range {
+                    start: Position {
+                        line: 82,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 82,
+                        character: 28,
+                    },
                 },
             },
         },
@@ -682,15 +740,17 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
                     character: 12,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("graph.py"),
-                start: Position {
-                    line: 83,
-                    character: 0,
-                },
-                end: Position {
-                    line: 83,
-                    character: 28,
+                range: api_types::Range {
+                    start: Position {
+                        line: 83,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 83,
+                        character: 28,
+                    },
                 },
             },
         },
