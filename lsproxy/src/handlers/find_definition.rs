@@ -318,7 +318,7 @@ mod test {
 
         assert_eq!(
             error_response.error,
-            "Failed to find definition from position: No identifier found at position. Closest matches: [Identifier { name: \"plt\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 28 }, end: Position { line: 0, character: 31 } }, kind: None }, Identifier { name: \"pyplot\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 18 }, end: Position { line: 0, character: 24 } }, kind: None }, Identifier { name: \"matplotlib\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 7 }, end: Position { line: 0, character: 17 } }, kind: None }]"
+            "Failed to find definition from position: No identifier found at position. Closest matches: [Identifier { name: \"plt\", file_range: FileRange { path: \"main.py\", range: Range { start: Position { line: 0, character: 28 }, end: Position { line: 0, character: 31 } } }, kind: None }, Identifier { name: \"pyplot\", file_range: FileRange { path: \"main.py\", range: Range { start: Position { line: 0, character: 18 }, end: Position { line: 0, character: 24 } } }, kind: None }, Identifier { name: \"matplotlib\", file_range: FileRange { path: \"main.py\", range: Range { start: Position { line: 0, character: 7 }, end: Position { line: 0, character: 17 } } }, kind: None }]"
         );
         Ok(())
     }

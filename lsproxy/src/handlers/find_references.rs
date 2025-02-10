@@ -587,8 +587,7 @@ mod test {
         let error_response: ErrorResponse = serde_json::from_slice(&bytes)?;
         assert_eq!(
             error_response.error,
-            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 88, character: 15 }, end: Position { line: 88, character: 16 } }, kind: None }, Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 16 }, end: Position { line: 87, character: 17 } }, kind: None }, Identifier { name: \"append\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } }, kind: None }]"
-        );
+            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"n\", file_range: FileRange { path: \"graph.py\", range: Range { start: Position { line: 88, character: 15 }, end: Position { line: 88, character: 16 } } }, kind: None }, Identifier { name: \"n\", file_range: FileRange { path: \"graph.py\", range: Range { start: Position { line: 87, character: 16 }, end: Position { line: 87, character: 17 } } }, kind: None }, Identifier { name: \"append\", file_range: FileRange { path: \"graph.py\", range: Range { start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } } }, kind: None }]"        );
 
         Ok(())
     }

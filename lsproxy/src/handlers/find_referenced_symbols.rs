@@ -807,7 +807,7 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("log_execution_time"),
-                        kind: Some(String::from("function-call")),
+                        kind: Some(String::from("decorator")),
                         file_range: FileRange {
                             path: String::from("search.py"),
                             range: Range {
@@ -1623,103 +1623,137 @@ mod test {
                     },
                 },
                 Identifier {
+                    name: String::from("property"),
+                    kind: Some(String::from("decorator")),
+                    file_range: FileRange {
+                        path: String::from("graph.py"),
+                        range: Range {
+                            start: Position {
+                                line: 22,
+                                character: 5,
+                            },
+                            end: Position {
+                                line: 22,
+                                character: 13,
+                            },
+                        },
+                    },
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
+                        path: String::from("graph.py"),
+                        range: Range {
+                            start: Position {
+                                line: 35,
+                                character: 15,
+                            },
+                            end: Position {
+                                line: 35,
+                                character: 18,
+                            },
+                        },
+                    },
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
+                        path: String::from("graph.py"),
+                        range: Range {
+                            start: Position {
+                                line: 35,
+                                character: 34,
+                            },
+                            end: Position {
+                                line: 35,
+                                character: 37,
+                            },
+                        },
+                    },
+                },
+                Identifier {
+                    name: String::from("ValueError"),
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
+                        path: String::from("graph.py"),
+                        range: Range {
+                            start: Position {
+                                line: 63,
+                                character: 18,
+                            },
+                            end: Position {
+                                line: 63,
+                                character: 28,
+                            },
+                        },
+                    },
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
+                        path: String::from("graph.py"),
+                        range: Range {
+                            start: Position {
+                                line: 71,
+                                character: 13,
+                            },
+                            end: Position {
+                                line: 71,
+                                character: 16,
+                            },
+                        },
+                    },
+                },
+                Identifier {
+                    name: String::from("abs"),
+                    kind: Some(String::from("function-call")),
+                    file_range: FileRange {
+                        path: String::from("graph.py"),
+                        range: Range {
+                            start: Position {
+                                line: 72,
+                                character: 13,
+                            },
+                            end: Position {
+                                line: 72,
+                                character: 16,
+                            },
+                        },
+                    },
+                },
+                Identifier {
                     name: String::from("min"),
                     kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("graph.py"),
                         range: Range {
                             start: Position {
-                                line: 15,
-                                character: 23,
+                                line: 73,
+                                character: 46,
                             },
                             end: Position {
-                                line: 15,
-                                character: 29,
+                                line: 73,
+                                character: 49,
                             },
                         },
                     },
                 },
                 Identifier {
-                    name: String::from("remove"),
+                    name: String::from("append"),
                     kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("graph.py"),
                         range: Range {
                             start: Position {
-                                line: 15,
-                                character: 23,
+                                line: 87,
+                                character: 18,
                             },
                             end: Position {
-                                line: 15,
-                                character: 29,
-                            },
-                        },
-                    },
-                },
-                Identifier {
-                    name: String::from("add"),
-                    kind: Some(String::from("function-call")),
-                    file_range: FileRange {
-                        path: String::from("graph.py"),
-                        range: Range {
-                            start: Position {
-                                line: 15,
-                                character: 23,
-                            },
-                            end: Position {
-                                line: 15,
-                                character: 29,
-                            },
-                        },
-                    },
-                },
-                Identifier {
-                    name: String::from("get"),
-                    kind: Some(String::from("function-call")),
-                    file_range: FileRange {
-                        path: String::from("graph.py"),
-                        range: Range {
-                            start: Position {
-                                line: 15,
-                                character: 23,
-                            },
-                            end: Position {
-                                line: 15,
-                                character: 29,
-                            },
-                        },
-                    },
-                },
-                Identifier {
-                    name: String::from("float"),
-                    kind: Some(String::from("function-call")),
-                    file_range: FileRange {
-                        path: String::from("graph.py"),
-                        range: Range {
-                            start: Position {
-                                line: 15,
-                                character: 23,
-                            },
-                            end: Position {
-                                line: 15,
-                                character: 29,
-                            },
-                        },
-                    },
-                },
-                Identifier {
-                    name: String::from("RuntimeError"),
-                    kind: Some(String::from("function-call")),
-                    file_range: FileRange {
-                        path: String::from("graph.py"),
-                        range: Range {
-                            start: Position {
-                                line: 15,
-                                character: 23,
-                            },
-                            end: Position {
-                                line: 15,
-                                character: 29,
+                                line: 87,
+                                character: 24,
                             },
                         },
                     },
