@@ -4,7 +4,7 @@ use log::{error, info};
 use lsp_types::{Location, Position as LspPosition};
 
 use crate::api_types::{
-    CodeContext, ErrorResponse, FilePosition, FileRange, GetReferencesRequest, Position,
+    CodeContext, ErrorResponse, FilePosition, FileRange, GetReferencesRequest, Position, Range,
     ReferencesResponse,
 };
 use crate::handlers::error::IntoHttpResponse;
@@ -208,13 +208,15 @@ async fn fetch_code_context(
                     source_code,
                     range: FileRange {
                         path: uri_to_relative_path_string(&reference.uri),
-                        start: Position {
-                            line: range.start.line,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: range.end.line,
-                            character: 0,
+                        range: Range {
+                            start: Position {
+                                line: range.start.line,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: range.end.line,
+                                character: 0,
+                            },
                         },
                     },
                 });
@@ -325,15 +327,17 @@ mod test {
             selected_identifier: Identifier {
                 name: String::from("AStarGraph"),
                 kind: None,
-                range: FileRange {
+                file_range: FileRange {
                     path: String::from("graph.py"),
-                    start: Position {
-                        line: 12,
-                        character: 6,
-                    },
-                    end: Position {
-                        line: 12,
-                        character: 16,
+                    range: Range {
+                        start: Position {
+                            line: 12,
+                            character: 6,
+                        },
+                        end: Position {
+                            line: 12,
+                            character: 16,
+                        },
                     },
                 },
             },
@@ -537,15 +541,17 @@ mod test {
             context: None,
             selected_identifier: Identifier {
                 name: String::from("log_time"),
-                range: FileRange {
+                file_range: FileRange {
                     path: String::from("decorators.rb"),
-                    start: Position {
-                        line: 8,
-                        character: 8,
-                    },
-                    end: Position {
-                        line: 8,
-                        character: 16,
+                    range: Range {
+                        start: Position {
+                            line: 8,
+                            character: 8,
+                        },
+                        end: Position {
+                            line: 8,
+                            character: 16,
+                        },
                     },
                 },
                 kind: None,

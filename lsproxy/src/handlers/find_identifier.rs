@@ -155,7 +155,14 @@ mod test {
 
         assert_eq!(identifier_response.identifiers.len(), 1);
         assert_eq!(identifier_response.identifiers[0].name, "AStarGraph");
-        assert_eq!(identifier_response.identifiers[0].range.start.line, 12);
+        assert_eq!(
+            identifier_response.identifiers[0]
+                .file_range
+                .range
+                .start
+                .line,
+            12
+        );
         Ok(())
     }
 

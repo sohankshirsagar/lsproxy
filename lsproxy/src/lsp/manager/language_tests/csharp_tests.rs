@@ -1,4 +1,5 @@
 use super::*;
+use crate::api_types::{FilePosition, FileRange, Position, Range, Symbol, SymbolResponse};
 
 #[tokio::test]
 async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,15 +25,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 17,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 2,
-                    character: 0,
-                },
-                end: Position {
-                    line: 87,
-                    character: 5,
+                range: Range {
+                    start: Position {
+                        line: 2,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 87,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -46,15 +49,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 36,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 4,
-                    character: 0,
-                },
-                end: Position {
-                    line: 4,
-                    character: 50,
+                range: Range {
+                    start: Position {
+                        line: 4,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 4,
+                        character: 50,
+                    },
                 },
             },
         },
@@ -68,15 +73,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 36,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 5,
-                    character: 0,
-                },
-                end: Position {
-                    line: 5,
-                    character: 52,
+                range: Range {
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 5,
+                        character: 52,
+                    },
                 },
             },
         },
@@ -90,15 +97,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 36,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 6,
-                    character: 0,
-                },
-                end: Position {
-                    line: 6,
-                    character: 50,
+                range: Range {
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 50,
+                    },
                 },
             },
         },
@@ -112,15 +121,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 33,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 7,
-                    character: 0,
-                },
-                end: Position {
-                    line: 7,
-                    character: 39,
+                range: Range {
+                    start: Position {
+                        line: 7,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 7,
+                        character: 39,
+                    },
                 },
             },
         },
@@ -134,15 +145,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 21,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 8,
-                    character: 0,
-                },
-                end: Position {
-                    line: 8,
-                    character: 30,
+                range: Range {
+                    start: Position {
+                        line: 8,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 8,
+                        character: 30,
+                    },
                 },
             },
         },
@@ -156,15 +169,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 29,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 9,
-                    character: 0,
-                },
-                end: Position {
-                    line: 9,
-                    character: 37,
+                range: Range {
+                    start: Position {
+                        line: 9,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 9,
+                        character: 37,
+                    },
                 },
             },
         },
@@ -178,15 +193,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 29,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: Position {
-                    line: 10,
-                    character: 37,
+                range: Range {
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 37,
+                    },
                 },
             },
         },
@@ -200,15 +217,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 20,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 11,
-                    character: 0,
-                },
-                end: Position {
-                    line: 11,
-                    character: 33,
+                range: Range {
+                    start: Position {
+                        line: 11,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 11,
+                        character: 33,
+                    },
                 },
             },
         },
@@ -222,15 +241,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 27,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 11,
-                    character: 0,
-                },
-                end: Position {
-                    line: 11,
-                    character: 33,
+                range: Range {
+                    start: Position {
+                        line: 11,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 11,
+                        character: 33,
+                    },
                 },
             },
         },
@@ -244,15 +265,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 30,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 12,
-                    character: 0,
-                },
-                end: Position {
-                    line: 12,
-                    character: 36,
+                range: Range {
+                    start: Position {
+                        line: 12,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 12,
+                        character: 36,
+                    },
                 },
             },
         },
@@ -266,15 +289,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 27,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 23,
-                    character: 0,
-                },
-                end: Position {
-                    line: 49,
-                    character: 9,
+                range: Range {
+                    start: Position {
+                        line: 23,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 49,
+                        character: 9,
+                    },
                 },
             },
         },
@@ -288,15 +313,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 21,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 51,
-                    character: 0,
-                },
-                end: Position {
-                    line: 76,
-                    character: 9,
+                range: Range {
+                    start: Position {
+                        line: 51,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 76,
+                        character: 9,
+                    },
                 },
             },
         },
@@ -310,15 +337,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 23,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 78,
-                    character: 0,
-                },
-                end: Position {
-                    line: 81,
-                    character: 9,
+                range: Range {
+                    start: Position {
+                        line: 78,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 81,
+                        character: 9,
+                    },
                 },
             },
         },
@@ -332,15 +361,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 21,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.cs"),
-                start: Position {
-                    line: 83,
-                    character: 0,
-                },
-                end: Position {
-                    line: 86,
-                    character: 9,
+                range: Range {
+                    start: Position {
+                        line: 83,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 86,
+                        character: 9,
+                    },
                 },
             },
         },

@@ -1,4 +1,6 @@
 use super::*;
+use crate::api_types::{Position, Range as ApiRange};
+use lsp_types::{Position as LspPosition, Range as LspRange};
 
 #[tokio::test]
 #[ignore = "Java hangs in tests"]
@@ -24,15 +26,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 13,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: Position {
-                    line: 96,
-                    character: 21,
+                range: ApiRange {
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 96,
+                        character: 21,
+                    },
                 },
             },
         },
@@ -46,15 +50,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 22,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 39,
-                    character: 0,
-                },
-                end: Position {
-                    line: 59,
-                    character: 5,
+                range: ApiRange {
+                    start: Position {
+                        line: 39,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 59,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -68,15 +74,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 17,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 61,
-                    character: 0,
-                },
-                end: Position {
-                    line: 89,
-                    character: 41,
+                range: ApiRange {
+                    start: Position {
+                        line: 61,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 89,
+                        character: 41,
+                    },
                 },
             },
         },
@@ -90,15 +98,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 55,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 93,
-                    character: 0,
-                },
-                end: Position {
-                    line: 95,
-                    character: 41,
+                range: ApiRange {
+                    start: Position {
+                        line: 93,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 95,
+                        character: 41,
+                    },
                 },
             },
         },
@@ -112,15 +122,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 59,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 98,
-                    character: 0,
-                },
-                end: Position {
-                    line: 136,
-                    character: 5,
+                range: ApiRange {
+                    start: Position {
+                        line: 98,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 136,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -134,15 +146,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 20,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.java"),
-                start: Position {
-                    line: 138,
-                    character: 0,
-                },
-                end: Position {
-                    line: 140,
-                    character: 5,
+                range: ApiRange {
+                    start: Position {
+                        line: 138,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 140,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -167,7 +181,7 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
     let references = manager
         .find_references(
             file_path,
-            lsp_types::Position {
+            LspPosition {
                 line: 10,
                 character: 13,
             },
@@ -177,12 +191,12 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
     let expected = vec![
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 10,
                     character: 13,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 10,
                     character: 18,
                 },
@@ -190,12 +204,12 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 111,
                     character: 8,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 111,
                     character: 13,
                 },
@@ -203,12 +217,12 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 111,
                     character: 23,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 111,
                     character: 28,
                 },
@@ -231,7 +245,7 @@ async fn test_definition() -> Result<(), Box<dyn std::error::Error>> {
     let definition_response = manager
         .find_definition(
             "AStar.java",
-            lsp_types::Position {
+            LspPosition {
                 line: 111,
                 character: 8,
             },
@@ -245,12 +259,12 @@ async fn test_definition() -> Result<(), Box<dyn std::error::Error>> {
     };
     let expected = vec![Location {
         uri: Url::parse("file:///mnt/lsproxy_root/sample_project/java/AStar.java").unwrap(),
-        range: Range {
-            start: lsp_types::Position {
+        range: LspRange {
+            start: LspPosition {
                 line: 10,
                 character: 13,
             },
-            end: lsp_types::Position {
+            end: LspPosition {
                 line: 10,
                 character: 18,
             },

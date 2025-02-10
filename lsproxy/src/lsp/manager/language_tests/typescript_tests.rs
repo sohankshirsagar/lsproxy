@@ -1,3 +1,5 @@
+use crate::api_types;
+
 use super::*;
 
 #[tokio::test]
@@ -23,15 +25,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 13,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/node.ts"),
-                start: Position {
-                    line: 0,
-                    character: 0,
-                },
-                end: Position {
-                    line: 14,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -45,15 +49,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/node.ts"),
-                start: Position {
-                    line: 1,
-                    character: 0,
-                },
-                end: Position {
-                    line: 7,
-                    character: 8,
+                range: api_types::Range {
+                    start: Position {
+                        line: 1,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 7,
+                        character: 8,
+                    },
                 },
             },
         },
@@ -67,15 +73,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/node.ts"),
-                start: Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: Position {
-                    line: 10,
-                    character: 37,
+                range: api_types::Range {
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 37,
+                    },
                 },
             },
         },
@@ -89,15 +97,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 4,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/node.ts"),
-                start: Position {
-                    line: 13,
-                    character: 0,
-                },
-                end: Position {
-                    line: 13,
-                    character: 57,
+                range: api_types::Range {
+                    start: Position {
+                        line: 13,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 13,
+                        character: 57,
+                    },
                 },
             },
         },

@@ -1,3 +1,5 @@
+use crate::api_types;
+
 use super::*;
 
 #[tokio::test]
@@ -23,15 +25,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 11,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/map.rs"),
-                start: Position {
-                    line: 0,
-                    character: 0,
-                },
-                end: Position {
-                    line: 4,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 4,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -45,15 +49,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 5,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/map.rs"),
-                start: Position {
-                    line: 6,
-                    character: 0,
-                },
-                end: Position {
-                    line: 24,
-                    character: 1,
+                range: api_types::Range {
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 24,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -67,15 +73,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 11,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/map.rs"),
-                start: Position {
-                    line: 21,
-                    character: 0,
-                },
-                end: Position {
-                    line: 23,
-                    character: 5,
+                range: api_types::Range {
+                    start: Position {
+                        line: 21,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 23,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -89,15 +97,17 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     character: 11,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("src/map.rs"),
-                start: Position {
-                    line: 7,
-                    character: 0,
-                },
-                end: Position {
-                    line: 19,
-                    character: 5,
+                range: api_types::Range {
+                    start: Position {
+                        line: 7,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 19,
+                        character: 5,
+                    },
                 },
             },
         },
