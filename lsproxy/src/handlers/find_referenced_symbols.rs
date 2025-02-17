@@ -60,6 +60,7 @@ pub async fn find_referenced_symbols(
                 line: info.identifier_position.position.line,
                 character: info.identifier_position.position.character,
             },
+            info.full_scan,
         )
         .await
     {
@@ -231,7 +232,6 @@ mod test {
     use crate::test_utils::{csharp_sample_path, python_sample_path, TestContext};
 
     #[tokio::test]
-    #[ignore = "Csharp hangs in tests"]
     async fn test_csharp_referenced_symbols() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup(&csharp_sample_path(), false).await?;
         let state = initialize_app_state().await?;
@@ -244,6 +244,7 @@ mod test {
                     character: 17,
                 },
             },
+            full_scan: false,
         });
 
         sleep(Duration::from_secs(5)).await;
@@ -273,7 +274,6 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("AddNeighborsToOpenList"),
-                        kind: Some(String::from("function-call")),
                         file_range: FileRange {
                             path: String::from("AStar.cs"),
                             range: Range {
@@ -287,6 +287,7 @@ mod test {
                                 },
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("AddNeighborsToOpenList"),
@@ -316,7 +317,6 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("AddNeighborsToOpenList"),
-                        kind: Some(String::from("function-call")),
                         file_range: FileRange {
                             path: String::from("AStar.cs"),
                             range: Range {
@@ -330,6 +330,7 @@ mod test {
                                 },
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("AddNeighborsToOpenList"),
@@ -359,7 +360,6 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("Distance"),
-                        kind: Some(String::from("function-call")),
                         file_range: FileRange {
                             path: String::from("AStar.cs"),
                             range: Range {
@@ -373,6 +373,7 @@ mod test {
                                 },
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("Distance"),
@@ -402,7 +403,6 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("FindNeighborInList"),
-                        kind: Some(String::from("function-call")),
                         file_range: FileRange {
                             path: String::from("AStar.cs"),
                             range: Range {
@@ -416,6 +416,7 @@ mod test {
                                 },
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("FindNeighborInList"),
@@ -445,7 +446,6 @@ mod test {
                 ReferenceWithSymbolDefinitions {
                     reference: Identifier {
                         name: String::from("FindNeighborInList"),
-                        kind: Some(String::from("function-call")),
                         file_range: FileRange {
                             path: String::from("AStar.cs"),
                             range: Range {
@@ -459,6 +459,7 @@ mod test {
                                 },
                             },
                         },
+                        kind: Some(String::from("function-call")),
                     },
                     definitions: vec![Symbol {
                         name: String::from("FindNeighborInList"),
@@ -489,7 +490,6 @@ mod test {
             external_symbols: vec![
                 Identifier {
                     name: String::from("Add"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -503,10 +503,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Any"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -520,10 +520,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("RemoveAt"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -537,10 +537,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Add"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -554,10 +554,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Insert"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -571,10 +571,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Insert"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -588,10 +588,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Add"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -605,10 +605,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Sort"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -622,10 +622,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Sqrt"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -639,10 +639,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Pow"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -656,10 +656,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Pow"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -673,10 +673,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
                 Identifier {
                     name: String::from("Any"),
-                    kind: Some(String::from("function-call")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -690,12 +690,12 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("function-call")),
                 },
             ],
             not_found: vec![
                 Identifier {
                     name: String::from("Node"),
-                    kind: Some(String::from("class")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -709,10 +709,10 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("class-instantiation")),
                 },
                 Identifier {
                     name: String::from("Node"),
-                    kind: Some(String::from("class")),
                     file_range: FileRange {
                         path: String::from("AStar.cs"),
                         range: Range {
@@ -726,6 +726,7 @@ mod test {
                             },
                         },
                     },
+                    kind: Some(String::from("class-instantiation")),
                 },
             ],
         };
@@ -778,6 +779,7 @@ mod test {
                     character: 4,
                 },
             },
+            full_scan: false,
         });
 
         sleep(Duration::from_secs(5)).await;
@@ -1269,6 +1271,7 @@ mod test {
                     character: 6,
                 },
             },
+            full_scan: false,
         });
 
         sleep(Duration::from_secs(5)).await;

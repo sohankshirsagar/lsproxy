@@ -345,6 +345,7 @@ impl Manager {
         &self,
         file_path: &str,
         position: Position,
+        full_scan: bool,
     ) -> Result<Vec<(AstGrepMatch, GotoDefinitionResponse)>, LspManagerError> {
         let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
@@ -373,7 +374,7 @@ impl Manager {
         // Get the symbol and its references
         let (_, references_to_symbols) = match self
             .ast_grep
-            .get_symbol_and_references(full_path_str, &position, false)
+            .get_symbol_and_references(full_path_str, &position, full_scan)
             .await
         {
             Ok(result) => result,

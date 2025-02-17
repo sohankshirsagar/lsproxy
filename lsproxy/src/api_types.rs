@@ -237,7 +237,8 @@ pub struct GetReferencesRequest {
     pub include_raw_response: bool,
 }
 
-/// Request to get all symbols that are referenced from a symbol at the given position
+/// Request to get all symbols that are referenced from a symbol at the given position, either
+/// focusing on function calls, or more permissively finding all references
 ///
 /// The input position must point to a symbol (e.g. function name, class name, variable name).
 /// The response will include all symbols that are referenced from that input symbol.
@@ -245,6 +246,14 @@ pub struct GetReferencesRequest {
 /// all symbols referenced within that function's implementation.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencedSymbolsRequest {
+    /// Whether to use the more permissive rules to find referenced symbols. This will be not just
+    /// code that is executed but also things like type hints and chained indirection.
+    /// Defaults to false.
+    #[serde(default)]
+    #[schema(example = false)]
+    pub full_scan: bool,
+
+    /// The identifier position of the symbol to find references within
     pub identifier_position: FilePosition,
 }
 

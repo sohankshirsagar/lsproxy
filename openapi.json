@@ -7,7 +7,7 @@
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
     },
-    "version": "0.2.0"
+    "version": "0.2.1"
   },
   "servers": [
     {
@@ -473,13 +473,19 @@
       },
       "GetReferencedSymbolsRequest": {
         "type": "object",
-        "description": "Request to get all symbols that are referenced from a symbol at the given position\n\nThe input position must point to a symbol (e.g. function name, class name, variable name).\nThe response will include all symbols that are referenced from that input symbol.\nFor example, if the position points to a function name, the response will include\nall symbols referenced within that function's implementation.",
+        "description": "Request to get all symbols that are referenced from a symbol at the given position, either\nfocusing on function calls, or more permissively finding all references\n\nThe input position must point to a symbol (e.g. function name, class name, variable name).\nThe response will include all symbols that are referenced from that input symbol.\nFor example, if the position points to a function name, the response will include\nall symbols referenced within that function's implementation.",
         "required": [
           "identifier_position"
         ],
         "properties": {
+          "full_scan": {
+            "type": "boolean",
+            "description": "Whether to use the more permissive rules to find referenced symbols. This will be not just\ncode that is executed but also things like type hints and chained indirection.\nDefaults to false.",
+            "example": false
+          },
           "identifier_position": {
-            "$ref": "#/components/schemas/FilePosition"
+            "$ref": "#/components/schemas/FilePosition",
+            "description": "The identifier position of the symbol to find references within"
           }
         }
       },
