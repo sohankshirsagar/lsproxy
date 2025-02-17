@@ -83,8 +83,12 @@ impl AstGrepClient {
             .into_iter()
             .filter(|m| {
                 let contained = symbol_match.contains(m);
+                let all_ref = m.rule_id == "all-references";
 
-                contained && (full_scan || m.rule_id != "non-function")
+                // If we're doing a full scan, we want to use the more permissive "all-references"
+                // rule, whereas if we're not doing a full scan, we just want to use the targeted
+                // rules
+                contained && ((full_scan && all_ref) || (!full_scan && !all_ref))
             })
             .collect();
 

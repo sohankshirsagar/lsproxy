@@ -60,6 +60,7 @@ pub async fn find_referenced_symbols(
                 line: info.identifier_position.position.line,
                 character: info.identifier_position.position.character,
             },
+            info.full_scan
         )
         .await
     {
@@ -231,7 +232,6 @@ mod test {
     use crate::test_utils::{csharp_sample_path, python_sample_path, TestContext};
 
     #[tokio::test]
-    #[ignore = "Csharp hangs in tests"]
     async fn test_csharp_referenced_symbols() -> Result<(), Box<dyn std::error::Error>> {
         let _context = TestContext::setup(&csharp_sample_path(), false).await?;
         let state = initialize_app_state().await?;
@@ -244,6 +244,7 @@ mod test {
                     character: 17,
                 },
             },
+            full_scan: false,
         });
 
         sleep(Duration::from_secs(5)).await;
@@ -778,6 +779,7 @@ mod test {
                     character: 4,
                 },
             },
+            full_scan: false,
         });
 
         sleep(Duration::from_secs(5)).await;
@@ -1269,6 +1271,7 @@ mod test {
                     character: 6,
                 },
             },
+            full_scan: false,
         });
 
         sleep(Duration::from_secs(5)).await;

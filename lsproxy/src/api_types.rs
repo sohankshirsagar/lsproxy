@@ -245,6 +245,9 @@ pub struct GetReferencesRequest {
 /// all symbols referenced within that function's implementation.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencedSymbolsRequest {
+    #[serde(default)]
+    #[schema(example = false)]
+    pub full_scan: bool,
     pub identifier_position: FilePosition,
 }
 

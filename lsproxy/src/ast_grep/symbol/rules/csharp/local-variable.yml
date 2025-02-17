@@ -1,0 +1,14 @@
+id: local-variable
+language: csharp
+rule:
+  kind: identifier
+  pattern: $NAME
+  any:
+    - inside:
+        any:
+          - kind: enum_member_declaration
+    - inside:
+        any:
+          - kind: variable_declarator
+          - kind: parameter
+        field: name
