@@ -64,6 +64,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
         Symbol {
+            name: String::from("_open"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 4,
+                    character: 36,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 4,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 4,
+                        character: 41,
+                    },
+                },
+            },
+        },
+        Symbol {
             name: String::from("_closed"),
             kind: String::from("field"),
             identifier_position: FilePosition {
@@ -83,6 +107,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     end: Position {
                         line: 5,
                         character: 52,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("_closed"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 5,
+                    character: 36,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 5,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 5,
+                        character: 43,
                     },
                 },
             },
@@ -112,6 +160,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
         Symbol {
+            name: String::from("_path"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 6,
+                    character: 36,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 6,
+                        character: 41,
+                    },
+                },
+            },
+        },
+        Symbol {
             name: String::from("_maze"),
             kind: String::from("field"),
             identifier_position: FilePosition {
@@ -131,6 +203,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     end: Position {
                         line: 7,
                         character: 39,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("_maze"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 7,
+                    character: 33,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 7,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 7,
+                        character: 38,
                     },
                 },
             },
@@ -160,6 +256,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
         Symbol {
+            name: String::from("_current"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 8,
+                    character: 21,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 8,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 8,
+                        character: 29,
+                    },
+                },
+            },
+        },
+        Symbol {
             name: String::from("_xStart"),
             kind: String::from("field"),
             identifier_position: FilePosition {
@@ -184,6 +304,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
         Symbol {
+            name: String::from("_xStart"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 9,
+                    character: 29,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 9,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 9,
+                        character: 36,
+                    },
+                },
+            },
+        },
+        Symbol {
             name: String::from("_yStart"),
             kind: String::from("field"),
             identifier_position: FilePosition {
@@ -203,6 +347,30 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     end: Position {
                         line: 10,
                         character: 37,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("_yStart"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 10,
+                    character: 29,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 10,
+                        character: 36,
                     },
                 },
             },
@@ -256,6 +424,54 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
         Symbol {
+            name: String::from("_xEnd"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 11,
+                    character: 20,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 11,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 11,
+                        character: 25,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("_yEnd"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 11,
+                    character: 27,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 11,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 11,
+                        character: 32,
+                    },
+                },
+            },
+        },
+        Symbol {
             name: String::from("_diag"),
             kind: String::from("field"),
             identifier_position: FilePosition {
@@ -275,6 +491,174 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     end: Position {
                         line: 12,
                         character: 36,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("_diag"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 12,
+                    character: 30,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 12,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 12,
+                        character: 35,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("maze"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 14,
+                    character: 29,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 33,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("xStart"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 14,
+                    character: 39,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 45,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("yStart"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 14,
+                    character: 51,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 57,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("diag"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 14,
+                    character: 64,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 68,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("xEnd"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 23,
+                    character: 42,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 23,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 23,
+                        character: 46,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("yEnd"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 23,
+                    character: 52,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 23,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 23,
+                        character: 56,
                     },
                 },
             },
@@ -328,6 +712,126 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
         Symbol {
+            name: String::from("x"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 53,
+                    character: 21,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 53,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 53,
+                        character: 22,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("y"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 55,
+                    character: 25,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 55,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 55,
+                        character: 26,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("node"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 60,
+                    character: 24,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 60,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 60,
+                        character: 28,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("x"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 78,
+                    character: 36,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 78,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 78,
+                        character: 37,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("y"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 78,
+                    character: 43,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 78,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 78,
+                        character: 44,
+                    },
+                },
+            },
+        },
+        Symbol {
             name: String::from("Distance"),
             kind: String::from("method"),
             identifier_position: FilePosition {
@@ -347,6 +851,54 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
                     end: Position {
                         line: 81,
                         character: 9,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("list"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 83,
+                    character: 51,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 83,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 83,
+                        character: 55,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: String::from("node"),
+            kind: String::from("local-variable"),
+            identifier_position: FilePosition {
+                path: String::from("AStar.cs"),
+                position: Position {
+                    line: 83,
+                    character: 62,
+                },
+            },
+            file_range: FileRange {
+                path: String::from("AStar.cs"),
+                range: Range {
+                    start: Position {
+                        line: 83,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 83,
+                        character: 66,
                     },
                 },
             },
@@ -376,6 +928,51 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             },
         },
     ];
-    assert_eq!(symbol_response, expected);
+    // Sort definitions
+    let mut sorted_response = symbol_response;
+    sorted_response.sort_by(|a, b| {
+        let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+        if path_cmp.is_eq() {
+            let line_cmp = a
+                .identifier_position
+                .position
+                .line
+                .cmp(&b.identifier_position.position.line);
+            if line_cmp.is_eq() {
+                a.identifier_position
+                    .position
+                    .character
+                    .cmp(&b.identifier_position.position.character)
+            } else {
+                line_cmp
+            }
+        } else {
+            path_cmp
+        }
+    });
+
+    let mut sorted_expected = expected;
+    sorted_expected.sort_by(|a, b| {
+        let path_cmp = a.identifier_position.path.cmp(&b.identifier_position.path);
+        if path_cmp.is_eq() {
+            let line_cmp = a
+                .identifier_position
+                .position
+                .line
+                .cmp(&b.identifier_position.position.line);
+            if line_cmp.is_eq() {
+                a.identifier_position
+                    .position
+                    .character
+                    .cmp(&b.identifier_position.position.character)
+            } else {
+                line_cmp
+            }
+        } else {
+            path_cmp
+        }
+    });
+
+    assert_eq!(sorted_response, sorted_expected);
     Ok(())
 }
