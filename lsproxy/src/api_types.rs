@@ -76,6 +76,8 @@ pub enum SupportedLanguages {
     Rust,
     #[serde(rename = "cpp")]
     CPP,
+    #[serde(rename = "csharp")]
+    CSharp,
     #[serde(rename = "java")]
     Java,
     #[serde(rename = "golang")]
@@ -115,20 +117,27 @@ pub struct FileRange {
     /// The path to the file.
     #[schema(example = "src/main.py")]
     pub path: String,
-    /// The start position of the range.
-    pub start: Position,
-    /// The end position of the range.
-    pub end: Position,
+    /// The range within the file
+    pub range: Range,
 }
 
 impl FileRange {
     pub fn contains(&self, position: FilePosition) -> bool {
         let pos = &position.position;
         self.path == position.path
-            && self.start.line <= pos.line
-            && self.end.line >= pos.line
-            && (self.start.line != pos.line || self.start.character <= pos.character)
-            && (self.end.line != pos.line || self.end.character >= pos.character)
+            && self.range.start.line <= pos.line
+            && self.range.end.line >= pos.line
+            && (self.range.start.line != pos.line || self.range.start.character <= pos.character)
+            && (self.range.end.line != pos.line || self.range.end.character >= pos.character)
+    }
+}
+
+impl From<FileRange> for lsp_types::Range {
+    fn from(range: FileRange) -> Self {
+        lsp_types::Range::new(
+            lsp_types::Position::from(range.range.start),
+            lsp_types::Position::from(range.range.end),
+        )
     }
 }
 
@@ -147,15 +156,6 @@ impl From<lsp_types::Position> for Position {
             line: position.line,
             character: position.character,
         }
-    }
-}
-
-impl From<FileRange> for lsp_types::Range {
-    fn from(range: FileRange) -> Self {
-        lsp_types::Range::new(
-            lsp_types::Position::from(range.start),
-            lsp_types::Position::from(range.end),
-        )
     }
 }
 
@@ -194,13 +194,13 @@ pub struct Symbol {
     pub identifier_position: FilePosition,
 
     /// The full range of the symbol.
-    pub range: FileRange,
+    pub file_range: FileRange,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Identifier {
     pub name: String,
-    pub range: FileRange,
+    pub file_range: FileRange,
     pub kind: Option<String>,
 }
 
@@ -239,7 +239,8 @@ pub struct GetReferencesRequest {
     pub include_raw_response: bool,
 }
 
-/// Request to get all symbols that are referenced from a symbol at the given position
+/// Request to get all symbols that are referenced from a symbol at the given position, either
+/// focusing on function calls, or more permissively finding all references
 ///
 /// The input position must point to a symbol (e.g. function name, class name, variable name).
 /// The response will include all symbols that are referenced from that input symbol.
@@ -247,6 +248,14 @@ pub struct GetReferencesRequest {
 /// all symbols referenced within that function's implementation.
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct GetReferencedSymbolsRequest {
+    /// Whether to use the more permissive rules to find referenced symbols. This will be not just
+    /// code that is executed but also things like type hints and chained indirection.
+    /// Defaults to false.
+    #[serde(default)]
+    #[schema(example = false)]
+    pub full_scan: bool,
+
+    /// The identifier position of the symbol to find references within
     pub identifier_position: FilePosition,
 }
 
@@ -397,6 +406,23 @@ pub struct IdentifierResponse {
     pub identifiers: Vec<Identifier>,
 }
 
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Range {
+    /// The start position of the range.
+    pub start: Position,
+    /// The end position of the range.
+    pub end: Position,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct ReadSourceCodeRequest {
+    /// Path to the file, relative to the workspace root
+    #[schema(example = "src/main.py")]
+    pub path: String,
+    /// Optional range within the file to read
+    pub range: Option<Range>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -405,13 +431,15 @@ mod tests {
     fn test_contains_multi_line_range() {
         let range = FileRange {
             path: "test.rs".to_string(),
-            start: Position {
-                line: 10,
-                character: 5,
-            },
-            end: Position {
-                line: 12,
-                character: 10,
+            range: Range {
+                start: Position {
+                    line: 10,
+                    character: 5,
+                },
+                end: Position {
+                    line: 12,
+                    character: 10,
+                },
             },
         };
 
@@ -452,13 +480,15 @@ mod tests {
     fn test_contains_multi_line_range_outside_positions() {
         let range = FileRange {
             path: "test.rs".to_string(),
-            start: Position {
-                line: 10,
-                character: 5,
-            },
-            end: Position {
-                line: 12,
-                character: 10,
+            range: Range {
+                start: Position {
+                    line: 10,
+                    character: 5,
+                },
+                end: Position {
+                    line: 12,
+                    character: 10,
+                },
             },
         };
 
@@ -508,13 +538,15 @@ mod tests {
     fn test_contains_single_line_range() {
         let single_line_range = FileRange {
             path: "test.rs".to_string(),
-            start: Position {
-                line: 10,
-                character: 5,
-            },
-            end: Position {
-                line: 10,
-                character: 10,
+            range: Range {
+                start: Position {
+                    line: 10,
+                    character: 5,
+                },
+                end: Position {
+                    line: 10,
+                    character: 10,
+                },
             },
         };
 
@@ -554,13 +586,15 @@ mod tests {
     fn test_contains_zero_width_range() {
         let zero_width_range = FileRange {
             path: "test.rs".to_string(),
-            start: Position {
-                line: 10,
-                character: 5,
-            },
-            end: Position {
-                line: 10,
-                character: 5,
+            range: Range {
+                start: Position {
+                    line: 10,
+                    character: 5,
+                },
+                end: Position {
+                    line: 10,
+                    character: 5,
+                },
             },
         };
 

@@ -66,7 +66,7 @@ mod test {
 
     use actix_web::http::StatusCode;
 
-    use crate::api_types::{FilePosition, FileRange, Position, Symbol};
+    use crate::api_types::{FilePosition, FileRange, Position, Range, Symbol};
     use crate::initialize_app_state;
     use crate::test_utils::{python_sample_path, TestContext};
 
@@ -103,15 +103,17 @@ mod test {
                         character: 4,
                     },
                 },
-                range: FileRange {
+                file_range: FileRange {
                     path: String::from("main.py"),
-                    start: Position {
-                        line: 5,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 12,
-                        character: 14,
+                    range: Range {
+                        start: Position {
+                            line: 5,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 12,
+                            character: 14,
+                        },
                     },
                 },
             },
@@ -125,15 +127,17 @@ mod test {
                         character: 4,
                     },
                 },
-                range: FileRange {
+                file_range: FileRange {
                     path: String::from("main.py"),
-                    start: Position {
-                        line: 14,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 19,
-                        character: 28,
+                    range: Range {
+                        start: Position {
+                            line: 14,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 19,
+                            character: 28,
+                        },
                     },
                 },
             },

@@ -1,4 +1,4 @@
-use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position};
+use crate::api_types::{CodeContext, ErrorResponse, FileRange, Position, Range};
 use crate::handlers::error::IntoHttpResponse;
 use crate::handlers::utils;
 use crate::lsp::manager::{LspManagerError, Manager};
@@ -9,7 +9,7 @@ use log::{error, info, warn};
 
 use crate::api_types::{DefinitionResponse, GetDefinitionRequest};
 use crate::AppState;
-use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition, Range};
+use lsp_types::{GotoDefinitionResponse, Location, Position as LspPosition, Range as LspRange};
 /// Get the definition of a symbol at a specific position in a file
 ///
 /// Returns the location of the definition for the symbol at the given position.
@@ -142,13 +142,15 @@ async fn fetch_definition_source_code(
             Some(ast_grep_match) => CodeContext {
                 range: FileRange {
                     path: relative_path,
-                    start: Position {
-                        line: ast_grep_match.get_context_range().start.line as u32,
-                        character: ast_grep_match.get_context_range().start.column as u32,
-                    },
-                    end: Position {
-                        line: ast_grep_match.get_context_range().end.line as u32,
-                        character: ast_grep_match.get_context_range().end.column as u32,
+                    range: Range {
+                        start: Position {
+                            line: ast_grep_match.get_context_range().start.line as u32,
+                            character: ast_grep_match.get_context_range().start.column as u32,
+                        },
+                        end: Position {
+                            line: ast_grep_match.get_context_range().end.line as u32,
+                            character: ast_grep_match.get_context_range().end.column as u32,
+                        },
                     },
                 },
                 source_code: ast_grep_match.get_source_code(),
@@ -156,7 +158,7 @@ async fn fetch_definition_source_code(
             None => {
                 warn!("Symbol not found for definition: {:?}", definition);
                 warn!("No exact match in file symbols (likely filtered out). Returning an approximate range instead.");
-                let range = Range {
+                let range = LspRange {
                     start: LspPosition {
                         line: definition.range.start.line.saturating_sub(3),
                         character: 0,
@@ -172,13 +174,15 @@ async fn fetch_definition_source_code(
                 CodeContext {
                     range: FileRange {
                         path: relative_path,
-                        start: Position {
-                            line: definition.range.start.line.saturating_sub(3),
-                            character: 0,
-                        },
-                        end: Position {
-                            line: definition.range.end.line as u32 + 3,
-                            character: 0,
+                        range: Range {
+                            start: Position {
+                                line: definition.range.start.line.saturating_sub(3),
+                                character: 0,
+                            },
+                            end: Position {
+                                line: definition.range.end.line as u32 + 3,
+                                character: 0,
+                            },
                         },
                     },
                     source_code,
@@ -235,7 +239,49 @@ mod test {
         let bytes = actix_web::body::to_bytes(body).await.unwrap();
         let definition_response: DefinitionResponse = serde_json::from_slice(&bytes).unwrap();
 
-        let expected_response = DefinitionResponse { raw_response: None, definitions: vec![FilePosition { path: String::from("graph.py"), position: Position { line: 12, character: 6 } }], source_code_context: Some(vec![CodeContext { range: FileRange { path: String::from("graph.py"), start: Position { line: 12, character: 0 }, end: Position { line: 88, character: 16 } }, source_code: String::from("class AStarGraph(GraphBase):\n    def __init__(self):\n        self._barriers: List[List[Tuple[int, int]]] = []\n        self._barriers.append([\n            (2, 4), (2, 5), (2, 6),\n            (3, 6), (4, 6), (5, 6),\n            (5, 5), (5, 4), (5, 3),\n            (5, 2), (4, 2), (3, 2),\n        ])\n\n    @property\n    def barriers(self):\n        return self._barriers\n\n    def _barrier_cost(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:\n        \"\"\"Original barrier-based cost calculation\"\"\"\n        for barrier in self.barriers:\n            if b in barrier:\n                return 100\n        return 1\n\n    def _distance_cost(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:\n        \"\"\"Cost based on Manhattan distance between points\"\"\"\n        return abs(b[0] - a[0]) + abs(b[1] - a[1])\n\n    def _combined_cost(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:\n        \"\"\"Combines barrier and distance costs\"\"\"\n        barrier_cost = self._barrier_cost(a, b)\n        distance_cost = self._distance_cost(a, b)\n        return barrier_cost * distance_cost\n\n    def move_cost(self, a: Tuple[int, int], b: Tuple[int, int], \n                 strategy: CostStrategy = CostStrategy.BARRIER) -> float:\n        \"\"\"\n        Calculate movement cost between two points using specified strategy.\n        \n        Args:\n            a: Starting position\n            b: Ending position\n            strategy: Cost calculation strategy to use\n            \n        Returns:\n            float: Cost of movement\n        \"\"\"\n        if strategy == CostStrategy.BARRIER:\n            cost_function = self._barrier_cost\n        elif strategy == CostStrategy.DISTANCE:\n            cost_function = self._distance_cost\n        elif strategy == CostStrategy.COMBINED:\n            cost_function = self._combined_cost\n        else:\n            raise ValueError(f\"Unknown cost strategy: {strategy}\")\n        \n        return cost_function(a, b)\n\n    @log_execution_time\n    def heuristic(self, start, goal):\n        D = 1\n        D2 = 1\n        dx = abs(start[0] - goal[0])\n        dy = abs(start[1] - goal[1])\n        return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)\n\n    @log_execution_time\n    def get_vertex_neighbours(self, pos, cost_strategy: CostStrategy = CostStrategy.BARRIER):\n        n = []\n        for dx, dy in [\n            (1, 0), (-1, 0), (0, 1), (0, -1),\n            (1, 1), (-1, 1), (1, -1), (-1, -1),\n        ]:\n            x2 = pos[0] + dx\n            y2 = pos[1] + dy\n            if x2 < 0 or x2 > 7 or y2 < 0 or y2 > 7:\n                continue\n            if self.move_cost(pos, (x2, y2), strategy=cost_strategy) < 100:\n                n.append((x2, y2))\n        return n") }]), selected_identifier: Identifier { name: String::from("AStarGraph"), kind: None, range: FileRange { path: String::from("main.py"), start: Position { line: 1, character: 18 }, end: Position { line: 1, character: 28 } } } };
+        let expected_response = DefinitionResponse {
+            raw_response: None,
+            definitions: vec![FilePosition {
+                path: String::from("graph.py"),
+                position: Position {
+                    line: 12,
+                    character: 6,
+                },
+            }],
+            source_code_context: Some(vec![CodeContext {
+                range: FileRange {
+                    path: String::from("graph.py"),
+                    range: Range {
+                        start: Position {
+                            line: 12,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 88,
+                            character: 16,
+                        },
+                    },
+                },
+                source_code: String::from("class AStarGraph(GraphBase):\n    def __init__(self):\n        self._barriers: List[List[Tuple[int, int]]] = []\n        self._barriers.append([\n            (2, 4), (2, 5), (2, 6),\n            (3, 6), (4, 6), (5, 6),\n            (5, 5), (5, 4), (5, 3),\n            (5, 2), (4, 2), (3, 2),\n        ])\n\n    @property\n    def barriers(self):\n        return self._barriers\n\n    def _barrier_cost(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:\n        \"\"\"Original barrier-based cost calculation\"\"\"\n        for barrier in self.barriers:\n            if b in barrier:\n                return 100\n        return 1\n\n    def _distance_cost(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:\n        \"\"\"Cost based on Manhattan distance between points\"\"\"\n        return abs(b[0] - a[0]) + abs(b[1] - a[1])\n\n    def _combined_cost(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:\n        \"\"\"Combines barrier and distance costs\"\"\"\n        barrier_cost = self._barrier_cost(a, b)\n        distance_cost = self._distance_cost(a, b)\n        return barrier_cost * distance_cost\n\n    def move_cost(self, a: Tuple[int, int], b: Tuple[int, int], \n                 strategy: CostStrategy = CostStrategy.BARRIER) -> float:\n        \"\"\"\n        Calculate movement cost between two points using specified strategy.\n        \n        Args:\n            a: Starting position\n            b: Ending position\n            strategy: Cost calculation strategy to use\n            \n        Returns:\n            float: Cost of movement\n        \"\"\"\n        if strategy == CostStrategy.BARRIER:\n            cost_function = self._barrier_cost\n        elif strategy == CostStrategy.DISTANCE:\n            cost_function = self._distance_cost\n        elif strategy == CostStrategy.COMBINED:\n            cost_function = self._combined_cost\n        else:\n            raise ValueError(f\"Unknown cost strategy: {strategy}\")\n        \n        return cost_function(a, b)\n\n    @log_execution_time\n    def heuristic(self, start, goal):\n        D = 1\n        D2 = 1\n        dx = abs(start[0] - goal[0])\n        dy = abs(start[1] - goal[1])\n        return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)\n\n    @log_execution_time\n    def get_vertex_neighbours(self, pos, cost_strategy: CostStrategy = CostStrategy.BARRIER):\n        n = []\n        for dx, dy in [\n            (1, 0), (-1, 0), (0, 1), (0, -1),\n            (1, 1), (-1, 1), (1, -1), (-1, -1),\n        ]:\n            x2 = pos[0] + dx\n            y2 = pos[1] + dy\n            if x2 < 0 or x2 > 7 or y2 < 0 or y2 > 7:\n                continue\n            if self.move_cost(pos, (x2, y2), strategy=cost_strategy) < 100:\n                n.append((x2, y2))\n        return n"),
+            }]),
+            selected_identifier: Identifier {
+                name: String::from("AStarGraph"),
+                kind: None,
+                file_range: FileRange {
+                    path: String::from("main.py"),
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 18,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 28,
+                        },
+                    },
+                },
+            },
+        };
 
         assert_eq!(definition_response, expected_response);
         Ok(())
@@ -272,7 +318,7 @@ mod test {
 
         assert_eq!(
             error_response.error,
-            "Failed to find definition from position: No identifier found at position. Closest matches: [Identifier { name: \"plt\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 28 }, end: Position { line: 0, character: 31 } }, kind: None }, Identifier { name: \"pyplot\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 18 }, end: Position { line: 0, character: 24 } }, kind: None }, Identifier { name: \"matplotlib\", range: FileRange { path: \"main.py\", start: Position { line: 0, character: 7 }, end: Position { line: 0, character: 17 } }, kind: None }]"
+            "Failed to find definition from position: No identifier found at position. Closest matches: [Identifier { name: \"plt\", file_range: FileRange { path: \"main.py\", range: Range { start: Position { line: 0, character: 28 }, end: Position { line: 0, character: 31 } } }, kind: None }, Identifier { name: \"pyplot\", file_range: FileRange { path: \"main.py\", range: Range { start: Position { line: 0, character: 18 }, end: Position { line: 0, character: 24 } } }, kind: None }, Identifier { name: \"matplotlib\", file_range: FileRange { path: \"main.py\", range: Range { start: Position { line: 0, character: 7 }, end: Position { line: 0, character: 17 } } }, kind: None }]"
         );
         Ok(())
     }

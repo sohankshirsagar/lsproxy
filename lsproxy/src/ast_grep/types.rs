@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api_types::{FilePosition, FileRange, Identifier, Position, Symbol},
+    api_types::{FilePosition, FileRange, Identifier, Position, Range, Symbol},
     utils::file_utils::absolute_path_to_relative_path_string,
 };
 
@@ -141,15 +141,17 @@ impl From<AstGrepMatch> for Symbol {
                     character: ast_match.range.start.column as u32,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: path.clone(),
-                start: Position {
-                    line: match_range.start.line as u32,
-                    character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
-                },
-                end: Position {
-                    line: match_range.end.line as u32,
-                    character: match_range.end.column as u32,
+                range: Range {
+                    start: Position {
+                        line: match_range.start.line as u32,
+                        character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
+                    },
+                    end: Position {
+                        line: match_range.end.line as u32,
+                        character: match_range.end.column as u32,
+                    },
                 },
             },
         }
@@ -168,15 +170,17 @@ impl From<AstGrepMatch> for Identifier {
         Identifier {
             name: ast_match.meta_variables.single.name.text.clone(),
             kind,
-            range: FileRange {
+            file_range: FileRange {
                 path: path.clone(),
-                start: Position {
-                    line: match_range.start.line as u32,
-                    character: match_range.start.column as u32,
-                },
-                end: Position {
-                    line: match_range.end.line as u32,
-                    character: match_range.end.column as u32,
+                range: Range {
+                    start: Position {
+                        line: match_range.start.line as u32,
+                        character: match_range.start.column as u32,
+                    },
+                    end: Position {
+                        line: match_range.end.line as u32,
+                        character: match_range.end.column as u32,
+                    },
                 },
             },
         }

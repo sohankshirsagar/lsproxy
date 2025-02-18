@@ -44,7 +44,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
 #[openapi(
     info(
         title = "lsproxy",
-        version = "0.1.6",
+        version = "0.2.1",
         license(
             name = "Apache-2.0",
             url = "https://www.apache.org/licenses/LICENSE-2.0"

@@ -1,4 +1,6 @@
 use super::*;
+use crate::api_types::{Position as ApiPosition, Range as ApiRange};
+use lsp_types::{Position as LspPosition, Range as LspRange};
 
 #[tokio::test]
 async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,20 +20,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("class"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 6,
                     character: 6,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 6,
-                    character: 0,
-                },
-                end: Position {
-                    line: 94,
-                    character: 1,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 6,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 94,
+                        character: 1,
+                    },
                 },
             },
         },
@@ -40,20 +44,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("method"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 18,
                     character: 20,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 18,
-                    character: 0,
-                },
-                end: Position {
-                    line: 24,
-                    character: 5,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 18,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 24,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -62,20 +68,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("method"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 50,
                     character: 21,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 50,
-                    character: 0,
-                },
-                end: Position {
-                    line: 80,
-                    character: 5,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 50,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 80,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -84,20 +92,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 8,
                     character: 19,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 8,
-                    character: 0,
-                },
-                end: Position {
-                    line: 8,
-                    character: 31,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 8,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 8,
+                        character: 31,
+                    },
                 },
             },
         },
@@ -106,20 +116,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 16,
                     character: 18,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 16,
-                    character: 0,
-                },
-                end: Position {
-                    line: 16,
-                    character: 23,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 16,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 16,
+                        character: 23,
+                    },
                 },
             },
         },
@@ -128,20 +140,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("method"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 82,
                     character: 21,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 82,
-                    character: 0,
-                },
-                end: Position {
-                    line: 84,
-                    character: 5,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 82,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 84,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -150,20 +164,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("method"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 86,
                     character: 21,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 86,
-                    character: 0,
-                },
-                end: Position {
-                    line: 93,
-                    character: 5,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 86,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 93,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -172,20 +188,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("method"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 26,
                     character: 20,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 26,
-                    character: 0,
-                },
-                end: Position {
-                    line: 48,
-                    character: 5,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 26,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 48,
+                        character: 5,
+                    },
                 },
             },
         },
@@ -194,20 +212,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 10,
                     character: 19,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 10,
-                    character: 0,
-                },
-                end: Position {
-                    line: 10,
-                    character: 24,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 10,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 10,
+                        character: 24,
+                    },
                 },
             },
         },
@@ -216,20 +236,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 11,
                     character: 18,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 11,
-                    character: 0,
-                },
-                end: Position {
-                    line: 11,
-                    character: 22,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 11,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 11,
+                        character: 22,
+                    },
                 },
             },
         },
@@ -238,20 +260,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 7,
                     character: 19,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 7,
-                    character: 0,
-                },
-                end: Position {
-                    line: 7,
-                    character: 29,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 7,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 7,
+                        character: 29,
+                    },
                 },
             },
         },
@@ -260,20 +284,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 9,
                     character: 19,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 9,
-                    character: 0,
-                },
-                end: Position {
-                    line: 9,
-                    character: 29,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 9,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 9,
+                        character: 29,
+                    },
                 },
             },
         },
@@ -282,20 +308,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 14,
                     character: 17,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 14,
-                    character: 0,
-                },
-                end: Position {
-                    line: 14,
-                    character: 22,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 14,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 14,
+                        character: 22,
+                    },
                 },
             },
         },
@@ -304,20 +332,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 12,
                     character: 17,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 12,
-                    character: 0,
-                },
-                end: Position {
-                    line: 12,
-                    character: 24,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 12,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 12,
+                        character: 24,
+                    },
                 },
             },
         },
@@ -326,20 +356,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 15,
                     character: 17,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 15,
-                    character: 0,
-                },
-                end: Position {
-                    line: 15,
-                    character: 22,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 15,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 15,
+                        character: 22,
+                    },
                 },
             },
         },
@@ -348,20 +380,22 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
             kind: String::from("property"),
             identifier_position: FilePosition {
                 path: String::from("AStar.php"),
-                position: Position {
+                position: ApiPosition {
                     line: 13,
                     character: 17,
                 },
             },
-            range: FileRange {
+            file_range: FileRange {
                 path: String::from("AStar.php"),
-                start: Position {
-                    line: 13,
-                    character: 0,
-                },
-                end: Position {
-                    line: 13,
-                    character: 24,
+                range: ApiRange {
+                    start: ApiPosition {
+                        line: 13,
+                        character: 0,
+                    },
+                    end: ApiPosition {
+                        line: 13,
+                        character: 24,
+                    },
                 },
             },
         },
@@ -385,7 +419,7 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
     let references = manager
         .find_references(
             file_path,
-            lsp_types::Position {
+            LspPosition {
                 line: 3,
                 character: 6,
             },
@@ -395,12 +429,12 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
     let expected = vec![
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/AStar.php").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 11,
                     character: 12,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 11,
                     character: 16,
                 },
@@ -408,12 +442,12 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/AStar.php").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 23,
                     character: 25,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 23,
                     character: 29,
                 },
@@ -421,12 +455,12 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/AStar.php").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 57,
                     character: 28,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 57,
                     character: 32,
                 },
@@ -434,12 +468,12 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/AStar.php").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 86,
                     character: 53,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 86,
                     character: 57,
                 },
@@ -447,12 +481,12 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/Node.php").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 3,
                     character: 0,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 23,
                     character: 1,
                 },
@@ -460,12 +494,12 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/Node.php").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 4,
                     character: 12,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 4,
                     character: 16,
                 },
@@ -473,12 +507,12 @@ async fn test_php_references() -> Result<(), Box<dyn std::error::Error>> {
         },
         Location {
             uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/Node.php").unwrap(),
-            range: Range {
-                start: lsp_types::Position {
+            range: LspRange {
+                start: LspPosition {
                     line: 10,
                     character: 33,
                 },
-                end: lsp_types::Position {
+                end: LspPosition {
                     line: 10,
                     character: 37,
                 },
@@ -500,7 +534,7 @@ async fn test_php_definition() -> Result<(), Box<dyn std::error::Error>> {
     let definition_response = manager
         .find_definition(
             "main.php",
-            lsp_types::Position {
+            LspPosition {
                 line: 20,
                 character: 13,
             },
@@ -514,12 +548,12 @@ async fn test_php_definition() -> Result<(), Box<dyn std::error::Error>> {
     };
     let expected = vec![Location {
         uri: Url::parse("file:///mnt/lsproxy_root/sample_project/php/AStar.php").unwrap(),
-        range: Range {
-            start: lsp_types::Position {
+        range: LspRange {
+            start: LspPosition {
                 line: 6,
                 character: 0,
             },
-            end: lsp_types::Position {
+            end: LspPosition {
                 line: 94,
                 character: 1,
             },

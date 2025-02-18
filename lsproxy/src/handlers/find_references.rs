@@ -4,7 +4,7 @@ use log::{error, info};
 use lsp_types::{Location, Position as LspPosition};
 
 use crate::api_types::{
-    CodeContext, ErrorResponse, FilePosition, FileRange, GetReferencesRequest, Position,
+    CodeContext, ErrorResponse, FilePosition, FileRange, GetReferencesRequest, Position, Range,
     ReferencesResponse,
 };
 use crate::handlers::error::IntoHttpResponse;
@@ -208,13 +208,15 @@ async fn fetch_code_context(
                     source_code,
                     range: FileRange {
                         path: uri_to_relative_path_string(&reference.uri),
-                        start: Position {
-                            line: range.start.line,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: range.end.line,
-                            character: 0,
+                        range: Range {
+                            start: Position {
+                                line: range.start.line,
+                                character: 0,
+                            },
+                            end: Position {
+                                line: range.end.line,
+                                character: 0,
+                            },
                         },
                     },
                 });
@@ -325,15 +327,17 @@ mod test {
             selected_identifier: Identifier {
                 name: String::from("AStarGraph"),
                 kind: None,
-                range: FileRange {
+                file_range: FileRange {
                     path: String::from("graph.py"),
-                    start: Position {
-                        line: 12,
-                        character: 6,
-                    },
-                    end: Position {
-                        line: 12,
-                        character: 16,
+                    range: Range {
+                        start: Position {
+                            line: 12,
+                            character: 6,
+                        },
+                        end: Position {
+                            line: 12,
+                            character: 16,
+                        },
                     },
                 },
             },
@@ -537,15 +541,17 @@ mod test {
             context: None,
             selected_identifier: Identifier {
                 name: String::from("log_time"),
-                range: FileRange {
+                file_range: FileRange {
                     path: String::from("decorators.rb"),
-                    start: Position {
-                        line: 8,
-                        character: 8,
-                    },
-                    end: Position {
-                        line: 8,
-                        character: 16,
+                    range: Range {
+                        start: Position {
+                            line: 8,
+                            character: 8,
+                        },
+                        end: Position {
+                            line: 8,
+                            character: 16,
+                        },
                     },
                 },
                 kind: None,
@@ -581,8 +587,7 @@ mod test {
         let error_response: ErrorResponse = serde_json::from_slice(&bytes)?;
         assert_eq!(
             error_response.error,
-            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 88, character: 15 }, end: Position { line: 88, character: 16 } }, kind: None }, Identifier { name: \"n\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 16 }, end: Position { line: 87, character: 17 } }, kind: None }, Identifier { name: \"append\", range: FileRange { path: \"graph.py\", start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } }, kind: None }]"
-        );
+            "Failed to find references from position: No identifier found at position. Closest matches: [Identifier { name: \"n\", file_range: FileRange { path: \"graph.py\", range: Range { start: Position { line: 88, character: 15 }, end: Position { line: 88, character: 16 } } }, kind: None }, Identifier { name: \"n\", file_range: FileRange { path: \"graph.py\", range: Range { start: Position { line: 87, character: 16 }, end: Position { line: 87, character: 17 } } }, kind: None }, Identifier { name: \"append\", file_range: FileRange { path: \"graph.py\", range: Range { start: Position { line: 87, character: 18 }, end: Position { line: 87, character: 24 } } }, kind: None }]"        );
 
         Ok(())
     }
