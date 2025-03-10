@@ -45,10 +45,10 @@ Before committing, make sure to format the code with
 
 ## Running locally
 
-Running is also pretty simple.
+Running is also pretty simple (the no auth is optional but is easier to interact with locally).
 
 ```
-./scripts/run.sh $WORKSPACE_PATH
+./scripts/run.sh $WORKSPACE_PATH --no-auth
 ```
 
 The run script also builds as well, so you can just use this single script if you're iterating in development.
