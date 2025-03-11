@@ -203,6 +203,12 @@ RUN eval "$(rbenv init -)" \
     && gem install srb
 
 RUN eval "$(rbenv init -)" \
+    && rbenv install 3.2.6 \
+    && rbenv shell 3.2.6 \
+    && gem install ruby-lsp \
+    && gem install srb
+
+RUN eval "$(rbenv init -)" \
     && rbenv install 3.2.2 \
     && rbenv shell 3.2.2 \
     && gem install ruby-lsp \
