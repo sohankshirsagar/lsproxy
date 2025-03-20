@@ -128,13 +128,12 @@ RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
 # Install Java
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    mkdir -p /opt/java && \
-    curl -L https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d7be941347e21a1d9f/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz | tar -xz -C /opt/java && \
-    ln -s /opt/java/jdk-21.0.2 /opt/java/current && \
-    update-alternatives --install /usr/bin/java java /opt/java/current/bin/java 100 && \
-    update-alternatives --install /usr/bin/javac javac /opt/java/current/bin/javac 100 && \
+    apt-get install -y --no-install-recommends wget gnupg software-properties-common && \
+    wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | apt-key add - && \
+    echo "deb https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
+    temurin-21-jdk \
     gradle \
     maven \
     && apt-get clean \
