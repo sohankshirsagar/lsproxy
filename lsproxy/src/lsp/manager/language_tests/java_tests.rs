@@ -3,7 +3,6 @@ use crate::api_types::{Position, Range as ApiRange};
 use lsp_types::{Position as LspPosition, Range as LspRange};
 
 #[tokio::test]
-#[ignore = "Java hangs in tests"]
 async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
     let context = TestContext::setup(&java_sample_path(), true).await?;
     let manager = context
@@ -169,7 +168,6 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[tokio::test]
-#[ignore = "Java hangs in tests"]
 async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
     let context = TestContext::setup(&java_sample_path(), true).await?;
     let manager = context
@@ -233,7 +231,6 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[tokio::test]
-#[ignore = "Java hangs in tests"]
 async fn test_definition() -> Result<(), Box<dyn std::error::Error>> {
     let context = TestContext::setup(&java_sample_path(), true).await?;
     let manager = context
