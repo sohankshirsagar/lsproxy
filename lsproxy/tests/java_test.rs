@@ -3,7 +3,6 @@ use lsproxy::api_types::{
     SymbolResponse,
 };
 use lsproxy::{initialize_app_state, run_server};
-use reqwest;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -36,7 +35,7 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
 
     // Spawn the server in a separate thread
     let _server_thread = thread::spawn(move || {
-        set_global_mount_dir(&mount_dir);
+        set_global_mount_dir(mount_dir);
 
         let system = actix_web::rt::System::new();
         if let Err(e) = system.block_on(async {
@@ -67,7 +66,7 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::blocking::Client::new();
     // Test workspace/list-files endpoint
     let response = client
-        .get(&format!("{}/v1/workspace/list-files", base_url))
+        .get(format!("{}/v1/workspace/list-files", base_url))
         .send()
         .expect("Failed to send request");
     assert_eq!(response.status(), 200);
@@ -88,7 +87,7 @@ fn test_server_integration_java() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test file_symbols endpoint
     let response = client
-        .get(&format!("{}/v1/symbol/definitions-in-file", base_url))
+        .get(format!("{}/v1/symbol/definitions-in-file", base_url))
         .query(&[("file_path", "AStar.java")])
         .send()
         .expect("Failed to send request");

@@ -120,8 +120,8 @@ pub struct Label {
 impl From<&AstGrepMatch> for lsp_types::Position {
     fn from(ast_match: &AstGrepMatch) -> Self {
         Self {
-            line: ast_match.range.start.line as u32,
-            character: ast_match.range.start.column as u32,
+            line: ast_match.range.start.line,
+            character: ast_match.range.start.column,
         }
     }
 }
@@ -137,20 +137,20 @@ impl From<AstGrepMatch> for Symbol {
             identifier_position: FilePosition {
                 path: path.clone(),
                 position: Position {
-                    line: ast_match.range.start.line as u32,
-                    character: ast_match.range.start.column as u32,
+                    line: ast_match.range.start.line,
+                    character: ast_match.range.start.column,
                 },
             },
             file_range: FileRange {
                 path: path.clone(),
                 range: Range {
                     start: Position {
-                        line: match_range.start.line as u32,
+                        line: match_range.start.line,
                         character: 0, // TODO: this is not technically true, we're returning the whole line for consistency
                     },
                     end: Position {
-                        line: match_range.end.line as u32,
-                        character: match_range.end.column as u32,
+                        line: match_range.end.line,
+                        character: match_range.end.column,
                     },
                 },
             },
@@ -174,12 +174,12 @@ impl From<AstGrepMatch> for Identifier {
                 path: path.clone(),
                 range: Range {
                     start: Position {
-                        line: match_range.start.line as u32,
-                        character: match_range.start.column as u32,
+                        line: match_range.start.line,
+                        character: match_range.start.column,
                     },
                     end: Position {
-                        line: match_range.end.line as u32,
-                        character: match_range.end.column as u32,
+                        line: match_range.end.line,
+                        character: match_range.end.column,
                     },
                 },
             },

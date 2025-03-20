@@ -182,7 +182,7 @@ pub async fn run_server_with_port_and_host(
         .and_then(|s| url::Url::parse(&s.url).ok())
         .map(|url| url.path().to_string()) // Convert path to owned String
         .and_then(|path| path.strip_prefix('/').map(|s| s.to_string())) // Convert stripped result to String
-        .unwrap_or_else(|| String::new()); // Use empty string as default
+        .unwrap_or_else(String::new); // Use empty string as default
 
     match validate_jwt_config() {
         Ok(secret) => secret,

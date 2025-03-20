@@ -29,7 +29,7 @@ pub fn search_files(
                 let path = entry.path();
                 if !include_patterns.iter().any(|pattern| {
                     glob::Pattern::new(pattern)
-                        .map(|p| p.matches_path(&path))
+                        .map(|p| p.matches_path(path))
                         .unwrap_or(false)
                 }) {
                     continue;
@@ -85,10 +85,9 @@ fn build_walk(path: &Path, exclude_patterns: Vec<String>, respect_gitignore: boo
         .filter_entry(move |entry| {
             let path = entry.path();
             let is_excluded = exclude_patterns.iter().any(|pattern| {
-                let matches = glob::Pattern::new(pattern)
+                glob::Pattern::new(pattern)
                     .map(|p| p.matches_path(path))
-                    .unwrap_or(false);
-                matches
+                    .unwrap_or(false)
             });
             !is_excluded
         })

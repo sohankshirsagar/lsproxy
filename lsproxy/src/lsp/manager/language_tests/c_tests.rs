@@ -65,8 +65,8 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
     let mut actual_locations = references;
     let mut expected_locations = expected;
 
-    actual_locations.sort_by(|a, b| a.uri.path().cmp(&b.uri.path()));
-    expected_locations.sort_by(|a, b| a.uri.path().cmp(&b.uri.path()));
+    actual_locations.sort_by(|a, b| a.uri.path().cmp(b.uri.path()));
+    expected_locations.sort_by(|a, b| a.uri.path().cmp(b.uri.path()));
 
     assert_eq!(actual_locations, expected_locations);
     Ok(())

@@ -99,7 +99,7 @@ impl AstGrepClient {
         let command_result = Command::new("ast-grep")
             .arg("scan")
             .arg("--config")
-            .arg(&config_path)
+            .arg(config_path)
             .arg("--json")
             .arg(file_name)
             .output()
@@ -228,8 +228,8 @@ mod tests {
         let match_positions: Vec<lsp_types::Position> = references
             .iter()
             .map(|ast_match: &AstGrepMatch| lsp_types::Position {
-                line: ast_match.get_identifier_range().start.line as u32,
-                character: ast_match.get_identifier_range().start.column as u32,
+                line: ast_match.get_identifier_range().start.line,
+                character: ast_match.get_identifier_range().start.column,
             })
             .collect();
         let expected = vec![

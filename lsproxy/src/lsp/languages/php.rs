@@ -84,7 +84,7 @@ impl PhpactorClient {
             .map_err(|e| format!("Failed to spawn `composer dump-autoload`: {}", e))?;
 
         // Wait for the child process to complete
-        if let Some(status) = child.wait().await.ok() {
+        if let Ok(status) = child.wait().await {
             if !status.success() {
                 if let Some(code) = status.code() {
                     warn!(

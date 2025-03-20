@@ -47,9 +47,12 @@ RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
 # Install Java
 RUN apt-get update && \
-    apt-get install \
-    -y --no-install-recommends \
-    openjdk-17-jdk \
+    apt-get install -y --no-install-recommends wget gnupg software-properties-common && \
+    wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | apt-key add - && \
+    echo "deb https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    temurin-21-jdk \
     gradle \
     maven \
     && apt-get clean \

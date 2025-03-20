@@ -141,7 +141,7 @@ pub trait LspClient: Send {
                         } else if let Some(params) = message.params.clone() {
                             let message_key = ExpectedMessageKey {
                                 method: message.method.clone().unwrap(),
-                                params: params,
+                                params,
                             };
                             if let Some(sender) =
                                 pending_requests.remove_notification(message_key).await
@@ -228,7 +228,7 @@ pub trait LspClient: Send {
                 text_document: TextDocumentIdentifier {
                     uri: Url::from_file_path(file_path).unwrap(),
                 },
-                position: position,
+                position,
             },
             work_done_progress_params: WorkDoneProgressParams::default(),
             partial_result_params: PartialResultParams::default(),
@@ -361,7 +361,7 @@ pub trait LspClient: Send {
             .map(|&s| s.to_string())
             .collect();
 
-        match search_directories(&Path::new(&root_path), include_patterns, exclude_patterns) {
+        match search_directories(Path::new(&root_path), include_patterns, exclude_patterns) {
             Ok(dirs) => {
                 for dir in dirs {
                     let folder_path = Path::new(&root_path).join(&dir);

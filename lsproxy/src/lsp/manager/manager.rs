@@ -113,7 +113,7 @@ impl Manager {
                     RUBY_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect()
                 }
             };
-            if search_files(
+            if !search_files(
                 Path::new(root_path),
                 patterns,
                 DEFAULT_EXCLUDE_PATTERNS
@@ -124,8 +124,7 @@ impl Manager {
             )
             .map_err(|e| warn!("Error searching files: {}", e))
             .unwrap_or_default()
-            .len()
-                > 0
+            .is_empty()
             {
                 lsps.push(lsp);
             }
@@ -216,14 +215,13 @@ impl Manager {
         if !workspace_files.contains(&file_path.to_string()) {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let full_path = get_mount_dir().join(&file_path);
+        let full_path = get_mount_dir().join(file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
-        let ast_grep_result = self
-            .ast_grep
+
+        self.ast_grep
             .get_file_symbols(full_path_str)
             .await
-            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)));
-        ast_grep_result
+            .map_err(|e| LspManagerError::InternalError(format!("Symbol retrieval failed: {}", e)))
     }
 
     pub async fn get_symbol_from_position(
@@ -231,7 +229,7 @@ impl Manager {
         file_path: &str,
         identifier_position: &lsp_types::Position,
     ) -> Result<Symbol, LspManagerError> {
-        let full_path = get_mount_dir().join(&file_path);
+        let full_path = get_mount_dir().join(file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         match self
             .ast_grep
@@ -252,9 +250,9 @@ impl Manager {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
         if !workspace_files.contains(&file_path.to_string()) {
-            return Err(LspManagerError::FileNotFound(file_path.to_string()).into());
+            return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
-        let full_path = get_mount_dir().join(&file_path);
+        let full_path = get_mount_dir().join(file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
@@ -323,7 +321,7 @@ impl Manager {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
 
-        let full_path = get_mount_dir().join(&file_path);
+        let full_path = get_mount_dir().join(file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
         let lsp_type = detect_language(full_path_str).map_err(|e| {
             LspManagerError::InternalError(format!("Language detection failed: {}", e))
@@ -354,7 +352,7 @@ impl Manager {
             return Err(LspManagerError::FileNotFound(file_path.to_string()));
         }
 
-        let full_path = get_mount_dir().join(&file_path);
+        let full_path = get_mount_dir().join(file_path);
         let full_path_str = full_path.to_str().unwrap_or_default();
 
         let lsp_type = detect_language(full_path_str).map_err(|e| {
@@ -432,7 +430,7 @@ impl Manager {
         let client = self.get_client(detect_language(file_path)?).ok_or(
             LspManagerError::LspClientNotFound(detect_language(file_path)?),
         )?;
-        let full_path = get_mount_dir().join(&file_path);
+        let full_path = get_mount_dir().join(file_path);
         let mut locked_client = client.lock().await;
         locked_client
             .get_workspace_documents()
@@ -447,7 +445,7 @@ impl Manager {
         &self,
         file_path: &str,
     ) -> Result<Vec<Identifier>, LspManagerError> {
-        let full_path = get_mount_dir().join(&file_path);
+        let full_path = get_mount_dir().join(file_path);
         let workspace_files = self.list_files().await.map_err(|e| {
             LspManagerError::InternalError(format!("Workspace file retrieval failed: {}", e))
         })?;
