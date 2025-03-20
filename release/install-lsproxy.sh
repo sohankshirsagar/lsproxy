@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.4.0"
+LSPROXY_VERSION="0.4.1"
 
 # Initialize variables
 TARGET_USER=""
@@ -55,12 +55,12 @@ setup_user() {
         TARGET_USER="root"
         user_home="/root"
         echo "No user specified, running as root"
-        
+
     # Case 2: Only UID specified - error
     elif [ -z "$TARGET_USER" ] && [ -n "$TARGET_UID" ]; then
         echo "Error: --uid must be used with --user"
         exit 1
-        
+
     # Case 3: Only username specified - must exist
     elif [ -n "$TARGET_USER" ] && [ -z "$TARGET_UID" ]; then
         if ! id "$TARGET_USER" >/dev/null 2>&1; then
@@ -69,7 +69,7 @@ setup_user() {
         fi
         user_home=$(eval echo ~$TARGET_USER)
         echo "Using existing user: $TARGET_USER"
-        
+
     # Case 4: Both username and UID specified
     else
         # Check if user exists
@@ -91,7 +91,7 @@ setup_user() {
 
     # Create and set up directories
     mkdir -p "$user_home"/{.local,.cargo,go}
-    
+
     # If we have a UID, set ownership
     if [ -n "$TARGET_UID" ]; then
         chown -R "${TARGET_UID}:${TARGET_UID}" "$user_home"
@@ -184,7 +184,7 @@ install_java() {
     mkdir -p /opt/jdtls
     tar -xzf /tmp/jdt-language-server.tar.gz -C /opt/jdtls --no-same-owner
     rm /tmp/jdt-language-server.tar.gz
-    
+
     # Add jdtls to PATH
     echo 'export PATH="/opt/jdtls/bin:${PATH}"' >> /etc/profile.d/jdtls.sh
 }
@@ -262,10 +262,10 @@ install_ruby() {
 install_dotnet() {
     echo "Installing .NET and C# language server..."
     local dotnet_dir="$LSPROXY_USER_HOME/.dotnet"
-    
+
     curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh
     chmod +x dotnet-install.sh
-    
+
     if [ "$LSPROXY_TARGET_USER" != "root" ]; then
         # Install as target user if it exists
         if id "$LSPROXY_TARGET_USER" >/dev/null 2>&1; then
@@ -289,7 +289,7 @@ install_dotnet() {
         export PATH="$PATH:$dotnet_dir:$dotnet_dir/tools"
         dotnet tool install --global csharp-ls
     fi
-    
+
     rm dotnet-install.sh
 }
 
@@ -297,7 +297,7 @@ install_dotnet() {
 install_lsproxy() {
     local arch=$(detect_arch)
     local binary_url="https://github.com/agentic-labs/lsproxy/releases/download/${LSPROXY_VERSION}/lsproxy-${LSPROXY_VERSION}-linux-${arch}"
-    
+
     echo "Downloading LSProxy binary for Linux ${arch}..."
     curl -L -o /usr/local/bin/lsproxy "${binary_url}"
     chmod +x /usr/local/bin/lsproxy
