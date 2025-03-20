@@ -134,8 +134,8 @@ async fn fetch_definition_source_code(
         let relative_path = uri_to_relative_path_string(&definition.uri);
         let file_symbols = manager.definitions_in_file_ast_grep(&relative_path).await?;
         let symbol = file_symbols.iter().find(|s| {
-            s.get_identifier_range().start.line as u32 == definition.range.start.line
-                && s.get_identifier_range().start.column as u32 == definition.range.start.character
+            s.get_identifier_range().start.line == definition.range.start.line
+                && s.get_identifier_range().start.column == definition.range.start.character
         });
 
         let source_code_context = match symbol {
@@ -144,12 +144,12 @@ async fn fetch_definition_source_code(
                     path: relative_path,
                     range: Range {
                         start: Position {
-                            line: ast_grep_match.get_context_range().start.line as u32,
-                            character: ast_grep_match.get_context_range().start.column as u32,
+                            line: ast_grep_match.get_context_range().start.line,
+                            character: ast_grep_match.get_context_range().start.column,
                         },
                         end: Position {
-                            line: ast_grep_match.get_context_range().end.line as u32,
-                            character: ast_grep_match.get_context_range().end.column as u32,
+                            line: ast_grep_match.get_context_range().end.line,
+                            character: ast_grep_match.get_context_range().end.column,
                         },
                     },
                 },
@@ -164,7 +164,7 @@ async fn fetch_definition_source_code(
                         character: 0,
                     },
                     end: LspPosition {
-                        line: definition.range.end.line as u32 + 3,
+                        line: definition.range.end.line + 3,
                         character: 0,
                     },
                 };
@@ -180,7 +180,7 @@ async fn fetch_definition_source_code(
                                 character: 0,
                             },
                             end: Position {
-                                line: definition.range.end.line as u32 + 3,
+                                line: definition.range.end.line + 3,
                                 character: 0,
                             },
                         },

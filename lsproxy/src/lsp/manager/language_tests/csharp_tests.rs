@@ -11,8 +11,7 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
 
     let file_path = "AStar.cs";
     let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-    let symbol_response: SymbolResponse =
-        file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+    let symbol_response: SymbolResponse = file_symbols.into_iter().map(Symbol::from).collect();
 
     let expected = vec![
         Symbol {

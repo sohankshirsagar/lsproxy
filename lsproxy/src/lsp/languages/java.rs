@@ -1,6 +1,7 @@
 use std::{error::Error, os::unix::fs::PermissionsExt, path::Path, process::Stdio};
 
 use async_trait::async_trait;
+use glob::glob;
 use log::debug;
 use lsp_types::InitializeResult;
 use notify_debouncer_mini::DebouncedEvent;
@@ -83,6 +84,26 @@ impl JdtlsClient {
         let workspace_dir = Path::new("/usr/src/app/jdtls_workspace");
         tokio::fs::create_dir_all(&workspace_dir).await?;
         tokio::fs::set_permissions(&workspace_dir, PermissionsExt::from_mode(0o777)).await?;
+
+        // Find the launcher jar dynamically
+        let launcher_pattern = "/opt/jdtls/plugins/org.eclipse.equinox.launcher_*.jar";
+        let launcher_path = match glob(launcher_pattern)
+            .map_err(|e| format!("Failed to read glob pattern: {}", e))?
+            .next()
+        {
+            Some(Ok(path)) => path,
+            Some(Err(e)) => return Err(format!("Error reading launcher jar path: {}", e).into()),
+            None => {
+                return Err(format!(
+                    "No launcher jar found matching pattern: {}",
+                    launcher_pattern
+                )
+                .into())
+            }
+        };
+
+        debug!("Using launcher jar: {:?}", launcher_path);
+
         let process = Command::new("java")
             .arg("-Declipse.application=org.eclipse.jdt.ls.core.id1")
             .arg("-Dosgi.bundles.defaultStartLevel=4")
@@ -96,7 +117,7 @@ impl JdtlsClient {
             .arg("--add-opens")
             .arg("java.base/java.lang=ALL-UNNAMED")
             .arg("-jar")
-            .arg("/opt/jdtls/plugins/org.eclipse.equinox.launcher_1.6.900.v20240613-2009.jar")
+            .arg(launcher_path)
             .arg("-configuration")
             .arg("/opt/jdtls/config_linux")
             .arg("-data")

@@ -15,7 +15,7 @@ static GLOBAL_MOUNT_DIR: LazyLock<Arc<RwLock<PathBuf>>> =
     LazyLock::new(|| Arc::new(RwLock::new(PathBuf::from("/mnt/workspace"))));
 
 thread_local! {
-    static THREAD_LOCAL_MOUNT_DIR: RefCell<Option<PathBuf>> = RefCell::new(None);
+    static THREAD_LOCAL_MOUNT_DIR: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
 }
 
 pub fn get_mount_dir() -> PathBuf {

@@ -40,3 +40,7 @@ compile_commands.json
 .phpactor.json
 package-lock.json
 node_modules
+
+# macOS specific files
+.DS_Store
+**/.DS_Store

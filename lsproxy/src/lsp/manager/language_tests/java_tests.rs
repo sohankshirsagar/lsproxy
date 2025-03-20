@@ -3,7 +3,6 @@ use crate::api_types::{Position, Range as ApiRange};
 use lsp_types::{Position as LspPosition, Range as LspRange};
 
 #[tokio::test]
-#[ignore = "Java hangs in tests"]
 async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
     let context = TestContext::setup(&java_sample_path(), true).await?;
     let manager = context
@@ -12,8 +11,7 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("Manager is not initialized")?;
     let file_path = "AStar.java";
     let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-    let mut symbol_response: SymbolResponse =
-        file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+    let mut symbol_response: SymbolResponse = file_symbols.into_iter().map(Symbol::from).collect();
 
     let mut expected = vec![
         Symbol {
@@ -170,7 +168,6 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[tokio::test]
-#[ignore = "Java hangs in tests"]
 async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
     let context = TestContext::setup(&java_sample_path(), true).await?;
     let manager = context
@@ -234,7 +231,6 @@ async fn test_references() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[tokio::test]
-#[ignore = "Java hangs in tests"]
 async fn test_definition() -> Result<(), Box<dyn std::error::Error>> {
     let context = TestContext::setup(&java_sample_path(), true).await?;
     let manager = context

@@ -17,7 +17,7 @@ async fn test_workspace_files() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("Manager is not initialized")?;
 
     let mut result = manager.list_files().await?;
-    let mut expected = vec!["graph.py", "main.py", "search.py", "__init__.py"];
+    let mut expected = ["graph.py", "main.py", "search.py", "__init__.py"];
 
     assert_eq!(result.sort(), expected.sort());
     Ok(())
@@ -34,8 +34,7 @@ async fn test_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
     let file_path = "main.py";
     let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
 
-    let symbol_response: SymbolResponse =
-        file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+    let symbol_response: SymbolResponse = file_symbols.into_iter().map(Symbol::from).collect();
 
     let expected = vec![
         Symbol {
@@ -126,8 +125,7 @@ async fn test_file_symbols_decorators() -> Result<(), Box<dyn std::error::Error>
     let file_path = "graph.py";
     let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
 
-    let symbol_response: SymbolResponse =
-        file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+    let symbol_response: SymbolResponse = file_symbols.into_iter().map(Symbol::from).collect();
 
     let expected = vec![
         Symbol {

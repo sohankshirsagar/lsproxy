@@ -12,29 +12,29 @@ RUN apt-get update && apt install -y --no-install-recommends curl && \
 # Set up cross-compilation tools and target based on build/target platform
 RUN apt-get update && \
     case "$TARGETPLATFORM" in \
-        "linux/amd64") \
-            if [ "$BUILDARCH" = "arm64" ]; then \
-                rustup target add x86_64-unknown-linux-gnu && \
-                apt-get install -y gcc-x86-64-linux-gnu && \
-                echo '[target.x86_64-unknown-linux-gnu]' > /usr/local/cargo/config.toml && \
-                echo 'linker = "x86_64-linux-gnu-gcc"' >> /usr/local/cargo/config.toml; \
-            elif [ "$BUILDARCH" != "amd64" ]; then \
-                echo "Unsupported build architecture for linux/amd64: $BUILDARCH" && exit 1; \
-            fi \
-            ;; \
-        "linux/arm64") \
-            if [ "$BUILDARCH" = "amd64" ]; then \
-                rustup target add aarch64-unknown-linux-gnu && \
-                apt-get install -y gcc-aarch64-linux-gnu && \
-                echo '[target.aarch64-unknown-linux-gnu]' > /usr/local/cargo/config.toml && \
-                echo 'linker = "aarch64-linux-gnu-gcc"' >> /usr/local/cargo/config.toml; \
-            elif [ "$BUILDARCH" != "arm64" ]; then \
-                echo "Unsupported build architecture for linux/arm64: $BUILDARCH" && exit 1; \
-            fi \
-            ;; \
-        *) \
-            echo "Unsupported target platform: $TARGETPLATFORM (BUILDARCH: $BUILDARCH)" && exit 1 \
-            ;; \
+    "linux/amd64") \
+    if [ "$BUILDARCH" = "arm64" ]; then \
+    rustup target add x86_64-unknown-linux-gnu && \
+    apt-get install -y gcc-x86-64-linux-gnu && \
+    echo '[target.x86_64-unknown-linux-gnu]' > /usr/local/cargo/config.toml && \
+    echo 'linker = "x86_64-linux-gnu-gcc"' >> /usr/local/cargo/config.toml; \
+    elif [ "$BUILDARCH" != "amd64" ]; then \
+    echo "Unsupported build architecture for linux/amd64: $BUILDARCH" && exit 1; \
+    fi \
+    ;; \
+    "linux/arm64") \
+    if [ "$BUILDARCH" = "amd64" ]; then \
+    rustup target add aarch64-unknown-linux-gnu && \
+    apt-get install -y gcc-aarch64-linux-gnu && \
+    echo '[target.aarch64-unknown-linux-gnu]' > /usr/local/cargo/config.toml && \
+    echo 'linker = "aarch64-linux-gnu-gcc"' >> /usr/local/cargo/config.toml; \
+    elif [ "$BUILDARCH" != "arm64" ]; then \
+    echo "Unsupported build architecture for linux/arm64: $BUILDARCH" && exit 1; \
+    fi \
+    ;; \
+    *) \
+    echo "Unsupported target platform: $TARGETPLATFORM (BUILDARCH: $BUILDARCH)" && exit 1 \
+    ;; \
     esac && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -45,24 +45,24 @@ COPY . .
 RUN mkdir -p /usr/src/bin
 
 RUN case "$TARGETPLATFORM" in \
-        "linux/amd64") \
-            if [ "$BUILDARCH" = "arm64" ]; then \
-                cargo build --release --target x86_64-unknown-linux-gnu && \
-                cp target/x86_64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
-            elif [ "$BUILDARCH" = "amd64" ]; then \
-                cargo build --release && \
-                cp target/release/lsproxy /usr/src/bin/lsproxy; \
-            fi \
-            ;; \
-        "linux/arm64") \
-            if [ "$BUILDARCH" = "amd64" ]; then \
-                cargo build --release --target aarch64-unknown-linux-gnu && \
-                cp target/aarch64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
-            elif [ "$BUILDARCH" = "arm64" ]; then \
-                cargo build --release && \
-                cp target/release/lsproxy /usr/src/bin/lsproxy; \
-            fi \
-            ;; \
+    "linux/amd64") \
+    if [ "$BUILDARCH" = "arm64" ]; then \
+    cargo build --release --target x86_64-unknown-linux-gnu && \
+    cp target/x86_64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
+    elif [ "$BUILDARCH" = "amd64" ]; then \
+    cargo build --release && \
+    cp target/release/lsproxy /usr/src/bin/lsproxy; \
+    fi \
+    ;; \
+    "linux/arm64") \
+    if [ "$BUILDARCH" = "amd64" ]; then \
+    cargo build --release --target aarch64-unknown-linux-gnu && \
+    cp target/aarch64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
+    elif [ "$BUILDARCH" = "arm64" ]; then \
+    cargo build --release && \
+    cp target/release/lsproxy /usr/src/bin/lsproxy; \
+    fi \
+    ;; \
     esac
 
 RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${BUILDARCH}.tar.gz" && \
@@ -70,13 +70,13 @@ RUN curl -O -L "https://go.dev/dl/go1.23.5.linux-${BUILDARCH}.tar.gz" && \
     rm go1.23.5.linux-${BUILDARCH}.tar.gz && \
     GOARCH=${TARGETARCH} /usr/local/go/bin/go install golang.org/x/tools/gopls@latest && \
     if [ "${TARGETARCH}" = "${BUILDARCH}" ]; then \
-        cp ~/go/bin/gopls /usr/src/bin/ ; \
+    cp ~/go/bin/gopls /usr/src/bin/ ; \
     else \
-        case "${TARGETARCH}" in \
-            "amd64") cp ~/go/bin/linux_amd64/gopls /usr/src/bin/ ;; \
-            "arm64") cp ~/go/bin/linux_arm64/gopls /usr/src/bin/ ;; \
-            *) echo "Unsupported TARGETARCH: ${TARGETARCH}" && exit 1 ;; \
-        esac ; \
+    case "${TARGETARCH}" in \
+    "amd64") cp ~/go/bin/linux_amd64/gopls /usr/src/bin/ ;; \
+    "arm64") cp ~/go/bin/linux_arm64/gopls /usr/src/bin/ ;; \
+    *) echo "Unsupported TARGETARCH: ${TARGETARCH}" && exit 1 ;; \
+    esac ; \
     fi
 
 FROM rust:1.81.0-slim-bookworm
@@ -128,9 +128,12 @@ RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
 # Install Java
 RUN apt-get update && \
-    apt-get install \
-    -y --no-install-recommends \
-    openjdk-17-jdk \
+    apt-get install -y --no-install-recommends wget gnupg software-properties-common && \
+    wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | apt-key add - && \
+    echo "deb https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    temurin-21-jdk \
     gradle \
     maven \
     && apt-get clean \
@@ -140,6 +143,10 @@ RUN apt-get update && \
     mkdir -p /opt/jdtls && \
     tar -xzf /tmp/jdt-language-server.tar.gz -C /opt/jdtls --no-same-owner && \
     rm /tmp/jdt-language-server.tar.gz
+
+# Set JAVA_HOME environment variable
+ENV JAVA_HOME=/opt/java/current
+ENV PATH=${JAVA_HOME}/bin:${PATH}
 
 # Add jdtls to PATH
 ENV PATH="/opt/jdtls/bin:${PATH}"

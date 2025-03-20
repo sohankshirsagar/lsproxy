@@ -11,8 +11,7 @@ async fn test_php_file_symbols() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("Manager is not initialized")?;
     let file_path = "AStar.php";
     let file_symbols = manager.definitions_in_file_ast_grep(file_path).await?;
-    let mut symbol_response: SymbolResponse =
-        file_symbols.into_iter().map(|s| Symbol::from(s)).collect();
+    let mut symbol_response: SymbolResponse = file_symbols.into_iter().map(Symbol::from).collect();
 
     let mut expected = vec![
         Symbol {
