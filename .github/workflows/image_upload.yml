@@ -65,8 +65,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            usetusk/lsproxy/ruby:${{ steps.get_version.outputs.VERSION }}
-            usetusk/lsproxy/ruby:latest
+            usetusk/lsproxy-ruby:${{ steps.get_version.outputs.VERSION }}
+            usetusk/lsproxy-ruby:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -77,8 +77,8 @@ jobs:
           # Copy install script
           cp release/install-lsproxy.sh release-binaries/
           # Extract AMD64 binary
-          docker pull usetusk/lsproxy/ruby:${VERSION}
-          docker create --name amd64-container --platform linux/amd64 usetusk/lsproxy/ruby:${VERSION}
+          docker pull usetusk/lsproxy-ruby:${VERSION}
+          docker create --name amd64-container --platform linux/amd64 usetusk/lsproxy-ruby:${VERSION}
           docker cp amd64-container:/usr/local/bin/lsproxy-bin release-binaries/lsproxy-${VERSION}-linux-amd64
           docker rm amd64-container
           chmod +x release-binaries/*
