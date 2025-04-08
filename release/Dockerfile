@@ -38,16 +38,16 @@ RUN apt-get update && \
                 echo "Unsupported build architecture for linux/amd64: $BUILDARCH" && exit 1; \
             fi \
             ;; \
-        "linux/arm64") \
-            if [ "$BUILDARCH" = "amd64" ]; then \
-                rustup target add aarch64-unknown-linux-gnu && \
-                apt-get install -y gcc-aarch64-linux-gnu && \
-                echo '[target.aarch64-unknown-linux-gnu]' > /usr/local/cargo/config.toml && \
-                echo 'linker = "aarch64-linux-gnu-gcc"' >> /usr/local/cargo/config.toml; \
-            elif [ "$BUILDARCH" != "arm64" ]; then \
-                echo "Unsupported build architecture for linux/arm64: $BUILDARCH" && exit 1; \
-            fi \
-            ;; \
+        # "linux/arm64") \
+        #     if [ "$BUILDARCH" = "amd64" ]; then \
+        #         rustup target add aarch64-unknown-linux-gnu && \
+        #         apt-get install -y gcc-aarch64-linux-gnu && \
+        #         echo '[target.aarch64-unknown-linux-gnu]' > /usr/local/cargo/config.toml && \
+        #         echo 'linker = "aarch64-linux-gnu-gcc"' >> /usr/local/cargo/config.toml; \
+        #     elif [ "$BUILDARCH" != "arm64" ]; then \
+        #         echo "Unsupported build architecture for linux/arm64: $BUILDARCH" && exit 1; \
+        #     fi \
+        #     ;; \
         *) \
             echo "Unsupported target platform: $TARGETPLATFORM (BUILDARCH: $BUILDARCH)" && exit 1 \
             ;; \
@@ -68,14 +68,14 @@ RUN case "$TARGETPLATFORM" in \
                 cp target/release/lsproxy /usr/src/bin/lsproxy; \
             fi \
             ;; \
-        "linux/arm64") \
-            if [ "$BUILDARCH" = "amd64" ]; then \
-                cargo build --release --target aarch64-unknown-linux-gnu && \
-                cp target/aarch64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
-            elif [ "$BUILDARCH" = "arm64" ]; then \
-                cargo build --release && \
-                cp target/release/lsproxy /usr/src/bin/lsproxy; \
-            fi \
+        # "linux/arm64") \
+        #     if [ "$BUILDARCH" = "amd64" ]; then \
+        #         cargo build --release --target aarch64-unknown-linux-gnu && \
+        #         cp target/aarch64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
+        #     elif [ "$BUILDARCH" = "arm64" ]; then \
+        #         cargo build --release && \
+        #         cp target/release/lsproxy /usr/src/bin/lsproxy; \
+        #     fi \
             ;; \
     esac
 

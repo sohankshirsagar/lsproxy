@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LSPROXY_VERSION="0.1.7"
+LSPROXY_VERSION="0.1.8"
 
 # Initialize variables
 TARGET_USER=""

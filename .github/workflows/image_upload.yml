@@ -63,7 +63,7 @@ jobs:
           context: ./lsproxy
           file: ./release/Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: |
             usetusk/lsproxy/ruby:${{ steps.get_version.outputs.VERSION }}
             usetusk/lsproxy/ruby:latest
@@ -81,10 +81,6 @@ jobs:
           docker create --name amd64-container --platform linux/amd64 usetusk/lsproxy/ruby:${VERSION}
           docker cp amd64-container:/usr/local/bin/lsproxy-bin release-binaries/lsproxy-${VERSION}-linux-amd64
           docker rm amd64-container
-          # Extract ARM64 binary
-          docker create --name arm64-container --platform linux/arm64 usetusk/lsproxy/ruby:${VERSION}
-          docker cp arm64-container:/usr/local/bin/lsproxy-bin release-binaries/lsproxy-${VERSION}-linux-arm64
-          docker rm arm64-container
           chmod +x release-binaries/*
 
       - name: Prepare ast-grep rules
@@ -98,7 +94,6 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           REQUIRED_FILES=(
-            "release-binaries/lsproxy-${VERSION}-linux-arm64"
             "release-binaries/lsproxy-${VERSION}-linux-amd64"
             "release-binaries/install-lsproxy.sh"
             "release-binaries/lsproxy-${VERSION}-ast-grep-rules.tar.gz"
@@ -116,7 +111,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release-binaries/lsproxy-${{ github.ref_name }}-linux-arm64
             release-binaries/lsproxy-${{ github.ref_name }}-linux-amd64
             release-binaries/install-lsproxy.sh
             release-binaries/lsproxy-${{ github.ref_name }}-ast-grep-rules.tar.gz
