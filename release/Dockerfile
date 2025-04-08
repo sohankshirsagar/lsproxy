@@ -191,6 +191,12 @@ RUN echo 'eval "$(/home/user/.rbenv/bin/rbenv init -)"' >> /home/user/.bashrc &&
 
 # Install Ruby and ruby-lsp
 RUN eval "$(rbenv init -)" \
+    && rbenv install 3.4.2 \
+    && rbenv global 3.4.2 \
+    && gem install ruby-lsp \
+    && gem install srb
+
+RUN eval "$(rbenv init -)" \
     && rbenv install 3.4.1 \
     && rbenv global 3.4.1 \
     && gem install ruby-lsp \
