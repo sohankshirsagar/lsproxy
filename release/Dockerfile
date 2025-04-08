@@ -76,6 +76,9 @@ RUN case "$TARGETPLATFORM" in \
         #         cargo build --release && \
         #         cp target/release/lsproxy /usr/src/bin/lsproxy; \
         #     fi \
+        #     ;; \
+        *) \
+            echo "Unsupported target platform: $TARGETPLATFORM (BUILDARCH: $BUILDARCH)" && exit 1 \
             ;; \
     esac
 
