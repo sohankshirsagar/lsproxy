@@ -58,14 +58,13 @@ RUN apt-get update && \
 COPY . .
 
 # Build with appropriate target
-RUN cargo clean && \
-    case "$TARGETPLATFORM" in \
+RUN case "$TARGETPLATFORM" in \
         "linux/amd64") \
             if [ "$BUILDARCH" = "arm64" ]; then \
                 cargo build --release --target x86_64-unknown-linux-gnu && \
                 cp target/x86_64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
             elif [ "$BUILDARCH" = "amd64" ]; then \
-                cargo clean && cargo build --release && \
+                cargo build --release && \
                 cp target/release/lsproxy /usr/src/bin/lsproxy; \
             fi \
             ;; \
@@ -74,7 +73,7 @@ RUN cargo clean && \
                 cargo build --release --target aarch64-unknown-linux-gnu && \
                 cp target/aarch64-unknown-linux-gnu/release/lsproxy /usr/src/bin/lsproxy; \
             elif [ "$BUILDARCH" = "arm64" ]; then \
-                cargo clean && cargo build --release && \
+                cargo build --release && \
                 cp target/release/lsproxy /usr/src/bin/lsproxy; \
             fi \
             ;; \
