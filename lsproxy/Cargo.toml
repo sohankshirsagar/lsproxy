@@ -1,6 +1,6 @@
 [package]
 name = "lsproxy"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 
 [lib]
@@ -49,4 +49,4 @@ incremental = true
 incremental = true
 
 [patch.crates-io]
-zip = "=2.2.0"
+zip = "=2.3.0"
