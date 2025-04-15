@@ -111,7 +111,7 @@ pub async fn initialize_app_state_with_mount_dir(
         warn!("Changing global mount dir to: {}", global_mount_dir);
     }
 
-    if let Err(_) = check_mount_dir() {
+    if check_mount_dir().is_err() {
         eprintln!(
             "Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
             get_mount_dir().to_string_lossy()
