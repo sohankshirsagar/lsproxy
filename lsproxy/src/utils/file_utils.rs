@@ -3,7 +3,7 @@ use crate::{
     lsp::manager::LspManagerError,
 };
 use ignore::WalkBuilder;
-use log::{debug, warn};
+use log::{debug, error, warn};
 use std::path::{Path, PathBuf};
 use url::Url;
 
@@ -38,7 +38,7 @@ pub fn search_files(
                     files.push(path.to_path_buf());
                 }
             }
-            Err(err) => eprintln!("Error: {}", err),
+            Err(err) => error!("Error: {}", err),
         }
     }
 
@@ -69,7 +69,7 @@ pub fn search_directories(
                     dirs.push(path.parent().unwrap().to_path_buf());
                 }
             }
-            Err(err) => eprintln!("Error: {}", err),
+            Err(err) => error!("Error: {}", err),
         }
     }
     Ok(dirs

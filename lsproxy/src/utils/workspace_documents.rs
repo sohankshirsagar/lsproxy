@@ -396,7 +396,6 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         let files = handler.list_files().await;
-        println!("Files: {:?}", files);
         assert_eq!(files.len(), 2);
         assert!(files.contains(&dir.path().join("file1.rs")));
         assert!(files.contains(&dir.path().join("file3.rs")));

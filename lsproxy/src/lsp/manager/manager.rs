@@ -392,14 +392,29 @@ impl Manager {
 
         // Get direct definitions for each reference
         for ast_match in references_to_symbols.iter() {
-            let definition = locked_client
+            match locked_client
                 .text_document_definition(full_path_str, lsp_types::Position::from(ast_match))
                 .await
-                .map_err(|e| {
-                    LspManagerError::InternalError(format!("Definition retrieval failed: {}", e))
-                })?;
+            {
+                Ok(definition) => {
+                    definitions.push((ast_match.clone(), definition));
+                }
+                Err(e) => {
+                    // Log the error but continue processing other references
+                    log::warn!(
+                        "Definition retrieval failed for reference: {}, error: {}",
+                        ast_match.meta_variables.single.name.text,
+                        e
+                    );
+                }
+            }
+        }
 
-            definitions.push((ast_match.clone(), definition));
+        // Only return an error if we couldn't get any definitions at all
+        if definitions.is_empty() && !references_to_symbols.is_empty() {
+            return Err(LspManagerError::InternalError(
+                "Failed to retrieve any definitions for the referenced symbols".to_string(),
+            ));
         }
 
         Ok(definitions)

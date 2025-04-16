@@ -150,6 +150,7 @@ ENV PATH=${JAVA_HOME}/bin:${PATH}
 
 # Add jdtls to PATH
 ENV PATH="/opt/jdtls/bin:${PATH}"
+RUN chmod -R +rw /opt/jdtls/config_*
 
 # Install rust-analyzer
 RUN rustup component add rust-analyzer

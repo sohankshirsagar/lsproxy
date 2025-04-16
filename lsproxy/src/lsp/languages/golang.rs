@@ -6,6 +6,7 @@ use crate::{
     },
 };
 use async_trait::async_trait;
+use log::error;
 use lsp_types::InitializeParams;
 use notify_debouncer_mini::DebouncedEvent;
 use std::{error::Error, path::Path, process::Stdio};
@@ -63,7 +64,7 @@ impl GoplsClient {
             .stderr(Stdio::piped())
             .spawn()
             .map_err(|e| {
-                eprintln!("Failed to start gopls process: {}", e);
+                error!("Failed to start gopls process: {}", e);
                 Box::new(e) as Box<dyn std::error::Error + Send + Sync>
             })?;
         let process_handler = ProcessHandler::new(process)
