@@ -65,6 +65,7 @@ RUN apt-get update && \
 
 # Add jdtls to PATH
 ENV PATH="/opt/jdtls/bin:${PATH}"
+RUN chmod -R +rw /opt/jdtls/config_*
 
 # Install rust-analyzer and rustfmt
 RUN rustup component add rust-analyzer
