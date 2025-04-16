@@ -6,7 +6,7 @@ use actix_web::{
 };
 use api_types::{FindIdentifierRequest, IdentifierResponse};
 use handlers::{find_identifier, read_source_code};
-use log::warn;
+use log::{error, info, warn};
 use middleware::{validate_jwt_config, JwtMiddleware};
 use std::fs;
 use std::fs::File;
@@ -112,8 +112,8 @@ pub async fn initialize_app_state_with_mount_dir(
     }
 
     if check_mount_dir().is_err() {
-        eprintln!(
-            "Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
+        error!(
+            "Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
             get_mount_dir().to_string_lossy()
         );
         std::process::exit(1);
@@ -187,7 +187,7 @@ pub async fn run_server_with_port_and_host(
     match validate_jwt_config() {
         Ok(secret) => secret,
         Err(e) => {
-            eprintln!("Configuration error: {}", e);
+            info!("Configuration error: {}", e);
             std::process::exit(1);
         }
     };
@@ -223,7 +223,7 @@ pub async fn run_server_with_port_and_host(
                 ("/system/health", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(health_check))),
                 (p, m) => panic!(
-                    "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
+                    "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.",
                     p,
                     m
                 )
@@ -294,7 +294,7 @@ pub fn write_openapi_to_file(file_path: &PathBuf) -> std::io::Result<()> {
         serde_json::to_string_pretty(&openapi).expect("Failed to serialize OpenAPI to JSON");
     let mut file = File::create(file_path)?;
     file.write_all(openapi_json.as_bytes())?;
-    println!("OpenAPI spec written to: {}", file_path.display());
+    info!("OpenAPI spec written to: {}", file_path.display());
     Ok(())
 }
 
@@ -307,6 +307,7 @@ mod test {
 
     use crate::api_types::set_thread_local_mount_dir;
     use crate::test_utils::{js_sample_path, python_sample_path, TestContext};
+    use log::info;
     use std::net::TcpStream;
     use std::sync::mpsc;
     use std::thread;
@@ -427,7 +428,7 @@ mod test {
 
         // Check if the server is running
         match TcpStream::connect("0.0.0.0:4444") {
-            Ok(_) => println!("Server is running"),
+            Ok(_) => info!("Server is running"),
             Err(e) => return Err(format!("Failed to connect to server: {}", e).into()),
         }
 

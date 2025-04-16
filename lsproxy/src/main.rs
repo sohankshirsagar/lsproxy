@@ -1,5 +1,5 @@
 use clap::Parser;
-use env_logger::Env;
+use log::{error, info};
 use lsproxy::{initialize_app_state_with_mount_dir, run_server_with_host, write_openapi_to_file};
 use std::path::PathBuf;
 
@@ -22,15 +22,18 @@ struct Cli {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Starting...");
+    info!("Starting...");
 
     // Set up panic handler for better error reporting
     std::panic::set_hook(Box::new(|panic_info| {
-        eprintln!("Server panicked: {:?}", panic_info);
+        error!("Server panicked: {:?}", panic_info);
     }));
 
-    // Initialize logging with info level as default
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    // Initialize tracing subscriber for better logging
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")))
+        .init();
 
     // Parse command line arguments
     let cli = Cli::parse();
@@ -38,7 +41,7 @@ async fn main() -> std::io::Result<()> {
     // Handle OpenAPI spec generation if requested
     if cli.write_openapi {
         if let Err(e) = write_openapi_to_file(&PathBuf::from("openapi.json")) {
-            eprintln!("Error: Failed to write the openapi.json to a file. Please see error for more details.");
+            error!("Error: Failed to write the openapi.json to a file. Please see error for more details.");
             return Err(e);
         }
         return Ok(());
