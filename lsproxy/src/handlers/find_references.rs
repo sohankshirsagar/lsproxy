@@ -368,12 +368,7 @@ mod test {
 
         let response = find_references(state, mock_request).await;
 
-        assert_eq!(
-            response.status(),
-            StatusCode::OK,
-            "{}",
-            format!("{:?}", response.body())
-        );
+        assert_eq!(response.status(), StatusCode::OK,);
         let content_type = response
             .headers()
             .get("content-type")

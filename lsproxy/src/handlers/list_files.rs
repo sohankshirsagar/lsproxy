@@ -59,8 +59,9 @@ mod test {
         let mut workspace_files_response: Vec<String> = serde_json::from_slice(&bytes).unwrap();
 
         let mut expected = ["graph.py", "main.py", "search.py", "__init__.py"];
-
-        assert_eq!(expected.sort(), workspace_files_response.sort());
+        expected.sort();
+        workspace_files_response.sort();
+        assert_eq!(workspace_files_response, expected);
         Ok(())
     }
 }

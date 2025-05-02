@@ -18,8 +18,9 @@ async fn test_workspace_files() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut result = manager.list_files().await?;
     let mut expected = ["graph.py", "main.py", "search.py", "__init__.py"];
-
-    assert_eq!(result.sort(), expected.sort());
+    result.sort();
+    expected.sort();
+    assert_eq!(result, expected);
     Ok(())
 }
 

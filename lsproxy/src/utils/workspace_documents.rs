@@ -172,7 +172,7 @@ impl WorkspaceDocumentsHandler {
     }
 
     async fn matches_patterns(
-        path: &PathBuf,
+        path: &Path,
         patterns: &Arc<RwLock<(Vec<String>, Vec<String>)>>,
     ) -> bool {
         let patterns_guard = patterns.read().await;
