@@ -1,8 +1,9 @@
 use clap::Parser;
 
-use env_logger::Env;
-use lsproxy::{initialize_app_state_with_mount_dir, run_server_with_port_and_host, write_openapi_to_file};
 use log::{error, info};
+use lsproxy::{
+    initialize_app_state_with_mount_dir, run_server_with_port_and_host, write_openapi_to_file,
+};
 use std::path::PathBuf;
 
 /// Command line interface for LSProxy server
@@ -28,8 +29,6 @@ struct Cli {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    info!("Starting on port {}", cli.port);
-
     // Set up panic handler for better error reporting
     std::panic::set_hook(Box::new(|panic_info| {
         error!("Server panicked: {:?}", panic_info);
@@ -37,8 +36,10 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize tracing subscriber for better logging
     tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")))
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
         .init();
 
     // Parse command line arguments
@@ -59,5 +60,7 @@ async fn main() -> std::io::Result<()> {
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
     // Run the server with specified host
+    info!("Starting on port {}", cli.port);
+
     run_server_with_port_and_host(app_state, cli.port, &cli.host).await
 }
