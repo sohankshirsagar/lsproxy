@@ -58,7 +58,13 @@ mod test {
         let bytes = actix_web::body::to_bytes(body).await.unwrap();
         let mut workspace_files_response: Vec<String> = serde_json::from_slice(&bytes).unwrap();
 
-        let mut expected = ["graph.py", "main.py", "search.py", "__init__.py"];
+        let mut expected = [
+            "__init__.py",
+            "decorators.py",
+            "graph.py",
+            "main.py",
+            "search.py",
+        ];
         expected.sort();
         workspace_files_response.sort();
         assert_eq!(workspace_files_response, expected);
