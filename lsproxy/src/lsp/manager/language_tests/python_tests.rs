@@ -17,7 +17,13 @@ async fn test_workspace_files() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("Manager is not initialized")?;
 
     let mut result = manager.list_files().await?;
-    let mut expected = ["graph.py", "main.py", "search.py", "__init__.py"];
+    let mut expected = [
+        "__init__.py",
+        "decorators.py",
+        "graph.py",
+        "main.py",
+        "search.py",
+    ];
     result.sort();
     expected.sort();
     assert_eq!(result, expected);
