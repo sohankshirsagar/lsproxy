@@ -170,6 +170,54 @@ pub trait LspClient: Send {
         self.get_process().send(&message).await
     }
 
+    async fn text_document_did_open_batch(
+        &mut self,
+        items: Vec<lsp_types::TextDocumentItem>,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Create a batch of notifications
+        let mut notifications = Vec::with_capacity(items.len());
+
+        for item in items {
+            let params = DidOpenTextDocumentParams {
+                text_document: item,
+            };
+            let notification = self
+                .get_json_rpc()
+                .create_notification("textDocument/didOpen", serde_json::to_value(params)?);
+
+            notifications.push(format!(
+                "Content-Length: {}\r\n\r\n{}",
+                notification.len(),
+                notification
+            ));
+        }
+
+        // Send all notifications concurrently with a semaphore to limit concurrency
+        let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(5));
+        let process = self.get_process();
+
+        // Create a vector of futures for sending messages
+        let mut send_futures = Vec::with_capacity(notifications.len());
+
+        for message in notifications {
+            let semaphore_clone = semaphore.clone();
+            let mut process_clone = process.clone();
+
+            // Create a future for sending each message
+            let future = async move {
+                let _permit = semaphore_clone.acquire().await.unwrap();
+                process_clone.send(&message).await
+            };
+
+            send_futures.push(future);
+        }
+
+        // Wait for all futures to complete
+        futures::future::try_join_all(send_futures).await?;
+
+        Ok(())
+    }
+
     async fn text_document_did_open(
         &mut self,
         item: lsp_types::TextDocumentItem,
@@ -203,6 +251,8 @@ pub trait LspClient: Send {
             workspace_documents.get_did_open_configuration() == DidOpenConfiguration::Lazy
                 && !workspace_documents.is_did_open_document(file_path)
         };
+
+        debug!("Needs open: {}", needs_open);
 
         // If needed, read the document text and send didOpen
         if needs_open {

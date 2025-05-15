@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
+use log::debug;
 
 #[async_trait::async_trait]
 pub trait Process: Send + Sync {
@@ -53,7 +54,9 @@ impl Process for ProcessHandler {
                     content_length.ok_or("Missing Content-Length header in LSP message")?;
                 let mut content = vec![0; length];
                 stdout.read_exact(&mut content).await?;
-                return Ok(String::from_utf8(content)?);
+                let content_str = String::from_utf8(content)?;
+                debug!("Received content: {}", content_str);
+                return Ok(content_str);
             } else if line.starts_with("Content-Length: ") {
                 content_length = Some(line.trim_start_matches("Content-Length: ").trim().parse()?);
             }
