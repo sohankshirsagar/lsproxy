@@ -173,47 +173,42 @@ pub trait LspClient: Send {
     async fn text_document_did_open_batch(
         &mut self,
         items: Vec<lsp_types::TextDocumentItem>,
+        batch_size: usize,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        // Create a batch of notifications
-        let mut notifications = Vec::with_capacity(items.len());
+        // Process items in chunks
+        for chunk in items.chunks(batch_size) {
+            // Create a vector of futures for this batch
+            let mut batch_futures = Vec::with_capacity(chunk.len());
 
-        for item in items {
-            let params = DidOpenTextDocumentParams {
-                text_document: item,
-            };
-            let notification = self
-                .get_json_rpc()
-                .create_notification("textDocument/didOpen", serde_json::to_value(params)?);
+            for item in chunk {
+                let params = DidOpenTextDocumentParams {
+                    text_document: item.clone(),
+                };
 
-            notifications.push(format!(
-                "Content-Length: {}\r\n\r\n{}",
-                notification.len(),
-                notification
-            ));
+                // Create notification for this item
+                let notification = self
+                    .get_json_rpc()
+                    .create_notification("textDocument/didOpen", serde_json::to_value(params)?);
+
+                let message = format!(
+                    "Content-Length: {}\r\n\r\n{}",
+                    notification.len(),
+                    notification
+                );
+
+                // Create a future for sending this notification
+                let mut process_clone = self.get_process().clone();
+                let future = async move {
+                    process_clone.send(&message).await
+                };
+
+                batch_futures.push(future);
+            }
+
+            // Process this batch in parallel and wait for all to complete
+            // before moving to the next batch
+            futures::future::try_join_all(batch_futures).await?;
         }
-
-        // Send all notifications concurrently with a semaphore to limit concurrency
-        let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(5));
-        let process = self.get_process();
-
-        // Create a vector of futures for sending messages
-        let mut send_futures = Vec::with_capacity(notifications.len());
-
-        for message in notifications {
-            let semaphore_clone = semaphore.clone();
-            let mut process_clone = process.clone();
-
-            // Create a future for sending each message
-            let future = async move {
-                let _permit = semaphore_clone.acquire().await.unwrap();
-                process_clone.send(&message).await
-            };
-
-            send_futures.push(future);
-        }
-
-        // Wait for all futures to complete
-        futures::future::try_join_all(send_futures).await?;
 
         Ok(())
     }

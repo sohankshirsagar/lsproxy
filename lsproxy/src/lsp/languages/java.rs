@@ -54,8 +54,6 @@ impl LspClient for JdtlsClient {
         &mut self,
         root_path: String,
     ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
-        // throw an error here
-        return Err("Error".into());
         debug!("Initializing LSP client with root path: {:?}", root_path);
         self.start_response_listener().await?;
 
@@ -67,6 +65,17 @@ impl LspClient for JdtlsClient {
             // So we set it to an empty array to avoid doing this.
             // Getting definitions and references only needs the java files to be indexed which is done in setup_workspace
             "workspaceFolders": [""],
+            "settings": {
+                "java": {
+                    // Performance and concurrency settings
+                    "maxConcurrentBuilds": 8,
+                    "parallelJobsCount": 8,
+
+                    "autobuild": {
+                        "enabled": false       // Disable auto-builds during initial indexing
+                    },
+                }
+            }
         }));
         let result = self
             .send_request("initialize", Some(serde_json::to_value(params)?))
@@ -91,67 +100,74 @@ impl LspClient for JdtlsClient {
             true
         ).unwrap_or_default();
 
-        let all_files = files.clone();
-        debug!("Found {} Java files to process", all_files.len());
+        debug!("Found {} Java files to process", files.len());
 
-        // First, read all files in parallel without using workspace_documents directly
-        let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(8));
-        let mut read_futures = FuturesUnordered::new();
+        // Process files in small batches to manage memory usage
+        const PROCESSING_BATCH_SIZE: usize = 8;
+        const SLEEP_DURATION_MS: u64 = 100;
+        let total_files = files.len();
+        let mut processed_count = 0;
 
-        for file_path in all_files {
-            let path_buf = std::path::PathBuf::from(&file_path);
-            let semaphore_clone = semaphore.clone();
- 
-            read_futures.push(async move {
-                let _permit = semaphore_clone.acquire().await.unwrap();
-                match tokio::fs::read_to_string(&path_buf).await {
-                    Ok(content) => Some((path_buf, content)),
-                    Err(_) => None,
-                }
-            });
-        }
+        // Process files in chunks of PROCESSING_BATCH_SIZE
+        for chunk in files.chunks(PROCESSING_BATCH_SIZE) {
+            // Process this small batch
+            let mut document_items = Vec::with_capacity(PROCESSING_BATCH_SIZE);
 
-        // Collect results as they complete
-        let mut document_items = Vec::new();
-        while let Some(result) = read_futures.next().await {
-            if let Some((path_buf, content)) = result {
-                if let Ok(uri) = Url::from_file_path(&path_buf) {
-                    document_items.push(TextDocumentItem {
-                        uri,
-                        language_id: "java".to_string(),
-                        version: 1,
-                        text: content,
-                    });
-                    debug!("Prepared file for indexing: {}", path_buf.display());
+            // Read files in parallel within this small batch
+            let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(PROCESSING_BATCH_SIZE));
+            let mut read_futures = FuturesUnordered::new();
+
+            for file_path in chunk {
+                let path_buf = std::path::PathBuf::from(file_path);
+                let semaphore_clone = semaphore.clone();
+
+                read_futures.push(async move {
+                    let _permit = semaphore_clone.acquire().await.unwrap();
+                    match tokio::fs::read_to_string(&path_buf).await {
+                        Ok(content) => Some((path_buf, content)),
+                        Err(_) => None,
+                    }
+                });
+            }
+
+            // Collect results for this small batch
+            while let Some(result) = read_futures.next().await {
+                if let Some((path_buf, content)) = result {
+                    if let Ok(uri) = Url::from_file_path(&path_buf) {
+                        document_items.push(TextDocumentItem {
+                            uri,
+                            language_id: "java".to_string(),
+                            version: 1,
+                            text: content,
+                        });
+                    }
                 }
             }
-        }
 
-        // log time took to read files
-        let elapsed = start_time.elapsed();
-        debug!("Time took to read {} files: {:?}", document_items.len(), elapsed);
+            // Send this batch to LSP
+            if !document_items.is_empty() {
+                self.text_document_did_open_batch(document_items, chunk.len()).await?;
+                processed_count += chunk.len();
+                debug!("Processed {}/{} files ({:.1}%)",
+                    processed_count,
+                    total_files,
+                    (processed_count as f64 / total_files as f64) * 100.0
+                );
+            }
 
-        debug!("Finished reading {} files, now opening them in the LSP", document_items.len());
+            // Brief pause to allow server to process
+            tokio::time::sleep(std::time::Duration::from_millis(SLEEP_DURATION_MS)).await;
 
-        // Process files in batches to avoid overwhelming the server
-        const BATCH_SIZE: usize = 100;
-        let total_batches = (document_items.len() + BATCH_SIZE - 1) / BATCH_SIZE;
-        for (batch_index, chunk) in document_items.chunks(BATCH_SIZE).enumerate() {
-            self.text_document_did_open_batch(chunk.to_vec()).await?;
-            debug!("Opened batch {} of {} ({} files)",
-                batch_index + 1,
-                total_batches,
-                chunk.len()
-            );
-            // wait for 0.5 seconds
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            // Force memory cleanup between batches
+            drop(read_futures);
+            drop(semaphore);
         }
 
         // Give the server some time to process these files
-        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-        let elapsed2 = start_time.elapsed();
-        debug!("Java setup_workspace completed in {:.2} seconds", elapsed2.as_secs_f64());
+        let elapsed = start_time.elapsed();
+        debug!("Java setup_workspace completed in {:.2} seconds", elapsed.as_secs_f64());
         Ok(())
     }
 }
@@ -200,7 +216,11 @@ impl JdtlsClient {
             .arg("-Declipse.product=org.eclipse.jdt.ls.core.product")
             .arg("-Dlog.protocol=true")
             .arg("-Dlog.level=ALL")
-            .arg("-Xmx1g")
+            .arg("-Xmx8g")
+            .arg("-XX:+UseParallelGC")
+            .arg("-XX:ParallelGCThreads=12")
+            .arg("-XX:+UseStringDeduplication")
+            .arg("-XX:StringTableSize=1000003")
             .arg("--add-modules=ALL-SYSTEM")
             .arg("--add-opens")
             .arg("java.base/java.util=ALL-UNNAMED")
