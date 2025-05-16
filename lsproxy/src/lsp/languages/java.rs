@@ -216,6 +216,7 @@ impl JdtlsClient {
             .arg("-Declipse.product=org.eclipse.jdt.ls.core.product")
             .arg("-Dlog.protocol=true")
             .arg("-Dlog.level=ALL")
+            .arg("-DwatchParentProcess=false")
             .arg("-Xmx8g")
             .arg("-XX:+UseParallelGC")
             .arg("-XX:ParallelGCThreads=12")
