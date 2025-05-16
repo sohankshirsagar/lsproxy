@@ -22,7 +22,11 @@ rule:
         pattern: $CONTEXT
     - kind: property_identifier
       inside:
-        kind: pair
-        has:
-          kind: arrow_function
+        any:
+          - kind: pair
+            has:
+              any:
+                - kind: function_expression
+                - kind: arrow_function
+          - kind: method_definition
         pattern: $CONTEXT
