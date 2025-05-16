@@ -54,6 +54,8 @@ impl LspClient for JdtlsClient {
         &mut self,
         root_path: String,
     ) -> Result<InitializeResult, Box<dyn Error + Send + Sync>> {
+        // throw an error here
+        return Err("Error".into());
         debug!("Initializing LSP client with root path: {:?}", root_path);
         self.start_response_listener().await?;
 
