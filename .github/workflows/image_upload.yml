@@ -8,7 +8,8 @@ permissions:
   packages: write # For container registry operations
 jobs:
   validate-and-release:
-    runs-on: large
+    runs-on: 
+      labels: large
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
