@@ -8,7 +8,7 @@ permissions:
   packages: write # For container registry operations
 jobs:
   validate-and-release:
-    runs-on: ubuntu-latest
+    runs-on: large
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
