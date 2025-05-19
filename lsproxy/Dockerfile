@@ -1,4 +1,4 @@
-FROM rust:1.81.0-slim-bookworm
+FROM rust:1.82.0-slim-bookworm
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
