@@ -387,6 +387,7 @@ pub trait LspClient: Send {
     async fn setup_workspace(
         &mut self,
         root_path: &str,
+        delete_existing_workspace_dir: Option<bool>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         Ok(())
     }
@@ -437,5 +438,10 @@ pub trait LspClient: Send {
         }
 
         Ok(workspace_folders.into_iter().collect())
+    }
+
+    async fn open_java_files(&mut self, _file_paths: &[String]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        // Default implementation returns an error for non-Java clients
+        Err("This language server does not support opening Java files".into())
     }
 }

@@ -89,27 +89,118 @@ impl LspClient for JdtlsClient {
     async fn setup_workspace(
         &mut self,
         root_path: &str,
+        delete_existing_workspace_dir: Option<bool>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         debug!("Setting up Java workspace at path: {}", root_path);
+        debug!("delete_existing_workspace_dir: {:?}", delete_existing_workspace_dir);
+
         let start_time = std::time::Instant::now();
 
-        let files = search_files(
-            Path::new(root_path),
-            JAVA_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
-            DEFAULT_EXCLUDE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
-            true
-        ).unwrap_or_default();
+        // Only open all java files in the workspace if we have deleted the workspace dir
+        if delete_existing_workspace_dir.unwrap_or(false) {
+            debug!("Opening all java files in the workspace");
 
-        debug!("Found {} Java files to process", files.len());
+            let files = search_files(
+                Path::new(root_path),
+                JAVA_FILE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
+                DEFAULT_EXCLUDE_PATTERNS.iter().map(|&s| s.to_string()).collect(),
+                true
+            ).unwrap_or_default();
+
+            debug!("Found {} Java files to process", files.len());
+
+            // log the first file
+            debug!("First file: {:?}", files.first());
+
+            // Process files in small batches to manage memory usage
+            const PROCESSING_BATCH_SIZE: usize = 8;
+            const SLEEP_DURATION_MS: u64 = 100;
+            let total_files = files.len();
+            let mut processed_count = 0;
+
+            // Process files in chunks of PROCESSING_BATCH_SIZE
+            for chunk in files.chunks(PROCESSING_BATCH_SIZE) {
+                // Process this small batch
+                let mut document_items = Vec::with_capacity(PROCESSING_BATCH_SIZE);
+
+                // Read files in parallel within this small batch
+                let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(PROCESSING_BATCH_SIZE));
+                let mut read_futures = FuturesUnordered::new();
+
+                for file_path in chunk {
+                    let path_buf = std::path::PathBuf::from(file_path);
+                    let semaphore_clone = semaphore.clone();
+
+                    read_futures.push(async move {
+                        let _permit = semaphore_clone.acquire().await.unwrap();
+                        match tokio::fs::read_to_string(&path_buf).await {
+                            Ok(content) => Some((path_buf, content)),
+                            Err(_) => None,
+                        }
+                    });
+                }
+
+                // Collect results for this small batch
+                while let Some(result) = read_futures.next().await {
+                    if let Some((path_buf, content)) = result {
+                        if let Ok(uri) = Url::from_file_path(&path_buf) {
+                            document_items.push(TextDocumentItem {
+                                uri,
+                                language_id: "java".to_string(),
+                                version: 1,
+                                text: content,
+                            });
+                        }
+                    }
+                }
+
+                // Send this batch to LSP
+                if !document_items.is_empty() {
+                    self.text_document_did_open_batch(document_items, chunk.len()).await?;
+                    processed_count += chunk.len();
+                    debug!("Processed {}/{} files ({:.1}%)",
+                        processed_count,
+                        total_files,
+                        (processed_count as f64 / total_files as f64) * 100.0
+                    );
+                }
+
+                // Brief pause to allow server to process
+                tokio::time::sleep(std::time::Duration::from_millis(SLEEP_DURATION_MS)).await;
+
+                // Force memory cleanup between batches
+                drop(read_futures);
+                drop(semaphore);
+            }
+        } else {
+            debug!("No need to open java files in the workspace, keeping the existing workspace");
+        }
+
+        // Give the server some time to process these files
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+        let elapsed = start_time.elapsed();
+        debug!("Java setup_workspace completed in {:.2} seconds", elapsed.as_secs_f64());
+        Ok(())
+    }
+
+    // This is used when we cache the existing workspace dir and want to open all new/modified java files
+    // Only implemented for Java
+    // Gets called when /workspace/open-java-files endpoint is hit
+    async fn open_java_files(&mut self, file_paths: &[String]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        debug!("Opening {} Java files", file_paths.len());
+
+        // prepend all file paths with /mnt/workspace/
+        let file_paths = file_paths.iter().map(|path| format!("/mnt/workspace/{}", path)).collect::<Vec<String>>();
 
         // Process files in small batches to manage memory usage
         const PROCESSING_BATCH_SIZE: usize = 8;
         const SLEEP_DURATION_MS: u64 = 100;
-        let total_files = files.len();
+        let total_files = file_paths.len();
         let mut processed_count = 0;
 
         // Process files in chunks of PROCESSING_BATCH_SIZE
-        for chunk in files.chunks(PROCESSING_BATCH_SIZE) {
+        for chunk in file_paths.chunks(PROCESSING_BATCH_SIZE) {
             // Process this small batch
             let mut document_items = Vec::with_capacity(PROCESSING_BATCH_SIZE);
 
@@ -162,13 +253,9 @@ impl LspClient for JdtlsClient {
             drop(read_futures);
             drop(semaphore);
         }
-
-        // Give the server some time to process these files
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-
-        let elapsed = start_time.elapsed();
-        debug!("Java setup_workspace completed in {:.2} seconds", elapsed.as_secs_f64());
-        Ok(())
+        
+        debug!("Successfully opened {} Java files", processed_count);
+        Ok(processed_count)
     }
 }
 
@@ -176,12 +263,16 @@ impl JdtlsClient {
     pub async fn new(
         root_path: &str,
         watch_events_rx: Receiver<DebouncedEvent>,
+        delete_existing_workspace_dir: Option<bool>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let workspace_dir = Path::new("/usr/src/app/jdtls_workspace");
 
+        // log the delete_existing_workspace_dir
+        debug!("delete_existing_workspace_dir: {:?}", delete_existing_workspace_dir);
+
         // Delete the workspace directory if it exists
         // Doing this so we can start fresh when testing locally
-        if workspace_dir.exists() {
+        if workspace_dir.exists() && delete_existing_workspace_dir.unwrap_or(false) {
             debug!("Deleting existing JDTLS workspace directory");
             tokio::fs::remove_dir_all(&workspace_dir).await?;
         }
@@ -216,10 +307,13 @@ impl JdtlsClient {
             .arg("-Declipse.product=org.eclipse.jdt.ls.core.product")
             .arg("-Dlog.protocol=true")
             .arg("-Dlog.level=ALL")
-            .arg("-DwatchParentProcess=false")
             .arg("-Xmx8g")
-            .arg("-XX:+UseParallelGC")
-            .arg("-XX:ParallelGCThreads=12")
+            .arg("-XX:+UseG1GC")
+            .arg("-XX:ConcGCThreads=4")
+            .arg("-XX:ParallelGCThreads=8")
+            .arg("-XX:+AlwaysPreTouch")
+            .arg("-XX:+DisableExplicitGC")
+            .arg("-XX:G1HeapRegionSize=8m")
             .arg("-XX:+UseStringDeduplication")
             .arg("-XX:StringTableSize=1000003")
             .arg("--add-modules=ALL-SYSTEM")
@@ -258,7 +352,7 @@ impl JdtlsClient {
                 .map(|&s| s.to_string())
                 .collect(),
             watch_events_rx,
-            DidOpenConfiguration::Lazy,
+            DidOpenConfiguration::None,
         );
 
         let json_rpc_handler = JsonRpcHandler::new();

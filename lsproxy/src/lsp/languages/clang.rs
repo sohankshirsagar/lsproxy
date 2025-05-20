@@ -56,6 +56,7 @@ impl LspClient for ClangdClient {
     async fn setup_workspace(
         &mut self,
         root_path: &str,
+        delete_existing_workspace_dir: Option<bool>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let compile_db_files = search_files(
             Path::new(root_path),

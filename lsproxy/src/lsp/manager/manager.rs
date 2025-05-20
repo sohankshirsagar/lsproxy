@@ -32,10 +32,11 @@ pub struct Manager {
     lsp_clients: HashMap<SupportedLanguages, Arc<Mutex<Box<dyn LspClient>>>>,
     watch_events_sender: Sender<DebouncedEvent>,
     ast_grep: AstGrepClient,
+    delete_existing_workspace_dir: Option<bool>,
 }
 
 impl Manager {
-    pub async fn new(root_path: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(root_path: &str, delete_existing_workspace_dir: Option<bool>) -> Result<Self, Box<dyn Error>> {
         let (tx, _) = channel(100);
         let event_sender = tx.clone();
         let mut debouncer = new_debouncer(
@@ -62,7 +63,17 @@ impl Manager {
             lsp_clients: HashMap::new(),
             watch_events_sender: event_sender,
             ast_grep,
+            delete_existing_workspace_dir,
         })
+    }
+
+    pub async fn open_java_files(&self, file_paths: &[String]) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        if let Some(client) = self.lsp_clients.get(&SupportedLanguages::Java) {
+            let mut client = client.lock().await;
+            client.open_java_files(file_paths).await
+        } else {
+            Err("Java language server not initialized".into())
+        }
     }
 
     /// Detects the languages in the workspace by searching for files that match the language server's file patterns, before LSPs are started.
@@ -173,7 +184,7 @@ impl Manager {
                         .map_err(|e| e.to_string())?,
                 ),
                 SupportedLanguages::Java => Box::new(
-                    JdtlsClient::new(workspace_path, self.watch_events_sender.subscribe())
+                    JdtlsClient::new(workspace_path, self.watch_events_sender.subscribe(), self.delete_existing_workspace_dir)
                         .await
                         .map_err(|e| e.to_string())?,
                 ),
@@ -199,7 +210,7 @@ impl Manager {
                 .map_err(|e| e.to_string())?;
             debug!("Setting up workspace");
             client
-                .setup_workspace(workspace_path)
+                .setup_workspace(workspace_path, self.delete_existing_workspace_dir)
                 .await
                 .map_err(|e| e.to_string())?;
             self.lsp_clients.insert(lsp, Arc::new(Mutex::new(client)));

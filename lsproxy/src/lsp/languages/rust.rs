@@ -86,6 +86,7 @@ impl LspClient for RustAnalyzerClient {
     async fn setup_workspace(
         &mut self,
         _root_path: &str,
+        delete_existing_workspace_dir: Option<bool>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         // This is required for workspace features like go to definition to work
         self.send_request("rust-analyzer/reloadWorkspace", None)

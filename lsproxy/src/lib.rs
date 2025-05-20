@@ -27,10 +27,11 @@ use crate::api_types::{
     FilePosition, FileRange, FileSymbolsRequest, GetDefinitionRequest, GetReferencedSymbolsRequest,
     GetReferencesRequest, HealthResponse, Position, ReferenceWithSymbolDefinitions,
     ReferencedSymbolsResponse, ReferencesResponse, SupportedLanguages, Symbol, SymbolResponse,
+    OpenJavaFilesRequest, OpenJavaFilesResponse,
 };
 use crate::handlers::{
     definitions_in_file, find_definition, find_referenced_symbols, find_references, health_check,
-    list_files,
+    list_files, open_java_files,
 };
 use crate::lsp::manager::Manager;
 // use crate::utils::doc_utils::make_code_sample;
@@ -74,6 +75,8 @@ pub fn check_mount_dir() -> std::io::Result<()> {
             HealthResponse,
             FindIdentifierRequest,
             IdentifierResponse,
+            OpenJavaFilesRequest,
+            OpenJavaFilesResponse,
         )
     ),
     paths(
@@ -85,6 +88,7 @@ pub fn check_mount_dir() -> std::io::Result<()> {
         crate::handlers::read_source_code,
         crate::handlers::find_referenced_symbols,
         crate::handlers::find_identifier,
+        crate::handlers::open_java_files,
     ),
     tags(
         (name = "lsproxy-api", description = "LSP Proxy API")
@@ -111,6 +115,19 @@ pub async fn initialize_app_state_with_mount_dir(
         warn!("Changing global mount dir to: {}", global_mount_dir);
     }
 
+    let delete_existing_workspace_dir = match std::env::var("DELETE_EXISTING_WORKSPACE_DIR") {
+        Ok(val) => {
+            if val.to_lowercase() == "true" {
+                Some(true)
+            } else if val.to_lowercase() == "false" {
+                Some(false)
+            } else {
+                None
+            }
+        },
+        Err(_) => None,
+    };
+
     if let Err(_) = check_mount_dir() {
         eprintln!(
             "Error: Your workspace isn't mounted at '{}'. Please mount your workspace at this location.",
@@ -123,7 +140,7 @@ pub async fn initialize_app_state_with_mount_dir(
     let mount_dir = mount_dir_path.to_string_lossy();
 
     // Create and initialize manager before wrapping in Arc
-    let mut manager = Manager::new(&mount_dir).await?;
+    let mut manager = Manager::new(&mount_dir, delete_existing_workspace_dir).await?;
     manager.start_langservers(&mount_dir).await?;
     let manager = Arc::new(manager);
 
@@ -222,6 +239,8 @@ pub async fn run_server_with_port_and_host(
                     api_scope.service(resource(path).route(post().to(read_source_code))),
                 ("/system/health", Some(Method::Get)) =>
                     api_scope.service(resource(path).route(get().to(health_check))),
+                ("/workspace/open-java-files", Some(Method::Post)) =>
+                    api_scope.service(resource(path).route(post().to(open_java_files))),
                 (p, m) => panic!(
                     "Invalid path configuration for {}: {:?}. Ensure the OpenAPI spec matches your handlers.", 
                     p,

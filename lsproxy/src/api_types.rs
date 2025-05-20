@@ -421,6 +421,17 @@ pub struct ReadSourceCodeRequest {
     pub range: Option<Range>,
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OpenJavaFilesRequest {
+    pub file_paths: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct OpenJavaFilesResponse {
+    pub message: String,
+    pub opened_count: usize,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -71,5 +71,6 @@ echo -e "${BLUE}Starting application...${NC}"
 docker run --rm -p 4444:4444 \
     -v "$WORKSPACE_PATH:/mnt/workspace" \
     $AUTH_ENV \
+    -e DELETE_EXISTING_WORKSPACE_DIR=false \
     -v "$(pwd)/lsproxy/target/release":/usr/src/app \
     lsproxy-dev ./lsproxy
