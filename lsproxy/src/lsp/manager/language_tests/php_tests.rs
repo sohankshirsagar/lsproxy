@@ -530,6 +530,8 @@ async fn test_php_definition() -> Result<(), Box<dyn std::error::Error>> {
         .as_ref()
         .ok_or("Manager is not initialized")?;
 
+    tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+
     let definition_response = manager
         .find_definition(
             "main.php",

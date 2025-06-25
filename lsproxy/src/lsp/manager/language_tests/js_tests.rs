@@ -503,6 +503,54 @@ async fn test_file_symbols_functions_js() -> Result<(), Box<dyn std::error::Erro
                 },
             },
         },
+        Symbol {
+            name: "exampleFunc".to_string(),
+            kind: "function".to_string(),
+            identifier_position: FilePosition {
+                path: file_path.to_string(),
+                position: Position {
+                    line: 26,
+                    character: 15,
+                },
+            },
+            file_range: FileRange {
+                path: file_path.to_string(),
+                range: Range {
+                    start: Position {
+                        line: 26,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 28,
+                        character: 1,
+                    },
+                },
+            },
+        },
+        Symbol {
+            name: "exampleFunc".to_string(),
+            kind: "function".to_string(),
+            identifier_position: FilePosition {
+                path: file_path.to_string(),
+                position: Position {
+                    line: 31,
+                    character: 15,
+                },
+            },
+            file_range: FileRange {
+                path: file_path.to_string(),
+                range: Range {
+                    start: Position {
+                        line: 31,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 33,
+                        character: 1,
+                    },
+                },
+            },
+        },
     ];
 
     symbol_response.sort_by_key(|s| s.name.clone());

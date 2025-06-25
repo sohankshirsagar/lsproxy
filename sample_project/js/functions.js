@@ -22,3 +22,13 @@ const topLevelFuncExprConst = function namedInnerFuncExpr() {};
 // Assignment expression with an arrow function
 let assignedArrowLet;
 assignedArrowLet = () => {};
+
+// Assignment to module.exports with a named function expression
+module.exports.exampleFunc = function exampleFuncInner() {
+  console.log("hello");
+};
+
+// Assignment to module.exports with an arrow function
+module.exports.exampleFunc = () => {
+  console.log("hello");
+}
