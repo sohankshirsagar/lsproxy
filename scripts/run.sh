@@ -67,9 +67,13 @@ echo -e "${BLUE}Starting application...${NC}"
 # Run the build
 ./scripts/build.sh
 
+# remove /tmp/lsproxy-logs
+rm -rf /tmp/lsproxy-logs
+
 # Run the application
 docker run --rm --user 1000 -p 4444:4444 \
     -v "$WORKSPACE_PATH:/mnt/workspace" \
+    -v "/tmp/lsproxy-logs:/tmp" \
     $AUTH_ENV \
     -v "$(pwd)/lsproxy/target/release":/usr/src/app \
     lsproxy-dev ./lsproxy
