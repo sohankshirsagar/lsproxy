@@ -223,6 +223,12 @@ RUN eval "$(rbenv init -)" \
     && gem install ruby-lsp \
     && gem install srb
 
+RUN eval "$(rbenv init -)" \
+    && rbenv install 3.3.5 \
+    && rbenv shell 3.3.5 \
+    && gem install ruby-lsp \
+    && gem install srb
+
 # Download and run dotnet install script
 RUN curl -fsSL https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.sh -o dotnet-install.sh \
     && chmod +x dotnet-install.sh \
